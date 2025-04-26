@@ -1,0 +1,16 @@
+#pragma once
+
+#include "data.h"
+#include "player.h"
+#include "world.h"
+
+typedef struct {
+  Player player;
+  World world;
+} Game;
+
+void game_tick(Game *game);
+
+void load_game(Game *game, ByteBuf *bytebuf);
+
+void save_game(Game *game, ByteBuf *bytebuf);
