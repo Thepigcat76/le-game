@@ -10,6 +10,7 @@ typedef struct {
   Direction direction;
 
   // PLAYER DATA
+  Rectangle box;
   int essence;
 } Player;
 

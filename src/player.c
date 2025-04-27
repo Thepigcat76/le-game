@@ -7,12 +7,13 @@
 Player player_new() {
   return (Player){
       .cam = camera_new(SCREEN_WIDTH, SCREEN_HEIGHT),
-      .textures = {load_texture("assets/player.png"),
-                   load_texture("assets/player_back.png"),
-                   load_texture("assets/player_left.png"),
-                   load_texture("assets/player_right.png")},
+      .textures = {load_texture("res/assets/player.png"),
+                   load_texture("res/assets/player_back.png"),
+                   load_texture("res/assets/player_left.png"),
+                   load_texture("res/assets/player_right.png")},
       .direction = DIRECTION_DOWN,
       .essence = 0,
+      .box = {.x = SCREEN_WIDTH / 2.0 - 8, .y = 0, .width = 16, .height = 32}
   };
 }
 
@@ -45,19 +46,23 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
   Camera2D *cam = &player->cam;
 
   if (w) {
-    cam->target.y -= 2;
+    player->box.y -= 2;
+    player->cam.target.y -= 2;
     player->direction = DIRECTION_UP;
   }
   if (a) {
-    cam->target.x -= 2;
+    player->box.x -= 2;
+    player->cam.target.x -= 2;
     player->direction = DIRECTION_LEFT;
   }
   if (s) {
-    cam->target.y += 2;
+    player->box.y += 2;
+    player->cam.target.y += 2;
     player->direction = DIRECTION_DOWN;
   }
   if (d) {
-    cam->target.x += 2;
+    player->box.x += 2;
+    player->cam.target.x += 2;
     player->direction = DIRECTION_RIGHT;
   }
 }

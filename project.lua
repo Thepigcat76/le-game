@@ -20,5 +20,6 @@ Libraries = {
     "dl",
     "rt",
     "X11",
+    "cjson",
 }
 

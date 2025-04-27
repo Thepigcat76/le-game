@@ -1,18 +1,30 @@
 #include "../include/game.h"
 #include "../include/shared.h"
-#include "../include/stb_perlin.h"
 #include "raylib.h"
 
-#define TILE_SIZE 16
+void rec_draw_outline(const Rectangle *rec, Color color) {
+  DrawRectangleLinesEx(*rec, 1, color);
+}
+
+void debug_rect(Rectangle *rect) {
+  TraceLog(LOG_INFO, "Rect{x=%f, y=%f, w=%f, h=%f}", rect->x, rect->y,
+           rect->width, rect->height);
+}
 
 int main(void) {
   InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Ballz");
   SetExitKey(0);
 
+  tile_types_init();
+
   Game game = {
       .player = player_new(),
       .world = world_new(),
   };
+
+  world_gen(&game.world);
+
+  world_prepare_rendering(&game.world);
 
   if (FileExists("bytes.bin")) {
     uint8_t bytes[4000];
@@ -22,53 +34,56 @@ int main(void) {
     load_game(&game, &buf);
   }
 
-  TraceLog(LOG_INFO, "Essence: %d", game.player.essence);
-
   SetTargetFPS(60);
 
-  Texture2D grass_texture = load_texture("assets/grass.png");
-  Texture2D stone_texture = load_texture("assets/stone.png");
+  float speed = 2.0f;
 
   while (!WindowShouldClose()) {
     game_tick(&game);
 
     BeginDrawing();
     ClearBackground(RAYWHITE);
-    // CAMERA
+    // CAMERA BEGIN
     BeginMode2D(game.player.cam);
-    for (int y = 0; y < 40; y++) {
-      for (int x = 0; x < 40; x++) {
-        float fx = x * 0.1;
-        float fy = y * 0.1;
-        float noise = stb_perlin_noise3(fx, fy, 0.0f, 0, 0, 0);
-        float i = (((noise + 1.0f) / 2.0f * 2.50f) / 2.50f);
-        // TraceLog(LOG_INFO, "I: %d", i);
-        int blue = i * 255;
-        // TraceLog(LOG_INFO, "BLUE: %d", blue);
+    {
+      Camera2D *cam = &game.player.cam;
 
-        Texture2D texture;
-        Color tint = WHITE;
-        if (blue > 127) {
-          if (blue < 150) {
-            tint.r -= 40;
-            tint.g -= 40;
-            tint.b -= 40;
-          }
-          texture = grass_texture;
-        } else {
-          texture = stone_texture;
+      world_render(&game.world);
+
+      Texture2D texture = player_get_texture(&game.player);
+      DrawTextureEx(texture, (Vector2){game.player.box.x, game.player.box.y}, 0,
+                    1, WHITE);
+
+      Vector2 mouse_world_pos = GetScreenToWorld2D(GetMousePosition(), *cam);
+
+      Rectangle tile_box = game.world.chunks[0][0].tiles[0][0].box;
+
+      //rec_draw_outline(&tile_box, BLUE);
+
+      int x_index = (int)(mouse_world_pos.x / TILE_SIZE);
+      int y_index = (int)(mouse_world_pos.y / TILE_SIZE);
+      Rectangle rec = (Rectangle){.x = x_index * (TILE_SIZE),
+                                  .y = y_index * (TILE_SIZE),
+                                  .width = (TILE_SIZE),
+                                  .height = (TILE_SIZE)};
+
+      rec_draw_outline(&rec, BLUE);
+
+      // TraceLog(LOG_INFO, "Mouse x: %d, y: %d", x_index * 16, y_index * 16);
+      // debug_rect(&tile_rect);
+
+      if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
+        TileInstance *selected_tile =
+            &game.world.chunks[0][0].tiles[y_index][x_index];
+        if (CheckCollisionPointRec(mouse_world_pos, selected_tile->box)) {
+          *selected_tile = tile_new(&TILES[TILE_GRASS], x_index * TILE_SIZE,
+                                   y_index * TILE_SIZE);
+          world_prepare_rendering(&game.world);
         }
-
-        DrawTexture(texture, x * TILE_SIZE, y * TILE_SIZE, tint);
       }
     }
-
-    Camera2D *cam = &game.player.cam;
-
-    Texture2D texture = player_get_texture(&game.player);
-    TraceLog(LOG_INFO, "Direction: %d", game.player.direction);
-    DrawTexture(texture, cam->target.x, cam->target.y, WHITE);
     EndMode2D();
+
     // CAMERA END
     EndDrawing();
   }

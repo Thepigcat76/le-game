@@ -9,6 +9,12 @@ typedef struct {
 
 World world_new();
 
+void world_gen(World *world);
+
+void world_prepare_rendering(World *world);
+
+void world_render(World *world);
+
 void load_world(World *world, DataMap *data);
 
 void save_world(World *world, DataMap *data);
