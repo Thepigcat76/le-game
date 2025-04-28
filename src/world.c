@@ -1,6 +1,7 @@
 #include "../include/world.h"
 #include "../include/stb_perlin.h"
 #include <raylib.h>
+#include <stdio.h>
 
 World world_new() { return (World){}; }
 
@@ -12,8 +13,6 @@ void world_gen(World *world) {
       float fx = x * 0.1;
       float fy = y * 0.1;
       int noise = (stb_perlin_noise3(fx, fy, 0.0f, 0, 0, 0) + 1) * 10;
-
-      TraceLog(LOG_INFO, "Noise: %d", noise);
 
       TileType type;
       if (noise > 5) {
@@ -50,6 +49,7 @@ void world_prepare_rendering(World *world) {
 }
 
 void world_render(World *world) {
+  DrawTexture(TILES[TILE_STONE].texture, 0, 0, WHITE);
   Chunk *chunk = &world->chunks[0][0];
   for (int y = 0; y < CHUNK_SIZE; y++) {
     for (int x = 0; x < CHUNK_SIZE; x++) {

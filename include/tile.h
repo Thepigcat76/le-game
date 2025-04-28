@@ -3,13 +3,13 @@
 #include "data.h"
 #include <raylib.h>
 
-#define TILES_AMOUNT 3
+#define TILES_AMOUNT 4
 
 typedef enum {
-  TILE_EMPTY,
-  TILE_DIRT,
-  TILE_GRASS,
-  TILE_STONE,
+  TILE_EMPTY = 0,
+  TILE_DIRT = 1,
+  TILE_GRASS = 2,
+  TILE_STONE = 3,
 } TileId;
 
 typedef struct {
@@ -57,3 +57,5 @@ void tile_load(TileInstance *tile);
 
 void tile_save(TileInstance *tile);
 
+// CONNECTED TEXTURES
+void init_connected_info();

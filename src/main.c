@@ -38,53 +38,99 @@ int main(void) {
 
   float speed = 2.0f;
 
+  Shader shader = LoadShader(NULL, "res/shaders/lighting.fs");
+  int light_pos_loc = GetShaderLocation(shader, "lightPos");
+  int light_color_loc = GetShaderLocation(shader, "lightColor");
+  int light_radius_loc = GetShaderLocation(shader, "lightRadius");
+
+  Texture2D torch_texture = load_texture("res/assets/torch.png");
+
+  RenderTexture2D world_texture =
+      LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
+
   while (!WindowShouldClose()) {
     game_tick(&game);
 
+    if (IsKeyDown(KEY_R)) {
+      shader = LoadShader(NULL, "res/shaders/lighting.fs");
+      init_connected_info();
+    }
+
     BeginDrawing();
-    ClearBackground(RAYWHITE);
-    // CAMERA BEGIN
-    BeginMode2D(game.player.cam);
     {
       Camera2D *cam = &game.player.cam;
+      // CAMERA BEGIN
+      Vector2 mousePos = GetMousePosition();
 
-      world_render(&game.world);
+      Vector2 mouse_world_pos = GetScreenToWorld2D(mousePos, *cam);
+      Vector2 lightPos = {(mousePos.x / GetScreenWidth()),
+                          1.0 - (mousePos.y / GetScreenHeight())};
 
-      Texture2D texture = player_get_texture(&game.player);
-      DrawTextureEx(texture, (Vector2){game.player.box.x, game.player.box.y}, 0,
-                    1, WHITE);
+      Vector3 lightColor = {1.0f, 1.0f, 0.8f}; // warm white
+      float lightRadius = 0.08f * cam->zoom;
 
-      Vector2 mouse_world_pos = GetScreenToWorld2D(GetMousePosition(), *cam);
+      SetShaderValue(shader, light_pos_loc, &lightPos, SHADER_UNIFORM_VEC2);
+      SetShaderValue(shader, light_color_loc, &lightColor, SHADER_UNIFORM_VEC3);
+      SetShaderValue(shader, light_radius_loc, &lightRadius,
+                     SHADER_UNIFORM_FLOAT);
+      BeginTextureMode(world_texture);
+      {
+        BeginMode2D(*cam);
+        {
+          ClearBackground(DARKGRAY);
 
-      Rectangle tile_box = game.world.chunks[0][0].tiles[0][0].box;
+          world_render(&game.world);
 
-      //rec_draw_outline(&tile_box, BLUE);
+          Texture2D texture = player_get_texture(&game.player);
 
-      int x_index = (int)(mouse_world_pos.x / TILE_SIZE);
-      int y_index = (int)(mouse_world_pos.y / TILE_SIZE);
-      Rectangle rec = (Rectangle){.x = x_index * (TILE_SIZE),
-                                  .y = y_index * (TILE_SIZE),
-                                  .width = (TILE_SIZE),
-                                  .height = (TILE_SIZE)};
+          Rectangle tile_box = game.world.chunks[0][0].tiles[0][0].box;
 
-      rec_draw_outline(&rec, BLUE);
+          // rec_draw_outline(&tile_box, BLUE);
 
-      // TraceLog(LOG_INFO, "Mouse x: %d, y: %d", x_index * 16, y_index * 16);
-      // debug_rect(&tile_rect);
+          int x_index = (int)(mouse_world_pos.x / TILE_SIZE);
+          int y_index = (int)(mouse_world_pos.y / TILE_SIZE);
+          Rectangle rec = (Rectangle){.x = x_index * (TILE_SIZE),
+                                      .y = y_index * (TILE_SIZE),
+                                      .width = (TILE_SIZE),
+                                      .height = (TILE_SIZE)};
 
-      if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
-        TileInstance *selected_tile =
-            &game.world.chunks[0][0].tiles[y_index][x_index];
-        if (CheckCollisionPointRec(mouse_world_pos, selected_tile->box)) {
-          *selected_tile = tile_new(&TILES[TILE_GRASS], x_index * TILE_SIZE,
-                                   y_index * TILE_SIZE);
-          world_prepare_rendering(&game.world);
+          rec_draw_outline(&rec, BLUE);
+          DrawTextureEx(texture,
+                        (Vector2){game.player.box.x, game.player.box.y}, 0, 1,
+                        WHITE);
+
+          // TraceLog(LOG_INFO, "Mouse x: %d, y: %d", x_index * 16, y_index *
+          // 16); debug_rect(&tile_rect);
+
+          if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
+            TileInstance *selected_tile =
+                &game.world.chunks[0][0].tiles[y_index][x_index];
+            if (CheckCollisionPointRec(mouse_world_pos, selected_tile->box)) {
+              *selected_tile = tile_new(&TILES[TILE_STONE], x_index * TILE_SIZE,
+                                        y_index * TILE_SIZE);
+              world_prepare_rendering(&game.world);
+            }
+          }
+
+          //DrawTextureEx(torch_texture,
+          //              (Vector2){mouse_world_pos.x, mouse_world_pos.y}, 0, 2,
+          //              WHITE);
+
+          // CAMERA END
         }
+        EndMode2D();
       }
-    }
-    EndMode2D();
+      EndTextureMode();
 
-    // CAMERA END
+      BeginShaderMode(shader);
+      {
+        DrawTextureRec(world_texture.texture,
+                       (Rectangle){0, 0, (float)world_texture.texture.width,
+                                   -(float)world_texture.texture.height},
+                       (Vector2){0, 0}, WHITE);
+      }
+      EndShaderMode();
+    }
     EndDrawing();
   }
 

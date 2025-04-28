@@ -27,7 +27,7 @@ static ConnectedInfo CONNECTED_INFO;
   extern void src_file_name##_tile_init();                                     \
   src_file_name##_tile_init();
 
-static void init_connected_info() {
+void init_connected_info() {
   ConnectedInfo info;
   char *file = read_file_to_string("res/connected.json");
   cJSON *json = cJSON_Parse(file);
@@ -70,7 +70,6 @@ static void init_connected_info() {
           if (cJSON_IsNumber(entry)) {
             info.connections[i].predicate[j] = entry->valueint;
           } else {
-
           }
           info.connections[i].predicates = size;
         }
@@ -101,6 +100,7 @@ static void init_connected_info() {
 }
 
 void tile_types_init() {
+  tile_type_init(TILE_EMPTY);
   tile_type_init(TILE_DIRT);
   tile_type_init(TILE_GRASS);
   tile_type_init(TILE_STONE);
@@ -114,16 +114,16 @@ void tile_type_init(TileId id) {
     INIT_TILE(empty)
     break;
   }
+  case TILE_DIRT: {
+    INIT_TILE(dirt)
+    break;
+  }
   case TILE_GRASS: {
     INIT_TILE(grass)
     break;
   }
   case TILE_STONE: {
     INIT_TILE(stone)
-    break;
-  }
-  case TILE_DIRT: {
-    INIT_TILE(dirt)
     break;
   }
   }
@@ -157,52 +157,6 @@ TileInstance tile_new(TileType *type, int x, int y) {
 }
 
 #define IS_MAIN_TILE(i) (i == 1 || i == 3 || i == 4 || i == 6)
-#define MAIN_TILES (int[]){1, 3, 4, 6}
-
-static bool all_true(bool *arr, int size) {
-  for (int i = 0; i < size; i++) {
-    if (!arr[i] && IS_MAIN_TILE(i)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-static bool all_false(bool *arr, int size) {
-  for (int i = 0; i < size; i++) {
-    if (arr[i] && IS_MAIN_TILE(i)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-static bool index_true_and_other_false(bool *arr, int index, int size) {
-  for (int i = 0; i < size; i++) {
-    if (i == index) {
-      if (!arr[i]) {
-        return false;
-      }
-    } else if (arr[i] && IS_MAIN_TILE(i)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-static bool indices_2_true_and_other_false(bool *arr, int index0, int index1,
-                                           int size) {
-  for (int i = 0; i < size; i++) {
-    if (i == index0 || i == index1) {
-      if (!arr[i]) {
-        return false;
-      }
-    } else if (arr[i] && IS_MAIN_TILE(i)) {
-      return false;
-    }
-  }
-  return true;
-}
 
 static bool indices_true_and_other_false(bool *arr, int indices[],
                                          int indices_amount, int size) {
@@ -235,86 +189,40 @@ static Rectangle sprite_rect(int x, int y) {
 
 // TODO: Cache sprite
 static Rectangle select_tile(bool *same_tile) {
-  // COMPLETLY SURROUNDED
-  if (all_true(same_tile, 8)) {
-    return sprite_rect(32, 16);
-  } else if (all_false(same_tile, 8)) {
-    return sprite_rect(0, 48);
-  }
-  // SINGLE TILE NEXT TO THIS TILE
-  else if (index_true_and_other_false(same_tile, 1, 8)) {
-    return sprite_rect(0, 32);
-  } else if (index_true_and_other_false(same_tile, 3, 8)) {
-    return sprite_rect(48, 48);
-  } else if (index_true_and_other_false(same_tile, 4, 8)) {
-    return sprite_rect(16, 48);
-  } else if (index_true_and_other_false(same_tile, 6, 8)) {
-    return sprite_rect(0, 0);
-  }
-  // TILE ON EITHER SIDE
-  else if (indices_true_and_other_false(same_tile, (int[]){3, 4}, 2, 8)) {
-    return sprite_rect(32, 48);
-  } else if (indices_true_and_other_false(same_tile, (int[]){1, 6}, 2, 8)) {
-    return sprite_rect(0, 16);
-  }
-  // CROSS
-  else if (indices_true_and_other_false(same_tile, (int[]){1, 3, 4, 6}, 4, 8)) {
-    return sprite_rect(32, 16);
-  }
-  // T-JUNCTION
-  else if (indices_true_and_other_false(same_tile, (int[]){3, 4, 6}, 3, 8)) {
-    return sprite_rect(32, 0);
-  } else if (indices_true_and_other_false(same_tile, (int[]){1, 4, 6}, 3, 8)) {
-    return sprite_rect(16, 16);
-  } else if (indices_true_and_other_false(same_tile, (int[]){1, 3, 4}, 3, 8)) {
-    return sprite_rect(32, 32);
-  } else if (indices_true_and_other_false(same_tile, (int[]){1, 3, 6}, 3, 8)) {
-    return sprite_rect(48, 16);
-  }
-  // CORNER
-  else if (indices_true_and_other_false(same_tile, (int[]){3, 5, 6}, 3, 8)) {
-    return sprite_rect(48, 0);
-  } else if (indices_true_and_other_false(same_tile, (int[]){4, 6, 7}, 3, 8)) {
-    return sprite_rect(16, 0);
-  } else if (indices_true_and_other_false(same_tile, (int[]){1, 2, 4}, 3, 8)) {
-    return sprite_rect(16, 32);
-  } else if (indices_true_and_other_false(same_tile, (int[]){0, 1, 3}, 3, 8)) {
-    return sprite_rect(48, 32);
-  }
-  // STUFFS
-  else if (indices_true_and_other_false(same_tile, (int[]){1, 3}, 2, 8)) {
-    return sprite_rect(48, 32);
-  } else if (indices_true_and_other_false(same_tile, (int[]){3, 6}, 2, 8)) {
-    return sprite_rect(48, 0);
-  } else if (indices_true_and_other_false(same_tile, (int[]){6, 4}, 2, 8)) {
-    return sprite_rect(16, 0);
-  } else if (indices_true_and_other_false(same_tile, (int[]){4, 1}, 2, 8)) {
-    return sprite_rect(16, 32);
+  for (int i = 0; i < CONNECTED_INFO.connections_amount; i++) {
+    Connection connection = CONNECTED_INFO.connections[i];
+    if (indices_true_and_other_false(same_tile, connection.predicate,
+                                     connection.predicates, 8)) {
+      return sprite_rect(connection.sprite_pos.x, connection.sprite_pos.y);
+    }
   }
 
   TraceLog(LOG_ERROR, "Failed to select tile");
-  return sprite_rect(0, 48);
+  return sprite_rect(CONNECTED_INFO.default_sprite_pos.x,
+                     CONNECTED_INFO.default_sprite_pos.y);
 }
 
 void tile_render(TileInstance *tile) {
-  if (!tile->type.uses_tileset) {
-    DrawTextureEx(tile->type.texture, (Vector2){tile->box.x, tile->box.y}, 0, 1,
-                  WHITE);
-  } else {
-    TileId self_id = tile->type.id;
-    TileId *texture_data = tile->texture_data.surrounding_tiles;
-    bool same_tile[8];
-    same_tile[0] = texture_data[0] == self_id;
-    same_tile[1] = texture_data[1] == self_id;
-    same_tile[2] = texture_data[2] == self_id;
-    same_tile[3] = texture_data[3] == self_id;
-    same_tile[4] = texture_data[4] == self_id;
-    same_tile[5] = texture_data[5] == self_id;
-    same_tile[6] = texture_data[6] == self_id;
-    same_tile[7] = texture_data[7] == self_id;
-    Rectangle selected_tile = select_tile(same_tile);
-    DrawTextureRec(tile->type.texture, selected_tile,
-                   (Vector2){tile->box.x, tile->box.y}, WHITE);
+  if (tile->type.has_texture) {
+    if (!tile->type.uses_tileset) {
+      DrawTextureEx(tile->type.texture, (Vector2){tile->box.x, tile->box.y}, 0,
+                    1, WHITE);
+    } else {
+      TileId self_id = tile->type.id;
+      TileId *texture_data = tile->texture_data.surrounding_tiles;
+      bool same_tile[8];
+      same_tile[0] = texture_data[0] == self_id;
+      same_tile[1] = texture_data[1] == self_id;
+      same_tile[2] = texture_data[2] == self_id;
+      same_tile[3] = texture_data[3] == self_id;
+      same_tile[4] = texture_data[4] == self_id;
+      same_tile[5] = texture_data[5] == self_id;
+      same_tile[6] = texture_data[6] == self_id;
+      same_tile[7] = texture_data[7] == self_id;
+      Rectangle selected_tile = select_tile(same_tile);
+      DrawTextureRec(tile->type.texture, selected_tile,
+                     (Vector2){tile->box.x, tile->box.y}, WHITE);
+    }
   }
 }
 

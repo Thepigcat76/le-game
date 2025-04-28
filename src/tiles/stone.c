@@ -1,5 +1,6 @@
 #include "../../include/shared.h"
 #include "../../include/tile.h"
+#include <raylib.h>
 
 void stone_tile_init() {
   TileType type = {
