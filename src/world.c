@@ -36,20 +36,43 @@ void world_prepare_rendering(World *world) {
   for (int y = 0; y < CHUNK_SIZE; y++) {
     for (int x = 0; x < CHUNK_SIZE; x++) {
       TileTextureData *texture_data = &chunk->tiles[y][x].texture_data;
-      texture_data->surrounding_tiles[0] = y > 0 && x > 0 ? chunk->tiles[y - 1][x - 1].type.id : TILE_EMPTY;
-      texture_data->surrounding_tiles[1] = y > 0 ? chunk->tiles[y - 1][x].type.id : TILE_EMPTY;
-      texture_data->surrounding_tiles[2] = y > 0 && x < CHUNK_SIZE - 1 ? chunk->tiles[y - 1][x + 1].type.id : TILE_EMPTY;
-      texture_data->surrounding_tiles[3] = x > 0 ? chunk->tiles[y][x - 1].type.id : TILE_EMPTY;
-      texture_data->surrounding_tiles[4] = x < CHUNK_SIZE - 1 ? chunk->tiles[y][x + 1].type.id : TILE_EMPTY;
-      texture_data->surrounding_tiles[5] = y < CHUNK_SIZE - 1 && x > 0 ? chunk->tiles[y + 1][x - 1].type.id : TILE_EMPTY;
-      texture_data->surrounding_tiles[6] = y < CHUNK_SIZE - 1 ? chunk->tiles[y + 1][x].type.id : TILE_EMPTY;
-      texture_data->surrounding_tiles[7] = y < CHUNK_SIZE - 1 && x < CHUNK_SIZE - 1 ? chunk->tiles[y + 1][x + 1].type.id : TILE_EMPTY;
+      texture_data->surrounding_tiles[0] =
+          y > 0 && x > 0 ? chunk->tiles[y - 1][x - 1].type.id : TILE_EMPTY;
+      texture_data->surrounding_tiles[1] =
+          y > 0 ? chunk->tiles[y - 1][x].type.id : TILE_EMPTY;
+      texture_data->surrounding_tiles[2] =
+          y > 0 && x < CHUNK_SIZE - 1 ? chunk->tiles[y - 1][x + 1].type.id
+                                      : TILE_EMPTY;
+      texture_data->surrounding_tiles[3] =
+          x > 0 ? chunk->tiles[y][x - 1].type.id : TILE_EMPTY;
+      texture_data->surrounding_tiles[4] =
+          x < CHUNK_SIZE - 1 ? chunk->tiles[y][x + 1].type.id : TILE_EMPTY;
+      texture_data->surrounding_tiles[5] =
+          y < CHUNK_SIZE - 1 && x > 0 ? chunk->tiles[y + 1][x - 1].type.id
+                                      : TILE_EMPTY;
+      texture_data->surrounding_tiles[6] =
+          y < CHUNK_SIZE - 1 ? chunk->tiles[y + 1][x].type.id : TILE_EMPTY;
+      texture_data->surrounding_tiles[7] =
+          y < CHUNK_SIZE - 1 && x < CHUNK_SIZE - 1
+              ? chunk->tiles[y + 1][x + 1].type.id
+              : TILE_EMPTY;
+    }
+  }
+
+  for (int y = 0; y < CHUNK_SIZE; y++) {
+    for (int x = 0; x < CHUNK_SIZE; x++) {
+      tile_calc_sprite_box(&chunk->tiles[y][x]);
     }
   }
 }
 
 void world_render(World *world) {
-  DrawTexture(TILES[TILE_STONE].texture, 0, 0, WHITE);
+  for (int y = 0; y < CHUNK_SIZE; y++) {
+    for (int x = 0; x < CHUNK_SIZE; x++) {
+      DrawTexture(TILES[TILE_DIRT].texture, x * TILE_SIZE, y * TILE_SIZE,
+                  WHITE);
+    }
+  }
   Chunk *chunk = &world->chunks[0][0];
   for (int y = 0; y < CHUNK_SIZE; y++) {
     for (int x = 0; x < CHUNK_SIZE; x++) {
@@ -61,4 +84,9 @@ void world_render(World *world) {
 
 void load_world(World *world, DataMap *data) {}
 
-void save_world(World *world, DataMap *data) {}
+// TODO: Dealloc... pretty much everything
+void save_world(World *world, DataMap *data) {
+  DataMap map = data_map_new(100);
+  chunk_save(&world->chunks[0][0], &map);
+  data_map_insert(&map, "chunk0,0", data_map(map));
+}

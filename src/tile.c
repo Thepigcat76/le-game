@@ -100,12 +100,12 @@ void init_connected_info() {
 }
 
 void tile_types_init() {
+  init_connected_info();
+
   tile_type_init(TILE_EMPTY);
   tile_type_init(TILE_DIRT);
   tile_type_init(TILE_GRASS);
   tile_type_init(TILE_STONE);
-
-  init_connected_info();
 }
 
 void tile_type_init(TileId id) {
@@ -144,7 +144,13 @@ char *tile_type_to_string(TileType *type) {
 
 // TILE INSTANCE
 
+static Rectangle rect(int x, int y, int w, int h) {
+  return (Rectangle){.x = x, .y = y, .width = w, .height = h};
+}
+
 TileInstance tile_new(TileType *type, int x, int y) {
+  Vec2i default_pos = CONNECTED_INFO.default_sprite_pos;
+  int default_sprite_res = CONNECTED_INFO.res;
   TileInstance instance = {
       .type = *type,
       .box = {.width = TILE_SIZE,
@@ -152,6 +158,11 @@ TileInstance tile_new(TileType *type, int x, int y) {
               .x = (float)x,
               .y = (float)y},
       .custom_data = {},
+      .cur_sprite_box =
+          type->uses_tileset
+              ? rect(default_pos.x, default_pos.y, default_sprite_res,
+                     default_sprite_res)
+              : rect(0, 0, type->texture.width, type->texture.height),
   };
   return instance;
 }
@@ -179,10 +190,6 @@ static bool indices_true_and_other_false(bool *arr, int indices[],
   return true;
 }
 
-static Rectangle rect(int x, int y, int w, int h) {
-  return (Rectangle){.x = x, .y = y, .width = w, .height = h};
-}
-
 static Rectangle sprite_rect(int x, int y) {
   return (Rectangle){.x = x, .y = y, .width = 16, .height = 16};
 }
@@ -202,27 +209,27 @@ static Rectangle select_tile(bool *same_tile) {
                      CONNECTED_INFO.default_sprite_pos.y);
 }
 
+void tile_calc_sprite_box(TileInstance *tile) {
+  if (tile->type.uses_tileset) {
+    TileId self_id = tile->type.id;
+    TileId *texture_data = tile->texture_data.surrounding_tiles;
+    bool same_tile[8];
+    same_tile[0] = texture_data[0] == self_id;
+    same_tile[1] = texture_data[1] == self_id;
+    same_tile[2] = texture_data[2] == self_id;
+    same_tile[3] = texture_data[3] == self_id;
+    same_tile[4] = texture_data[4] == self_id;
+    same_tile[5] = texture_data[5] == self_id;
+    same_tile[6] = texture_data[6] == self_id;
+    same_tile[7] = texture_data[7] == self_id;
+    tile->cur_sprite_box = select_tile(same_tile);
+  }
+}
+
 void tile_render(TileInstance *tile) {
   if (tile->type.has_texture) {
-    if (!tile->type.uses_tileset) {
-      DrawTextureEx(tile->type.texture, (Vector2){tile->box.x, tile->box.y}, 0,
-                    1, WHITE);
-    } else {
-      TileId self_id = tile->type.id;
-      TileId *texture_data = tile->texture_data.surrounding_tiles;
-      bool same_tile[8];
-      same_tile[0] = texture_data[0] == self_id;
-      same_tile[1] = texture_data[1] == self_id;
-      same_tile[2] = texture_data[2] == self_id;
-      same_tile[3] = texture_data[3] == self_id;
-      same_tile[4] = texture_data[4] == self_id;
-      same_tile[5] = texture_data[5] == self_id;
-      same_tile[6] = texture_data[6] == self_id;
-      same_tile[7] = texture_data[7] == self_id;
-      Rectangle selected_tile = select_tile(same_tile);
-      DrawTextureRec(tile->type.texture, selected_tile,
-                     (Vector2){tile->box.x, tile->box.y}, WHITE);
-    }
+    DrawTextureRec(tile->type.texture, tile->cur_sprite_box,
+                   (Vector2){tile->box.x, tile->box.y}, WHITE);
   }
 }
 
@@ -230,6 +237,8 @@ void tile_right_click(TileInstance *tile) {}
 
 void tile_tick(TileInstance *tile) {}
 
-void tile_load(TileInstance *tile) {}
+void tile_load(TileInstance *tile) {
+  
+}
 
 void tile_save(TileInstance *tile) {}

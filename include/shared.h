@@ -7,7 +7,7 @@
 
 #define CHUNK_SIZE 16
 
-#define WORLD_CHUNK_CAPACITY 16
+#define WORLD_CHUNK_CAPACITY 4
 
 #define TILE_SIZE 16
 

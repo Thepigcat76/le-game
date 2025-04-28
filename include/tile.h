@@ -43,6 +43,7 @@ typedef struct {
   // ADVANCED
   Data custom_data;
   TileTextureData texture_data;
+  Rectangle cur_sprite_box;
 } TileInstance;
 
 TileInstance tile_new(TileType *type, int x, int y);
@@ -58,4 +59,7 @@ void tile_load(TileInstance *tile);
 void tile_save(TileInstance *tile);
 
 // CONNECTED TEXTURES
+
+void tile_calc_sprite_box(TileInstance *tile);
+
 void init_connected_info();
