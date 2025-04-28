@@ -82,11 +82,14 @@ void world_render(World *world) {
   }
 }
 
-void load_world(World *world, DataMap *data) {}
+void load_world(World *world, DataMap *data) {
+  DataMap map = data_map_get(data, "chunk0,0").var.data_map;
+  chunk_load(&world->chunks[0][0], &map);
+}
 
 // TODO: Dealloc... pretty much everything
 void save_world(World *world, DataMap *data) {
-  DataMap map = data_map_new(100);
+  DataMap map = data_map_new(400);
   chunk_save(&world->chunks[0][0], &map);
-  data_map_insert(&map, "chunk0,0", data_map(map));
+  data_map_insert(data, "chunk0,0", data_map(map));
 }

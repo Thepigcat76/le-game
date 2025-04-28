@@ -95,7 +95,7 @@ void init_connected_info() {
 
   CONNECTED_INFO = info;
 
-  // cJSON_Delete(json);
+  cJSON_Delete(json);
   free(file);
 }
 
@@ -238,7 +238,7 @@ void tile_right_click(TileInstance *tile) {}
 void tile_tick(TileInstance *tile) {}
 
 void tile_load(TileInstance *tile) {
-  
+
 }
 
 void tile_save(TileInstance *tile) {}

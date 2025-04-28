@@ -112,9 +112,9 @@ int main(void) {
             }
           }
 
-          //DrawTextureEx(torch_texture,
-          //              (Vector2){mouse_world_pos.x, mouse_world_pos.y}, 0, 2,
-          //              WHITE);
+          DrawTextureEx(torch_texture,
+                        (Vector2){mouse_world_pos.x, mouse_world_pos.y}, 0, 2,
+                        WHITE);
 
           // CAMERA END
         }
@@ -134,9 +134,9 @@ int main(void) {
     EndDrawing();
   }
 
-  uint8_t bytes[4000];
+  uint8_t bytes[5000];
   ByteBuf buf = {
-      .bytes = bytes, .writer_index = 0, .reader_index = 0, .capacity = 4000};
+      .bytes = bytes, .writer_index = 0, .reader_index = 0, .capacity = 5000};
   save_game(&game, &buf);
   byte_buf_to_file(&buf);
 

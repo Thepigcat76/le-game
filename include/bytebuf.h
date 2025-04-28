@@ -27,7 +27,7 @@ void byte_buf_read_string(ByteBuf *buf, char *str_buf);
 
 char *byte_buf_read_string_heap(ByteBuf *buf);
 
-void byte_buf_to_bin(const ByteBuf *buf, char *str_buf);
+int byte_buf_to_bin(const ByteBuf *buf, char *str_buf);
 
 void byte_buf_from_bin(ByteBuf *buf, const char *str_buf);
 

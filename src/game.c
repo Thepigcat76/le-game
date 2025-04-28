@@ -17,8 +17,8 @@ void game_tick(Game *game) {
 }
 
 void load_game(Game *game, ByteBuf *bytebuf) {
-  DataMap player_map = byte_buf_read_data(bytebuf).var.data_map;
-  load_player(&game->player, &player_map);
+  //DataMap player_map = byte_buf_read_data(bytebuf).var.data_map;
+  //load_player(&game->player, &player_map);
   DataMap world_map = byte_buf_read_data(bytebuf).var.data_map;
   load_world(&game->world, &world_map);
 }
@@ -29,8 +29,11 @@ void save_game(Game *game, ByteBuf *bytebuf) {
   DataMap world_map = data_map_new(400);
   save_world(&game->world, &world_map);
 
-  byte_buf_write_data(
-      bytebuf, (Data){.type = DATA_TYPE_MAP, .var = {.data_map = player_map}});
+  //byte_buf_write_data(
+  //    bytebuf, (Data){.type = DATA_TYPE_MAP, .var = {.data_map = player_map}});
   byte_buf_write_data(
       bytebuf, (Data){.type = DATA_TYPE_MAP, .var = {.data_map = world_map}});
+
+  //data_free(&player_map, DATA_TYPE_MAP);
+  //data_free(&world_map, DATA_TYPE_MAP);
 }

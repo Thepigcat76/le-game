@@ -20,6 +20,7 @@ typedef struct _data {
   enum {
     DATA_TYPE_MAP,
     DATA_TYPE_LIST,
+    DATA_TYPE_BYTE,
     DATA_TYPE_SHORT,
     DATA_TYPE_INT,
     DATA_TYPE_LONG,
@@ -31,6 +32,7 @@ typedef struct _data {
   union {
     DataMap data_map;
     DataList data_list;
+    signed char data_byte;
     short data_short;
     int data_int;
     long data_long;
@@ -59,6 +61,8 @@ Data data_map(DataMap map);
 
 Data data_list(DataList list);
 
+Data data_byte(signed char c);
+
 Data data_short(short s);
 
 Data data_int(int i);
@@ -70,3 +74,5 @@ Data data_float(float f);
 Data data_double(double d);
 
 Data data_string(char *str);
+
+void data_free(void *raw_data, int type);

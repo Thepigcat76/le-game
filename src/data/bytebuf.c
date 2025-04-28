@@ -1,4 +1,5 @@
 #include "../../include/bytebuf.h"
+#include <raylib.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -65,14 +66,16 @@ char *byte_buf_read_string_heap(ByteBuf *buf) {
   return str_buf;
 }
 
-void byte_buf_to_bin(const ByteBuf *buf, char *str_buf) {
+int byte_buf_to_bin(const ByteBuf *buf, char *str_buf) {
   size_t str_index = 0;
   for (int i = 0; i < buf->writer_index; i++) {
     for (int j = 7; j >= 0; j--) {
       str_buf[str_index++] = (buf->bytes[i] & (1 << j)) ? '1' : '0';
+      //printf("byte: %d, str_index: %zu\n", buf->bytes[i], str_index);
     }
   }
   str_buf[str_index] = '\0';
+  return str_index;
 }
 
 void byte_buf_from_bin(ByteBuf *buf, const char *str_buf) {
@@ -110,9 +113,11 @@ void byte_buf_to_file(const ByteBuf *buf) {
     exit(1);
   }
 
-  char bin_str[100 * 8 + 1];
-  byte_buf_to_bin(buf, bin_str);
+  TraceLog(LOG_INFO, "writer index: %d", buf->writer_index);
 
-  fwrite(bin_str, sizeof(char), strlen(bin_str), f);
+  char bin_str[80000 + 1];
+  int size = byte_buf_to_bin(buf, bin_str);
+
+  fwrite(bin_str, sizeof(char), size, f);
   fclose(f);
 }

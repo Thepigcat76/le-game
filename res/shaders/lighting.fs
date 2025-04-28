@@ -10,7 +10,7 @@ uniform float lightRadius;
 
 out vec4 finalColor;
 
-#define AMBIENT 1
+#define AMBIENT 0.1
 
 void main()
 {

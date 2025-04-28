@@ -7,7 +7,7 @@
 
 DataMap data_map_new(size_t capacity) {
   return (DataMap){
-      .keys = malloc(capacity),
+      .keys = malloc(capacity * 8),
       .values = malloc(capacity * sizeof(Data)),
       .capacity = capacity,
       .len = 0,
@@ -33,7 +33,8 @@ Data data_map_get(const DataMap *data_map, char *key) {
   exit(EXIT_FAILURE);
 }
 
-Data data_map_get_or_default(const DataMap *data_map, char *key, Data default_val) {
+Data data_map_get_or_default(const DataMap *data_map, char *key,
+                             Data default_val) {
   if (data_map_contains(data_map, key)) {
     return data_map_get(data_map, key);
   }
@@ -41,7 +42,13 @@ Data data_map_get_or_default(const DataMap *data_map, char *key, Data default_va
 }
 
 void data_map_insert(DataMap *data_map, char *key, Data val) {
-  data_map->keys[data_map->len] = key;
+  data_map->keys[data_map->len] =
+      malloc(strlen(key) + 1); // allocate enough space
+  if (!data_map->keys[data_map->len]) {
+    fprintf(stderr, "Failed to allocate memory for key\n");
+    exit(1);
+  }
+  strcpy(data_map->keys[data_map->len], key);
   data_map->values[data_map->len] = val;
   data_map->len++;
 }
@@ -66,6 +73,9 @@ void byte_buf_read_data_map(ByteBuf *buf, DataMap *map) {
 void byte_buf_write_data(ByteBuf *buf, Data data) {
   byte_buf_write_byte(buf, data.type);
   switch (data.type) {
+  case DATA_TYPE_BYTE:
+    byte_buf_write_byte(buf, data.var.data_byte);
+    break;
   case DATA_TYPE_INT:
     byte_buf_write_int(buf, data.var.data_int);
     break;
@@ -79,7 +89,7 @@ void byte_buf_write_data(ByteBuf *buf, Data data) {
     byte_buf_write_data_map(buf, &data.var.data_map);
     break;
   default:
-    fprintf(stderr, "Error writing data");
+    fprintf(stderr, "Error writing data\n");
   }
 }
 
@@ -87,6 +97,10 @@ Data byte_buf_read_data(ByteBuf *buf) {
   uint8_t type = byte_buf_read_byte(buf);
 
   switch (type) {
+  case DATA_TYPE_BYTE: {
+    signed char byte = byte_buf_read_byte(buf);
+    return (Data){.type = type, .var = {.data_byte = byte}};
+  }
   case DATA_TYPE_INT: {
     int32_t integer = byte_buf_read_int(buf);
     return (Data){.type = type, .var = {.data_int = integer}};
@@ -118,6 +132,10 @@ Data data_list(DataList list) {
   return (Data){.type = DATA_TYPE_LIST, .var = {.data_list = list}};
 }
 
+Data data_byte(signed char c) {
+  return (Data){.type = DATA_TYPE_BYTE, .var = {.data_byte = c}};
+}
+
 Data data_short(short s) {
   return (Data){.type = DATA_TYPE_SHORT, .var = {.data_short = s}};
 }
@@ -140,4 +158,26 @@ Data data_double(double d) {
 
 Data data_string(char *str) {
   return (Data){.type = DATA_TYPE_STRING, .var = {.data_string = str}};
+}
+
+void data_free(void *raw_data, int type) {
+  switch (type) {
+  case DATA_TYPE_MAP: {
+    DataMap *map = (DataMap *)raw_data;
+    for (size_t i = 0; i < map->len; i++) {
+      // free(map->keys[i]);
+      // data_free(&map->values[i], map->values[i].type);
+    }
+    // free(map->keys);
+    free(map->values);
+    break;
+  }
+  case DATA_TYPE_STRING: {
+    char *str = (char *)raw_data;
+    free(str);
+    break;
+  }
+  default:
+    break;
+  }
 }
