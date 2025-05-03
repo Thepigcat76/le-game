@@ -1,6 +1,7 @@
 #include "../include/game.h"
 #include "../include/shared.h"
 #include "raylib.h"
+#include <math.h>
 
 void rec_draw_outline(const Rectangle *rec, Color color) {
   DrawRectangleLinesEx(*rec, 1, color);
@@ -24,8 +25,6 @@ int main(void) {
 
   world_gen(&game.world);
 
-  world_prepare_rendering(&game.world);
-
   if (FileExists("bytes.bin")) {
     uint8_t bytes[4000];
     ByteBuf buf = {
@@ -33,6 +32,8 @@ int main(void) {
     byte_buf_from_file(&buf);
     load_game(&game, &buf);
   }
+
+  world_prepare_rendering(&game.world);
 
   SetTargetFPS(60);
 
@@ -44,6 +45,7 @@ int main(void) {
   int light_radius_loc = GetShaderLocation(shader, "lightRadius");
 
   Texture2D torch_texture = load_texture("res/assets/torch.png");
+  Texture2D slot_texture = load_texture("res/assets/slot.png");
 
   RenderTexture2D world_texture =
       LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -63,15 +65,16 @@ int main(void) {
       Vector2 mousePos = GetMousePosition();
 
       Vector2 mouse_world_pos = GetScreenToWorld2D(mousePos, *cam);
-      Vector2 lightPos = {(mousePos.x / GetScreenWidth()),
-                          1.0 - (mousePos.y / GetScreenHeight())};
+      Vector2 light_pos = {(mousePos.x / GetScreenWidth()),
+                           1.0 - (mousePos.y / GetScreenHeight())};
 
-      Vector3 lightColor = {1.0f, 1.0f, 0.8f}; // warm white
-      float lightRadius = 0.08f * cam->zoom;
+      Vector3 light_color = {1.0f, 1.0f, 0.8f}; // warm white
+      float light_radius = 0.08f * cam->zoom * (1.0f + 0.11f * sin(GetTime()));
 
-      SetShaderValue(shader, light_pos_loc, &lightPos, SHADER_UNIFORM_VEC2);
-      SetShaderValue(shader, light_color_loc, &lightColor, SHADER_UNIFORM_VEC3);
-      SetShaderValue(shader, light_radius_loc, &lightRadius,
+      SetShaderValue(shader, light_pos_loc, &light_pos, SHADER_UNIFORM_VEC2);
+      SetShaderValue(shader, light_color_loc, &light_color,
+                     SHADER_UNIFORM_VEC3);
+      SetShaderValue(shader, light_radius_loc, &light_radius,
                      SHADER_UNIFORM_FLOAT);
       BeginTextureMode(world_texture);
       {
@@ -103,12 +106,13 @@ int main(void) {
           // 16); debug_rect(&tile_rect);
 
           if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
-            TileInstance *selected_tile =
-                &game.world.chunks[0][0].tiles[y_index][x_index];
-            if (CheckCollisionPointRec(mouse_world_pos, selected_tile->box)) {
-              *selected_tile = tile_new(&TILES[TILE_STONE], x_index * TILE_SIZE,
-                                        y_index * TILE_SIZE);
-              world_prepare_rendering(&game.world);
+            TileInstance selected_tile =
+                game.world.chunks[0][0].tiles[y_index][x_index];
+            if (CheckCollisionPointRec(mouse_world_pos, selected_tile.box)) {
+              TileInstance new_tile = tile_new(
+                  &TILES[TILE_STONE], x_index * TILE_SIZE, y_index * TILE_SIZE);
+              chunk_set_tile(&game.world.chunks[0][0], new_tile, x_index,
+                             y_index);
             }
           }
 
@@ -130,6 +134,12 @@ int main(void) {
                        (Vector2){0, 0}, WHITE);
       }
       EndShaderMode();
+
+      DrawTextureEx(slot_texture,
+                    (Vector2){.x = SCREEN_WIDTH - (3.5 * 16) - 30,
+                              .y = (SCREEN_HEIGHT / 2.0f) - (3.5 * 8)},
+                    0, 3.5, WHITE);
+      item_render((ItemInstance){}, int x, int y)
     }
     EndDrawing();
   }

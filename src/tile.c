@@ -204,7 +204,7 @@ static Rectangle select_tile(bool *same_tile) {
     }
   }
 
-  TraceLog(LOG_ERROR, "Failed to select tile");
+  TraceLog(LOG_ERROR, "Failed to select tile box");
   return sprite_rect(CONNECTED_INFO.default_sprite_pos.x,
                      CONNECTED_INFO.default_sprite_pos.y);
 }
