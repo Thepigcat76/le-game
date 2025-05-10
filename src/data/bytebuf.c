@@ -91,8 +91,8 @@ void byte_buf_from_bin(ByteBuf *buf, const char *str_buf) {
   }
 }
 
-void byte_buf_from_file(ByteBuf *buf) {
-  FILE *f = fopen("bytes.bin", "rb");
+void byte_buf_from_file(ByteBuf *buf, const char *name) {
+  FILE *f = fopen(name, "rb");
   if (!f) {
     printf("Failed to open file for reading\n");
     exit(1);
@@ -106,8 +106,8 @@ void byte_buf_from_file(ByteBuf *buf) {
   byte_buf_from_bin(buf, file_content);
 }
 
-void byte_buf_to_file(const ByteBuf *buf) {
-  FILE *f = fopen("bytes.bin", "wb");
+void byte_buf_to_file(const ByteBuf *buf, const char *name) {
+  FILE *f = fopen(name, "wb");
   if (!f) {
     printf("Failed to open file for writing\n");
     exit(1);

@@ -46,17 +46,17 @@ typedef struct {
   Rectangle cur_sprite_box;
 } TileInstance;
 
-TileInstance tile_new(TileType *type, int x, int y);
+TileInstance tile_new(const TileType *type, int x, int y);
 
-void tile_render(TileInstance *tile);
+void tile_render(const TileInstance *tile);
 
 void tile_right_click(TileInstance *tile);
 
 void tile_tick(TileInstance *tile);
 
-void tile_load(TileInstance *tile);
+void tile_load(TileInstance *tile, const DataMap *data);
 
-void tile_save(TileInstance *tile);
+void tile_save(const TileInstance *tile, DataMap *data);
 
 // CONNECTED TEXTURES
 

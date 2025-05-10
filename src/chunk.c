@@ -1,7 +1,32 @@
 #include "../include/chunk.h"
+#include "../include/stb_perlin.h"
 #include "stdio.h"
 #include <raylib.h>
-#include <string.h>
+
+void chunk_gen(Chunk *chunk, Vec2i chunk_pos) {
+  int chunk_x = chunk_pos.x * CHUNK_SIZE;
+  int chunk_y = chunk_pos.y * CHUNK_SIZE;
+  for (int y = 0; y < CHUNK_SIZE; y++) {
+    for (int x = 0; x < CHUNK_SIZE; x++) {
+      float fx = (chunk_x + x) * 0.1;
+      float fy = (chunk_y + y) * 0.1;
+      int noise = (stb_perlin_noise3(fx, fy, 0.0f, 0, 0, 0) + 1) * 10;
+
+      TileType type;
+      if (noise > 5) {
+        if (noise < 8) {
+          type = TILES[TILE_DIRT];
+        } else {
+          type = TILES[TILE_GRASS];
+        }
+      } else {
+        type = TILES[TILE_STONE];
+      }
+      chunk->tiles[y][x] =
+          tile_new(&type, (chunk_x + x) * TILE_SIZE, (chunk_y + y) * TILE_SIZE);
+    }
+  }
+}
 
 void chunk_set_tile(Chunk *chunk, TileInstance tile, int x, int y) {
   if (chunk->tiles[y][x].type.id == tile.type.id) {
@@ -53,7 +78,7 @@ void chunk_set_tile_texture_data(Chunk *chunk, int x, int y) {
                                            : TILE_EMPTY;
 }
 
-void chunk_load(Chunk *chunk, DataMap *data) {
+void chunk_load(Chunk *chunk, const DataMap *data) {
   for (int y = 0; y < CHUNK_SIZE; y++) {
     for (int x = 0; x < CHUNK_SIZE; x++) {
       unsigned char pos = (unsigned char)x;
@@ -75,8 +100,7 @@ void chunk_load(Chunk *chunk, DataMap *data) {
   }
 }
 
-void chunk_save(Chunk *chunk, DataMap *data) {
-  data_map_insert(data, "test", data_int(chunk->tiles[0][0].type.id));
+void chunk_save(const Chunk *chunk, DataMap *data) {
   for (int y = 0; y < CHUNK_SIZE; y++) {
     for (int x = 0; x < CHUNK_SIZE; x++) {
       unsigned char pos = (unsigned char)x;
@@ -84,7 +108,7 @@ void chunk_save(Chunk *chunk, DataMap *data) {
       char id_buf[4];
       snprintf(id_buf, 4, "%u", pos);
 
-      TileInstance *tile = &chunk->tiles[y][x];
+      const TileInstance *tile = &chunk->tiles[y][x];
       // Insert with a duplicated/copy string if needed
       data_map_insert(data, id_buf, data_byte(tile->type.id));
 

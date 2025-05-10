@@ -46,6 +46,10 @@ char *read_file_to_string(const char *filename) {
 
 Vec2i vec2i(int x, int y) { return (Vec2i){.x = x, .y = y}; }
 
+bool vec2_eq(const Vec2i *vec1, const Vec2i *vec2) {
+  return vec1->x == vec2->x && vec1->y == vec2->y;
+}
+
 Texture2D load_texture(char *path) {
   Image image = LoadImage(path);
   Texture2D texture = LoadTextureFromImage(image);

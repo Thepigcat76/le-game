@@ -17,19 +17,22 @@ int main(void) {
   SetExitKey(0);
 
   tile_types_init();
+  item_types_init();
 
   Game game = {
       .player = player_new(),
       .world = world_new(),
   };
 
+  player_set_world(&game.player, &game.world);
+
   world_gen(&game.world);
 
-  if (FileExists("bytes.bin")) {
+  if (FileExists("save/game.bin")) {
     uint8_t bytes[4000];
     ByteBuf buf = {
         .bytes = bytes, .writer_index = 0, .reader_index = 0, .capacity = 4000};
-    byte_buf_from_file(&buf);
+    byte_buf_from_file(&buf, "save/game.bin");
     load_game(&game, &buf);
   }
 
@@ -86,7 +89,7 @@ int main(void) {
 
           Texture2D texture = player_get_texture(&game.player);
 
-          Rectangle tile_box = game.world.chunks[0][0].tiles[0][0].box;
+          Rectangle tile_box = game.world.chunks[0].tiles[0][0].box;
 
           // rec_draw_outline(&tile_box, BLUE);
 
@@ -107,18 +110,18 @@ int main(void) {
 
           if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
             TileInstance selected_tile =
-                game.world.chunks[0][0].tiles[y_index][x_index];
+                game.world.chunks[0].tiles[y_index][x_index];
             if (CheckCollisionPointRec(mouse_world_pos, selected_tile.box)) {
               TileInstance new_tile = tile_new(
                   &TILES[TILE_STONE], x_index * TILE_SIZE, y_index * TILE_SIZE);
-              chunk_set_tile(&game.world.chunks[0][0], new_tile, x_index,
+              chunk_set_tile(&game.world.chunks[0], new_tile, x_index,
                              y_index);
             }
           }
 
-          DrawTextureEx(torch_texture,
-                        (Vector2){mouse_world_pos.x, mouse_world_pos.y}, 0, 2,
-                        WHITE);
+          //DrawTextureEx(torch_texture,
+          //              (Vector2){mouse_world_pos.x, mouse_world_pos.y}, 0, 2,
+          //              WHITE);
 
           // CAMERA END
         }
@@ -139,7 +142,10 @@ int main(void) {
                     (Vector2){.x = SCREEN_WIDTH - (3.5 * 16) - 30,
                               .y = (SCREEN_HEIGHT / 2.0f) - (3.5 * 8)},
                     0, 3.5, WHITE);
-      item_render((ItemInstance){}, int x, int y)
+      ItemInstance item = {
+        .type = ITEMS[ITEM_TORCH],
+      };
+      item_render(&item, mousePos.x, mousePos.y);
     }
     EndDrawing();
   }
@@ -148,7 +154,7 @@ int main(void) {
   ByteBuf buf = {
       .bytes = bytes, .writer_index = 0, .reader_index = 0, .capacity = 5000};
   save_game(&game, &buf);
-  byte_buf_to_file(&buf);
+  byte_buf_to_file(&buf, "save/game.bin");
 
   CloseWindow();
 }

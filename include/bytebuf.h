@@ -31,9 +31,9 @@ int byte_buf_to_bin(const ByteBuf *buf, char *str_buf);
 
 void byte_buf_from_bin(ByteBuf *buf, const char *str_buf);
 
-void byte_buf_from_file(ByteBuf *buf);
+void byte_buf_from_file(ByteBuf *buf, const char *name);
 
-void byte_buf_to_file(const ByteBuf *buf);
+void byte_buf_to_file(const ByteBuf *buf, const char *name);
 
 #define byte_buf_write_list(buf, func, list, len)                              \
   byte_buf_write_int(buf, len);                                                \

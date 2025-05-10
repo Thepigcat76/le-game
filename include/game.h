@@ -3,6 +3,7 @@
 #include "data.h"
 #include "player.h"
 #include "world.h"
+#include "item.h"
 
 typedef struct {
   Player player;
@@ -10,6 +11,8 @@ typedef struct {
 } Game;
 
 void game_tick(Game *game);
+
+void game_free(const Game *game);
 
 void load_game(Game *game, ByteBuf *bytebuf);
 

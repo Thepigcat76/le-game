@@ -1,5 +1,6 @@
 #include "../include/game.h"
 #include <raylib.h>
+#include <stdlib.h>
 
 void game_tick(Game *game) {
   bool zoom_in = IsKeyDown(KEY_UP);
@@ -14,6 +15,9 @@ void game_tick(Game *game) {
 
   player_handle_movement(&game->player, w, a, s, d);
   
+}
+
+void game_free(const Game *game) {
 }
 
 void load_game(Game *game, ByteBuf *bytebuf) {

@@ -148,7 +148,7 @@ static Rectangle rect(int x, int y, int w, int h) {
   return (Rectangle){.x = x, .y = y, .width = w, .height = h};
 }
 
-TileInstance tile_new(TileType *type, int x, int y) {
+TileInstance tile_new(const TileType *type, int x, int y) {
   Vec2i default_pos = CONNECTED_INFO.default_sprite_pos;
   int default_sprite_res = CONNECTED_INFO.res;
   TileInstance instance = {
@@ -226,7 +226,7 @@ void tile_calc_sprite_box(TileInstance *tile) {
   }
 }
 
-void tile_render(TileInstance *tile) {
+void tile_render(const TileInstance *tile) {
   if (tile->type.has_texture) {
     DrawTextureRec(tile->type.texture, tile->cur_sprite_box,
                    (Vector2){tile->box.x, tile->box.y}, WHITE);
@@ -237,8 +237,8 @@ void tile_right_click(TileInstance *tile) {}
 
 void tile_tick(TileInstance *tile) {}
 
-void tile_load(TileInstance *tile) {
+void tile_load(TileInstance *tile, const DataMap *data) {
 
 }
 
-void tile_save(TileInstance *tile) {}
+void tile_save(const TileInstance *tile, DataMap *data) {}

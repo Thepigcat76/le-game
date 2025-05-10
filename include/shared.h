@@ -7,7 +7,7 @@
 
 #define CHUNK_SIZE 16
 
-#define WORLD_CHUNK_CAPACITY 4
+#define WORLD_LOADED_CHUNKS 9
 
 #define TILE_SIZE 16
 
@@ -26,5 +26,7 @@ typedef struct {
 } Vec2i;
 
 Vec2i vec2i(int x, int y);
+
+bool vec2_eq(const Vec2i *vec1, const Vec2i *vec2);
 
 Texture2D load_texture(char *path);

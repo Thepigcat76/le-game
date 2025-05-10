@@ -2,9 +2,11 @@
 
 #include "shared.h"
 #include "data.h"
+#include "world.h"
 #include <raylib.h>
 
 typedef struct {
+  World *world;
   Camera2D cam;
   Texture2D textures[4];
   Direction direction;
@@ -12,11 +14,16 @@ typedef struct {
   // PLAYER DATA
   Rectangle box;
   int essence;
+  Vec2i chunk_pos;
 } Player;
 
 Player player_new();
 
+void player_set_world(Player *player, World *world);
+
 Texture2D player_get_texture(Player *player);
+
+void player_set_pos(Player *player, int x, int y);
 
 void player_handle_zoom(Player *player, bool zoom_in, bool zoom_out);
 
