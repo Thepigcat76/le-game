@@ -1,4 +1,5 @@
 #include "../../include/data.h"
+#include <raylib.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -57,7 +58,7 @@ void byte_buf_write_data_map(ByteBuf *buf, const DataMap *map) {
   byte_buf_write_int(buf, map->len);
   for (int i = 0; i < map->len; i++) {
     byte_buf_write_string(buf, map->keys[i]);
-    byte_buf_write_data(buf, map->values[i]);
+    byte_buf_write_data(buf, &map->values[i]);
   }
 }
 
@@ -70,26 +71,44 @@ void byte_buf_read_data_map(ByteBuf *buf, DataMap *map) {
   }
 }
 
-void byte_buf_write_data(ByteBuf *buf, Data data) {
-  byte_buf_write_byte(buf, data.type);
-  switch (data.type) {
+void byte_buf_write_data_list(ByteBuf *buf, const DataList *list) {
+  byte_buf_write_int(buf, list->len);
+  for (int i = 0; i < list->len; i++) {
+    byte_buf_write_data(buf, &list->items[i]);
+  }
+}
+
+void byte_buf_read_data_list(ByteBuf *buf, DataList *list) {
+  size_t len = byte_buf_read_int(buf);
+  for (int i = 0; i < len; i++) {
+    list->items[i] = byte_buf_read_data(buf);
+  }
+}
+
+void byte_buf_write_data(ByteBuf *buf, const Data *data) {
+  byte_buf_write_byte(buf, data->type);
+  switch (data->type) {
   case DATA_TYPE_BYTE:
-    byte_buf_write_byte(buf, data.var.data_byte);
+    byte_buf_write_byte(buf, data->var.data_byte);
     break;
   case DATA_TYPE_INT:
-    byte_buf_write_int(buf, data.var.data_int);
+    byte_buf_write_int(buf, data->var.data_int);
     break;
   case DATA_TYPE_CHAR:
-    byte_buf_write_byte(buf, data.var.data_char);
+    byte_buf_write_byte(buf, data->var.data_char);
     break;
   case DATA_TYPE_STRING:
-    byte_buf_write_string(buf, data.var.data_string);
+    byte_buf_write_string(buf, data->var.data_string);
     break;
   case DATA_TYPE_MAP:
-    byte_buf_write_data_map(buf, &data.var.data_map);
+    byte_buf_write_data_map(buf, &data->var.data_map);
+    break;
+  case DATA_TYPE_LIST:
+    byte_buf_write_data_list(buf, &data->var.data_list);
     break;
   default:
-    fprintf(stderr, "Error writing data\n");
+    fprintf(stderr, "Error writing data, type: %u\n", data->type);
+    break;
   }
 }
 
@@ -114,13 +133,20 @@ Data byte_buf_read_data(ByteBuf *buf) {
     return (Data){.type = type, .var = {.data_string = string}};
   }
   case DATA_TYPE_MAP: {
+    // TODO: Use actual length instead of 400
     DataMap map = data_map_new(400);
     byte_buf_read_data_map(buf, &map);
     return (Data){.type = type, .var = {.data_map = map}};
   }
-  default:
+  case DATA_TYPE_LIST: {
+    DataList list = {.items = malloc(400 * sizeof(Data)), .len = 400};
+    byte_buf_read_data_list(buf, &list);
+    return (Data){.type = type, .var = {.data_list = list}};
+  }
+  default: {
     fprintf(stderr, "Error reading data");
     exit(1);
+  }
   }
 }
 
@@ -169,12 +195,12 @@ void data_free(void *raw_data, int type) {
       // data_free(&map->values[i], map->values[i].type);
     }
     // free(map->keys);
-    free(map->values);
+    // free(map->values);
     break;
   }
   case DATA_TYPE_STRING: {
     char *str = (char *)raw_data;
-    free(str);
+    // free(str);
     break;
   }
   default:

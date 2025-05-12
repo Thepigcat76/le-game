@@ -10,6 +10,8 @@ typedef struct {
   World world;
 } Game;
 
+void game_reload();
+
 void game_tick(Game *game);
 
 void game_free(const Game *game);

@@ -25,6 +25,9 @@ typedef struct {
   int y;
 } Vec2i;
 
+typedef Vec2i ChunkPos;
+typedef Vec2i TilePos;
+
 Vec2i vec2i(int x, int y);
 
 bool vec2_eq(const Vec2i *vec1, const Vec2i *vec2);

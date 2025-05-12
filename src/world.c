@@ -1,4 +1,5 @@
 #include "../include/world.h"
+#include <stdint.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #define STB_PERLIN_IMPLEMENTATION
@@ -12,7 +13,7 @@ World world_new() {
   };
 }
 
-void world_add_chunk(World *world, Vec2i pos, Chunk chunk) {
+void world_add_chunk(World *world, ChunkPos pos, Chunk chunk) {
   TraceLog(LOG_INFO, "Chunk index: %zu", world->chunks_amount);
   world->chunks[world->chunks_amount] = chunk;
   world->chunk_lookup.indices[world->chunks_amount] = world->chunks_amount;
@@ -25,11 +26,9 @@ void world_add_chunk(World *world, Vec2i pos, Chunk chunk) {
   }
 }
 
-ssize_t world_chunk_index_by_pos(const World *world, Vec2i pos) {
+ssize_t world_chunk_index_by_pos(const World *world, ChunkPos pos) {
   for (size_t i = 0; i < world->chunks_amount; i++) {
     if (vec2_eq(&world->chunk_lookup.chunks_positions[i], &pos)) {
-      TraceLog(LOG_INFO, "Found index: %zu for pos: %d, %d",
-               world->chunk_lookup.indices[i], pos.x, pos.y);
       return world->chunk_lookup.indices[i];
     }
   }
@@ -52,17 +51,9 @@ void world_gen_chunk_at(World *world, Vec2i chunk_pos) {
 void world_gen(World *world) { world_gen_chunk_at(world, vec2i(0, 0)); }
 
 void world_prepare_rendering(World *world) {
-  Chunk *chunk = &world->chunks[0];
-  for (int y = 0; y < CHUNK_SIZE; y++) {
-    for (int x = 0; x < CHUNK_SIZE; x++) {
-      chunk_set_tile_texture_data(chunk, x, y);
-    }
-  }
-
-  for (int y = 0; y < CHUNK_SIZE; y++) {
-    for (int x = 0; x < CHUNK_SIZE; x++) {
-      tile_calc_sprite_box(&chunk->tiles[y][x]);
-    }
+  for (int i = 0; i < world->chunks_amount; i++) {
+    Chunk *chunk = &world->chunks[i];
+    chunk_prepare_rendering(chunk);
   }
 }
 
@@ -78,9 +69,9 @@ void world_render(const World *world) {
                     WHITE);
       }
     }
-    for (int y = chunk_y; y < chunk_y + CHUNK_SIZE; y++) {
-      for (int x = chunk_x; x < chunk_x + CHUNK_SIZE; x++) {
-        const TileInstance *tile = &chunk->tiles[y - chunk_y][x - chunk_x];
+    for (int y = 0; y < CHUNK_SIZE; y++) {
+      for (int x = 0; x < CHUNK_SIZE; x++) {
+        const TileInstance *tile = &chunk->tiles[y][x];
         tile_render(tile);
       }
     }
@@ -88,14 +79,27 @@ void world_render(const World *world) {
 }
 
 void load_world(World *world, const DataMap *data) {
-  DataMap map = data_map_get(data, "chunk0,0").var.data_map;
-  chunk_load(&world->chunks[0], &map);
+  uint8_t chunks = data_map_get(data, "len").var.data_byte;
+  TraceLog(LOG_INFO, "Chunks: %u", chunks);
+  for (int i = 0; i < chunks; i++) {
+    char key[2];
+    snprintf(key, 2, "%u", i);
+    DataMap map = data_map_get(data, key).var.data_map;
+    Chunk chunk;
+    chunk_load(&chunk, &map);
+    world_add_chunk(world, chunk.chunk_pos, chunk);
+  }
 }
 
 // TODO: Dealloc... pretty much everything
 void save_world(const World *world, DataMap *data) {
-  DataMap map = data_map_new(400);
-  const Chunk *chunk = &world->chunks[0];
-  chunk_save(chunk, &map);
-  data_map_insert(data, "chunk0,0", data_map(map));
+  data_map_insert(data, "len",data_byte((uint8_t) world->chunks_amount));
+  for (int i = 0; i < world->chunks_amount; i++) {
+    DataMap map = data_map_new(300);
+    const Chunk *chunk = &world->chunks[i];
+    chunk_save(chunk, &map);
+    char key[2];
+    snprintf(key, 2, "%u", i);
+    data_map_insert(data, key, data_map(map));
+  }
 }

@@ -5,10 +5,13 @@
 #include "shared.h"
 
 typedef struct {
+  ChunkPos chunk_pos;
   TileInstance tiles[CHUNK_SIZE][CHUNK_SIZE];
 } Chunk;
 
-void chunk_gen(Chunk *chunk, Vec2i chunk_pos);
+void chunk_gen(Chunk *chunk, ChunkPos chunk_pos);
+
+void chunk_prepare_rendering(Chunk *chunk);
 
 void chunk_set_tile_texture_data(Chunk *chunk, int x, int y);
 

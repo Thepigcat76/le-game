@@ -1,3 +1,4 @@
+#include "../include/config.h"
 #include "../include/game.h"
 #include "../include/shared.h"
 #include "raylib.h"
@@ -19,6 +20,8 @@ int main(void) {
   tile_types_init();
   item_types_init();
 
+  game_reload();
+
   Game game = {
       .player = player_new(),
       .world = world_new(),
@@ -26,14 +29,14 @@ int main(void) {
 
   player_set_world(&game.player, &game.world);
 
-  world_gen(&game.world);
-
   if (FileExists("save/game.bin")) {
-    uint8_t bytes[4000];
+    uint8_t bytes[6000];
     ByteBuf buf = {
-        .bytes = bytes, .writer_index = 0, .reader_index = 0, .capacity = 4000};
+        .bytes = bytes, .writer_index = 0, .reader_index = 0, .capacity = 6000};
     byte_buf_from_file(&buf, "save/game.bin");
     load_game(&game, &buf);
+  } else {
+    world_gen(&game.world);
   }
 
   world_prepare_rendering(&game.world);
@@ -46,6 +49,7 @@ int main(void) {
   int light_pos_loc = GetShaderLocation(shader, "lightPos");
   int light_color_loc = GetShaderLocation(shader, "lightColor");
   int light_radius_loc = GetShaderLocation(shader, "lightRadius");
+  int ambient_light_loc = GetShaderLocation(shader, "ambientLight");
 
   Texture2D torch_texture = load_texture("res/assets/torch.png");
   Texture2D slot_texture = load_texture("res/assets/slot.png");
@@ -58,7 +62,7 @@ int main(void) {
 
     if (IsKeyDown(KEY_R)) {
       shader = LoadShader(NULL, "res/shaders/lighting.fs");
-      init_connected_info();
+      game_reload();
     }
 
     BeginDrawing();
@@ -78,6 +82,8 @@ int main(void) {
       SetShaderValue(shader, light_color_loc, &light_color,
                      SHADER_UNIFORM_VEC3);
       SetShaderValue(shader, light_radius_loc, &light_radius,
+                     SHADER_UNIFORM_FLOAT);
+      SetShaderValue(shader, ambient_light_loc, &CONFIG.ambient_light,
                      SHADER_UNIFORM_FLOAT);
       BeginTextureMode(world_texture);
       {
@@ -113,15 +119,14 @@ int main(void) {
                 game.world.chunks[0].tiles[y_index][x_index];
             if (CheckCollisionPointRec(mouse_world_pos, selected_tile.box)) {
               TileInstance new_tile = tile_new(
-                  &TILES[TILE_STONE], x_index * TILE_SIZE, y_index * TILE_SIZE);
-              chunk_set_tile(&game.world.chunks[0], new_tile, x_index,
-                             y_index);
+                  &TILES[TILE_GRASS], x_index * TILE_SIZE, y_index * TILE_SIZE);
+              chunk_set_tile(&game.world.chunks[0], new_tile, x_index, y_index);
             }
           }
 
-          //DrawTextureEx(torch_texture,
-          //              (Vector2){mouse_world_pos.x, mouse_world_pos.y}, 0, 2,
-          //              WHITE);
+          // DrawTextureEx(torch_texture,
+          //               (Vector2){mouse_world_pos.x, mouse_world_pos.y}, 0,
+          //               2, WHITE);
 
           // CAMERA END
         }
@@ -143,16 +148,16 @@ int main(void) {
                               .y = (SCREEN_HEIGHT / 2.0f) - (3.5 * 8)},
                     0, 3.5, WHITE);
       ItemInstance item = {
-        .type = ITEMS[ITEM_TORCH],
+          .type = ITEMS[ITEM_TORCH],
       };
       item_render(&item, mousePos.x, mousePos.y);
     }
     EndDrawing();
   }
 
-  uint8_t bytes[5000];
+  uint8_t bytes[6000];
   ByteBuf buf = {
-      .bytes = bytes, .writer_index = 0, .reader_index = 0, .capacity = 5000};
+      .bytes = bytes, .writer_index = 0, .reader_index = 0, .capacity = 6000};
   save_game(&game, &buf);
   byte_buf_to_file(&buf, "save/game.bin");
 

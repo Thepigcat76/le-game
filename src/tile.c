@@ -100,8 +100,6 @@ void init_connected_info() {
 }
 
 void tile_types_init() {
-  init_connected_info();
-
   tile_type_init(TILE_EMPTY);
   tile_type_init(TILE_DIRT);
   tile_type_init(TILE_GRASS);
@@ -164,6 +162,7 @@ TileInstance tile_new(const TileType *type, int x, int y) {
                      default_sprite_res)
               : rect(0, 0, type->texture.width, type->texture.height),
   };
+  TraceLog(LOG_INFO, "NEW");
   return instance;
 }
 
@@ -223,6 +222,7 @@ void tile_calc_sprite_box(TileInstance *tile) {
     same_tile[6] = texture_data[6] == self_id;
     same_tile[7] = texture_data[7] == self_id;
     tile->cur_sprite_box = select_tile(same_tile);
+    TraceLog(LOG_INFO, "SELECTING");
   }
 }
 
@@ -233,12 +233,12 @@ void tile_render(const TileInstance *tile) {
   }
 }
 
+void tile_on_reload() { init_connected_info(); }
+
 void tile_right_click(TileInstance *tile) {}
 
 void tile_tick(TileInstance *tile) {}
 
-void tile_load(TileInstance *tile, const DataMap *data) {
-
-}
+void tile_load(TileInstance *tile, const DataMap *data) {}
 
 void tile_save(const TileInstance *tile, DataMap *data) {}

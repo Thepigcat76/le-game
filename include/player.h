@@ -23,7 +23,7 @@ void player_set_world(Player *player, World *world);
 
 Texture2D player_get_texture(Player *player);
 
-void player_set_pos(Player *player, int x, int y);
+void player_set_pos(Player *player, float x, float y);
 
 void player_handle_zoom(Player *player, bool zoom_in, bool zoom_out);
 

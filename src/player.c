@@ -1,6 +1,7 @@
 #include "../include/player.h"
 #include "../include/camera.h"
 #include "../include/shared.h"
+#include "../include/config.h"
 #include "math.h"
 #include <raylib.h>
 
@@ -37,7 +38,7 @@ Vector2 player_pos(const Player *player) {
   return (Vector2){.x = player->box.x, .y = player->box.y};
 }
 
-void player_set_pos(Player *player, int x, int y) {
+void player_set_pos(Player *player, float x, float y) {
   player->box.x = x;
   player->box.y = y;
   player->cam.target.x = x;
@@ -66,20 +67,22 @@ void player_handle_zoom(Player *player, bool zoom_in, bool zoom_out) {
 void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
   Camera2D *cam = &player->cam;
 
+  float distance = 2 * CONFIG.player_speed;
+
   if (w) {
-    player_set_pos(player, player_pos(player).x, player_pos(player).y - 2);
+    player_set_pos(player, player_pos(player).x, player_pos(player).y - distance);
     player->direction = DIRECTION_UP;
   }
   if (a) {
-    player_set_pos(player, player_pos(player).x - 2, player_pos(player).y);
+    player_set_pos(player, player_pos(player).x - distance, player_pos(player).y);
     player->direction = DIRECTION_LEFT;
   }
   if (s) {
-    player_set_pos(player, player_pos(player).x, player_pos(player).y + 2);
+    player_set_pos(player, player_pos(player).x, player_pos(player).y + distance);
     player->direction = DIRECTION_DOWN;
   }
   if (d) {
-    player_set_pos(player, player_pos(player).x + 2, player_pos(player).y);
+    player_set_pos(player, player_pos(player).x + distance, player_pos(player).y);
     player->direction = DIRECTION_RIGHT;
   }
 }

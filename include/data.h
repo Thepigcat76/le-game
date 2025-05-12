@@ -51,9 +51,7 @@ Data data_map_get_or_default(const DataMap *data_map, char *key, Data default_va
 
 void data_map_insert(DataMap *data_map, char *key, Data val);
 
-void byte_buf_write_data(ByteBuf *buf, Data data);
-
-void byte_buf_write_data(ByteBuf *buf, Data data);
+void byte_buf_write_data(ByteBuf *buf, const Data *data);
 
 Data byte_buf_read_data(ByteBuf *buf);
 

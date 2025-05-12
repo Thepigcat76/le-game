@@ -7,17 +7,15 @@ uniform sampler2D texture0;
 uniform vec2 lightPos;
 uniform vec3 lightColor;
 uniform float lightRadius;
+uniform float ambientLight;
 
 out vec4 finalColor;
 
-#define AMBIENT 0.15
-
-void main()
-{
+void main() {
     vec4 texel = texture(texture0, fragTexCoord);
 
     float dist = distance(lightPos, fragTexCoord);
-    float intensity = AMBIENT + smoothstep(lightRadius, 0.0, dist);
+    float intensity = ambientLight + smoothstep(lightRadius, 0.0, dist);
 
     vec3 litColor = texel.rgb * (lightColor * intensity);
 
