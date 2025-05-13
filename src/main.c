@@ -95,8 +95,6 @@ int main(void) {
 
           Texture2D texture = player_get_texture(&game.player);
 
-          Rectangle tile_box = game.world.chunks[0].tiles[0][0].box;
-
           // rec_draw_outline(&tile_box, BLUE);
 
           int x_index = (int)(mouse_world_pos.x / TILE_SIZE);
@@ -111,16 +109,13 @@ int main(void) {
                         (Vector2){game.player.box.x, game.player.box.y}, 0, 1,
                         WHITE);
 
-          // TraceLog(LOG_INFO, "Mouse x: %d, y: %d", x_index * 16, y_index *
-          // 16); debug_rect(&tile_rect);
-
           if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
-            TileInstance selected_tile =
-                game.world.chunks[0].tiles[y_index][x_index];
-            if (CheckCollisionPointRec(mouse_world_pos, selected_tile.box)) {
+            TileInstance *selected_tile = world_tile_at(&game.world, vec2i(x_index, y_index));
+            if (CheckCollisionPointRec(mouse_world_pos, selected_tile->box)) {
               TileInstance new_tile = tile_new(
                   &TILES[TILE_GRASS], x_index * TILE_SIZE, y_index * TILE_SIZE);
-              chunk_set_tile(&game.world.chunks[0], new_tile, x_index, y_index);
+              world_set_tile(&game.world, vec2i(x_index, y_index), new_tile);
+              TraceLog(LOG_INFO, "X: %d, Y: %d", x_index, y_index);
             }
           }
 

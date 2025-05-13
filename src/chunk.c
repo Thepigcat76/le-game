@@ -1,6 +1,7 @@
 #include "../include/chunk.h"
 #include "../include/stb_perlin.h"
-#include "stdio.h"
+#include <stdbool.h>
+#include <stdio.h>
 #include <raylib.h>
 #include <stdlib.h>
 
@@ -28,72 +29,27 @@ void chunk_gen(Chunk *chunk, ChunkPos chunk_pos) {
     }
   }
   chunk->chunk_pos = chunk_pos;
-
-  chunk_prepare_rendering(chunk);
 }
 
-void chunk_prepare_rendering(Chunk *chunk) {
-  for (int y = 0; y < CHUNK_SIZE; y++) {
-    for (int x = 0; x < CHUNK_SIZE; x++) {
-      chunk_set_tile_texture_data(chunk, x, y);
-    }
-  }
-
-  for (int y0 = 0; y0 < CHUNK_SIZE; y0++) {
-    for (int x0 = 0; x0 < CHUNK_SIZE; x0++) {
-      tile_calc_sprite_box(&chunk->tiles[y0][x0]);
-    }
-  }
-}
-
-void chunk_set_tile(Chunk *chunk, TileInstance tile, int x, int y) {
+bool chunk_can_place_tile(Chunk *chunk, TileInstance tile, int x, int y) {
   if (chunk->tiles[y][x].type.id == tile.type.id) {
-    return; // No need to update if the tile is the same
+    return false; // No need to update if the tile is the same
   }
 
   if (x < 0 || x >= CHUNK_SIZE || y < 0 || y >= CHUNK_SIZE) {
     fprintf(stderr, "Error: Chunk coordinates out of bounds\n");
-    return;
+    return false;
+  }
+  return true;
+}
+
+bool chunk_set_tile(Chunk *chunk, TileInstance tile, int x, int y) {
+  if (!chunk_can_place_tile(chunk, tile, x, y)) {
+    return false;
   }
 
   chunk->tiles[y][x] = tile;
-
-  // Loop over the surrounding tiles (including center)
-  for (int dy = -1; dy <= 1; dy++) {
-    for (int dx = -1; dx <= 1; dx++) {
-      int nx = x + dx;
-      int ny = y + dy;
-
-      // Check bounds
-      if (nx >= 0 && nx < CHUNK_SIZE && ny >= 0 && ny < CHUNK_SIZE) {
-        chunk_set_tile_texture_data(chunk, nx, ny);
-        tile_calc_sprite_box(&chunk->tiles[ny][nx]);
-      }
-    }
-  }
-}
-
-void chunk_set_tile_texture_data(Chunk *chunk, int x, int y) {
-  TileTextureData *texture_data = &chunk->tiles[y][x].texture_data;
-  texture_data->surrounding_tiles[0] =
-      y > 0 && x > 0 ? chunk->tiles[y - 1][x - 1].type.id : TILE_EMPTY;
-  texture_data->surrounding_tiles[1] =
-      y > 0 ? chunk->tiles[y - 1][x].type.id : TILE_EMPTY;
-  texture_data->surrounding_tiles[2] = y > 0 && x < CHUNK_SIZE - 1
-                                           ? chunk->tiles[y - 1][x + 1].type.id
-                                           : TILE_EMPTY;
-  texture_data->surrounding_tiles[3] =
-      x > 0 ? chunk->tiles[y][x - 1].type.id : TILE_EMPTY;
-  texture_data->surrounding_tiles[4] =
-      x < CHUNK_SIZE - 1 ? chunk->tiles[y][x + 1].type.id : TILE_EMPTY;
-  texture_data->surrounding_tiles[5] = y < CHUNK_SIZE - 1 && x > 0
-                                           ? chunk->tiles[y + 1][x - 1].type.id
-                                           : TILE_EMPTY;
-  texture_data->surrounding_tiles[6] =
-      y < CHUNK_SIZE - 1 ? chunk->tiles[y + 1][x].type.id : TILE_EMPTY;
-  texture_data->surrounding_tiles[7] = y < CHUNK_SIZE - 1 && x < CHUNK_SIZE - 1
-                                           ? chunk->tiles[y + 1][x + 1].type.id
-                                           : TILE_EMPTY;
+  return true;
 }
 
 void chunk_load(Chunk *chunk, const DataMap *data) {

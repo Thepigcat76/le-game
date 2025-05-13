@@ -14,16 +14,10 @@ World world_new() {
 }
 
 void world_add_chunk(World *world, ChunkPos pos, Chunk chunk) {
-  TraceLog(LOG_INFO, "Chunk index: %zu", world->chunks_amount);
   world->chunks[world->chunks_amount] = chunk;
   world->chunk_lookup.indices[world->chunks_amount] = world->chunks_amount;
   world->chunk_lookup.chunks_positions[world->chunks_amount] = pos;
   world->chunks_amount++;
-  for (int i = 0; i < world->chunks_amount; i++) {
-    TraceLog(LOG_INFO, "chunk lookup %d: %d, %d", i,
-             world->chunk_lookup.chunks_positions[i].x,
-             world->chunk_lookup.chunks_positions[i].y);
-  }
 }
 
 ssize_t world_chunk_index_by_pos(const World *world, ChunkPos pos) {
@@ -48,12 +42,96 @@ void world_gen_chunk_at(World *world, Vec2i chunk_pos) {
   world_add_chunk(world, chunk_pos, chunk);
 }
 
+TileInstance *world_tile_at(World *world, TilePos tile_pos) {
+  int chunk_tile_x = tile_pos.x % CHUNK_SIZE;
+  int chunk_tile_y = tile_pos.y % CHUNK_SIZE;
+  int chunk_x = (tile_pos.x - chunk_tile_x) / CHUNK_SIZE;
+  int chunk_y = (tile_pos.y - chunk_tile_y) / CHUNK_SIZE;
+  ChunkPos chunk_pos = vec2i(chunk_x, chunk_y);
+  if (world_has_chunk_at(world, chunk_pos)) {
+    Chunk *chunk = &world->chunks[world_chunk_index_by_pos(world, chunk_pos)];
+    return &chunk->tiles[chunk_tile_y][chunk_tile_x];
+  }
+  return &TILE_INSTANCE_EMPTY;
+}
+
 void world_gen(World *world) { world_gen_chunk_at(world, vec2i(0, 0)); }
+
+void world_set_tile(World *world, TilePos tile_pos, TileInstance tile) {
+  int chunk_tile_x = tile_pos.x % CHUNK_SIZE;
+  int chunk_tile_y = tile_pos.y % CHUNK_SIZE;
+  int chunk_x = (tile_pos.x - chunk_tile_x) / CHUNK_SIZE;
+  int chunk_y = (tile_pos.y - chunk_tile_y) / CHUNK_SIZE;
+  ChunkPos chunk_pos = vec2i(chunk_x, chunk_y);
+  if (world_has_chunk_at(world, chunk_pos)) {
+    Chunk *chunk = &world->chunks[world_chunk_index_by_pos(world, chunk_pos)];
+    bool success = chunk_set_tile(chunk, tile, chunk_tile_x, chunk_tile_y);
+
+    if (success) { // Loop over the surrounding tiles (including center)
+      for (int dy = -1; dy <= 1; dy++) {
+        for (int dx = -1; dx <= 1; dx++) {
+          int nx = chunk_tile_x + dx;
+          int ny = chunk_tile_y + dy;
+
+          // Check bounds
+          if (nx >= 0 && nx < CHUNK_SIZE && ny >= 0 && ny < CHUNK_SIZE) {
+            world_set_tile_texture_data(world, &chunk->tiles[ny][nx], nx, ny);
+            tile_calc_sprite_box(&chunk->tiles[ny][nx]);
+          }
+        }
+      }
+    }
+  }
+}
+
+void world_prepare_chunk_rendering(World *world, Chunk *chunk) {
+  for (int y = 0; y < CHUNK_SIZE; y++) {
+    for (int x = 0; x < CHUNK_SIZE; x++) {
+      TilePos pos = vec2i((chunk->chunk_pos.x * CHUNK_SIZE) + x,
+                          (chunk->chunk_pos.y * CHUNK_SIZE) + y);
+      TileInstance *tile = world_tile_at(world, vec2i(pos.x, pos.y));
+      if (tile->type.id != TILE_EMPTY) {
+        world_set_tile_texture_data(world, tile, pos.x, pos.y);
+      }
+    }
+  }
+
+  for (int y = 0; y < CHUNK_SIZE; y++) {
+    for (int x = 0; x < CHUNK_SIZE; x++) {
+      TilePos pos = vec2i((chunk->chunk_pos.x * CHUNK_SIZE) + x,
+                          (chunk->chunk_pos.y * CHUNK_SIZE) + y);
+      TileInstance *tile = world_tile_at(world, vec2i(pos.x, pos.y));
+      if (tile->type.id != TILE_EMPTY) {
+        tile_calc_sprite_box(tile);
+      }
+    }
+  }
+}
+
+void world_set_tile_texture_data(World *world, TileInstance *tile, int x,
+                                 int y) {
+  TileTextureData *texture_data = &tile->texture_data;
+  texture_data->surrounding_tiles[0] =
+      world_tile_at(world, vec2i(x - 1, y - 1))->type.id;
+  texture_data->surrounding_tiles[1] =
+      world_tile_at(world, vec2i(x, y - 1))->type.id;
+  texture_data->surrounding_tiles[2] =
+      world_tile_at(world, vec2i(x + 1, y - 1))->type.id;
+  texture_data->surrounding_tiles[3] =
+      world_tile_at(world, vec2i(x - 1, y))->type.id;
+  texture_data->surrounding_tiles[4] =
+      world_tile_at(world, vec2i(x + 1, y))->type.id;
+  texture_data->surrounding_tiles[5] =
+      world_tile_at(world, vec2i(x - 1, y + 1))->type.id;
+  texture_data->surrounding_tiles[6] =
+      world_tile_at(world, vec2i(x, y + 1))->type.id;
+  texture_data->surrounding_tiles[7] =
+      world_tile_at(world, vec2i(x + 1, y + 1))->type.id;
+}
 
 void world_prepare_rendering(World *world) {
   for (int i = 0; i < world->chunks_amount; i++) {
-    Chunk *chunk = &world->chunks[i];
-    chunk_prepare_rendering(chunk);
+    world_prepare_chunk_rendering(world, &world->chunks[i]);
   }
 }
 
@@ -93,7 +171,7 @@ void load_world(World *world, const DataMap *data) {
 
 // TODO: Dealloc... pretty much everything
 void save_world(const World *world, DataMap *data) {
-  data_map_insert(data, "len",data_byte((uint8_t) world->chunks_amount));
+  data_map_insert(data, "len", data_byte((uint8_t)world->chunks_amount));
   for (int i = 0; i < world->chunks_amount; i++) {
     DataMap map = data_map_new(300);
     const Chunk *chunk = &world->chunks[i];

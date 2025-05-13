@@ -1,7 +1,7 @@
 #include "../include/player.h"
 #include "../include/camera.h"
-#include "../include/shared.h"
 #include "../include/config.h"
+#include "../include/shared.h"
 #include "math.h"
 #include <raylib.h>
 
@@ -17,9 +17,7 @@ Player player_new() {
                   .box = {.x = 0, .y = 0, .width = 16, .height = 32}};
 }
 
-void player_set_world(Player *player, World *world) {
-  player->world = world;
-}
+void player_set_world(Player *player, World *world) { player->world = world; }
 
 Texture2D player_get_texture(Player *player) {
   switch (player->direction) {
@@ -39,6 +37,7 @@ Vector2 player_pos(const Player *player) {
 }
 
 void player_set_pos(Player *player, float x, float y) {
+  ChunkPos old_chunk_pos = player->chunk_pos;
   player->box.x = x;
   player->box.y = y;
   player->cam.target.x = x;
@@ -48,8 +47,25 @@ void player_set_pos(Player *player, float x, float y) {
 
   if (!world_has_chunk_at(player->world, player->chunk_pos)) {
     world_gen_chunk_at(player->world, player->chunk_pos);
-  }
 
+    world_prepare_chunk_rendering(
+        player->world, &player->world->chunks[world_chunk_index_by_pos(
+                           player->world, player->chunk_pos)]);
+    Vec2i offsets[4] = {
+        vec2i(-1, 0),
+        vec2i(+1, 0),
+        vec2i(0, -1),
+        vec2i(0, +1),
+    };
+    for (int i = 0; i < 4; i++) {
+      Vec2i offset = offsets[i];
+      world_prepare_chunk_rendering(
+          player->world,
+          &player->world->chunks[world_chunk_index_by_pos(
+              player->world,
+              vec2i(player->chunk_pos.x + offset.x, player->chunk_pos.y + offset.y))]);
+    }
+  }
 }
 
 void player_handle_zoom(Player *player, bool zoom_in, bool zoom_out) {
@@ -70,19 +86,23 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
   float distance = 2 * CONFIG.player_speed;
 
   if (w) {
-    player_set_pos(player, player_pos(player).x, player_pos(player).y - distance);
+    player_set_pos(player, player_pos(player).x,
+                   player_pos(player).y - distance);
     player->direction = DIRECTION_UP;
   }
   if (a) {
-    player_set_pos(player, player_pos(player).x - distance, player_pos(player).y);
+    player_set_pos(player, player_pos(player).x - distance,
+                   player_pos(player).y);
     player->direction = DIRECTION_LEFT;
   }
   if (s) {
-    player_set_pos(player, player_pos(player).x, player_pos(player).y + distance);
+    player_set_pos(player, player_pos(player).x,
+                   player_pos(player).y + distance);
     player->direction = DIRECTION_DOWN;
   }
   if (d) {
-    player_set_pos(player, player_pos(player).x + distance, player_pos(player).y);
+    player_set_pos(player, player_pos(player).x + distance,
+                   player_pos(player).y);
     player->direction = DIRECTION_RIGHT;
   }
 }

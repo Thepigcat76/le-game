@@ -11,11 +11,9 @@ typedef struct {
 
 void chunk_gen(Chunk *chunk, ChunkPos chunk_pos);
 
-void chunk_prepare_rendering(Chunk *chunk);
+bool chunk_can_place_tile(Chunk *chunk, TileInstance tile, int x, int y);
 
-void chunk_set_tile_texture_data(Chunk *chunk, int x, int y);
-
-void chunk_set_tile(Chunk *chunk, TileInstance tile, int x, int y);
+bool chunk_set_tile(Chunk *chunk, TileInstance tile, int x, int y);
 
 void chunk_load(Chunk *chunk, const DataMap *data);
 

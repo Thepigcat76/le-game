@@ -1,11 +1,12 @@
 #pragma once
 
 #include "data.h"
-#include "player.h"
-#include "world.h"
 #include "item.h"
+#include "player.h"
+#include "ui.h"
+#include "world.h"
 
-typedef struct {
+typedef struct _game {
   Player player;
   World world;
 } Game;

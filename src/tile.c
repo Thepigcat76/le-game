@@ -19,6 +19,7 @@ typedef struct {
 } ConnectedInfo;
 
 TileType TILES[TILES_AMOUNT];
+TileInstance TILE_INSTANCE_EMPTY;
 static ConnectedInfo CONNECTED_INFO;
 
 // TILE TYPE
@@ -104,6 +105,8 @@ void tile_types_init() {
   tile_type_init(TILE_DIRT);
   tile_type_init(TILE_GRASS);
   tile_type_init(TILE_STONE);
+
+  TILE_INSTANCE_EMPTY = tile_new(&TILES[TILE_EMPTY], 0, 0);
 }
 
 void tile_type_init(TileId id) {
@@ -162,7 +165,6 @@ TileInstance tile_new(const TileType *type, int x, int y) {
                      default_sprite_res)
               : rect(0, 0, type->texture.width, type->texture.height),
   };
-  TraceLog(LOG_INFO, "NEW");
   return instance;
 }
 
@@ -222,7 +224,6 @@ void tile_calc_sprite_box(TileInstance *tile) {
     same_tile[6] = texture_data[6] == self_id;
     same_tile[7] = texture_data[7] == self_id;
     tile->cur_sprite_box = select_tile(same_tile);
-    TraceLog(LOG_INFO, "SELECTING");
   }
 }
 

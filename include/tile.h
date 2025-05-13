@@ -46,6 +46,8 @@ typedef struct {
   Rectangle cur_sprite_box;
 } TileInstance;
 
+extern TileInstance TILE_INSTANCE_EMPTY;
+
 TileInstance tile_new(const TileType *type, int x, int y);
 
 void tile_render(const TileInstance *tile);
