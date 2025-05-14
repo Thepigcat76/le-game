@@ -1,8 +1,13 @@
 #include "../include/config.h"
 #include "../include/game.h"
+#include "../include/menus.h"
 #include "../include/shared.h"
 #include "raylib.h"
 #include <math.h>
+
+#define BUILD_LAYOUT(menu_name, menu)                                          \
+  extern void menu_name##_layout_build(Layout *layout);                        \
+  menu_name##_layout_build(&menu.layout);
 
 void rec_draw_outline(const Rectangle *rec, Color color) {
   DrawRectangleLinesEx(*rec, 1, color);
@@ -57,6 +62,9 @@ int main(void) {
   RenderTexture2D world_texture =
       LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
 
+  SaveMenu menu;
+  BUILD_LAYOUT(save_menu, menu);
+
   while (!WindowShouldClose()) {
     game_tick(&game);
 
@@ -93,7 +101,7 @@ int main(void) {
 
           world_render(&game.world);
 
-          Texture2D texture = player_get_texture(&game.player);
+          Texture2D player_texture = player_get_texture(&game.player);
 
           // rec_draw_outline(&tile_box, BLUE);
 
@@ -105,12 +113,13 @@ int main(void) {
                                       .height = (TILE_SIZE)};
 
           rec_draw_outline(&rec, BLUE);
-          DrawTextureEx(texture,
+          DrawTextureEx(player_texture,
                         (Vector2){game.player.box.x, game.player.box.y}, 0, 1,
                         WHITE);
 
           if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
-            TileInstance *selected_tile = world_tile_at(&game.world, vec2i(x_index, y_index));
+            TileInstance *selected_tile =
+                world_tile_at(&game.world, vec2i(x_index, y_index));
             if (CheckCollisionPointRec(mouse_world_pos, selected_tile->box)) {
               TileInstance new_tile = tile_new(
                   &TILES[TILE_GRASS], x_index * TILE_SIZE, y_index * TILE_SIZE);
@@ -146,6 +155,10 @@ int main(void) {
           .type = ITEMS[ITEM_TORCH],
       };
       item_render(&item, mousePos.x, mousePos.y);
+
+      ui_layout_render(&menu.layout,
+                       (RenderContext){.screen_width = SCREEN_WIDTH,
+                                       .screen_height = SCREEN_HEIGHT});
     }
     EndDrawing();
   }

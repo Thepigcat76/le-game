@@ -16,6 +16,7 @@ void config_on_reload() {
 
     cJSON *ambient_light = cJSON_GetObjectItemCaseSensitive(json, "ambient-light");
     cJSON *player_speed = cJSON_GetObjectItemCaseSensitive(json, "player-speed");
+    cJSON *default_font_size = cJSON_GetObjectItemCaseSensitive(json, "default-font-size");
 
     if (cJSON_IsNumber(ambient_light)) {
         CONFIG.ambient_light = ambient_light->valuedouble;
@@ -23,6 +24,10 @@ void config_on_reload() {
 
     if (cJSON_IsNumber(player_speed)) {
         CONFIG.player_speed = player_speed->valuedouble;
+    }
+
+    if (cJSON_IsNumber(default_font_size)) {
+        CONFIG.default_font_size = default_font_size->valueint;
     }
 
     cJSON_Delete(json);

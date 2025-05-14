@@ -3,6 +3,7 @@
 typedef struct {
     float ambient_light;
     double player_speed;
+    int default_font_size;
 } Config;
 
 extern Config CONFIG;

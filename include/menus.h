@@ -1,4 +1,6 @@
-#include "../../include/ui_layout.h"
+#pragma once
+
+#include "ui_layout.h"
 
 typedef struct {
     Layout layout;
