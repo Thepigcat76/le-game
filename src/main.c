@@ -1,13 +1,12 @@
 #include "../include/config.h"
 #include "../include/game.h"
-#include "../include/menus.h"
 #include "../include/shared.h"
 #include "raylib.h"
 #include <math.h>
 
-#define BUILD_LAYOUT(menu_name, menu)                                          \
-  extern void menu_name##_layout_build(Layout *layout);                        \
-  menu_name##_layout_build(&menu.layout);
+#define RENDER_MENU(ui_renderer, menu_name)                                    \
+  extern void menu_name##_render(UiRenderer *renderer, const Game *game);      \
+  menu_name##_render(ui_renderer, &game);
 
 void rec_draw_outline(const Rectangle *rec, Color color) {
   DrawRectangleLinesEx(*rec, 1, color);
@@ -21,6 +20,8 @@ void debug_rect(Rectangle *rect) {
 int main(void) {
   InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Ballz");
   SetExitKey(0);
+
+  shared_init();
 
   tile_types_init();
   item_types_init();
@@ -59,18 +60,39 @@ int main(void) {
   Texture2D torch_texture = load_texture("res/assets/torch.png");
   Texture2D slot_texture = load_texture("res/assets/slot.png");
 
+  Texture2D button_texture = load_texture("res/assets/gui/button.png");
+
   RenderTexture2D world_texture =
       LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
 
-  SaveMenu menu;
-  BUILD_LAYOUT(save_menu, menu);
+  UiRenderer ui_renderer = {.cur_x = 0,
+                            .cur_y = 0,
+                            .simulate = false,
+                            .ui_height = -1,
+                            .cur_style = {0},
+                            .context = {.screen_width = SCREEN_WIDTH,
+                                        .screen_height = SCREEN_HEIGHT}};
 
   while (!WindowShouldClose()) {
+    ui_renderer.cur_x = 0;
+    ui_renderer.cur_y = 0;
+
     game_tick(&game);
 
     if (IsKeyDown(KEY_R)) {
       shader = LoadShader(NULL, "res/shaders/lighting.fs");
       game_reload();
+    }
+
+    if (ui_renderer.ui_height == -1) {
+      ui_renderer.cur_y = 0;
+      ui_renderer.simulate = true;
+      RENDER_MENU(&ui_renderer, save_menu);
+      ui_renderer.ui_height = ui_renderer.cur_y;
+
+      ui_renderer.simulate = false;
+      ui_renderer.cur_x = 0;
+      ui_renderer.cur_y = 0;
     }
 
     BeginDrawing();
@@ -156,9 +178,7 @@ int main(void) {
       };
       item_render(&item, mousePos.x, mousePos.y);
 
-      ui_layout_render(&menu.layout,
-                       (RenderContext){.screen_width = SCREEN_WIDTH,
-                                       .screen_height = SCREEN_HEIGHT});
+      RENDER_MENU(&ui_renderer, save_menu);
     }
     EndDrawing();
   }

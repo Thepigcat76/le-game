@@ -1,76 +1,88 @@
 #include "../include/ui.h"
 #include "../include/config.h"
 #include "raylib.h"
+#include <stdbool.h>
 
-static void ui_component_text_render(Renderer *renderer,
-                                     const TextComponent *component,
-                                     RenderContext ctx) {
-  renderer->cur_x = (ctx.screen_width - component->dimensions.x) / 2;
-  DrawText(component->message, renderer->cur_x, renderer->cur_y,
-           CONFIG.default_font_size, component->color);
+void ui_setup(UiRenderer *renderer) {
+  if (renderer->ui_height != -1) {
+    renderer->cur_x = renderer->context.screen_width / 2;
+    renderer->cur_y =
+        (renderer->context.screen_height - renderer->ui_height) / 2;
+  }
+}
+
+void ui_set_style(UiRenderer *renderer, UiStyle style) {
+  renderer->cur_style = style;
+}
+
+void ui_button_render_ex(UiRenderer *renderer, ButtonUiComponent component) {
+  float scale = (float)CONFIG.default_font_size / 10;
+  renderer->cur_x =
+      (renderer->context.screen_width - component.width * scale) / 2;
+  renderer->cur_y += component.y_offset;
+
+  bool hovered = CheckCollisionPointRec(
+      GetMousePosition(), (Rectangle){.x = renderer->cur_x,
+                                      .y = renderer->cur_y,
+                                      .width = component.width * scale,
+                                      .height = component.height * scale});
+  DrawTextureEx(hovered ? component.selected_texture : component.texture,
+                (Vector2){.x = renderer->cur_x, .y = renderer->cur_y}, 0, scale,
+                WHITE);
+  int text_width = MeasureText(component.message, CONFIG.default_font_size);
+  float text_x = renderer->cur_x + component.text_x_offset +
+                 (float)(component.width * scale - text_width) / 2;
+  float text_y =
+      renderer->cur_y +
+      ((component.height * scale) / 2 - (float)CONFIG.default_font_size / 2) +
+      component.text_y_offset;
+  DrawText(component.message, text_x, text_y, CONFIG.default_font_size, WHITE);
+  renderer->cur_y += component.height * scale + renderer->cur_style.padding;
+
+  if (hovered && IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
+    component.on_click_func(NULL, NULL);
+  }
+}
+
+void ui_button_render(UiRenderer *renderer, const char *text, Texture2D texture,
+                      Texture2D selected_texture,
+                      ButtonClickFunction on_click_func) {
+  ui_button_render_ex(renderer,
+                      (ButtonUiComponent){.message = text,
+                                          .on_click_func = on_click_func,
+                                          .texture = texture,
+                                          .selected_texture = selected_texture,
+                                          .width = texture.width,
+                                          .height = texture.height,
+                                          .x_offset = 0,
+                                          .y_offset = 0,
+                                          .text_x_offset = 0,
+                                          .text_y_offset = -4});
+}
+
+void ui_text_render_ex(UiRenderer *renderer, TextUiComponent component) {
+  renderer->cur_x = (renderer->context.screen_width - component.width) / 2;
+  if (!renderer->simulate) {
+    DrawText(component.text, renderer->cur_x, renderer->cur_y,
+             CONFIG.default_font_size, component.color);
+  }
   // TODO: Move cur coordinate by dimension depdening on style
   // renderer->cur_x += component->dimensions.x + component->offset.x;
   renderer->cur_y +=
-      component->dimensions.y + component->offset.y + ctx.style.padding;
+      component.height + component.y_offset + renderer->cur_style.padding;
 }
 
-static void ui_component_spacing_render(Renderer *renderer,
-                                        const SpacingComponent *component,
-                                        RenderContext ctx) {}
-
-static void ui_component_button_render(Renderer *renderer,
-                                       const ButtonComponent *component,
-                                       RenderContext ctx) {}
-
-void ui_component_render(Renderer *renderer, const UiComponent *component,
-                         RenderContext ctx) {
-  switch (component->type) {
-  case COMPONENT_TEXT:
-    ui_component_text_render(renderer, &component->var.text, ctx);
-    break;
-  case COMPONENT_SPACING:
-    ui_component_spacing_render(renderer, &component->var.spacing, ctx);
-    break;
-  case COMPONENT_BUTTON:
-    ui_component_button_render(renderer, &component->var.button, ctx);
-    break;
-  }
+void ui_text_render(UiRenderer *renderer, const char *text) {
+  ui_text_render_ex(
+      renderer,
+      (TextUiComponent){.text = text,
+                        .color = WHITE,
+                        .height = CONFIG.default_font_size,
+                        .width = MeasureText(text, CONFIG.default_font_size),
+                        .x_offset = 0,
+                        .y_offset = 0});
 }
 
-static int ui_component_height(const UiComponent *component) {
-  switch (component->type) {
-  case COMPONENT_TEXT:
-    return component->var.text.dimensions.y;
-  case COMPONENT_SPACING:
-    return component->var.spacing.dimensions.y;
-  case COMPONENT_BUTTON:
-    return component->var.button.dimensions.y;
-  }
-}
+void ui_spacing_render_ex(UiRenderer *renderer, SpacingUiComponent component) {}
 
-void ui_layout_render(const Layout *layout, RenderContext ctx) {
-  Renderer renderer = {.cur_x = 0, .cur_y = 0};
-  int height = 0;
-  for (int i = 0; i < layout->components_amount; i++) {
-    height += ui_component_height(&layout->components[i]);
-    if (layout->components[i].type != COMPONENT_SPACING) {
-      height += layout->style.padding;
-    }
-  }
-  if (layout->components[layout->components_amount - 1].type !=
-      COMPONENT_SPACING) {
-    height -= layout->style.padding;
-  }
-  ctx.total_height = height;
-  ctx.start_x = ctx.screen_width / 2;
-  ctx.start_y = (ctx.screen_height - ctx.total_height) / 2;
-  ctx.style = layout->style;
-  TraceLog(LOG_INFO, "Height: %d, start y: %d", height, ctx.start_y);
-
-  renderer.cur_x = ctx.start_x;
-  renderer.cur_y = ctx.start_y;
-
-  for (int i = 0; i < layout->components_amount; i++) {
-    ui_component_render(&renderer, &layout->components[i], ctx);
-  }
-}
+void ui_spacing_render(UiRenderer *renderer, int spacing_height) {}

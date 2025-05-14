@@ -11,6 +11,9 @@
 
 #define TILE_SIZE 16
 
+extern Texture2D BUTTON_TEXTURE;
+extern Texture2D BUTTON_SELECTED_TEXTURE;
+
 char *read_file_to_string(const char *filename);
 
 typedef enum {
@@ -27,6 +30,8 @@ typedef struct {
 
 typedef Vec2i ChunkPos;
 typedef Vec2i TilePos;
+
+void shared_init();
 
 Vec2i vec2i(int x, int y);
 

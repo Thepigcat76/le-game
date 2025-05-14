@@ -1,6 +1,10 @@
 #include "../include/shared.h"
+#include <raylib.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+Texture2D BUTTON_TEXTURE;
+Texture2D BUTTON_SELECTED_TEXTURE;
 
 char *read_file_to_string(const char *filename) {
   FILE *file = fopen(filename, "rb");
@@ -42,6 +46,11 @@ char *read_file_to_string(const char *filename) {
 
   fclose(file);
   return buffer;
+}
+
+void shared_init() {
+  BUTTON_TEXTURE = load_texture("res/assets/gui/button.png");
+  BUTTON_SELECTED_TEXTURE = load_texture("res/assets/gui/button_selected.png");
 }
 
 Vec2i vec2i(int x, int y) { return (Vec2i){.x = x, .y = y}; }

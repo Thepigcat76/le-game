@@ -1,11 +1,26 @@
-#include "../../include/menus.h"
-#include "../../include/ui_layout.h"
+#include "../../include/game.h"
+#include "../../include/ui.h"
+#include <raylib.h>
 
-void save_menu_layout_build(SaveMenu *menu) {
-  Layout *layout = &menu->layout;
-  layout_set_style(
-      layout, (UiStyle){.padding = 100, .positions = {UI_CENTER, UI_CENTER}});
-  layout_text_simple(layout, "Game Paused");
-  layout_text_simple(layout, "Deez nuts");
-  layout_text_simple(layout, "Ballz");
+static void save_menu_button_0_clicked(void *_, void *game) {
+  TraceLog(LOG_INFO, "Button clicked");
+}
+
+void save_menu_render(UiRenderer *renderer, const Game *game) {
+  ui_set_style(renderer, (UiStyle){
+                             .positions = {UI_CENTER, UI_CENTER},
+                             .alignment = UI_VERTICAL,
+                             .padding = 24,
+                         });
+  ui_setup(renderer);
+
+  ui_text_render(renderer, "Game Paused");
+  ui_button_render(renderer, "Back To Game", BUTTON_TEXTURE,
+                   BUTTON_SELECTED_TEXTURE, save_menu_button_0_clicked);
+  ui_button_render(renderer, "General Settings", BUTTON_TEXTURE,
+                   BUTTON_SELECTED_TEXTURE, save_menu_button_0_clicked);
+  ui_button_render(renderer, "Gameplay Settings", BUTTON_TEXTURE,
+                   BUTTON_SELECTED_TEXTURE, save_menu_button_0_clicked);
+  ui_button_render(renderer, "Save Game", BUTTON_TEXTURE,
+                   BUTTON_SELECTED_TEXTURE, save_menu_button_0_clicked);
 }
