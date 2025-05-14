@@ -3,12 +3,13 @@
 #include "data.h"
 #include "item.h"
 #include "player.h"
-#include "ui.h"
 #include "world.h"
+#include "menu.h"
 
 typedef struct _game {
   Player player;
   World world;
+  MenuId cur_menu;
 } Game;
 
 void game_reload();

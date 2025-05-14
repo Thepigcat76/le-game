@@ -1,6 +1,7 @@
 #include "../include/config.h"
 #include "../include/game.h"
 #include "../include/shared.h"
+#include "../include/ui.h"
 #include "raylib.h"
 #include <math.h>
 
@@ -150,9 +151,13 @@ int main(void) {
             }
           }
 
-          // DrawTextureEx(torch_texture,
-          //               (Vector2){mouse_world_pos.x, mouse_world_pos.y}, 0,
-          //               2, WHITE);
+          if (IsKeyReleased(KEY_ESCAPE)) {
+            if (game.cur_menu == MENU_SAVE) {
+              game.cur_menu = MENU_NONE;
+            } else {
+              game.cur_menu = MENU_SAVE;
+            }
+          }
 
           // CAMERA END
         }
@@ -178,7 +183,9 @@ int main(void) {
       };
       item_render(&item, mousePos.x, mousePos.y);
 
-      RENDER_MENU(&ui_renderer, save_menu);
+      if (game.cur_menu == MENU_SAVE) {
+        RENDER_MENU(&ui_renderer, save_menu);
+      }
     }
     EndDrawing();
   }
