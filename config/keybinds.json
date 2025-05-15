@@ -1,0 +1,7 @@
+{
+  "move-foreward": "S",
+  "move-backward": "W",
+  "move-left": "A",
+  "move-right": "D",
+  "open-close-save-menu": "Esc",
+}
