@@ -1,5 +1,6 @@
 #include "../../include/game.h"
 #include "../../include/ui.h"
+#include "../../include/config.h"
 #include <raylib.h>
 
 static void save_menu_button_0_clicked(void *_, void *game) {
@@ -14,13 +15,20 @@ void save_menu_render(UiRenderer *renderer, const Game *game) {
                          });
   ui_setup(renderer);
 
+  int x_offset = 8 * (CONFIG.default_font_size / 10);
+  int y_offset = -2;
+
   ui_text_render(renderer, "Game Paused");
-  ui_button_render(renderer, "Back To Game", BUTTON_TEXTURE,
-                   BUTTON_SELECTED_TEXTURE, save_menu_button_0_clicked);
-  ui_button_render(renderer, "General Settings", BUTTON_TEXTURE,
-                   BUTTON_SELECTED_TEXTURE, save_menu_button_0_clicked);
-  ui_button_render(renderer, "Gameplay Settings", BUTTON_TEXTURE,
-                   BUTTON_SELECTED_TEXTURE, save_menu_button_0_clicked);
-  ui_button_render(renderer, "Save Game", BUTTON_TEXTURE,
-                   BUTTON_SELECTED_TEXTURE, save_menu_button_0_clicked);
+  ui_button_render_offset(renderer, "Back To Game", BACK_TO_GAME_BUTTON_TEXTURE,
+                          BUTTON_SELECTED_TEXTURE, save_menu_button_0_clicked,
+                          vec2i(x_offset, y_offset));
+  ui_button_render_offset(
+      renderer, "General Settings", VISUAL_SETTINGS_BUTTON_TEXTURE,
+      BUTTON_SELECTED_TEXTURE, save_menu_button_0_clicked, vec2i(x_offset, y_offset));
+  ui_button_render_offset(renderer, "Gameplay Settings",
+                          GAME_SETTINGS_BUTTON_TEXTURE, BUTTON_SELECTED_TEXTURE,
+                          save_menu_button_0_clicked, vec2i(x_offset, y_offset));
+  ui_button_render_offset(renderer, "Save Game", LEAVE_GAME_BUTTON_TEXTURE,
+                          BUTTON_SELECTED_TEXTURE, save_menu_button_0_clicked,
+                          vec2i(x_offset, y_offset));
 }

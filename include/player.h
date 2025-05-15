@@ -1,5 +1,6 @@
 #pragma once
 
+#include "item.h"
 #include "shared.h"
 #include "data.h"
 #include "world.h"
@@ -15,6 +16,7 @@ typedef struct {
   Rectangle box;
   int essence;
   Vec2i chunk_pos;
+  ItemInstance held_item;
 } Player;
 
 Player player_new();

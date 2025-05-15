@@ -73,4 +73,4 @@ Data data_double(double d);
 
 Data data_string(char *str);
 
-void data_free(void *raw_data, int type);
+void data_free(Data *data);

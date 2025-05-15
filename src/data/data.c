@@ -8,7 +8,7 @@
 
 DataMap data_map_new(size_t capacity) {
   return (DataMap){
-      .keys = malloc(capacity * 8),
+      .keys = malloc(capacity * sizeof(char *)),
       .values = malloc(capacity * sizeof(Data)),
       .capacity = capacity,
       .len = 0,
@@ -62,12 +62,12 @@ void byte_buf_write_data_map(ByteBuf *buf, const DataMap *map) {
   }
 }
 
-void byte_buf_read_data_map(ByteBuf *buf, DataMap *map) {
-  size_t len = byte_buf_read_int(buf);
-
+void byte_buf_read_data_map(ByteBuf *buf, DataMap *map, int len) {
   for (int i = 0; i < len; i++) {
-    data_map_insert(map, byte_buf_read_string_heap(buf),
-                    byte_buf_read_data(buf));
+    int key_str_len = byte_buf_read_int(buf);
+    char key_buf[key_str_len];
+    byte_buf_read_string(buf, key_buf, key_str_len);
+    data_map_insert(map, key_buf, byte_buf_read_data(buf));
   }
 }
 
@@ -78,8 +78,7 @@ void byte_buf_write_data_list(ByteBuf *buf, const DataList *list) {
   }
 }
 
-void byte_buf_read_data_list(ByteBuf *buf, DataList *list) {
-  size_t len = byte_buf_read_int(buf);
+void byte_buf_read_data_list(ByteBuf *buf, DataList *list, int len) {
   for (int i = 0; i < len; i++) {
     list->items[i] = byte_buf_read_data(buf);
   }
@@ -129,18 +128,21 @@ Data byte_buf_read_data(ByteBuf *buf) {
     return (Data){.type = type, .var = {.data_char = character}};
   }
   case DATA_TYPE_STRING: {
-    char *string = byte_buf_read_string_heap(buf);
+    int len = byte_buf_read_int(buf);
+    char *string = malloc(len * sizeof(char));
+    byte_buf_read_string(buf, string, len);
     return (Data){.type = type, .var = {.data_string = string}};
   }
   case DATA_TYPE_MAP: {
-    // TODO: Use actual length instead of 400
-    DataMap map = data_map_new(400);
-    byte_buf_read_data_map(buf, &map);
+    size_t len = byte_buf_read_int(buf);
+    DataMap map = data_map_new(len);
+    byte_buf_read_data_map(buf, &map, len);
     return (Data){.type = type, .var = {.data_map = map}};
   }
   case DATA_TYPE_LIST: {
-    DataList list = {.items = malloc(400 * sizeof(Data)), .len = 400};
-    byte_buf_read_data_list(buf, &list);
+    size_t len = byte_buf_read_int(buf);
+    DataList list = {.items = malloc(len * sizeof(Data)), .len = len};
+    byte_buf_read_data_list(buf, &list, len);
     return (Data){.type = type, .var = {.data_list = list}};
   }
   default: {
@@ -186,21 +188,28 @@ Data data_string(char *str) {
   return (Data){.type = DATA_TYPE_STRING, .var = {.data_string = str}};
 }
 
-void data_free(void *raw_data, int type) {
-  switch (type) {
+void data_free(Data *data) {
+  switch (data->type) {
   case DATA_TYPE_MAP: {
-    DataMap *map = (DataMap *)raw_data;
+    DataMap *map = &data->var.data_map;
     for (size_t i = 0; i < map->len; i++) {
-      // free(map->keys[i]);
-      // data_free(&map->values[i], map->values[i].type);
+      free(map->keys[i]);
+      data_free(&map->values[i]);
     }
-    // free(map->keys);
-    // free(map->values);
+    free(map->keys);
+    free(map->values);
     break;
   }
   case DATA_TYPE_STRING: {
-    char *str = (char *)raw_data;
-    // free(str);
+    free(data->var.data_string);
+    break;
+  }
+  case DATA_TYPE_LIST: {
+    DataList *data_list = &data->var.data_list;
+    for (int i = 0; i < data_list->len; i++) {
+      data_free(&data_list->items[i]);
+    }
+    free(data_list->items);
     break;
   }
   default:

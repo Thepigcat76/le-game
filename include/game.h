@@ -10,6 +10,7 @@ typedef struct _game {
   Player player;
   World world;
   MenuId cur_menu;
+  bool paused;
 } Game;
 
 void game_reload();

@@ -72,6 +72,10 @@ void ui_set_style(UiRenderer *renderer, UiStyle style);
 
 void ui_button_render_ex(UiRenderer *renderer, ButtonUiComponent component);
 
+void ui_button_render_offset(UiRenderer *renderer, const char *text, Texture2D texture,
+                      Texture2D selected_texture,
+                      ButtonClickFunction on_click_func, Vec2i offset);
+
 void ui_button_render(UiRenderer *renderer, const char *text, Texture2D texture,
                       Texture2D selected_texture,
                       ButtonClickFunction on_click_func);

@@ -14,6 +14,11 @@
 extern Texture2D BUTTON_TEXTURE;
 extern Texture2D BUTTON_SELECTED_TEXTURE;
 
+extern Texture2D BACK_TO_GAME_BUTTON_TEXTURE;
+extern Texture2D VISUAL_SETTINGS_BUTTON_TEXTURE;
+extern Texture2D GAME_SETTINGS_BUTTON_TEXTURE;
+extern Texture2D LEAVE_GAME_BUTTON_TEXTURE;
+
 char *read_file_to_string(const char *filename);
 
 typedef enum {

@@ -23,9 +23,7 @@ uint8_t byte_buf_read_byte(ByteBuf *buf);
 
 int32_t byte_buf_read_int(ByteBuf *buf);
 
-void byte_buf_read_string(ByteBuf *buf, char *str_buf);
-
-char *byte_buf_read_string_heap(ByteBuf *buf);
+void byte_buf_read_string(ByteBuf *buf, char *str_buf, int len);
 
 int byte_buf_to_bin(const ByteBuf *buf, char *str_buf);
 

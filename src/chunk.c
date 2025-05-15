@@ -94,5 +94,6 @@ void chunk_save(const Chunk *chunk, DataMap *data) {
       // }
     }
   }
-  data_map_insert(data, "tiles", data_list(tiles));
+  Data data_list_0 = data_list(tiles);
+  data_map_insert(data, "tiles", data_list_0);
 }

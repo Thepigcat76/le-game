@@ -6,6 +6,11 @@
 Texture2D BUTTON_TEXTURE;
 Texture2D BUTTON_SELECTED_TEXTURE;
 
+Texture2D BACK_TO_GAME_BUTTON_TEXTURE;
+Texture2D VISUAL_SETTINGS_BUTTON_TEXTURE;
+Texture2D GAME_SETTINGS_BUTTON_TEXTURE;
+Texture2D LEAVE_GAME_BUTTON_TEXTURE;
+
 char *read_file_to_string(const char *filename) {
   FILE *file = fopen(filename, "rb");
   if (file == NULL) {
@@ -51,6 +56,11 @@ char *read_file_to_string(const char *filename) {
 void shared_init() {
   BUTTON_TEXTURE = load_texture("res/assets/gui/button.png");
   BUTTON_SELECTED_TEXTURE = load_texture("res/assets/gui/button_selected.png");
+
+  BACK_TO_GAME_BUTTON_TEXTURE = load_texture("res/assets/gui/back_to_game_button.png");
+  VISUAL_SETTINGS_BUTTON_TEXTURE = load_texture("res/assets/gui/visual_settings_button.png");
+  GAME_SETTINGS_BUTTON_TEXTURE = load_texture("res/assets/gui/game_settings_button.png");
+  LEAVE_GAME_BUTTON_TEXTURE = load_texture("res/assets/gui/leave_game_button.png");
 }
 
 Vec2i vec2i(int x, int y) { return (Vec2i){.x = x, .y = y}; }

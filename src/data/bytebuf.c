@@ -45,25 +45,12 @@ int32_t byte_buf_read_int(ByteBuf *buf) {
   return integer;
 }
 
-void byte_buf_read_string(ByteBuf *buf, char *str_buf) {
-  int32_t len = byte_buf_read_int(buf);
+void byte_buf_read_string(ByteBuf *buf, char *str_buf, int len) {
   for (int i = 0; i < len; i++) {
     uint8_t byte = byte_buf_read_byte(buf);
     str_buf[i] = byte;
   }
   str_buf[len] = '\0';
-}
-
-char *byte_buf_read_string_heap(ByteBuf *buf) {
-  int32_t len = byte_buf_read_int(buf);
-  char *str_buf = malloc(len);
-  for (int i = 0; i < len; i++) {
-    uint8_t byte = byte_buf_read_byte(buf);
-    str_buf[i] = byte;
-  }
-  str_buf[len] = '\0';
-
-  return str_buf;
 }
 
 int byte_buf_to_bin(const ByteBuf *buf, char *str_buf) {

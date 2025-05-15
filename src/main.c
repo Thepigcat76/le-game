@@ -61,8 +61,6 @@ int main(void) {
   Texture2D torch_texture = load_texture("res/assets/torch.png");
   Texture2D slot_texture = load_texture("res/assets/slot.png");
 
-  Texture2D button_texture = load_texture("res/assets/gui/button.png");
-
   RenderTexture2D world_texture =
       LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
 
@@ -80,10 +78,17 @@ int main(void) {
 
     game_tick(&game);
 
-    if (IsKeyDown(KEY_R)) {
+    if (IsKeyPressed(KEYBINDS.reload_key)) {
+      UnloadShader(shader);
       shader = LoadShader(NULL, "res/shaders/lighting.fs");
       game_reload();
     }
+
+    Rectangle slot_rect = {.x = SCREEN_WIDTH - (3.5 * 16) - 30,
+                           .y = (SCREEN_HEIGHT / 2.0f) - (3.5 * 8),
+                           .width = 20 * 3.5,
+                           .height = 20 * 3.5};
+    bool slot_selected = CheckCollisionPointRec(GetMousePosition(), slot_rect);
 
     if (ui_renderer.ui_height == -1) {
       ui_renderer.cur_y = 0;
@@ -135,12 +140,15 @@ int main(void) {
                                       .width = (TILE_SIZE),
                                       .height = (TILE_SIZE)};
 
-          rec_draw_outline(&rec, BLUE);
+          if (!slot_selected) {
+            rec_draw_outline(&rec, BLUE);
+          }
+
           DrawTextureEx(player_texture,
                         (Vector2){game.player.box.x, game.player.box.y}, 0, 1,
                         WHITE);
 
-          if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
+          if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !slot_selected) {
             TileInstance *selected_tile =
                 world_tile_at(&game.world, vec2i(x_index, y_index));
             if (CheckCollisionPointRec(mouse_world_pos, selected_tile->box)) {
@@ -151,11 +159,13 @@ int main(void) {
             }
           }
 
-          if (IsKeyReleased(KEY_ESCAPE)) {
+          if (IsKeyReleased(KEYBINDS.open_close_save_menu_key)) {
             if (game.cur_menu == MENU_SAVE) {
               game.cur_menu = MENU_NONE;
+              game.paused = false;
             } else {
               game.cur_menu = MENU_SAVE;
+              game.paused = true;
             }
           }
 
@@ -174,21 +184,30 @@ int main(void) {
       }
       EndShaderMode();
 
-      DrawTextureEx(slot_texture,
-                    (Vector2){.x = SCREEN_WIDTH - (3.5 * 16) - 30,
-                              .y = (SCREEN_HEIGHT / 2.0f) - (3.5 * 8)},
-                    0, 3.5, WHITE);
-      ItemInstance item = {
-          .type = ITEMS[ITEM_TORCH],
-      };
-      item_render(&item, mousePos.x, mousePos.y);
+      Vec2i pos = vec2i(SCREEN_WIDTH - (3.5 * 16) - 30,
+                        (SCREEN_HEIGHT / 2.0f) - (3.5 * 8));
+      DrawTextureEx(slot_texture, (Vector2){pos.x, pos.y}, 0, 3.5, WHITE);
+      item_render(&game.player.held_item, pos.x + 2 * 3.5, pos.y + 2 * 3.5);
+
+      if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && slot_selected) {
+      }
 
       if (game.cur_menu == MENU_SAVE) {
         RENDER_MENU(&ui_renderer, save_menu);
       }
+
+      if (game.player.held_item.type.id != ITEM_EMPTY) {
+        HideCursor();
+        item_render(&game.player.held_item, mousePos.x - 8 * 3.5,
+                    mousePos.y - 8 * 3.5);
+      } else {
+        ShowCursor();
+      }
     }
     EndDrawing();
   }
+
+  UnloadShader(shader);
 
   uint8_t bytes[6000];
   ByteBuf buf = {

@@ -14,6 +14,7 @@ Player player_new() {
                                load_texture("res/assets/player_right.png")},
                   .direction = DIRECTION_DOWN,
                   .essence = 0,
+                  .held_item = {.type = ITEMS[ITEM_TORCH]},
                   .box = {.x = 0, .y = 0, .width = 16, .height = 32}};
 }
 
@@ -112,9 +113,17 @@ void load_player(Player *player, DataMap *map) {
       data_map_get_or_default(map, "essence", data_int(0)).var.data_int;
   player->direction =
       data_map_get_or_default(map, "direction", data_int(0)).var.data_int;
+  int x = data_map_get_or_default(map, "pos_x", data_int(0)).var.data_int;
+  int y = data_map_get_or_default(map, "pos_y", data_int(0)).var.data_int;
+  player->box.x = x;
+  player->box.y = y;
+  player->cam.target.x = x;
+  player->cam.target.y = y;
 }
 
 void save_player(Player *player, DataMap *map) {
   data_map_insert(map, "essence", data_int(player->essence));
   data_map_insert(map, "direction", data_int(player->direction));
+  data_map_insert(map, "pos_x", data_int(player->box.x));
+  data_map_insert(map, "pos_y", data_int(player->box.y));
 }

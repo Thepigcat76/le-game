@@ -72,12 +72,24 @@ void world_set_tile(World *world, TilePos tile_pos, TileInstance tile) {
         for (int dx = -1; dx <= 1; dx++) {
           int nx = chunk_tile_x + dx;
           int ny = chunk_tile_y + dy;
+          TilePos pos = vec2i((chunk->chunk_pos.x * CHUNK_SIZE) + nx,
+                              (chunk->chunk_pos.y * CHUNK_SIZE) + ny);
 
           // Check bounds
-          if (nx >= 0 && nx < CHUNK_SIZE && ny >= 0 && ny < CHUNK_SIZE) {
-            world_set_tile_texture_data(world, &chunk->tiles[ny][nx], nx, ny);
-            tile_calc_sprite_box(&chunk->tiles[ny][nx]);
-          }
+          world_set_tile_texture_data(world, world_tile_at(world, pos), pos.x,
+                                      pos.y);
+        }
+      }
+
+      for (int dy = -1; dy <= 1; dy++) {
+        for (int dx = -1; dx <= 1; dx++) {
+          int nx = chunk_tile_x + dx;
+          int ny = chunk_tile_y + dy;
+          TilePos pos = vec2i((chunk->chunk_pos.x * CHUNK_SIZE) + nx,
+                              (chunk->chunk_pos.y * CHUNK_SIZE) + ny);
+
+          // Check bounds
+          tile_calc_sprite_box(world_tile_at(world, pos));
         }
       }
     }
@@ -158,11 +170,11 @@ void world_render(const World *world) {
 
 void load_world(World *world, const DataMap *data) {
   uint8_t chunks = data_map_get(data, "len").var.data_byte;
-  TraceLog(LOG_INFO, "Chunks: %u", chunks);
   for (int i = 0; i < chunks; i++) {
     char key[2];
     snprintf(key, 2, "%u", i);
-    DataMap map = data_map_get(data, key).var.data_map;
+    Data data_map = data_map_get(data, key);
+    DataMap map = data_map.var.data_map;
     Chunk chunk;
     chunk_load(&chunk, &map);
     world_add_chunk(world, chunk.chunk_pos, chunk);

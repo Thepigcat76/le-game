@@ -60,6 +60,22 @@ void ui_button_render(UiRenderer *renderer, const char *text, Texture2D texture,
                                           .text_y_offset = -4});
 }
 
+void ui_button_render_offset(UiRenderer *renderer, const char *text,
+                             Texture2D texture, Texture2D selected_texture,
+                             ButtonClickFunction on_click_func, Vec2i offset) {
+  ui_button_render_ex(renderer,
+                      (ButtonUiComponent){.message = text,
+                                          .on_click_func = on_click_func,
+                                          .texture = texture,
+                                          .selected_texture = selected_texture,
+                                          .width = texture.width,
+                                          .height = texture.height,
+                                          .x_offset = 0,
+                                          .y_offset = 0,
+                                          .text_x_offset = offset.x,
+                                          .text_y_offset = offset.y - 4});
+}
+
 void ui_text_render_ex(UiRenderer *renderer, TextUiComponent component) {
   renderer->cur_x = (renderer->context.screen_width - component.width) / 2;
   if (!renderer->simulate) {
