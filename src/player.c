@@ -14,7 +14,7 @@ Player player_new() {
                                load_texture("res/assets/player_right.png")},
                   .direction = DIRECTION_DOWN,
                   .essence = 0,
-                  .held_item = {.type = ITEMS[ITEM_TORCH]},
+                  .held_item = {.type = ITEMS[ITEM_STICK]},
                   .box = {.x = 0, .y = 0, .width = 16, .height = 32}};
 }
 

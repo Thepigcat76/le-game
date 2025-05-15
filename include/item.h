@@ -6,11 +6,13 @@
 typedef enum {
   ITEM_EMPTY = 0,
   ITEM_TORCH = 1,
+  ITEM_STICK = 2,
 } ItemId;
 
 typedef struct {
   ItemId id;
   Texture2D texture;
+  bool light_source;
 } ItemType;
 
 extern ItemType ITEMS[ITEMS_AMOUNT];

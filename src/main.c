@@ -60,6 +60,7 @@ int main(void) {
 
   Texture2D torch_texture = load_texture("res/assets/torch.png");
   Texture2D slot_texture = load_texture("res/assets/slot.png");
+  Texture2D cursor_texture = load_texture("res/assets/cursor.png");
 
   RenderTexture2D world_texture =
       LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -112,7 +113,10 @@ int main(void) {
                            1.0 - (mousePos.y / GetScreenHeight())};
 
       Vector3 light_color = {1.0f, 1.0f, 0.8f}; // warm white
-      float light_radius = 0.08f * cam->zoom * (1.0f + 0.11f * sin(GetTime()));
+      float light_radius =
+          game.player.held_item.type.light_source
+              ? 0.08f * cam->zoom * (1.0f + 0.11f * sin(GetTime()))
+              : 0;
 
       SetShaderValue(shader, light_pos_loc, &light_pos, SHADER_UNIFORM_VEC2);
       SetShaderValue(shader, light_color_loc, &light_color,
@@ -198,8 +202,9 @@ int main(void) {
 
       if (game.player.held_item.type.id != ITEM_EMPTY) {
         HideCursor();
-        item_render(&game.player.held_item, mousePos.x - 8 * 3.5,
-                    mousePos.y - 8 * 3.5);
+        //item_render(&game.player.held_item, mousePos.x - 8 * 3.5,
+        //            mousePos.y - 8 * 3.5);
+        DrawTextureEx(cursor_texture, (Vector2){.x = mousePos.x, .y = mousePos.y}, 0, 2, WHITE);
       } else {
         ShowCursor();
       }

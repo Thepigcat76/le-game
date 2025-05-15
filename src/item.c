@@ -10,6 +10,7 @@ ItemType ITEMS[ITEMS_AMOUNT];
 void item_types_init() {
   item_type_init(ITEM_EMPTY);
   item_type_init(ITEM_TORCH);
+  item_type_init(ITEM_STICK);
 }
 
 void item_type_init(ItemId id) {
@@ -20,6 +21,10 @@ void item_type_init(ItemId id) {
   }
   case ITEM_TORCH: {
     INIT_ITEM(torch)
+    break;
+  }
+  case ITEM_STICK: {
+    INIT_ITEM(stick)
     break;
   }
   }
