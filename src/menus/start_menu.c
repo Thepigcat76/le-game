@@ -1,0 +1,36 @@
+#include "../../include/game.h"
+#include "../../include/ui.h"
+#include <raylib.h>
+#include <stdlib.h>
+
+static void start_menu_create_world(UiRenderer *ui_renderer, Game *game) {
+    game->cur_menu = MENU_NONE;
+}
+
+static void start_menu_leave_game(UiRenderer *ui_renderer, Game *game) {
+    game_unload(game);
+
+    CloseWindow();
+    CloseAudioDevice();
+    exit(0);
+}
+
+void start_menu_render(UiRenderer *renderer, const Game *game) {
+  ui_set_style(renderer, (UiStyle){
+                             .positions = {UI_CENTER, UI_CENTER},
+                             .alignment = UI_VERTICAL,
+                             .padding = 24,
+                         });
+  ui_setup(renderer);
+
+  int x_offset = 0;
+  int y_offset = -2;
+
+  ui_text_render(renderer, "LE GAME");
+  ui_button_render_offset(renderer, "Create World", BUTTON_TEXTURE,
+                          BUTTON_SELECTED_TEXTURE, start_menu_create_world,
+                          vec2i(x_offset, y_offset));
+  ui_button_render_offset(renderer, "Leave Game", BUTTON_TEXTURE,
+                          BUTTON_SELECTED_TEXTURE, start_menu_leave_game,
+                          vec2i(x_offset, y_offset));
+}

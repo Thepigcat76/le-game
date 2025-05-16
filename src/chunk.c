@@ -5,14 +5,17 @@
 #include <raylib.h>
 #include <stdlib.h>
 
+#define WORLD_SEED 0.234253089766
+
 void chunk_gen(Chunk *chunk, ChunkPos chunk_pos) {
   int chunk_x = chunk_pos.x * CHUNK_SIZE;
   int chunk_y = chunk_pos.y * CHUNK_SIZE;
+  float seed_offset = WORLD_SEED * 37.77f;
   for (int y = 0; y < CHUNK_SIZE; y++) {
     for (int x = 0; x < CHUNK_SIZE; x++) {
       float fx = (chunk_x + x) * 0.1;
       float fy = (chunk_y + y) * 0.1;
-      int noise = (stb_perlin_noise3(fx, fy, 0.0f, 0, 0, 0) + 1) * 10;
+      int noise = (stb_perlin_noise3(fx + seed_offset, fy + seed_offset, 0.0f, 0, 0, 0) + 1) * 10;
 
       TileType type;
       if (noise > 5) {

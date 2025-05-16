@@ -57,7 +57,7 @@ TileInstance *world_tile_at(World *world, TilePos tile_pos) {
 
 void world_gen(World *world) { world_gen_chunk_at(world, vec2i(0, 0)); }
 
-void world_set_tile(World *world, TilePos tile_pos, TileInstance tile) {
+bool world_set_tile(World *world, TilePos tile_pos, TileInstance tile) {
   int chunk_tile_x = tile_pos.x % CHUNK_SIZE;
   int chunk_tile_y = tile_pos.y % CHUNK_SIZE;
   int chunk_x = (tile_pos.x - chunk_tile_x) / CHUNK_SIZE;
@@ -93,7 +93,9 @@ void world_set_tile(World *world, TilePos tile_pos, TileInstance tile) {
         }
       }
     }
+    return success;
   }
+  return false;
 }
 
 void world_prepare_chunk_rendering(World *world, Chunk *chunk) {

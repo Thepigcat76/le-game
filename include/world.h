@@ -32,7 +32,7 @@ void world_gen(World *world);
 
 void world_gen_chunk_at(World *world, Vec2i chunk_pos);
 
-void world_set_tile(World *world, TilePos tile_pos, TileInstance tile);
+bool world_set_tile(World *world, TilePos tile_pos, TileInstance tile);
 
 void world_prepare_rendering(World *world);
 

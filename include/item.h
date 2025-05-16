@@ -1,12 +1,13 @@
 #pragma once
 
 #include <raylib.h>
-#define ITEMS_AMOUNT 2
+#define ITEMS_AMOUNT 4
 
 typedef enum {
-  ITEM_EMPTY = 0,
-  ITEM_TORCH = 1,
-  ITEM_STICK = 2,
+  ITEM_EMPTY,
+  ITEM_TORCH,
+  ITEM_STICK,
+  ITEM_HAMMER,
 } ItemId;
 
 typedef struct {
@@ -22,8 +23,6 @@ typedef struct {
 } ItemInstance;
 
 void item_types_init();
-
-void item_type_init(ItemId id);
 
 void item_render(const ItemInstance *item, int x, int y);
 

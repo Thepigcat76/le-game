@@ -2,9 +2,9 @@
 
 #include "data.h"
 #include "item.h"
+#include "menu.h"
 #include "player.h"
 #include "world.h"
-#include "menu.h"
 
 typedef struct _game {
   Player player;
@@ -16,6 +16,8 @@ typedef struct _game {
 void game_reload();
 
 void game_tick(Game *game);
+
+void game_unload(Game *game);
 
 void game_free(const Game *game);
 

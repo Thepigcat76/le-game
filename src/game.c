@@ -27,6 +27,14 @@ void game_tick(Game *game) {
   }
 }
 
+void game_unload(Game *game) {
+  uint8_t bytes[6000];
+  ByteBuf buf = {
+      .bytes = bytes, .writer_index = 0, .reader_index = 0, .capacity = 6000};
+  save_game(game, &buf);
+  byte_buf_to_file(&buf, "save/game.bin");
+}
+
 void game_free(const Game *game) {}
 
 void load_game(Game *game, ByteBuf *bytebuf) {

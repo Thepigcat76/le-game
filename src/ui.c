@@ -39,8 +39,8 @@ void ui_button_render_ex(UiRenderer *renderer, ButtonUiComponent component) {
   DrawText(component.message, text_x, text_y, CONFIG.default_font_size, WHITE);
   renderer->cur_y += component.height * scale + renderer->cur_style.padding;
 
-  if (hovered && IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
-    component.on_click_func(NULL, NULL);
+  if (hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+    component.on_click_func(renderer, renderer->game);
   }
 }
 

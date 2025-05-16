@@ -3,6 +3,7 @@
 #include "shared.h"
 #include <raylib.h>
 #include <stdlib.h>
+#include "game.h"
 
 typedef enum {
   UI_TOP,
@@ -29,13 +30,14 @@ typedef struct {
   int ui_height;
   UiStyle cur_style;
   bool simulate;
+  Game *game;
   struct {
     int screen_width;
     int screen_height;
   } context;
 } UiRenderer;
 
-typedef void (*ButtonClickFunction)(void *, void *);
+typedef void (*ButtonClickFunction)(UiRenderer *, Game *);
 
 typedef struct {
   Texture2D texture;
