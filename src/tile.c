@@ -22,6 +22,12 @@ TileType TILES[TILES_AMOUNT];
 TileInstance TILE_INSTANCE_EMPTY;
 static ConnectedInfo CONNECTED_INFO;
 
+typedef struct {
+  
+} TileVariantInfo;
+
+static 
+
 // TILE TYPE
 
 #define INIT_TILE(src_file_name)                                               \
@@ -234,7 +240,9 @@ void tile_render(const TileInstance *tile) {
   }
 }
 
-Texture2D *tile_variants_for_tile(const TileType *type, int x, int y);
+Texture2D *tile_variants_for_tile(const TileType *type, int x, int y) {
+
+}
 
 void tile_on_reload() { init_connected_info(); }
 
