@@ -1,6 +1,7 @@
 #include "../include/tile.h"
 #include "../include/cJSON.h"
 #include "../include/shared.h"
+#include <dirent.h>
 #include <raylib.h>
 #include <stdio.h>
 #include <string.h>
@@ -23,10 +24,14 @@ TileInstance TILE_INSTANCE_EMPTY;
 static ConnectedInfo CONNECTED_INFO;
 
 typedef struct {
-  
-} TileVariantInfo;
+  Texture2D *variants;
+} TileVariant;
 
-static 
+typedef struct {
+
+} ConnectedTie;
+
+static TileVariant VARIANTS[TILES_AMOUNT];
 
 // TILE TYPE
 
@@ -34,7 +39,7 @@ static
   extern void src_file_name##_tile_init();                                     \
   src_file_name##_tile_init();
 
-void init_connected_info() {
+static void init_connected_info() {
   ConnectedInfo info;
   char *file = read_file_to_string("res/connected.json");
   cJSON *json = cJSON_Parse(file);
@@ -240,11 +245,115 @@ void tile_render(const TileInstance *tile) {
   }
 }
 
-Texture2D *tile_variants_for_tile(const TileType *type, int x, int y) {
-
+static void init_variant_info(char *file_name) {
+  //TileVariant variant;
+  //char *file = read_file_to_string(file_name);
+  //cJSON *json = cJSON_Parse(file);
+  //if (json == NULL) {
+  //  printf("Error parsing JSON\n");
+  //  exit(1);
+  //}
+//
+  //if (cJSON_HasObjectItem(json, "")) {
+  //  cJSON *variants = cJSON_GetObjectItemCaseSensitive(json, "");
+  //  if (cJSON_IsArray(variants)) {
+//
+  //  }
+  //}
+//
+  //cJSON *res = cJSON_GetObjectItemCaseSensitive(json, "res");
+//
+  //if (cJSON_IsNumber(res)) {
+  //  info.res = res->valueint;
+  //}
+//
+  //if (cJSON_IsArray(default_sprite_pos)) {
+  //  cJSON *x = cJSON_GetArrayItem(default_sprite_pos, 0);
+  //  cJSON *y = cJSON_GetArrayItem(default_sprite_pos, 1);
+  //  if (cJSON_IsNumber(x) && cJSON_IsNumber(y)) {
+  //    info.default_sprite_pos = vec2i(x->valueint, y->valueint);
+  //  } else {
+  //    printf("Failed to get default sprite pos");
+  //    exit(1);
+  //  }
+  //}
+//
+  //if (cJSON_IsArray(values)) {
+  //  int size = cJSON_GetArraySize(values);
+  //  for (int i = 0; i < size; i++) {
+  //    cJSON *entry = cJSON_GetArrayItem(values, i);
+  //    cJSON *tiles = cJSON_GetObjectItemCaseSensitive(entry, "tiles");
+  //    cJSON *value = cJSON_GetObjectItemCaseSensitive(entry, "value");
+//
+  //    if (cJSON_IsArray(tiles)) {
+  //      int size = cJSON_GetArraySize(tiles);
+  //      for (int j = 0; j < size; j++) {
+  //        cJSON *entry = cJSON_GetArrayItem(tiles, j);
+//
+  //        if (cJSON_IsNumber(entry)) {
+  //          info.connections[i].predicate[j] = entry->valueint;
+  //        } else {
+  //        }
+  //        info.connections[i].predicates = size;
+  //      }
+  //    }
+//
+  //    Vec2i value_pos;
+//
+  //    if (cJSON_IsArray(value)) {
+  //      cJSON *x = cJSON_GetArrayItem(value, 0);
+  //      cJSON *y = cJSON_GetArrayItem(value, 1);
+  //      if (cJSON_IsNumber(x) && cJSON_IsNumber(y)) {
+  //        value_pos = vec2i(x->valueint, y->valueint);
+  //      } else {
+  //        printf("Failed to get sprite pos, values index: %d", i);
+  //        exit(1);
+  //      }
+  //    }
+//
+  //    info.connections[i].sprite_pos = value_pos;
+  //  }
+  //  info.connections_amount = size;
+  //}
+//
+  //CONNECTED_INFO = info;
+//
+  //cJSON_Delete(json);
+  //free(file);
 }
 
-void tile_on_reload() { init_connected_info(); }
+Texture2D *tile_variants_for_tile(const TileType *type, int x, int y) {
+  return NULL;
+}
+
+static void init_tile_variants() {
+  const char *assets_path = "res/assets/";
+  struct dirent *entry;
+  DIR *dir = opendir(assets_path);
+
+  if (dir == NULL) {
+    perror("opendir");
+    exit(1);
+  }
+
+  while ((entry = readdir(dir)) != NULL) {
+    if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+      continue;
+    }
+
+    if (strcmp(GetFileExtension(entry->d_name), "json") == 0) {
+      init_variant_info(entry->d_name);
+    }
+  }
+
+  closedir(dir);
+}
+
+void tile_on_reload() {
+  init_connected_info();
+
+  init_tile_variants();
+}
 
 void tile_right_click(TileInstance *tile) {}
 

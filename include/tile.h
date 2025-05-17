@@ -66,8 +66,6 @@ void tile_on_reload();
 
 void tile_calc_sprite_box(TileInstance *tile);
 
-void init_connected_info();
-
 // TEXTURE VARIANTS
 
 // X and Y params are only nessecary in tile sheets, otherwise you can just pass in 0
