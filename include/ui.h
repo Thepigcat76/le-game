@@ -89,3 +89,8 @@ void ui_text_render(UiRenderer *renderer, const char *text);
 void ui_spacing_render_ex(UiRenderer *renderer, SpacingUiComponent component);
 
 void ui_spacing_render(UiRenderer *renderer, int spacing_height);
+
+
+void ui_container_create(UiRenderer *renderer);
+
+void ui_container_destroy(UiRenderer *renderer);

@@ -99,6 +99,14 @@ void ui_text_render(UiRenderer *renderer, const char *text) {
                         .y_offset = 0});
 }
 
-void ui_spacing_render_ex(UiRenderer *renderer, SpacingUiComponent component) {}
+void ui_spacing_render_ex(UiRenderer *renderer, SpacingUiComponent component) {
+  renderer->cur_y +=
+      component.height + component.y_offset + renderer->cur_style.padding;
+}
 
-void ui_spacing_render(UiRenderer *renderer, int spacing_height) {}
+void ui_spacing_render(UiRenderer *renderer, int spacing_height) {
+  ui_spacing_render_ex(renderer, (SpacingUiComponent){.height = spacing_height,
+                                                      .width = 100,
+                                                      .x_offset = 0,
+                                                      .y_offset = 0});
+}
