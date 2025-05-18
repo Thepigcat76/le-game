@@ -1,4 +1,3 @@
-#include "../../include/shared.h"
 #include "../../include/tile.h"
 
 void empty_tile_init() {
@@ -12,6 +11,7 @@ void empty_tile_init() {
       .is_ticking = false,
       .stores_custom_data = false,
       .uses_tileset = false,
+      .has_animation = false,
   };
   TILES[type.id] = type;
 }

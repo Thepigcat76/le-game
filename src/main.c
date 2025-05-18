@@ -41,10 +41,22 @@ void menu_render(UiRenderer *ui_renderer, const Game *game) {
   }
 }
 
+
+float frame_timer = 0;
+
+static void update_animation(const TileType *type, float deltaTime) {
+  frame_timer += deltaTime * 1000.0f; // to ms
+  float delay = 400;
+  if (frame_timer >= delay) {
+    frame_timer = 0.0f;
+    TILE_ANIMATION_FRAMES[type->id] = (TILE_ANIMATION_FRAMES[type->id] + 1) % 2;
+  }
+}
+
 int main(void) {
-  #ifdef SURTUR_DEBUG
+#ifdef SURTUR_DEBUG
   SetTraceLogLevel(LOG_DEBUG);
-  #endif
+#endif
   InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Ballz");
   InitAudioDevice();
   SetExitKey(0);
@@ -193,8 +205,13 @@ int main(void) {
                                         .y = y_index * (TILE_SIZE),
                                         .width = (TILE_SIZE),
                                         .height = (TILE_SIZE)};
+            bool interaction_in_range =
+                abs((int)game.player.box.x - x_index * TILE_SIZE) <
+                CONFIG.interaction_range * TILE_SIZE &&
+                abs((int)game.player.box.y - y_index * TILE_SIZE) <
+                    CONFIG.interaction_range * TILE_SIZE;
 
-            if (!slot_selected) {
+            if (!slot_selected && interaction_in_range) {
               rec_draw_outline(&rec, BLUE);
             }
 
@@ -202,7 +219,7 @@ int main(void) {
                           (Vector2){game.player.box.x, game.player.box.y}, 0, 1,
                           WHITE);
 
-            if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !slot_selected) {
+            if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !slot_selected && interaction_in_range) {
               TileInstance *selected_tile =
                   world_tile_at(&game.world, vec2i(x_index, y_index));
               if (CheckCollisionPointRec(mouse_world_pos, selected_tile->box)) {
@@ -226,12 +243,12 @@ int main(void) {
               }
             }
 
-            if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && !slot_selected) {
+            if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && !slot_selected && interaction_in_range) {
               TileInstance *selected_tile =
                   world_tile_at(&game.world, vec2i(x_index, y_index));
               if (CheckCollisionPointRec(mouse_world_pos, selected_tile->box)) {
                 TileInstance new_tile =
-                    tile_new(&TILES[TILE_DIRT], x_index * TILE_SIZE,
+                    tile_new(&TILES[TILE_WATER], x_index * TILE_SIZE,
                              y_index * TILE_SIZE);
                 bool placed = world_set_tile(&game.world,
                                              vec2i(x_index, y_index), new_tile);
@@ -255,6 +272,9 @@ int main(void) {
               }
             }
           }
+
+          //DrawTexture(water_animation.frames[currentFrame].texture, 0, 0, WHITE);
+          //update_gif_animation(&water_animation, GetFrameTime());
 
           // CAMERA END
         }
@@ -297,7 +317,15 @@ int main(void) {
       }
     }
     EndDrawing();
+
+    for (int i = 0; i < TILES_AMOUNT; i++) {
+      update_animation(&TILES[i], GetFrameTime());
+    }
   }
+
+ // animation_unload(&water_animation);
+
+  tile_variants_free();
 
   UnloadShader(shader);
   UnloadSound(place_sound);

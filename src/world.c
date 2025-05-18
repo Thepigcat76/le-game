@@ -2,10 +2,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#ifndef SURTUR_BUILD_WIN
-#define STB_PERLIN_IMPLEMENTATION
-#endif
-#include "../include/stb_perlin.h"
 #include <raylib.h>
 #include <stdio.h>
 
@@ -151,12 +147,12 @@ void world_prepare_rendering(World *world) {
   }
 }
 
-void world_render(const World *world) {
+void world_render(World *world) {
   for (int i = 0; i < world->chunks_amount; i++) {
     Vec2i chunk_pos = world->chunk_lookup.chunks_positions[i];
     int chunk_x = chunk_pos.x * CHUNK_SIZE;
     int chunk_y = chunk_pos.y * CHUNK_SIZE;
-    const Chunk *chunk = &world->chunks[i];
+    Chunk *chunk = &world->chunks[i];
     for (int y = chunk_y; y < chunk_y + CHUNK_SIZE; y++) {
       for (int x = chunk_x; x < chunk_x + CHUNK_SIZE; x++) {
         DrawTexture(TILES[TILE_DIRT].texture, x * TILE_SIZE, y * TILE_SIZE,
@@ -165,7 +161,7 @@ void world_render(const World *world) {
     }
     for (int y = 0; y < CHUNK_SIZE; y++) {
       for (int x = 0; x < CHUNK_SIZE; x++) {
-        const TileInstance *tile = &chunk->tiles[y][x];
+        TileInstance *tile = &chunk->tiles[y][x];
         tile_render(tile);
       }
     }

@@ -4,13 +4,12 @@
 #include "shared.h"
 #include <raylib.h>
 
-#define TILES_AMOUNT 4
-
 typedef enum {
-  TILE_EMPTY = 0,
-  TILE_DIRT = 1,
-  TILE_GRASS = 2,
-  TILE_STONE = 3,
+  TILE_EMPTY,
+  TILE_DIRT,
+  TILE_GRASS,
+  TILE_STONE,
+  TILE_WATER,
 } TileId;
 
 typedef struct {
@@ -29,6 +28,7 @@ typedef struct {
   bool stores_custom_data;
   bool uses_tileset;
   int variant_index;
+  bool has_animation;
 } TileType;
 
 extern TileType TILES[];
@@ -48,13 +48,14 @@ typedef struct {
   TileTextureData texture_data;
   Rectangle cur_sprite_box;
   Texture2D variant_texture;
+  int animation_frame;
 } TileInstance;
 
 extern TileInstance TILE_INSTANCE_EMPTY;
 
 TileInstance tile_new(const TileType *type, int x, int y);
 
-void tile_render(const TileInstance *tile);
+void tile_render(TileInstance *tile);
 
 void tile_right_click(TileInstance *tile);
 
@@ -80,3 +81,5 @@ void tile_calc_sprite_box(TileInstance *tile);
 Texture2D *tile_variants_for_tile(const TileType *type, int x, int y);
 
 int tile_variants_amount_for_tile(const TileType *type, int x, int y);
+
+void tile_variants_free();

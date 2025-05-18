@@ -11,6 +11,8 @@ Texture2D VISUAL_SETTINGS_BUTTON_TEXTURE;
 Texture2D GAME_SETTINGS_BUTTON_TEXTURE;
 Texture2D LEAVE_GAME_BUTTON_TEXTURE;
 
+int TILE_ANIMATION_FRAMES[TILES_AMOUNT];
+
 char *read_file_to_string(const char *filename) {
   FILE *file = fopen(filename, "rb");
   if (file == NULL) {

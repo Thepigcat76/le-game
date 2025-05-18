@@ -1,6 +1,6 @@
 #include "../include/config.h"
-#include "../include/cJSON.h"
 #include "../include/shared.h"
+#include "../vendor/cJSON.h"
 #include <raylib.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -80,6 +80,8 @@ void config_on_reload() {
         cJSON_GetObjectItemCaseSensitive(json, "player-speed");
     cJSON *default_font_size =
         cJSON_GetObjectItemCaseSensitive(json, "default-font-size");
+    cJSON *interaction_range =
+        cJSON_GetObjectItemCaseSensitive(json, "interaction-range");
 
     if (cJSON_IsNumber(ambient_light)) {
       CONFIG.ambient_light = ambient_light->valuedouble;
@@ -91,6 +93,10 @@ void config_on_reload() {
 
     if (cJSON_IsNumber(default_font_size)) {
       CONFIG.default_font_size = default_font_size->valueint;
+    }
+
+    if (cJSON_IsNumber(interaction_range)) {
+      CONFIG.interaction_range = interaction_range->valueint;
     }
   });
 

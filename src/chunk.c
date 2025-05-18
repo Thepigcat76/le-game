@@ -1,5 +1,8 @@
 #include "../include/chunk.h"
-#include "../include/stb_perlin.h"
+#ifndef SURTUR_BUILD_WIN
+#define STB_PERLIN_IMPLEMENTATION
+#endif
+#include "../vendor/stb_perlin.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <raylib.h>
@@ -25,7 +28,7 @@ void chunk_gen(Chunk *chunk, ChunkPos chunk_pos) {
           type = TILES[TILE_GRASS];
         }
       } else {
-        type = TILES[TILE_STONE];
+        type = TILES[TILE_WATER];
       }
       chunk->tiles[y][x] =
           tile_new(&type, (chunk_x + x) * TILE_SIZE, (chunk_y + y) * TILE_SIZE);

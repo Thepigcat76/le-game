@@ -1,5 +1,6 @@
 {
     "ambient-light": 1.0,
     "player-speed": 1.25,
-    "default-font-size": 34
+    "default-font-size": 34,
+    "interaction-range": 8
 }

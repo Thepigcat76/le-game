@@ -1,4 +1,4 @@
-#include "../include/cJSON.h"
+#include "../vendor/cJSON.h"
 #include "../include/shared.h"
 #include "../include/tile.h"
 #include <dirent.h>
@@ -13,6 +13,8 @@ static void debug_variant_info();
 
 void tile_on_reload() {
   init_connected_info();
+
+  tile_variants_free();
 
   init_tile_variants();
 
@@ -142,7 +144,6 @@ static Rectangle sprite_rect(int x, int y) {
   return (Rectangle){.x = x, .y = y, .width = 16, .height = 16};
 }
 
-// TODO: Cache sprite
 static Rectangle select_tile(bool *same_tile) {
   for (int i = 0; i < CONNECTED_INFO.connections_amount; i++) {
     Connection connection = CONNECTED_INFO.connections[i];
@@ -174,13 +175,9 @@ void tile_calc_sprite_box(TileInstance *tile) {
   }
 }
 
-Vec2i tile_default_sprite_pos() {
-    return CONNECTED_INFO.default_sprite_pos;
-}
+Vec2i tile_default_sprite_pos() { return CONNECTED_INFO.default_sprite_pos; }
 
-int tile_default_sprite_resolution() {
-    return CONNECTED_INFO.res;;
-}
+int tile_default_sprite_resolution() { return CONNECTED_INFO.res; }
 
 // -- TEXTURE VARIANTS --
 
@@ -236,7 +233,6 @@ static void init_variant_info(char *meta_file_name, char *texture_file_name) {
     cJSON *variants = cJSON_GetObjectItemCaseSensitive(json, "");
     if (cJSON_IsArray(variants)) {
       int len = cJSON_GetArraySize(variants);
-      // TODO: Free this
       variant.var.single_tile_variant.variants =
           malloc(len * sizeof(Texture2D));
       variant.type = TILE_VARIANT_SINGLE;
@@ -266,7 +262,6 @@ static void init_variant_info(char *meta_file_name, char *texture_file_name) {
   }
 
   if (variant_index == -1) {
-    // TODO: Free
     char *texture_file_name_heap = malloc(strlen(texture_file_name) + 1);
     strcpy(texture_file_name_heap, texture_file_name);
     VARIANT_INFO.tile_texture_names[VARIANT_INFO.tiles_amount] =
@@ -279,6 +274,19 @@ static void init_variant_info(char *meta_file_name, char *texture_file_name) {
 
   cJSON_Delete(json);
   free(file);
+}
+
+void tile_variants_free() {
+  for (int i = 0; i < VARIANT_INFO.tiles_amount; i++) {
+    free(VARIANT_INFO.tile_texture_names[i]);
+    switch (VARIANT_INFO.variants[i].type) {
+    case TILE_VARIANT_SINGLE:
+      free(VARIANT_INFO.variants[i].var.single_tile_variant.variants);
+      break;
+    case TILE_VARIANT_CONNECTED:
+      break;
+    }
+  }
 }
 
 static void init_tile_variants() {

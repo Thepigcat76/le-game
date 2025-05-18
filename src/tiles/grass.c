@@ -12,6 +12,7 @@ void grass_tile_init() {
       .is_ticking = false,
       .stores_custom_data = false,
       .uses_tileset = true,
+      .has_animation = false,
   };
   TILES[type.id] = type;
 }

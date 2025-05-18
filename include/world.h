@@ -40,7 +40,7 @@ void world_prepare_chunk_rendering(World *world, Chunk *chunk);
 
 void world_set_tile_texture_data(World *world, TileInstance *tile, int x, int y);
 
-void world_render(const World *world);
+void world_render(World *world);
 
 void load_world(World *world, const DataMap *data);
 
