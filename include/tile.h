@@ -1,0 +1,82 @@
+#pragma once
+
+#include "data.h"
+#include "shared.h"
+#include <raylib.h>
+
+#define TILES_AMOUNT 4
+
+typedef enum {
+  TILE_EMPTY = 0,
+  TILE_DIRT = 1,
+  TILE_GRASS = 2,
+  TILE_STONE = 3,
+} TileId;
+
+typedef struct {
+  TileId surrounding_tiles[8];
+} TileTextureData;
+
+typedef struct {
+  TileId id;
+  bool has_texture;
+  char *texture_path;
+  Texture2D texture;
+  bool is_solid;
+
+  // ADVANCED TILE PROPERTIES
+  bool is_ticking;
+  bool stores_custom_data;
+  bool uses_tileset;
+  int variant_index;
+} TileType;
+
+extern TileType TILES[];
+
+void tile_type_init(TileType *type);
+
+void tile_types_init();
+
+char *tile_type_to_string(const TileType *type);
+
+typedef struct {
+  TileType type;
+  Rectangle box;
+  
+  // ADVANCED
+  Data custom_data;
+  TileTextureData texture_data;
+  Rectangle cur_sprite_box;
+  Texture2D variant_texture;
+} TileInstance;
+
+extern TileInstance TILE_INSTANCE_EMPTY;
+
+TileInstance tile_new(const TileType *type, int x, int y);
+
+void tile_render(const TileInstance *tile);
+
+void tile_right_click(TileInstance *tile);
+
+void tile_tick(TileInstance *tile);
+
+void tile_load(TileInstance *tile, const DataMap *data);
+
+void tile_save(const TileInstance *tile, DataMap *data);
+
+void tile_on_reload();
+
+// CONNECTED TEXTURES
+
+Vec2i tile_default_sprite_pos();
+
+int tile_default_sprite_resolution();
+
+void tile_calc_sprite_box(TileInstance *tile);
+
+// TEXTURE VARIANTS
+
+// X and Y params are only nessecary in tile sheets, otherwise you can just pass in 0
+Texture2D *tile_variants_for_tile(const TileType *type, int x, int y);
+
+int tile_variants_amount_for_tile(const TileType *type, int x, int y);
