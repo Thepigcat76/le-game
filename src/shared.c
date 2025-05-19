@@ -87,3 +87,24 @@ int shared_random(int min, int max) { return rand() % (max - min + 1) + min; }
 Rectangle rect(float x, float y, float w, float h) {
   return (Rectangle){.x = x, .y = y, .width = w, .height = h};
 }
+
+void DrawTextureRecEx(Texture2D texture, Rectangle source, Vector2 pos,
+                      float rotation, float scale, Color tint) {
+  DrawTexturePro(texture, source,
+                 (Rectangle){.x = pos.x,
+                             .y = pos.y,
+                             .width = source.width * scale,
+                             .height = source.height * scale},
+                 (Vector2){.x = source.width * scale / 2,
+                           .y = source.height * scale / 2},
+                 rotation, tint);
+}
+
+int floor_div(int a, int b) {
+  return (a >= 0) ? (a / b) : ((a - b + 1) / b);
+}
+
+int floor_mod(int a, int b) {
+  int r = a % b;
+  return (r < 0) ? r + b : r;
+}

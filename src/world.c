@@ -1,12 +1,13 @@
 #include "../include/world.h"
+#include <raylib.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <raylib.h>
-#include <stdio.h>
 
 World world_new() {
   return (World){
+      .chunks = malloc(WORLD_LOADED_CHUNKS * sizeof(Chunk)),
       .chunks_amount = 0,
   };
 }
@@ -41,25 +42,29 @@ void world_gen_chunk_at(World *world, Vec2i chunk_pos) {
 }
 
 TileInstance *world_tile_at(World *world, TilePos tile_pos) {
-  int chunk_tile_x = tile_pos.x % CHUNK_SIZE;
-  int chunk_tile_y = tile_pos.y % CHUNK_SIZE;
-  int chunk_x = (tile_pos.x - chunk_tile_x) / CHUNK_SIZE;
-  int chunk_y = (tile_pos.y - chunk_tile_y) / CHUNK_SIZE;
+  int chunk_tile_x = floor_mod(tile_pos.x, CHUNK_SIZE);
+  int chunk_tile_y = floor_mod(tile_pos.y, CHUNK_SIZE);
+
+  int chunk_x = floor_div(tile_pos.x, CHUNK_SIZE);
+  int chunk_y = floor_div(tile_pos.y, CHUNK_SIZE);
+
   ChunkPos chunk_pos = vec2i(chunk_x, chunk_y);
+
   if (world_has_chunk_at(world, chunk_pos)) {
     Chunk *chunk = &world->chunks[world_chunk_index_by_pos(world, chunk_pos)];
     return &chunk->tiles[chunk_tile_y][chunk_tile_x];
   }
+
   return &TILE_INSTANCE_EMPTY;
 }
 
 void world_gen(World *world) { world_gen_chunk_at(world, vec2i(0, 0)); }
 
 bool world_set_tile(World *world, TilePos tile_pos, TileInstance tile) {
-  int chunk_tile_x = tile_pos.x % CHUNK_SIZE;
-  int chunk_tile_y = tile_pos.y % CHUNK_SIZE;
-  int chunk_x = (tile_pos.x - chunk_tile_x) / CHUNK_SIZE;
-  int chunk_y = (tile_pos.y - chunk_tile_y) / CHUNK_SIZE;
+  int chunk_tile_x = floor_mod(tile_pos.x, CHUNK_SIZE);
+  int chunk_tile_y = floor_mod(tile_pos.y, CHUNK_SIZE);
+  int chunk_x = floor_div((tile_pos.x - chunk_tile_x), CHUNK_SIZE);
+  int chunk_y = floor_div((tile_pos.y - chunk_tile_y), CHUNK_SIZE);
   ChunkPos chunk_pos = vec2i(chunk_x, chunk_y);
   if (world_has_chunk_at(world, chunk_pos)) {
     Chunk *chunk = &world->chunks[world_chunk_index_by_pos(world, chunk_pos)];
@@ -99,8 +104,10 @@ bool world_set_tile(World *world, TilePos tile_pos, TileInstance tile) {
 void world_prepare_chunk_rendering(World *world, Chunk *chunk) {
   for (int y = 0; y < CHUNK_SIZE; y++) {
     for (int x = 0; x < CHUNK_SIZE; x++) {
-      TilePos pos = vec2i((chunk->chunk_pos.x * CHUNK_SIZE) + x,
-                          (chunk->chunk_pos.y * CHUNK_SIZE) + y);
+      int chunk_x = chunk->chunk_pos.x * CHUNK_SIZE;
+      int chunk_y = chunk->chunk_pos.y * CHUNK_SIZE;
+      TraceLog(LOG_INFO, "chunk x: %d, chunk y: %d", chunk_x, chunk_y);
+      TilePos pos = vec2i(chunk_x + x, chunk_y + y);
       TileInstance *tile = world_tile_at(world, vec2i(pos.x, pos.y));
       if (tile->type.id != TILE_EMPTY) {
         world_set_tile_texture_data(world, tile, pos.x, pos.y);
@@ -155,8 +162,10 @@ void world_render(World *world) {
     Chunk *chunk = &world->chunks[i];
     for (int y = chunk_y; y < chunk_y + CHUNK_SIZE; y++) {
       for (int x = chunk_x; x < chunk_x + CHUNK_SIZE; x++) {
-        DrawTexture(TILES[TILE_DIRT].texture, x * TILE_SIZE, y * TILE_SIZE,
-                    WHITE);
+        DrawTexture(
+            tile_variants_for_tile(&TILES[TILE_DIRT], 0, 0)
+                [chunk->background_texture_variants[y - chunk_y][x - chunk_x]],
+            x * TILE_SIZE, y * TILE_SIZE, WHITE);
       }
     }
     for (int y = 0; y < CHUNK_SIZE; y++) {

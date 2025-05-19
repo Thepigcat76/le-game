@@ -13,7 +13,7 @@ typedef struct {
 } ChunkLookup;
 
 typedef struct {
-  Chunk chunks[WORLD_LOADED_CHUNKS];
+  Chunk *chunks;
   size_t chunks_amount;
   ChunkLookup chunk_lookup;
 } World;

@@ -27,32 +27,40 @@ void game_tick(Game *game) {
   }
 }
 
-void game_unload(Game *game) {
-  uint8_t bytes[6000];
-  ByteBuf buf = {
-      .bytes = bytes, .writer_index = 0, .reader_index = 0, .capacity = 6000};
-  save_game(game, &buf);
-  byte_buf_to_file(&buf, "save/game.bin");
+void game_add_being(Game *game, BeingInstance being) {
+  game->beings[game->beings_amount++] = being;
 }
 
-void game_free(const Game *game) {}
+void game_remove_being(Game *game, BeingInstance *being) {
+  bool being_found = false;
+  for (int i = 0; i < game->beings_amount; i++) {
+    if (&game->beings[i] == being) {
+      being_found = true;
+    }
 
-void load_game(Game *game, ByteBuf *bytebuf) {
+    if (being_found) {
+      game->beings[i - 1] = game->beings[i];
+    }
+  }
+  game->beings_amount--;
+}
+
+static void load_game(Game *game, ByteBuf *bytebuf) {
   Data data_map_0 = byte_buf_read_data(bytebuf);
   DataMap *player_map = &data_map_0.var.data_map;
-  load_player(&game->player, player_map);
+  player_load(&game->player, player_map);
 
   Data data_map_1 = byte_buf_read_data(bytebuf);
   DataMap *world_map = &data_map_1.var.data_map;
   load_world(&game->world, world_map);
-  
+
   data_free(&data_map_0);
   data_free(&data_map_1);
 }
 
-void save_game(Game *game, ByteBuf *bytebuf) {
+static void save_game(Game *game, ByteBuf *bytebuf) {
   DataMap player_map = data_map_new(200);
-  save_player(&game->player, &player_map);
+  player_save(&game->player, &player_map);
   DataMap world_map = data_map_new(400);
   save_world(&game->world, &world_map);
 
@@ -65,4 +73,29 @@ void save_game(Game *game, ByteBuf *bytebuf) {
 
   data_free(&player_data);
   data_free(&world_data);
+}
+
+void game_load(Game *game) {
+  uint8_t bytes[SAVE_DATA_BYTES];
+  ByteBuf buf = {.bytes = bytes,
+                 .writer_index = 0,
+                 .reader_index = 0,
+                 .capacity = SAVE_DATA_BYTES};
+  byte_buf_from_file(&buf, "save/game.bin");
+  load_game(game, &buf);
+  TraceLog(LOG_INFO, "Successfully loaded game");
+}
+
+void game_unload(Game *game) {
+  tile_variants_free();
+
+  uint8_t bytes[SAVE_DATA_BYTES];
+  ByteBuf buf = {.bytes = bytes,
+                 .writer_index = 0,
+                 .reader_index = 0,
+                 .capacity = SAVE_DATA_BYTES};
+  save_game(game, &buf);
+  byte_buf_to_file(&buf, "save/game.bin");
+
+  free(game->world.chunks);
 }

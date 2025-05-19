@@ -9,13 +9,18 @@
 typedef struct {
   World *world;
   Camera2D cam;
-  Texture2D textures[4];
+  Texture2D animated_textures[DIRECTIONS_AMOUNT];
+  Texture2D textures[DIRECTIONS_AMOUNT];
   Direction direction;
+  int animation_frame;
+  int frame_timer;
+  bool walking;
 
   // PLAYER DATA
   Rectangle box;
   int essence;
-  Vec2i chunk_pos;
+  TilePos tile_pos;
+  ChunkPos chunk_pos;
   ItemInstance held_item;
 } Player;
 
@@ -23,7 +28,7 @@ Player player_new();
 
 void player_set_world(Player *player, World *world);
 
-Texture2D player_get_texture(Player *player);
+void player_render(Player *player);
 
 void player_set_pos(Player *player, float x, float y);
 
@@ -31,6 +36,8 @@ void player_handle_zoom(Player *player, bool zoom_in, bool zoom_out);
 
 void player_handle_movement(Player *player, bool w, bool a, bool s, bool d);
 
-void load_player(Player *player, DataMap *map);
+void player_set_pos_ex(Player *player, float x, float y, bool update_chunk);
 
-void save_player(Player *player, DataMap *map);
+void player_load(Player *player, DataMap *map);
+
+void player_save(Player *player, DataMap *map);

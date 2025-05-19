@@ -57,6 +57,8 @@ TileInstance tile_new(const TileType *type, int x, int y);
 
 void tile_render(TileInstance *tile);
 
+void tile_render_scaled(TileInstance *tile, float scale);
+
 void tile_right_click(TileInstance *tile);
 
 void tile_tick(TileInstance *tile);

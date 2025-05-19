@@ -7,7 +7,7 @@
 
 #define CHUNK_SIZE 16
 
-#define WORLD_LOADED_CHUNKS 9
+#define WORLD_LOADED_CHUNKS 40
 
 #define TILE_SIZE 16
 
@@ -18,6 +18,10 @@
 #define PATH_MAX 4096
 
 #define TILES_AMOUNT 5
+
+#define SAVE_DATA_BYTES 10000
+
+#define MAX_ENTITIES_AMOUNT 100
 
 extern Texture2D BUTTON_TEXTURE;
 extern Texture2D BUTTON_SELECTED_TEXTURE;
@@ -30,6 +34,8 @@ extern Texture2D LEAVE_GAME_BUTTON_TEXTURE;
 extern int TILE_ANIMATION_FRAMES[TILES_AMOUNT];
 
 char *read_file_to_string(const char *filename);
+
+#define DIRECTIONS_AMOUNT 4
 
 typedef enum {
   DIRECTION_UP,
@@ -57,3 +63,9 @@ Texture2D load_texture(char *path);
 int shared_random(int min, int max);
 
 Rectangle rect(float x, float y, float w, float h);
+
+void DrawTextureRecEx(Texture2D texture, Rectangle source, Vector2 pos, float rotation, float scale, Color tint);
+
+int floor_div(int a, int b);
+
+int floor_mod(int a, int b);

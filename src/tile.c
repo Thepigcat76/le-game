@@ -68,6 +68,23 @@ TileInstance tile_new(const TileType *type, int x, int y) {
   return instance;
 }
 
+void tile_render_scaled(TileInstance *tile, float scale) {
+  if (tile->type.has_texture) {
+    if (tile->type.variant_index != -1) {
+      DrawTextureRecEx(tile->variant_texture, tile->cur_sprite_box,
+                     (Vector2){tile->box.x, tile->box.y}, 0, scale, WHITE);
+    } else {
+      Rectangle sprite_rect = tile->cur_sprite_box;
+      if (tile->type.has_animation && tile->type.id == TILE_WATER) {
+        int offset_y =  64 * TILE_ANIMATION_FRAMES[tile->type.id];
+        sprite_rect.y += offset_y;
+      }
+      DrawTextureRecEx(tile->type.texture, sprite_rect,
+                     (Vector2){tile->box.x, tile->box.y}, 0, scale, WHITE);
+    }
+  }
+}
+
 void tile_render(TileInstance *tile) {
   if (tile->type.has_texture) {
     if (tile->type.variant_index != -1) {

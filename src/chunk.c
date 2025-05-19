@@ -3,12 +3,21 @@
 #define STB_PERLIN_IMPLEMENTATION
 #endif
 #include "../vendor/stb_perlin.h"
+#include <raylib.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <raylib.h>
 #include <stdlib.h>
 
 #define WORLD_SEED 0.234253089766
+
+static void chunk_assign_dirt_variants(Chunk *chunk) {
+  for (int y = 0; y < CHUNK_SIZE; y++) {
+    for (int x = 0; x < CHUNK_SIZE; x++) {
+      chunk->background_texture_variants[y][x] = shared_random(
+          0, tile_variants_amount_for_tile(&TILES[TILE_DIRT], 0, 0) - 1);
+    }
+  }
+}
 
 void chunk_gen(Chunk *chunk, ChunkPos chunk_pos) {
   int chunk_x = chunk_pos.x * CHUNK_SIZE;
@@ -16,9 +25,9 @@ void chunk_gen(Chunk *chunk, ChunkPos chunk_pos) {
   float seed_offset = WORLD_SEED * 37.77f;
   for (int y = 0; y < CHUNK_SIZE; y++) {
     for (int x = 0; x < CHUNK_SIZE; x++) {
-      float fx = (chunk_x + x) * 0.1;
-      float fy = (chunk_y + y) * 0.1;
-      int noise = (stb_perlin_noise3(fx + seed_offset, fy + seed_offset, 0.0f, 0, 0, 0) + 1) * 10;
+      float fx = (chunk_x + x) * 0.1 + seed_offset;
+      float fy = (chunk_y + y) * 0.1 + seed_offset;
+      int noise = (stb_perlin_noise3(fx, fy, 0.0f, 0, 0, 0) + 1) * 10;
 
       TileType type;
       if (noise > 5) {
@@ -34,6 +43,7 @@ void chunk_gen(Chunk *chunk, ChunkPos chunk_pos) {
           tile_new(&type, (chunk_x + x) * TILE_SIZE, (chunk_y + y) * TILE_SIZE);
     }
   }
+  chunk_assign_dirt_variants(chunk);
   chunk->chunk_pos = chunk_pos;
 }
 
@@ -43,7 +53,7 @@ bool chunk_can_place_tile(Chunk *chunk, TileInstance tile, int x, int y) {
   }
 
   if (x < 0 || x >= CHUNK_SIZE || y < 0 || y >= CHUNK_SIZE) {
-    fprintf(stderr, "Error: Chunk coordinates out of bounds\n");
+    fprintf(stderr, "Error: Chunk coordinates out of bounds: %d, %d\n", x, y);
     return false;
   }
   return true;
@@ -60,8 +70,8 @@ bool chunk_set_tile(Chunk *chunk, TileInstance tile, int x, int y) {
 
 void chunk_load(Chunk *chunk, const DataMap *data) {
   ChunkPos chunk_pos;
-  chunk_pos.x = (int)data_map_get(data, "chunk_x").var.data_byte;
-  chunk_pos.y = (int)data_map_get(data, "chunk_y").var.data_byte;
+  chunk_pos.x = (int)data_map_get(data, "chunk_x").var.data_int;
+  chunk_pos.y = (int)data_map_get(data, "chunk_y").var.data_int;
 
   DataList list = data_map_get(data, "tiles").var.data_list;
   for (int y = 0; y < CHUNK_SIZE; y++) {
@@ -79,12 +89,13 @@ void chunk_load(Chunk *chunk, const DataMap *data) {
       // }
     }
   }
+  chunk_assign_dirt_variants(chunk);
   chunk->chunk_pos = chunk_pos;
 }
 
 void chunk_save(const Chunk *chunk, DataMap *data) {
-  data_map_insert(data, "chunk_x", data_byte(chunk->chunk_pos.x));
-  data_map_insert(data, "chunk_y", data_byte(chunk->chunk_pos.y));
+  data_map_insert(data, "chunk_x", data_int(chunk->chunk_pos.x));
+  data_map_insert(data, "chunk_y", data_int(chunk->chunk_pos.y));
   DataList tiles = {.items = malloc(256 * sizeof(Data)), .len = 256};
   for (int y = 0; y < CHUNK_SIZE; y++) {
     for (int x = 0; x < CHUNK_SIZE; x++) {

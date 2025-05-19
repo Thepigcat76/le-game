@@ -60,47 +60,6 @@ if app.activeSprite ~= nil then
         newSpr:saveAs(filename..".png")
         newSpr:close()
 
-        framespeed = tonumber(data.fpsEntry)
-
-        -- Create animation data in JSON format
-        local animationData = {
-            animation = {
-                frametime = framespeed, -- Calculate the duration of one frame
-                frames = {}
-            }
-        }
-
-        -- Create JSON string manually
-        local jsonData = '{\n  "animation": {\n'
-        jsonData = jsonData .. '    "frametime": ' .. animationData.animation.frametime .. ',\n'
-        jsonData = jsonData .. '    "frames": [\n'
-
-        -- Check the selected save type
-        if data.saveType == "simple" then
-            -- Add each animation frame to the table
-            for i, frame in ipairs(spr.frames) do
-                local frameData = {
-                    index = i - 1, -- Frame index (starting from 0)
-                }
-                table.insert(animationData.animation.frames, frameData)
-            end
-
-            for i, frameData in ipairs(animationData.animation.frames) do
-                jsonData = jsonData .. '      ' .. frameData.index
-                if i < #animationData.animation.frames then
-                    jsonData = jsonData .. ','
-                end
-                jsonData = jsonData .. '\n'
-            end
-        end
-
-        jsonData = jsonData .. '    ]\n}\n}\n'
-
-        -- Create the mcmeta file and write the data to it
-        local mcmetaFile = io.open(filename .. ".png.mcmeta", "w")
-        mcmetaFile:write(jsonData)
-        mcmetaFile:close()
-
         -- Close the dialog window
         dlg:close()
     end
