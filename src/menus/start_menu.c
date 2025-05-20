@@ -4,15 +4,16 @@
 #include <stdlib.h>
 
 static void start_menu_create_world(UiRenderer *ui_renderer, Game *game) {
-    game->cur_menu = MENU_NONE;
+  game->cur_menu = MENU_NONE;
+  game->paused = false;
 }
 
 static void start_menu_leave_game(UiRenderer *ui_renderer, Game *game) {
-    game_unload(game);
+  game_unload(game);
 
-    CloseWindow();
-    CloseAudioDevice();
-    exit(0);
+  CloseWindow();
+  CloseAudioDevice();
+  exit(0);
 }
 
 void start_menu_render(UiRenderer *renderer, const Game *game) {
@@ -25,6 +26,8 @@ void start_menu_render(UiRenderer *renderer, const Game *game) {
 
   int x_offset = 0;
   int y_offset = -2;
+
+  TraceLog(LOG_INFO, "Cur y: %d", renderer->cur_y);
 
   ui_text_render(renderer, "LE GAME");
   ui_spacing_render(renderer, 100);

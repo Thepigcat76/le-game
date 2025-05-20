@@ -6,7 +6,8 @@
 
 typedef struct {
   ChunkPos chunk_pos;
-  TileInstance tiles[CHUNK_SIZE][CHUNK_SIZE];
+  TileInstance tiles[CHUNK_SIZE][CHUNK_SIZE][TILE_LAYERS_AMOUNT];
+  int variant_index;
   int background_texture_variants[CHUNK_SIZE][CHUNK_SIZE];
 } Chunk;
 

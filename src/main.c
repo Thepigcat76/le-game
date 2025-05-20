@@ -35,6 +35,10 @@ void menu_render(UiRenderer *ui_renderer, const Game *game) {
     RENDER_MENU(ui_renderer, start_menu);
     break;
   }
+  case MENU_BACKPACK: {
+    RENDER_MENU(ui_renderer, backpack_menu);
+    break;
+  }
   case MENU_NONE: {
     break;
   }
@@ -79,7 +83,7 @@ int main(void) {
   Game game = {
       .player = player_new(),
       .world = world_new(),
-      .cur_menu = MENU_START,
+      .cur_menu = MENU_NONE,
       .paused = false,
   };
 
@@ -197,11 +201,10 @@ int main(void) {
           ClearBackground(DARKGRAY);
 
           if (game.cur_menu != MENU_START) {
-            world_render(&game.world);
+            game_render(&game);
 
-            for (int i = 0; i < game.beings_amount; i++) {
-              being_render(&game.beings[i]);
-            }
+            //DrawTextureEx(workstation_texture, (Vector2){.x = 0, .y = 0}, 0, 1,
+            //              WHITE);
 
             // rec_draw_outline(&tile_box, BLUE);
 
@@ -231,19 +234,11 @@ int main(void) {
                 if (game.player.held_item.type.id == ITEM_HAMMER) {
                   for (int y = -1; y <= 1; y++) {
                     for (int x = -1; x <= 1; x++) {
-                      TileInstance new_tile = tile_new(
-                          &TILES[TILE_EMPTY], (x_index + x) * TILE_SIZE,
-                          (y_index + y) * TILE_SIZE);
-                      world_set_tile(&game.world,
-                                     vec2i(x_index + x, y_index + y), new_tile);
+                      world_remove_tile(&game.world, vec2i(x_index + x, y_index + y));
                     }
                   }
                 } else {
-                  TileInstance new_tile =
-                      tile_new(&TILES[TILE_EMPTY], x_index * TILE_SIZE,
-                               y_index * TILE_SIZE);
-                  world_set_tile(&game.world, vec2i(x_index, y_index),
-                                 new_tile);
+                  world_remove_tile(&game.world, vec2i(x_index, y_index));
                 }
               }
             }
@@ -280,21 +275,25 @@ int main(void) {
           }
 
           if (IsKeyPressed(KEY_F1)) {
-            game_add_being(
-                &game,
+            world_add_being(
+                &game.world,
                 being_new(
                     BEING_ITEM,
                     (BeingInstanceEx){
                         .type = BEING_INSTANCE_ITEM,
                         .var = {.item_instance = {.item =
                                                       game.player.held_item}}},
-                    game.player.box.x + 200, game.player.box.y, 16, 16));
+                    game.player.box.x, game.player.box.y, 16, 16));
           }
 
-          for (int i = 0; i < game.beings_amount; i++) {
-            if (CheckCollisionRecs(game.beings[i].context.box,
+          // TODO: optimize this
+          for (int i = 0; i < game.world.beings_amount; i++) {
+            if (CheckCollisionRecs(game.world.beings[i].context.box,
                                    game.player.box)) {
-              game_remove_being(&game, &game.beings[i]);
+              if (GetTime() - game.world.beings[i].context.creation_time >
+                  CONFIG.item_pickup_delay) {
+                world_remove_being(&game.world, &game.world.beings[i]);
+              }
             }
           }
 
@@ -368,6 +367,8 @@ int main(void) {
       TraceLog(LOG_DEBUG, "Tile under player: %s",
                tile_type_to_string(&tile_under_player->type));
     }
+
+    TraceLog(LOG_INFO, "Beings amount: %d", game.world.beings_amount);
   }
 
   // animation_unload(&water_animation);

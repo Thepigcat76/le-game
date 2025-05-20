@@ -16,6 +16,7 @@ void tile_types_init() {
   INIT_TILE(grass)
   INIT_TILE(stone)
   INIT_TILE(water)
+  INIT_TILE(workstation)
 
   TILE_INSTANCE_EMPTY = tile_new(&TILES[TILE_EMPTY], 0, 0);
 }
@@ -32,6 +33,8 @@ char *tile_type_to_string(const TileType *type) {
     return "dirt";
   case TILE_WATER:
     return "water";
+  case TILE_WORKSTATION:
+    return "workstation";
   }
 }
 
@@ -72,15 +75,15 @@ void tile_render_scaled(TileInstance *tile, float scale) {
   if (tile->type.has_texture) {
     if (tile->type.variant_index != -1) {
       DrawTextureRecEx(tile->variant_texture, tile->cur_sprite_box,
-                     (Vector2){tile->box.x, tile->box.y}, 0, scale, WHITE);
+                       (Vector2){tile->box.x, tile->box.y}, 0, scale, WHITE);
     } else {
       Rectangle sprite_rect = tile->cur_sprite_box;
       if (tile->type.has_animation && tile->type.id == TILE_WATER) {
-        int offset_y =  64 * TILE_ANIMATION_FRAMES[tile->type.id];
+        int offset_y = 64 * TILE_ANIMATION_FRAMES[tile->type.id];
         sprite_rect.y += offset_y;
       }
       DrawTextureRecEx(tile->type.texture, sprite_rect,
-                     (Vector2){tile->box.x, tile->box.y}, 0, scale, WHITE);
+                       (Vector2){tile->box.x, tile->box.y}, 0, scale, WHITE);
     }
   }
 }
@@ -93,7 +96,7 @@ void tile_render(TileInstance *tile) {
     } else {
       Rectangle sprite_rect = tile->cur_sprite_box;
       if (tile->type.has_animation && tile->type.id == TILE_WATER) {
-        int offset_y =  64 * TILE_ANIMATION_FRAMES[tile->type.id];
+        int offset_y = 64 * TILE_ANIMATION_FRAMES[tile->type.id];
         sprite_rect.y += offset_y;
       }
       DrawTextureRec(tile->type.texture, sprite_rect,

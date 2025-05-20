@@ -13,11 +13,11 @@ typedef struct _game {
   World world;
   MenuId cur_menu;
   bool paused;
-  BeingInstance beings[MAX_ENTITIES_AMOUNT];
-  int beings_amount;
 } Game;
 
 void game_reload();
+
+void game_render(Game *game);
 
 void game_tick(Game *game);
 
@@ -26,8 +26,3 @@ void game_load(Game *game);
 void game_unload(Game *game);
 
 void game_free(const Game *game);
-
-void game_add_being(Game *game, BeingInstance being);
-
-// TODO: Use UUID at some point
-void game_remove_being(Game *game, BeingInstance *being);

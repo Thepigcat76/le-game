@@ -11,6 +11,15 @@ void game_reload() {
   RELOAD(config);
 }
 
+void game_render(Game *game) {
+  world_render(&game->world);
+
+  for (int i = 0; i < game->world.beings_amount; i++) {
+    being_render(&game->world.beings[i]);
+  }
+
+}
+
 void game_tick(Game *game) {
   if (!game->paused) {
     bool zoom_in = IsKeyDown(KEY_UP);
@@ -24,25 +33,9 @@ void game_tick(Game *game) {
     bool d = IsKeyDown(KEYBINDS.move_right_key);
 
     player_handle_movement(&game->player, w, a, s, d);
+
+    
   }
-}
-
-void game_add_being(Game *game, BeingInstance being) {
-  game->beings[game->beings_amount++] = being;
-}
-
-void game_remove_being(Game *game, BeingInstance *being) {
-  bool being_found = false;
-  for (int i = 0; i < game->beings_amount; i++) {
-    if (&game->beings[i] == being) {
-      being_found = true;
-    }
-
-    if (being_found) {
-      game->beings[i - 1] = game->beings[i];
-    }
-  }
-  game->beings_amount--;
 }
 
 static void load_game(Game *game, ByteBuf *bytebuf) {

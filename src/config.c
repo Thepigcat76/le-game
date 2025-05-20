@@ -82,6 +82,8 @@ void config_on_reload() {
         cJSON_GetObjectItemCaseSensitive(json, "default-font-size");
     cJSON *interaction_range =
         cJSON_GetObjectItemCaseSensitive(json, "interaction-range");
+    cJSON *item_pickup_delay =
+        cJSON_GetObjectItemCaseSensitive(json, "item-pickup-delay");
 
     if (cJSON_IsNumber(ambient_light)) {
       CONFIG.ambient_light = ambient_light->valuedouble;
@@ -97,6 +99,10 @@ void config_on_reload() {
 
     if (cJSON_IsNumber(interaction_range)) {
       CONFIG.interaction_range = interaction_range->valueint;
+    }
+
+    if (cJSON_IsNumber(item_pickup_delay)) {
+      CONFIG.item_pickup_delay = item_pickup_delay->valuedouble;
     }
   });
 

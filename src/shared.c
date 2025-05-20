@@ -11,6 +11,8 @@ Texture2D VISUAL_SETTINGS_BUTTON_TEXTURE;
 Texture2D GAME_SETTINGS_BUTTON_TEXTURE;
 Texture2D LEAVE_GAME_BUTTON_TEXTURE;
 
+Texture2D BACKPACK_BACK_GROUND;
+
 int TILE_ANIMATION_FRAMES[TILES_AMOUNT];
 
 char *read_file_to_string(const char *filename) {
@@ -67,6 +69,8 @@ void shared_init() {
       load_texture("res/assets/gui/game_settings_button.png");
   LEAVE_GAME_BUTTON_TEXTURE =
       load_texture("res/assets/gui/leave_game_button.png");
+
+  BACKPACK_BACK_GROUND = load_texture("res/assets/gui/backpack_slots.png");
 }
 
 Vec2i vec2i(int x, int y) { return (Vec2i){.x = x, .y = y}; }
@@ -90,19 +94,17 @@ Rectangle rect(float x, float y, float w, float h) {
 
 void DrawTextureRecEx(Texture2D texture, Rectangle source, Vector2 pos,
                       float rotation, float scale, Color tint) {
-  DrawTexturePro(texture, source,
-                 (Rectangle){.x = pos.x,
-                             .y = pos.y,
-                             .width = source.width * scale,
-                             .height = source.height * scale},
-                 (Vector2){.x = source.width * scale / 2,
-                           .y = source.height * scale / 2},
-                 rotation, tint);
+  DrawTexturePro(
+      texture, source,
+      (Rectangle){.x = pos.x,
+                  .y = pos.y,
+                  .width = source.width * scale,
+                  .height = source.height * scale},
+      (Vector2){.x = source.width * scale / 2, .y = source.height * scale / 2},
+      rotation, tint);
 }
 
-int floor_div(int a, int b) {
-  return (a >= 0) ? (a / b) : ((a - b + 1) / b);
-}
+int floor_div(int a, int b) { return (a >= 0) ? (a / b) : ((a - b + 1) / b); }
 
 int floor_mod(int a, int b) {
   int r = a % b;

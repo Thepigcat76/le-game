@@ -1,6 +1,6 @@
-#include "../vendor/cJSON.h"
 #include "../include/shared.h"
 #include "../include/tile.h"
+#include "../vendor/cJSON.h"
 #include <dirent.h>
 #include <stdio.h>
 #include <string.h>
@@ -347,9 +347,27 @@ Texture2D *tile_variants_for_tile(const TileType *type, int x, int y) {
       .var.single_tile_variant.variants;
 }
 
+int tile_variants_index_for_name(const char *texture_path, int x, int y) {
+  int amount = VARIANT_INFO.tiles_amount;
+  for (int i = 0; i < amount; i++) {
+    if (strcmp(VARIANT_INFO.tile_texture_names[i], texture_path) == 0) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+Texture2D *tile_variants_by_index(int index, int x, int y) {
+  return VARIANT_INFO.variants[index].var.single_tile_variant.variants;
+}
+
 int tile_variants_amount_for_tile(const TileType *type, int x, int y) {
   return VARIANT_INFO.variants[type->variant_index]
       .var.single_tile_variant.variants_amount;
+}
+
+int tile_variants_amount_by_index(int index, int x, int y) {
+  return VARIANT_INFO.variants[index].var.single_tile_variant.variants_amount;
 }
 
 // -- SHARED --

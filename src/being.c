@@ -1,6 +1,7 @@
 #include "../include/being.h"
 #include <math.h>
 #include <raylib.h>
+#include <stdlib.h>
 
 BeingInstance being_new(BeingId id, BeingInstanceEx extra, int x, int y,
                         int width, int height) {
@@ -13,6 +14,13 @@ BeingInstance being_new(BeingId id, BeingInstanceEx extra, int x, int y,
       .world = NULL};
 }
 
+BeingInstance being_item_new(ItemInstance item, int x, int y) {
+  return being_new(BEING_ITEM,
+                   (BeingInstanceEx){.type = BEING_INSTANCE_ITEM,
+                                     .var = {.item_instance = {.item = item}}},
+                   x, y, 16, 16);
+}
+
 void being_tick(BeingInstance *being) {}
 
 void being_render(BeingInstance *being) {
@@ -23,9 +31,9 @@ void being_render(BeingInstance *being) {
     float t = (GetTime() - being->context.creation_time) * speed;
     float hover_offset = sinf(t) * fabs(sinf(t)); // sin^2 with sign
     hover_offset *= amplitude;
-    DrawTexture(
-        being->extra.var.item_instance.item.type.texture, being->context.box.x,
-        being->context.box.y + hover_offset, WHITE);
+    DrawTexture(being->extra.var.item_instance.item.type.texture,
+                being->context.box.x, being->context.box.y + hover_offset,
+                WHITE);
     break;
   }
   }

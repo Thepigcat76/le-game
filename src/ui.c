@@ -3,6 +3,11 @@
 #include "raylib.h"
 #include <stdbool.h>
 
+void ui_set_background(UiRenderer *renderer, Texture2D texture) {
+  DrawTextureEx(texture, (Vector2){renderer->cur_x, renderer->cur_y}, 0, 3,
+                WHITE);
+}
+
 void ui_setup(UiRenderer *renderer) {
   if (renderer->ui_height != -1) {
     renderer->cur_x = renderer->context.screen_width / 2;

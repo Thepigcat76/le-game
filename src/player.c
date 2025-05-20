@@ -21,7 +21,7 @@ Player player_new() {
       .essence = 0,
       .animation_frame = 0,
       .frame_timer = 0,
-      .held_item = {.type = ITEMS[ITEM_HAMMER]},
+      .held_item = {.type = ITEMS[ITEM_GRASS]},
       .box = {.x = 0, .y = 0, .width = 16, .height = 32},
       .chunk_pos = vec2i(0, 0),
       .tile_pos = vec2i(0, 0)};

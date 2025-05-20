@@ -10,11 +10,17 @@ typedef enum {
   TILE_GRASS,
   TILE_STONE,
   TILE_WATER,
+  TILE_WORKSTATION,
 } TileId;
 
 typedef struct {
   TileId surrounding_tiles[8];
 } TileTextureData;
+
+typedef enum {
+  TILE_LAYER_GROUND,
+  TILE_LAYER_TOP,
+} TileLayer;
 
 typedef struct {
   TileId id;
@@ -22,6 +28,7 @@ typedef struct {
   char *texture_path;
   Texture2D texture;
   bool is_solid;
+  TileLayer layer;
 
   // ADVANCED TILE PROPERTIES
   bool is_ticking;
@@ -42,7 +49,7 @@ char *tile_type_to_string(const TileType *type);
 typedef struct {
   TileType type;
   Rectangle box;
-  
+
   // ADVANCED
   Data custom_data;
   TileTextureData texture_data;
@@ -79,9 +86,15 @@ void tile_calc_sprite_box(TileInstance *tile);
 
 // TEXTURE VARIANTS
 
-// X and Y params are only nessecary in tile sheets, otherwise you can just pass in 0
+// X and Y params are only nessecary in tile sheets, otherwise you can just pass
+// in 0
 Texture2D *tile_variants_for_tile(const TileType *type, int x, int y);
 
+int tile_variants_index_for_name(const char *texture_name, int x, int y);
+
 int tile_variants_amount_for_tile(const TileType *type, int x, int y);
+
+Texture2D *tile_variants_by_index(int i, int x, int y);
+int tile_variants_amount_by_index(int index, int x, int y);
 
 void tile_variants_free();

@@ -5,6 +5,7 @@ typedef struct {
     double player_speed;
     int default_font_size;
     int interaction_range;
+    float item_pickup_delay;
 } Config;
 
 typedef struct {

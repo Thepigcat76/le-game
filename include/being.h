@@ -1,7 +1,6 @@
 #pragma once
 
 #include "item.h"
-#include "world.h"
 #include <raylib.h>
 
 typedef enum {
@@ -28,14 +27,16 @@ typedef struct {
   } var;
 } BeingInstanceEx;
 
-typedef struct {
+typedef struct being_instance {
   BeingId id;
   BeingInstanceEx extra;
   BeingContext context;
-  World *world;
+  struct world *world;
 } BeingInstance;
 
 BeingInstance being_new(BeingId id, BeingInstanceEx extra, int x, int y, int width, int height);
+
+BeingInstance being_item_new(ItemInstance item, int x, int y);
 
 void being_tick(BeingInstance *being);
 

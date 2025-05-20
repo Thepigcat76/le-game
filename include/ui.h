@@ -1,9 +1,9 @@
 #pragma once
 
+#include "game.h"
 #include "shared.h"
 #include <raylib.h>
 #include <stdlib.h>
-#include "game.h"
 
 typedef enum {
   UI_TOP,
@@ -68,15 +68,17 @@ typedef struct {
   Color color;
 } TextUiComponent;
 
+void ui_set_background(UiRenderer *renderer, Texture2D texture);
+
 void ui_setup(UiRenderer *renderer);
 
 void ui_set_style(UiRenderer *renderer, UiStyle style);
 
 void ui_button_render_ex(UiRenderer *renderer, ButtonUiComponent component);
 
-void ui_button_render_offset(UiRenderer *renderer, const char *text, Texture2D texture,
-                      Texture2D selected_texture,
-                      ButtonClickFunction on_click_func, Vec2i offset);
+void ui_button_render_offset(UiRenderer *renderer, const char *text,
+                             Texture2D texture, Texture2D selected_texture,
+                             ButtonClickFunction on_click_func, Vec2i offset);
 
 void ui_button_render(UiRenderer *renderer, const char *text, Texture2D texture,
                       Texture2D selected_texture,
@@ -90,6 +92,7 @@ void ui_spacing_render_ex(UiRenderer *renderer, SpacingUiComponent component);
 
 void ui_spacing_render(UiRenderer *renderer, int spacing_height);
 
+void ui_texture_render(UiRenderer *renderer, Texture2D texture);
 
 void ui_container_create(UiRenderer *renderer);
 
