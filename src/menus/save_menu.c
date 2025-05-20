@@ -6,6 +6,7 @@
 static void save_menu_back_to_game_button_clicked(UiRenderer *ui_renderer,
                                                   Game *game) {
   game->cur_menu = MENU_NONE;
+  game->paused = false;
 }
 
 static void save_menu_general_settings_button_clicked(UiRenderer *ui_renderer,

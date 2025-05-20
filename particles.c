@@ -2,7 +2,7 @@
 #include <stdlib.h> // For rand()
 #include <math.h>   // For cosf/sinf
 
-#define MAX_PARTICLES 500
+#define MAX_PARTICLES 10000
 
 typedef struct {
     Vector2 position;
@@ -24,7 +24,7 @@ void EmitParticle(Vector2 pos) {
 
             particles[i].position = pos;
             particles[i].velocity = (Vector2){ cosf(angle) * speed, sinf(angle) * speed };
-            particles[i].lifetime = 1.5f + (float)(rand() % 100) / 100.0f;
+            particles[i].lifetime = 1.5f + (float)(rand() % 100) / 10.0f;
             particles[i].age = 0;
             particles[i].color = WHITE;
             particles[i].active = true;

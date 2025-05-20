@@ -83,7 +83,7 @@ int main(void) {
   Game game = {
       .player = player_new(),
       .world = world_new(),
-      .cur_menu = MENU_NONE,
+      .cur_menu = MENU_START,
       .paused = false,
   };
 
