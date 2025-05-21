@@ -15,7 +15,7 @@ static void chunk_assign_dirt_variants(Chunk *chunk) {
       tile_variants_index_for_name("res/assets/dirt.png", 0, 0);
   for (int y = 0; y < CHUNK_SIZE; y++) {
     for (int x = 0; x < CHUNK_SIZE; x++) {
-      chunk->background_texture_variants[y][x] = shared_random(
+      chunk->background_texture_variants[y][x] = GetRandomValue(
           0, tile_variants_amount_by_index(chunk->variant_index, 0, 0) - 1);
     }
   }
@@ -68,12 +68,13 @@ bool chunk_can_place_tile(Chunk *chunk, TileInstance tile, int x, int y) {
   return true;
 }
 
-bool chunk_set_tile(Chunk *chunk, TileInstance tile, int x, int y) {
+bool chunk_set_tile(Chunk *chunk, TileInstance tile, int x, int y, TileLayer layer) {
   if (!chunk_can_place_tile(chunk, tile, x, y)) {
     return false;
   }
 
-  chunk->tiles[y][x][tile.type.layer] = tile;
+  chunk->tiles[y][x][layer] = tile;
+  TraceLog(LOG_DEBUG, "Layer: %d", layer);
   return true;
 }
 

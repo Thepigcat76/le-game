@@ -203,8 +203,9 @@ int main(void) {
           if (game.cur_menu != MENU_START) {
             game_render(&game);
 
-            //DrawTextureEx(workstation_texture, (Vector2){.x = 0, .y = 0}, 0, 1,
-            //              WHITE);
+            // DrawTextureEx(workstation_texture, (Vector2){.x = 0, .y = 0}, 0,
+            // 1,
+            //               WHITE);
 
             // rec_draw_outline(&tile_box, BLUE);
 
@@ -226,15 +227,16 @@ int main(void) {
 
             player_render(&game.player);
 
-            if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !slot_selected &&
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !slot_selected &&
                 interaction_in_range) {
               TileInstance *selected_tile =
-                  world_tile_at(&game.world, vec2i(x_index, y_index));
+                  world_ground_tile_at(&game.world, vec2i(x_index, y_index));
               if (CheckCollisionPointRec(mouse_world_pos, selected_tile->box)) {
                 if (game.player.held_item.type.id == ITEM_HAMMER) {
                   for (int y = -1; y <= 1; y++) {
                     for (int x = -1; x <= 1; x++) {
-                      world_remove_tile(&game.world, vec2i(x_index + x, y_index + y));
+                      world_remove_tile(&game.world,
+                                        vec2i(x_index + x, y_index + y));
                     }
                   }
                 } else {
@@ -246,7 +248,7 @@ int main(void) {
             if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && !slot_selected &&
                 interaction_in_range) {
               TileInstance *selected_tile =
-                  world_tile_at(&game.world, vec2i(x_index, y_index));
+                  world_ground_tile_at(&game.world, vec2i(x_index, y_index));
               if (CheckCollisionPointRec(mouse_world_pos, selected_tile->box)) {
                 TileInstance new_tile =
                     tile_new(&TILES[selected_tile_to_place],
@@ -296,6 +298,11 @@ int main(void) {
               }
             }
           }
+
+          if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+          }
+
+          game_render_particles();
 
           // DrawTexture(water_animation.frames[currentFrame].texture, 0, 0,
           // WHITE); update_gif_animation(&water_animation, GetFrameTime());
@@ -362,13 +369,9 @@ int main(void) {
     }
 
     TileInstance *tile_under_player =
-        world_tile_at(&game.world, game.player.tile_pos);
+        world_ground_tile_at(&game.world, game.player.tile_pos);
     if (tile_under_player->type.id != TILE_EMPTY) {
-      TraceLog(LOG_DEBUG, "Tile under player: %s",
-               tile_type_to_string(&tile_under_player->type));
     }
-
-    TraceLog(LOG_INFO, "Beings amount: %d", game.world.beings_amount);
   }
 
   // animation_unload(&water_animation);

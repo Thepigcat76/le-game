@@ -1,4 +1,5 @@
 #include "../../include/tile.h"
+#include <raylib.h>
 
 void empty_tile_init() {
   TileType type = {
@@ -8,6 +9,7 @@ void empty_tile_init() {
       .has_texture = false,
       .is_solid = false,
       .layer = TILE_LAYER_GROUND,
+      .tile_color = {},
 
       .is_ticking = false,
       .stores_custom_data = false,
@@ -25,6 +27,7 @@ void dirt_tile_init() {
       .has_texture = true,
       .is_solid = true,
       .layer = TILE_LAYER_GROUND,
+      .tile_color = BROWN,
 
       .is_ticking = false,
       .stores_custom_data = false,
@@ -42,6 +45,7 @@ void grass_tile_init() {
       .has_texture = true,
       .is_solid = true,
       .layer = TILE_LAYER_GROUND,
+      .tile_color = DARKGREEN,
 
       .is_ticking = false,
       .stores_custom_data = false,
@@ -59,6 +63,7 @@ void stone_tile_init() {
       .has_texture = true,
       .is_solid = true,
       .layer = TILE_LAYER_GROUND,
+      .tile_color = GRAY,
 
       .is_ticking = false,
       .stores_custom_data = false,
@@ -70,12 +75,13 @@ void stone_tile_init() {
 
 void workstation_tile_init() {
   TileType type = {
-      .id = TILE_STONE,
+      .id = TILE_WORKSTATION,
       .texture_path = "res/assets/workstation.png",
       .texture = load_texture("res/assets/workstation.png"),
       .has_texture = true,
       .is_solid = true,
       .layer = TILE_LAYER_TOP,
+      .tile_color = BROWN,
 
       .is_ticking = false,
       .stores_custom_data = false,
@@ -93,6 +99,7 @@ void water_tile_init() {
       .has_texture = true,
       .is_solid = true,
       .layer = TILE_LAYER_GROUND,
+      .tile_color = BLUE,
 
       .is_ticking = false,
       .stores_custom_data = false,

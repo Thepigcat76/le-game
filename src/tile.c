@@ -61,7 +61,7 @@ TileInstance tile_new(const TileType *type, int x, int y) {
   if (type->id != TILE_EMPTY && type->variant_index != -1) {
     int max = tile_variants_amount_for_tile(type, 0, 0) - 1;
     if (max >= 0) {
-      int r = shared_random(0, max);
+      int r = GetRandomValue(0, max);
       instance.variant_texture = tile_variants_for_tile(type, 0, 0)[r];
     } else {
       // TODO: Properly fix this
@@ -99,8 +99,9 @@ void tile_render(TileInstance *tile) {
         int offset_y = 64 * TILE_ANIMATION_FRAMES[tile->type.id];
         sprite_rect.y += offset_y;
       }
+      int offset_y = tile->type.id == TILE_WORKSTATION ? 16 : 0;
       DrawTextureRec(tile->type.texture, sprite_rect,
-                     (Vector2){tile->box.x, tile->box.y}, WHITE);
+                     (Vector2){tile->box.x, tile->box.y - offset_y}, WHITE);
     }
   }
 }

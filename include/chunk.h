@@ -15,7 +15,7 @@ void chunk_gen(Chunk *chunk, ChunkPos chunk_pos);
 
 bool chunk_can_place_tile(Chunk *chunk, TileInstance tile, int x, int y);
 
-bool chunk_set_tile(Chunk *chunk, TileInstance tile, int x, int y);
+bool chunk_set_tile(Chunk *chunk, TileInstance tile, int x, int y, TileLayer layer);
 
 void chunk_load(Chunk *chunk, const DataMap *data);
 

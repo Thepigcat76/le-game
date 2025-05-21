@@ -27,6 +27,8 @@
 
 #define TILE_LAYERS_AMOUNT 2
 
+#define MAX_PARTICLES_AMOUNT 500
+
 extern Texture2D BUTTON_TEXTURE;
 extern Texture2D BUTTON_SELECTED_TEXTURE;
 
@@ -34,6 +36,11 @@ extern Texture2D BACK_TO_GAME_BUTTON_TEXTURE;
 extern Texture2D VISUAL_SETTINGS_BUTTON_TEXTURE;
 extern Texture2D GAME_SETTINGS_BUTTON_TEXTURE;
 extern Texture2D LEAVE_GAME_BUTTON_TEXTURE;
+
+extern Texture2D BACK_TO_GAME_SELECTED_BUTTON_TEXTURE;
+extern Texture2D VISUAL_SETTINGS_SELECTED_BUTTON_TEXTURE;
+extern Texture2D GAME_SETTINGS_SELECTED_BUTTON_TEXTURE;
+extern Texture2D LEAVE_GAME_SELECTED_BUTTON_TEXTURE;
 
 extern Texture2D BACKPACK_BACK_GROUND;
 
@@ -65,8 +72,6 @@ Vec2i vec2i(int x, int y);
 bool vec2_eq(const Vec2i *vec1, const Vec2i *vec2);
 
 Texture2D load_texture(char *path);
-
-int shared_random(int min, int max);
 
 Rectangle rect(float x, float y, float w, float h);
 

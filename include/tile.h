@@ -29,6 +29,7 @@ typedef struct {
   Texture2D texture;
   bool is_solid;
   TileLayer layer;
+  Color tile_color;
 
   // ADVANCED TILE PROPERTIES
   bool is_ticking;

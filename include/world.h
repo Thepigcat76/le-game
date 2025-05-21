@@ -29,13 +29,19 @@ void world_add_chunk(World *world, Vec2i pos, Chunk chunk);
 
 ssize_t world_chunk_index_by_pos(const World *world, Vec2i pos);
 
-TileInstance *world_tile_at(World *world, TilePos tile_pos);
+TileInstance *world_ground_tile_at(World *world, TilePos tile_pos);
+
+TileInstance *world_highest_tile_at(World *world, TilePos tile_pos);
+
+TileInstance *world_tile_at(World *world, TilePos tile_pos, TileLayer layer);
 
 void world_gen(World *world);
 
 void world_gen_chunk_at(World *world, Vec2i chunk_pos);
 
 bool world_set_tile(World *world, TilePos tile_pos, TileInstance tile);
+
+bool world_set_tile_on_layer(World *world, TilePos tile_pos, TileInstance tile, TileLayer layer);
 
 void world_remove_tile(World *world, TilePos tile_pos);
 
