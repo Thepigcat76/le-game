@@ -227,6 +227,7 @@ int main(void) {
 
             player_render(&game.player);
 
+            // TODO: Use IsMouseButtonDown again
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !slot_selected &&
                 interaction_in_range) {
               TileInstance *selected_tile =
