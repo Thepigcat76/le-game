@@ -10,6 +10,7 @@ void empty_tile_init() {
       .is_solid = false,
       .layer = TILE_LAYER_GROUND,
       .tile_color = {},
+      .tile_height = -1,
 
       .is_ticking = false,
       .stores_custom_data = false,
@@ -28,6 +29,7 @@ void dirt_tile_init() {
       .is_solid = true,
       .layer = TILE_LAYER_GROUND,
       .tile_color = BROWN,
+      .tile_height = TILE_SIZE,
 
       .is_ticking = false,
       .stores_custom_data = false,
@@ -46,6 +48,7 @@ void grass_tile_init() {
       .is_solid = true,
       .layer = TILE_LAYER_GROUND,
       .tile_color = DARKGREEN,
+      .tile_height = TILE_SIZE,
 
       .is_ticking = false,
       .stores_custom_data = false,
@@ -64,6 +67,7 @@ void stone_tile_init() {
       .is_solid = true,
       .layer = TILE_LAYER_GROUND,
       .tile_color = GRAY,
+      .tile_height = TILE_SIZE,
 
       .is_ticking = false,
       .stores_custom_data = false,
@@ -82,6 +86,26 @@ void workstation_tile_init() {
       .is_solid = true,
       .layer = TILE_LAYER_TOP,
       .tile_color = BROWN,
+      .tile_height = 32,
+
+      .is_ticking = false,
+      .stores_custom_data = false,
+      .uses_tileset = false,
+      .has_animation = false,
+  };
+  TILES[type.id] = type;
+}
+
+void oven_tile_init() {
+  TileType type = {
+      .id = TILE_OVEN,
+      .texture_path = "res/assets/tall_oven.png",
+      .texture = load_texture("res/assets/tall_oven.png"),
+      .has_texture = true,
+      .is_solid = true,
+      .layer = TILE_LAYER_TOP,
+      .tile_color = GRAY,
+      .tile_height = 48,
 
       .is_ticking = false,
       .stores_custom_data = false,
@@ -100,6 +124,7 @@ void water_tile_init() {
       .is_solid = true,
       .layer = TILE_LAYER_GROUND,
       .tile_color = BLUE,
+      .tile_height = TILE_SIZE,
 
       .is_ticking = false,
       .stores_custom_data = false,

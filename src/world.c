@@ -56,10 +56,8 @@ TileInstance *world_highest_tile_at(World *world, TilePos tile_pos) {
     TileInstance *tile = world_tile_at(world, tile_pos, l);
     TraceLog(LOG_INFO, "Loop Layer: %d", l);
     if (tile->type.id != TILE_EMPTY || l == 0) {
-      TraceLog(
-          LOG_DEBUG, "Tile: %s, tile on layer 1: %s",
-          tile_type_to_string(&tile->type),
-          tile_type_to_string(&world_tile_at(world, tile_pos, TILE_LAYER_TOP)->type));
+      TraceLog(LOG_DEBUG, "Tile: %s, tile on layer 1: %s", tile_type_to_string(&tile->type),
+               tile_type_to_string(&world_tile_at(world, tile_pos, TILE_LAYER_TOP)->type));
       return tile;
     }
   }
@@ -90,8 +88,7 @@ bool world_set_tile(World *world, TilePos tile_pos, TileInstance tile) {
   return world_set_tile_on_layer(world, tile_pos, tile, tile.type.layer);
 }
 
-bool world_set_tile_on_layer(World *world, TilePos tile_pos, TileInstance tile,
-                             TileLayer layer) {
+bool world_set_tile_on_layer(World *world, TilePos tile_pos, TileInstance tile, TileLayer layer) {
   int chunk_tile_x = floor_mod(tile_pos.x, CHUNK_SIZE);
   int chunk_tile_y = floor_mod(tile_pos.y, CHUNK_SIZE);
   int chunk_x = floor_div((tile_pos.x - chunk_tile_x), CHUNK_SIZE);
@@ -99,19 +96,16 @@ bool world_set_tile_on_layer(World *world, TilePos tile_pos, TileInstance tile,
   ChunkPos chunk_pos = vec2i(chunk_x, chunk_y);
   if (world_has_chunk_at(world, chunk_pos)) {
     Chunk *chunk = &world->chunks[world_chunk_index_by_pos(world, chunk_pos)];
-    bool success =
-        chunk_set_tile(chunk, tile, chunk_tile_x, chunk_tile_y, layer);
+    bool success = chunk_set_tile(chunk, tile, chunk_tile_x, chunk_tile_y, layer);
 
     if (success) {
       for (int dy = -1; dy <= 1; dy++) {
         for (int dx = -1; dx <= 1; dx++) {
           int nx = chunk_tile_x + dx;
           int ny = chunk_tile_y + dy;
-          TilePos pos = vec2i((chunk->chunk_pos.x * CHUNK_SIZE) + nx,
-                              (chunk->chunk_pos.y * CHUNK_SIZE) + ny);
+          TilePos pos = vec2i((chunk->chunk_pos.x * CHUNK_SIZE) + nx, (chunk->chunk_pos.y * CHUNK_SIZE) + ny);
 
-          world_set_tile_texture_data(world, world_ground_tile_at(world, pos),
-                                      pos.x, pos.y);
+          world_set_tile_texture_data(world, world_ground_tile_at(world, pos), pos.x, pos.y);
         }
       }
 
@@ -119,8 +113,7 @@ bool world_set_tile_on_layer(World *world, TilePos tile_pos, TileInstance tile,
         for (int dx = -1; dx <= 1; dx++) {
           int nx = chunk_tile_x + dx;
           int ny = chunk_tile_y + dy;
-          TilePos pos = vec2i((chunk->chunk_pos.x * CHUNK_SIZE) + nx,
-                              (chunk->chunk_pos.y * CHUNK_SIZE) + ny);
+          TilePos pos = vec2i((chunk->chunk_pos.x * CHUNK_SIZE) + nx, (chunk->chunk_pos.y * CHUNK_SIZE) + ny);
 
           // Check bounds
           tile_calc_sprite_box(world_ground_tile_at(world, pos));
@@ -139,50 +132,43 @@ void world_remove_tile(World *world, TilePos tile_pos) {
   TileInstance *tile = world_highest_tile_at(world, tile_pos);
   TraceLog(LOG_INFO, "Remove Layer: %d", tile->type.layer);
   Color color = tile->type.tile_color;
-  if (world_set_tile_on_layer(world, tile_pos, empty_instance,
-                              tile->type.layer)) {
-    world_add_being(
-        world,
-        being_new(
-            BEING_ITEM,
-            (BeingInstanceEx){
-                .type = BEING_INSTANCE_ITEM,
-                .var = {.item_instance = {.item = {.type =
-                                                       ITEMS[ITEM_GRASS]}}}},
-            tile_pos.x * TILE_SIZE, tile_pos.y * TILE_SIZE, 16, 16));
+  if (world_set_tile_on_layer(world, tile_pos, empty_instance, tile->type.layer)) {
+    world_add_being(world,
+                    being_new(BEING_ITEM,
+                              (BeingInstanceEx){.type = BEING_INSTANCE_ITEM,
+                                                .var = {.item_instance = {.item = {.type = ITEMS[ITEM_GRASS]}}}},
+                              (tile_pos.x * TILE_SIZE) + GetRandomValue(-12, 12),
+                              (tile_pos.y * TILE_SIZE) + GetRandomValue(-12, 12), 16, 16));
 
     for (int i = 0; i < 5; i++) {
-      game_emit_particle(tile_pos.x * TILE_SIZE + GetRandomValue(-6, 14),
-                         tile_pos.y * TILE_SIZE + GetRandomValue(-6, 14),
-                         PARTICLE_TILE_BREAK,
-                         (ParticleInstanceEx){
-                             .type = PARTICLE_INSTANCE_TILE_BREAK,
-                             .var = {.tile_break = {.texture = particle_texture,
-                                                    .tint = color}}});
-      TraceLog(LOG_INFO, "r: %d g: %d b: %d a: %d", color.r, color.g, color.b,
-               color.a);
+      game_emit_particle(tile_pos.x * TILE_SIZE + GetRandomValue(-9, 14),
+                         tile_pos.y * TILE_SIZE + GetRandomValue(-9, 14), PARTICLE_TILE_BREAK,
+                         (ParticleInstanceEx){.type = PARTICLE_INSTANCE_TILE_BREAK,
+                                              .var = {.tile_break = {.texture = particle_texture, .tint = color}}});
+      TraceLog(LOG_INFO, "r: %d g: %d b: %d a: %d", color.r, color.g, color.b, color.a);
     }
   }
 }
 
 void world_add_being(World *world, BeingInstance being) {
   if (world->beings_amount < MAX_ENTITIES_AMOUNT) {
-    world->beings[world->beings_amount++] = being;
+    world->beings[world->beings_amount] = being;
+    world->beings[world->beings_amount].being_instance_id = world->beings_amount;
+    world->beings_amount++;
   }
 }
 
 void world_remove_being(World *world, BeingInstance *being) {
-  bool being_found = false;
   for (int i = 0; i < world->beings_amount; i++) {
-    if (&world->beings[i] == being) {
-      being_found = true;
-    }
-
-    if (being_found) {
-      world->beings[i - 1] = world->beings[i];
+    if (world->beings[i].being_instance_id == being->being_instance_id) {
+      // Shift everything after i left by one
+      for (int j = i; j < world->beings_amount - 1; j++) {
+        world->beings[j] = world->beings[j + 1];
+      }
+      world->beings_amount--;
+      return;
     }
   }
-  world->beings_amount--;
 }
 
 void world_prepare_chunk_rendering(World *world, Chunk *chunk) {
@@ -200,8 +186,7 @@ void world_prepare_chunk_rendering(World *world, Chunk *chunk) {
 
   for (int y = 0; y < CHUNK_SIZE; y++) {
     for (int x = 0; x < CHUNK_SIZE; x++) {
-      TilePos pos = vec2i((chunk->chunk_pos.x * CHUNK_SIZE) + x,
-                          (chunk->chunk_pos.y * CHUNK_SIZE) + y);
+      TilePos pos = vec2i((chunk->chunk_pos.x * CHUNK_SIZE) + x, (chunk->chunk_pos.y * CHUNK_SIZE) + y);
       TileInstance *tile = world_ground_tile_at(world, vec2i(pos.x, pos.y));
       if (tile->type.id != TILE_EMPTY) {
         tile_calc_sprite_box(tile);
@@ -210,25 +195,16 @@ void world_prepare_chunk_rendering(World *world, Chunk *chunk) {
   }
 }
 
-void world_set_tile_texture_data(World *world, TileInstance *tile, int x,
-                                 int y) {
+void world_set_tile_texture_data(World *world, TileInstance *tile, int x, int y) {
   TileTextureData *texture_data = &tile->texture_data;
-  texture_data->surrounding_tiles[0] =
-      world_ground_tile_at(world, vec2i(x - 1, y - 1))->type.id;
-  texture_data->surrounding_tiles[1] =
-      world_ground_tile_at(world, vec2i(x, y - 1))->type.id;
-  texture_data->surrounding_tiles[2] =
-      world_ground_tile_at(world, vec2i(x + 1, y - 1))->type.id;
-  texture_data->surrounding_tiles[3] =
-      world_ground_tile_at(world, vec2i(x - 1, y))->type.id;
-  texture_data->surrounding_tiles[4] =
-      world_ground_tile_at(world, vec2i(x + 1, y))->type.id;
-  texture_data->surrounding_tiles[5] =
-      world_ground_tile_at(world, vec2i(x - 1, y + 1))->type.id;
-  texture_data->surrounding_tiles[6] =
-      world_ground_tile_at(world, vec2i(x, y + 1))->type.id;
-  texture_data->surrounding_tiles[7] =
-      world_ground_tile_at(world, vec2i(x + 1, y + 1))->type.id;
+  texture_data->surrounding_tiles[0] = world_ground_tile_at(world, vec2i(x - 1, y - 1))->type.id;
+  texture_data->surrounding_tiles[1] = world_ground_tile_at(world, vec2i(x, y - 1))->type.id;
+  texture_data->surrounding_tiles[2] = world_ground_tile_at(world, vec2i(x + 1, y - 1))->type.id;
+  texture_data->surrounding_tiles[3] = world_ground_tile_at(world, vec2i(x - 1, y))->type.id;
+  texture_data->surrounding_tiles[4] = world_ground_tile_at(world, vec2i(x + 1, y))->type.id;
+  texture_data->surrounding_tiles[5] = world_ground_tile_at(world, vec2i(x - 1, y + 1))->type.id;
+  texture_data->surrounding_tiles[6] = world_ground_tile_at(world, vec2i(x, y + 1))->type.id;
+  texture_data->surrounding_tiles[7] = world_ground_tile_at(world, vec2i(x + 1, y + 1))->type.id;
 }
 
 void world_prepare_rendering(World *world) {
@@ -245,10 +221,9 @@ void world_render(World *world) {
     Chunk *chunk = &world->chunks[i];
     for (int y = chunk_y; y < chunk_y + CHUNK_SIZE; y++) {
       for (int x = chunk_x; x < chunk_x + CHUNK_SIZE; x++) {
-        DrawTexture(
-            tile_variants_by_index(chunk->variant_index, 0, 0)
-                [chunk->background_texture_variants[y - chunk_y][x - chunk_x]],
-            x * TILE_SIZE, y * TILE_SIZE, WHITE);
+        DrawTexture(tile_variants_by_index(chunk->variant_index, 0,
+                                           0)[chunk->background_texture_variants[y - chunk_y][x - chunk_x]],
+                    x * TILE_SIZE, y * TILE_SIZE, WHITE);
       }
     }
     for (int l = 0; l < TILE_LAYERS_AMOUNT; l++) {

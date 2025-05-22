@@ -56,8 +56,8 @@ void chunk_gen(Chunk *chunk, ChunkPos chunk_pos) {
   chunk->chunk_pos = chunk_pos;
 }
 
-bool chunk_can_place_tile(Chunk *chunk, TileInstance tile, int x, int y) {
-  if (chunk->tiles[y][x][TILE_LAYER_GROUND].type.id == tile.type.id) {
+bool chunk_can_place_tile_on_layer(Chunk *chunk, TileInstance tile, int x, int y, TileLayer layer) {
+  if (chunk->tiles[y][x][layer].type.id == tile.type.id) {
     return false; // No need to update if the tile is the same
   }
 
@@ -69,7 +69,7 @@ bool chunk_can_place_tile(Chunk *chunk, TileInstance tile, int x, int y) {
 }
 
 bool chunk_set_tile(Chunk *chunk, TileInstance tile, int x, int y, TileLayer layer) {
-  if (!chunk_can_place_tile(chunk, tile, x, y)) {
+  if (!chunk_can_place_tile_on_layer(chunk, tile, x, y, layer)) {
     return false;
   }
 

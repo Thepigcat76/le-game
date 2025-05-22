@@ -1,6 +1,5 @@
 #include "../include/game.h"
 #include "../include/config.h"
-#include <math.h>
 #include <raylib.h>
 
 #define RELOAD(src_file_prefix)                                                \
@@ -19,6 +18,7 @@ void game_render(Game *game) {
 
   for (int i = 0; i < game->world.beings_amount; i++) {
     being_render(&game->world.beings[i]);
+    rec_draw_outline(game->world.beings[i].context.box, WHITE);
   }
 }
 

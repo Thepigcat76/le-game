@@ -17,6 +17,7 @@ void tile_types_init() {
   INIT_TILE(stone)
   INIT_TILE(water)
   INIT_TILE(workstation)
+  INIT_TILE(oven)
 
   TILE_INSTANCE_EMPTY = tile_new(&TILES[TILE_EMPTY], 0, 0);
 }
@@ -35,6 +36,8 @@ char *tile_type_to_string(const TileType *type) {
     return "water";
   case TILE_WORKSTATION:
     return "workstation";
+  case TILE_OVEN:
+    return "oven";
   }
 }
 
@@ -99,7 +102,7 @@ void tile_render(TileInstance *tile) {
         int offset_y = 64 * TILE_ANIMATION_FRAMES[tile->type.id];
         sprite_rect.y += offset_y;
       }
-      int offset_y = tile->type.id == TILE_WORKSTATION ? 16 : 0;
+      int offset_y = tile->type.tile_height - TILE_SIZE;
       DrawTextureRec(tile->type.texture, sprite_rect,
                      (Vector2){tile->box.x, tile->box.y - offset_y}, WHITE);
     }

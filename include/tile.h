@@ -11,6 +11,7 @@ typedef enum {
   TILE_STONE,
   TILE_WATER,
   TILE_WORKSTATION,
+  TILE_OVEN,
 } TileId;
 
 typedef struct {
@@ -30,6 +31,7 @@ typedef struct {
   bool is_solid;
   TileLayer layer;
   Color tile_color;
+  int tile_height;
 
   // ADVANCED TILE PROPERTIES
   bool is_ticking;
@@ -39,7 +41,7 @@ typedef struct {
   bool has_animation;
 } TileType;
 
-extern TileType TILES[];
+extern TileType TILES[TILES_AMOUNT];
 
 void tile_type_init(TileType *type);
 

@@ -13,7 +13,7 @@ typedef struct {
 
 void chunk_gen(Chunk *chunk, ChunkPos chunk_pos);
 
-bool chunk_can_place_tile(Chunk *chunk, TileInstance tile, int x, int y);
+bool chunk_can_place_tile_on_layer(Chunk *chunk, TileInstance tile, int x, int y, TileLayer layer);
 
 bool chunk_set_tile(Chunk *chunk, TileInstance tile, int x, int y, TileLayer layer);
 

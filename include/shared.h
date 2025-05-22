@@ -17,7 +17,7 @@
 
 #define PATH_MAX 4096
 
-#define TILES_AMOUNT 6
+#define TILES_AMOUNT 7
 
 #define SAVE_DATA_BYTES 10000
 
@@ -66,6 +66,8 @@ typedef Vec2i ChunkPos;
 typedef Vec2i TilePos;
 
 void shared_init();
+
+void rec_draw_outline(Rectangle rec, Color color);
 
 Vec2i vec2i(int x, int y);
 

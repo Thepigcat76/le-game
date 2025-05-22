@@ -6,25 +6,22 @@
 #include <raylib.h>
 
 Player player_new() {
-  return (Player){
-      .world = NULL,
-      .cam = camera_new(SCREEN_WIDTH, SCREEN_HEIGHT),
-      .animated_textures = {load_texture("res/assets/player_front_walk.png"),
-                            load_texture("res/assets/player_back_walk.png"),
-                            load_texture("res/assets/player_left_walk.png"),
-                            load_texture("res/assets/player_right_walk.png")},
-      .textures = {load_texture("res/assets/player_front.png"),
-                   load_texture("res/assets/player_back.png"),
-                   load_texture("res/assets/player_left.png"),
-                   load_texture("res/assets/player_right.png")},
-      .direction = DIRECTION_DOWN,
-      .essence = 0,
-      .animation_frame = 0,
-      .frame_timer = 0,
-      .held_item = {.type = ITEMS[ITEM_GRASS]},
-      .box = {.x = 0, .y = 0, .width = 16, .height = 32},
-      .chunk_pos = vec2i(0, 0),
-      .tile_pos = vec2i(0, 0)};
+  return (Player){.world = NULL,
+                  .cam = camera_new(SCREEN_WIDTH, SCREEN_HEIGHT),
+                  .animated_textures = {load_texture("res/assets/player_front_walk.png"),
+                                        load_texture("res/assets/player_back_walk.png"),
+                                        load_texture("res/assets/player_left_walk.png"),
+                                        load_texture("res/assets/player_right_walk.png")},
+                  .textures = {load_texture("res/assets/player_front.png"), load_texture("res/assets/player_back.png"),
+                               load_texture("res/assets/player_left.png"), load_texture("res/assets/player_right.png")},
+                  .direction = DIRECTION_DOWN,
+                  .essence = 0,
+                  .animation_frame = 0,
+                  .frame_timer = 0,
+                  .held_item = {.type = ITEMS[ITEM_GRASS]},
+                  .box = {.x = 0, .y = 0, .width = 16, .height = 32},
+                  .chunk_pos = vec2i(0, 0),
+                  .tile_pos = vec2i(0, 0)};
 }
 
 void player_set_world(Player *player, World *world) { player->world = world; }
@@ -48,9 +45,7 @@ static Texture2D player_get_texture(Player *player) {
   }
 }
 
-Vector2 player_pos(const Player *player) {
-  return (Vector2){.x = player->box.x, .y = player->box.y};
-}
+Vector2 player_pos(const Player *player) { return (Vector2){.x = player->box.x, .y = player->box.y}; }
 
 static void update_animation(Player *player, float deltaTime) {
   player->frame_timer += deltaTime * 1000.0f; // to ms
@@ -65,13 +60,9 @@ void player_render(Player *player) {
   double scale = 1;
   Texture2D player_texture = player_get_texture(player);
   DrawTexturePro(
-      player_texture,
-      (Rectangle){0, player->walking ? 32 * player->animation_frame : 32, 16,
-                  32},
-      (Rectangle){.x = player->box.x,
-                  .y = player->box.y,
-                  .width = 16 * scale,
-                  .height = 32 * scale},
+      player_texture, (Rectangle){0, player->walking ? 32 * player->animation_frame : 32, 16, 32},
+      (Rectangle){
+          .x = player->box.x + 8 * scale, .y = player->box.y + 16 * scale, .width = 16 * scale, .height = 32 * scale},
       (Vector2){.x = 8 * scale, .y = 16 * scale}, 0, WHITE);
 
   if (player->walking) {
@@ -90,17 +81,15 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk) {
   player->chunk_pos.x = floor_div(x, CHUNK_SIZE * TILE_SIZE);
   player->chunk_pos.y = floor_div(y, CHUNK_SIZE * TILE_SIZE);
 
-  if (old_chunk_pos.x != player->chunk_pos.x ||
-      old_chunk_pos.y != player->chunk_pos.y) {
+  if (old_chunk_pos.x != player->chunk_pos.x || old_chunk_pos.y != player->chunk_pos.y) {
     TraceLog(LOG_INFO, "Entering New chunk");
   }
 
   if (update_chunk && !world_has_chunk_at(player->world, player->chunk_pos)) {
     world_gen_chunk_at(player->world, player->chunk_pos);
 
-    world_prepare_chunk_rendering(
-        player->world, &player->world->chunks[world_chunk_index_by_pos(
-                           player->world, player->chunk_pos)]);
+    world_prepare_chunk_rendering(player->world,
+                                  &player->world->chunks[world_chunk_index_by_pos(player->world, player->chunk_pos)]);
     Vec2i offsets[4] = {
         vec2i(-1, 0),
         vec2i(+1, 0),
@@ -112,15 +101,12 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk) {
       world_prepare_chunk_rendering(
           player->world,
           &player->world->chunks[world_chunk_index_by_pos(
-              player->world, vec2i(player->chunk_pos.x + offset.x,
-                                   player->chunk_pos.y + offset.y))]);
+              player->world, vec2i(player->chunk_pos.x + offset.x, player->chunk_pos.y + offset.y))]);
     }
   }
 }
 
-void player_set_pos(Player *player, float x, float y) {
-  player_set_pos_ex(player, x, y, true);
-}
+void player_set_pos(Player *player, float x, float y) { player_set_pos_ex(player, x, y, true); }
 
 void player_handle_zoom(Player *player, bool zoom_in, bool zoom_out) {
   Camera2D *cam = &player->cam;
@@ -142,26 +128,22 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
   bool walking = false;
 
   if (w) {
-    player_set_pos(player, player_pos(player).x,
-                   player_pos(player).y - distance);
+    player_set_pos(player, player_pos(player).x, player_pos(player).y - distance);
     player->direction = DIRECTION_UP;
     walking = true;
   }
   if (s) {
-    player_set_pos(player, player_pos(player).x,
-                   player_pos(player).y + distance);
+    player_set_pos(player, player_pos(player).x, player_pos(player).y + distance);
     player->direction = DIRECTION_DOWN;
     walking = true;
   }
   if (a) {
-    player_set_pos(player, player_pos(player).x - distance,
-                   player_pos(player).y);
+    player_set_pos(player, player_pos(player).x - distance, player_pos(player).y);
     player->direction = DIRECTION_LEFT;
     walking = true;
   }
   if (d) {
-    player_set_pos(player, player_pos(player).x + distance,
-                   player_pos(player).y);
+    player_set_pos(player, player_pos(player).x + distance, player_pos(player).y);
     player->direction = DIRECTION_RIGHT;
     walking = true;
   }
@@ -170,10 +152,8 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
 }
 
 void player_load(Player *player, DataMap *map) {
-  player->essence =
-      data_map_get_or_default(map, "essence", data_int(0)).var.data_int;
-  player->direction =
-      data_map_get_or_default(map, "direction", data_int(0)).var.data_int;
+  player->essence = data_map_get_or_default(map, "essence", data_int(0)).var.data_int;
+  player->direction = data_map_get_or_default(map, "direction", data_int(0)).var.data_int;
   int x = data_map_get_or_default(map, "pos_x", data_int(0)).var.data_int;
   int y = data_map_get_or_default(map, "pos_y", data_int(0)).var.data_int;
   player->box.x = x;

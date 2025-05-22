@@ -29,6 +29,7 @@ typedef struct {
 
 typedef struct being_instance {
   BeingId id;
+  int being_instance_id;
   BeingInstanceEx extra;
   BeingContext context;
   struct world *world;

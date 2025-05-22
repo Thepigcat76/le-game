@@ -81,6 +81,10 @@ void shared_init() {
 
 Vec2i vec2i(int x, int y) { return (Vec2i){.x = x, .y = y}; }
 
+void rec_draw_outline(Rectangle rec, Color color) {
+  DrawRectangleLinesEx(rec, 1, color);
+}
+
 bool vec2_eq(const Vec2i *vec1, const Vec2i *vec2) {
   return vec1->x == vec2->x && vec1->y == vec2->y;
 }
