@@ -3,25 +3,21 @@
 #include "../../include/ui.h"
 #include <raylib.h>
 
-static void save_menu_back_to_game_button_clicked(UiRenderer *ui_renderer,
-                                                  Game *game) {
-  game->cur_menu = MENU_NONE;
-  game->paused = false;
+static void save_menu_back_to_game_button_clicked() {
+  GAME.cur_menu = MENU_NONE;
+  GAME.paused = false;
 }
 
-static void save_menu_general_settings_button_clicked(UiRenderer *ui_renderer,
-                                                      Game *game) {
+static void save_menu_general_settings_button_clicked() {
   TraceLog(LOG_DEBUG, "Button clicked");
 }
 
-static void save_menu_gameplay_settings_button_clicked(UiRenderer *ui_renderer,
-                                                       Game *game) {
+static void save_menu_gameplay_settings_button_clicked() {
   TraceLog(LOG_DEBUG, "Button clicked");
 }
 
-static void save_menu_save_game_button_clicked(UiRenderer *ui_renderer,
-                                               Game *game) {
-  game->cur_menu = MENU_START;
+static void save_menu_save_game_button_clicked() {
+  GAME.cur_menu = MENU_START;
 }
 
 void save_menu_render(UiRenderer *renderer, const Game *game) {

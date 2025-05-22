@@ -3,13 +3,13 @@
 #include <raylib.h>
 #include <stdlib.h>
 
-static void start_menu_create_world(UiRenderer *ui_renderer, Game *game) {
-  game->cur_menu = MENU_NONE;
-  game->paused = false;
+static void start_menu_create_world() {
+  game_set_menu(&GAME, MENU_NONE);
+  GAME.paused = false;
 }
 
-static void start_menu_leave_game(UiRenderer *ui_renderer, Game *game) {
-  game_unload(game);
+static void start_menu_leave_game() {
+  game_unload(&GAME);
 
   CloseWindow();
   CloseAudioDevice();

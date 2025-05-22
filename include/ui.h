@@ -1,6 +1,5 @@
 #pragma once
 
-#include "game.h"
 #include "shared.h"
 #include <raylib.h>
 #include <stdlib.h>
@@ -30,14 +29,13 @@ typedef struct {
   int ui_height;
   UiStyle cur_style;
   bool simulate;
-  Game *game;
   struct {
     int screen_width;
     int screen_height;
   } context;
 } UiRenderer;
 
-typedef void (*ButtonClickFunction)(UiRenderer *, Game *);
+typedef void (*ButtonClickFunction)();
 
 typedef struct {
   Texture2D texture;

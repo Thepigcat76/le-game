@@ -2,16 +2,20 @@
 #include "../include/config.h"
 #include <raylib.h>
 
-#define RELOAD(src_file_prefix)                                                \
-  extern void src_file_prefix##_on_reload();                                   \
+#define RELOAD(src_file_prefix)                                                                                        \
+  extern void src_file_prefix##_on_reload();                                                                           \
   src_file_prefix##_on_reload();
+
+#define RENDER_MENU(ui_renderer, menu_name)                                                                            \
+  extern void menu_name##_render(UiRenderer *renderer, const Game *game);                                              \
+  menu_name##_render(ui_renderer, game);
 
 void game_reload() {
   RELOAD(tile);
   RELOAD(config);
 }
 
-ParticleManager PARTICLE_MANAGER;
+Game GAME;
 
 void game_render(Game *game) {
   world_render(&game->world);
@@ -38,7 +42,44 @@ void game_tick(Game *game) {
   }
 }
 
-void game_set_menu(Game *game, MenuId menu_id) { game->cur_menu = menu_id; }
+void game_render_menu(Game *game) {
+  UiRenderer *ui_renderer = &game->ui_renderer;
+  switch (game->cur_menu) {
+  case MENU_SAVE: {
+    RENDER_MENU(ui_renderer, save_menu);
+    break;
+  }
+  case MENU_START: {
+    RENDER_MENU(ui_renderer, start_menu);
+    break;
+  }
+  case MENU_BACKPACK: {
+    RENDER_MENU(ui_renderer, backpack_menu);
+    break;
+  }
+  case MENU_NONE: {
+    break;
+  }
+  }
+}
+
+static void ui_renderer_calc_height(UiRenderer *ui_renderer) {
+  if (ui_renderer->ui_height == -1) {
+    ui_renderer->cur_y = 0;
+    ui_renderer->simulate = true;
+    game_render_menu(&GAME);
+    ui_renderer->ui_height = ui_renderer->cur_y;
+
+    ui_renderer->simulate = false;
+    ui_renderer->cur_x = 0;
+    ui_renderer->cur_y = 0;
+  }
+}
+
+void game_set_menu(Game *game, MenuId menu_id) {
+  game->cur_menu = menu_id;
+  ui_renderer_calc_height(&game->ui_renderer);
+}
 
 static void load_game(Game *game, ByteBuf *bytebuf) {
   Data data_map_0 = byte_buf_read_data(bytebuf);
@@ -59,11 +100,9 @@ static void save_game(Game *game, ByteBuf *bytebuf) {
   DataMap world_map = data_map_new(400);
   save_world(&game->world, &world_map);
 
-  Data player_data =
-      (Data){.type = DATA_TYPE_MAP, .var = {.data_map = player_map}};
+  Data player_data = (Data){.type = DATA_TYPE_MAP, .var = {.data_map = player_map}};
   byte_buf_write_data(bytebuf, &player_data);
-  Data world_data =
-      (Data){.type = DATA_TYPE_MAP, .var = {.data_map = world_map}};
+  Data world_data = (Data){.type = DATA_TYPE_MAP, .var = {.data_map = world_map}};
   byte_buf_write_data(bytebuf, &world_data);
 
   data_free(&player_data);
@@ -72,10 +111,7 @@ static void save_game(Game *game, ByteBuf *bytebuf) {
 
 void game_load(Game *game) {
   uint8_t bytes[SAVE_DATA_BYTES];
-  ByteBuf buf = {.bytes = bytes,
-                 .writer_index = 0,
-                 .reader_index = 0,
-                 .capacity = SAVE_DATA_BYTES};
+  ByteBuf buf = {.bytes = bytes, .writer_index = 0, .reader_index = 0, .capacity = SAVE_DATA_BYTES};
   byte_buf_from_file(&buf, "save/game.bin");
   load_game(game, &buf);
   TraceLog(LOG_INFO, "Successfully loaded game");
@@ -85,10 +121,7 @@ void game_unload(Game *game) {
   tile_variants_free();
 
   uint8_t bytes[SAVE_DATA_BYTES];
-  ByteBuf buf = {.bytes = bytes,
-                 .writer_index = 0,
-                 .reader_index = 0,
-                 .capacity = SAVE_DATA_BYTES};
+  ByteBuf buf = {.bytes = bytes, .writer_index = 0, .reader_index = 0, .capacity = SAVE_DATA_BYTES};
   save_game(game, &buf);
   byte_buf_to_file(&buf, "save/game.bin");
 
@@ -97,20 +130,19 @@ void game_unload(Game *game) {
 
 // -- PARTICLES --
 
-void game_emit_particle(int x, int y, ParticleId particle_id,
-                        ParticleInstanceEx particle_extra) {
-  ParticleInstance *particles = PARTICLE_MANAGER.particles;
+void game_emit_particle(Game *game, int x, int y, ParticleId particle_id, ParticleInstanceEx particle_extra) {
+  ParticleInstance *particles = GAME.particle_manager.particles;
   Vector2 pos = {x, y};
 
   for (int i = 0; i < MAX_PARTICLES_AMOUNT; i++) {
-    if (!PARTICLE_MANAGER.particles[i].active) {
+    if (!GAME.particle_manager.particles[i].active) {
       float angle = (float)(rand() % 360) * DEG2RAD;
       float speed = 20 + (rand() % 100);
 
       particles[i].position = pos;
       particles[i].velocity = (Vector2){0, 0};
       //(Vector2){cosf(angle) * speed, sinf(angle) * speed};
-      particles[i].lifetime = 1.5f + (float)(rand() % 100) / 1000.0f;
+      particles[i].lifetime = (1.5f + (float)(rand() % 100) / 1000.0f) / 3;
       particles[i].age = 0;
       particles[i].color = particle_extra.var.tile_break.tint;
       particles[i].active = true;
@@ -121,8 +153,8 @@ void game_emit_particle(int x, int y, ParticleId particle_id,
   }
 }
 
-static void particles_update() {
-  ParticleInstance *particles = PARTICLE_MANAGER.particles;
+static void particles_update(Game *game) {
+  ParticleInstance *particles = GAME.particle_manager.particles;
 
   float dt = GetFrameTime();
   for (int i = 0; i < MAX_PARTICLES_AMOUNT; i++) {
@@ -134,7 +166,7 @@ static void particles_update() {
 
       particles[i].age += dt;
       float alpha = 1.0f - (particles[i].age / particles[i].lifetime);
-      //particles[i].color.a = (unsigned char)(255 * alpha);
+      // particles[i].color.a = (unsigned char)(255 * alpha);
 
       if (particles[i].age >= particles[i].lifetime) {
         particles[i].active = false;
@@ -143,23 +175,20 @@ static void particles_update() {
   }
 }
 
-void game_render_particles() {
-  particles_update();
+void game_render_particles(Game *game) {
+  particles_update(game);
 
-  ParticleInstance *particles = PARTICLE_MANAGER.particles;
+  ParticleInstance *particles = GAME.particle_manager.particles;
   for (int i = 0; i < MAX_PARTICLES_AMOUNT; i++) {
     if (particles[i].active) {
       switch (particles[i].extra.type) {
       case PARTICLE_INSTANCE_DEFAULT: {
-        DrawTexture(particles[i].extra.var.default_texture,
-                    particles[i].position.x, particles[i].position.y, WHITE);
+        DrawTexture(particles[i].extra.var.default_texture, particles[i].position.x, particles[i].position.y, WHITE);
         break;
       }
       case PARTICLE_INSTANCE_TILE_BREAK: {
-        DrawTextureV(
-            particles[i].extra.var.tile_break.texture,
-            (Vector2){particles[i].position.x, particles[i].position.y},
-            particles[i].color);
+        DrawTextureV(particles[i].extra.var.tile_break.texture,
+                     (Vector2){particles[i].position.x, particles[i].position.y}, particles[i].color);
         break;
       }
       }

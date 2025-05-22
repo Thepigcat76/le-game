@@ -157,7 +157,7 @@ bool world_remove_tile(World *world, TilePos tile_pos) {
     }
 
     for (int i = 0; i < 5; i++) {
-      game_emit_particle(tile_pos.x * TILE_SIZE + GetRandomValue(-9, 14),
+      game_emit_particle(&GAME, tile_pos.x * TILE_SIZE + GetRandomValue(-9, 14),
                          tile_pos.y * TILE_SIZE + GetRandomValue(-9, 14), PARTICLE_TILE_BREAK,
                          (ParticleInstanceEx){.type = PARTICLE_INSTANCE_TILE_BREAK,
                                               .var = {.tile_break = {.texture = particle_texture, .tint = color}}});

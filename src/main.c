@@ -7,10 +7,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define RENDER_MENU(ui_renderer, menu_name)                                                                            \
-  extern void menu_name##_render(UiRenderer *renderer, const Game *game);                                              \
-  menu_name##_render(ui_renderer, game);
-
 #define SOUND_BUFFER_LIMIT 64
 #define SOUND_COOLDOWN 0.125f
 
@@ -18,26 +14,6 @@ static Sound sound_buffer[SOUND_BUFFER_LIMIT] = {0};
 
 void debug_rect(Rectangle *rect) {
   TraceLog(LOG_DEBUG, "Rect{x=%f, y=%f, w=%f, h=%f}", rect->x, rect->y, rect->width, rect->height);
-}
-
-void menu_render(UiRenderer *ui_renderer, const Game *game) {
-  switch (game->cur_menu) {
-  case MENU_SAVE: {
-    RENDER_MENU(ui_renderer, save_menu);
-    break;
-  }
-  case MENU_START: {
-    RENDER_MENU(ui_renderer, start_menu);
-    break;
-  }
-  case MENU_BACKPACK: {
-    RENDER_MENU(ui_renderer, backpack_menu);
-    break;
-  }
-  case MENU_NONE: {
-    break;
-  }
-  }
 }
 
 float frame_timer = 0;
@@ -74,23 +50,31 @@ int main(void) {
       tile_new(&TILES[selected_tile_to_place], selected_tile_to_place_render_pos.x + 35,
                selected_tile_to_place_render_pos.y - 60);
 
-  Game game = {
+  GAME = (Game){
       .player = player_new(),
       .world = world_new(),
       .cur_menu = MENU_START,
       .paused = false,
+      .ui_renderer = (UiRenderer){.cur_x = 0,
+                                  .cur_y = 0,
+                                  .simulate = false,
+                                  .ui_height = -1,
+                                  .cur_style = {0},
+                                  .context = {.screen_width = SCREEN_WIDTH, .screen_height = SCREEN_HEIGHT}},
   };
 
-  player_set_world(&game.player, &game.world);
+  Game *game = &GAME;
+
+  player_set_world(&game->player, &game->world);
 
   if (FileExists("save/game.bin")) {
-    game_load(&game);
+    game_load(game);
   } else {
-    player_set_pos_ex(&game.player, TILE_SIZE * ((float)CHUNK_SIZE / 2), TILE_SIZE * ((float)CHUNK_SIZE / 2), false);
-    world_gen(&game.world);
+    player_set_pos_ex(&game->player, TILE_SIZE * ((float)CHUNK_SIZE / 2), TILE_SIZE * ((float)CHUNK_SIZE / 2), false);
+    world_gen(&game->world);
   }
 
-  world_prepare_rendering(&game.world);
+  world_prepare_rendering(&game->world);
 
   SetTargetFPS(60);
 
@@ -117,23 +101,19 @@ int main(void) {
 
   RenderTexture2D world_texture = LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
 
-  UiRenderer ui_renderer = {.cur_x = 0,
-                            .cur_y = 0,
-                            .simulate = false,
-                            .ui_height = -1,
-                            .cur_style = {0},
-                            .game = &game,
-                            .context = {.screen_width = SCREEN_WIDTH, .screen_height = SCREEN_HEIGHT}};
+  UiRenderer *ui_renderer = &game->ui_renderer;
+
+  game_set_menu(game, MENU_START);
 
   int cur_sound = 0;
 
   float sound_timer = 0;
 
   while (!WindowShouldClose()) {
-    ui_renderer.cur_x = 0;
-    ui_renderer.cur_y = 0;
+    ui_renderer->cur_x = 0;
+    ui_renderer->cur_y = 0;
 
-    game_tick(&game);
+    game_tick(game);
 
     if (IsKeyPressed(KEYBINDS.reload_key)) {
       UnloadShader(shader);
@@ -147,24 +127,13 @@ int main(void) {
                            .height = 20 * 3.5};
     bool slot_selected = CheckCollisionPointRec(GetMousePosition(), slot_rect);
 
-    if (ui_renderer.ui_height == -1) {
-      ui_renderer.cur_y = 0;
-      ui_renderer.simulate = true;
-      menu_render(&ui_renderer, &game);
-      ui_renderer.ui_height = ui_renderer.cur_y;
-
-      ui_renderer.simulate = false;
-      ui_renderer.cur_x = 0;
-      ui_renderer.cur_y = 0;
-    }
-
     sound_timer += GetFrameTime();
 
     BeginDrawing();
     {
       ClearBackground(DARKGRAY);
 
-      Camera2D *cam = &game.player.cam;
+      Camera2D *cam = &game->player.cam;
       // CAMERA BEGIN
       Vector2 mousePos = GetMousePosition();
 
@@ -173,7 +142,7 @@ int main(void) {
 
       Vector3 light_color = {1.0f, 1.0f, 0.8f}; // warm white
       float light_radius =
-          game.player.held_item.type.light_source ? 0.08f * cam->zoom * (1.0f + 0.11f * sin(GetTime())) : 0;
+          game->player.held_item.type.light_source ? 0.08f * cam->zoom * (1.0f + 0.11f * sin(GetTime())) : 0;
 
       SetShaderValue(shader, light_pos_loc, &light_pos, SHADER_UNIFORM_VEC2);
       SetShaderValue(shader, light_color_loc, &light_color, SHADER_UNIFORM_VEC3);
@@ -185,8 +154,8 @@ int main(void) {
         {
           ClearBackground(DARKGRAY);
 
-          if (game.cur_menu != MENU_START) {
-            game_render(&game);
+          if (game->cur_menu != MENU_START) {
+            game_render(game);
 
             // DrawTextureEx(workstation_texture, (Vector2){.x = 0, .y = 0}, 0,
             // 1,
@@ -199,48 +168,48 @@ int main(void) {
             Rectangle rec = (Rectangle){
                 .x = x_index * (TILE_SIZE), .y = y_index * (TILE_SIZE), .width = (TILE_SIZE), .height = (TILE_SIZE)};
             bool interaction_in_range =
-                abs((int)game.player.box.x - x_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE &&
-                abs((int)game.player.box.y - y_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE;
+                abs((int)game->player.box.x - x_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE &&
+                abs((int)game->player.box.y - y_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE;
 
             if (!slot_selected && interaction_in_range) {
               rec_draw_outline(rec, BLUE);
             }
 
-            player_render(&game.player);
+            player_render(&game->player);
 
-            rec_draw_outline(game.player.box, BLUE);
+            rec_draw_outline(game->player.box, BLUE);
 
             // TODO: Use IsMouseButtonDown again
             if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !slot_selected && interaction_in_range) {
-              TileInstance *selected_tile = world_highest_tile_at(&game.world, vec2i(x_index, y_index));
+              TileInstance *selected_tile = world_highest_tile_at(&game->world, vec2i(x_index, y_index));
               TileInstance tile = *selected_tile;
               if (CheckCollisionPointRec(mouse_world_pos, selected_tile->box) &&
-                  (game.player.last_broken_tile.type.layer == selected_tile->type.layer ||
-                   game.player.last_broken_tile.type.id == TILE_EMPTY)) {
-                if (game.player.held_item.type.id == ITEM_HAMMER) {
+                  (game->player.last_broken_tile.type.layer == selected_tile->type.layer ||
+                   game->player.last_broken_tile.type.id == TILE_EMPTY)) {
+                if (game->player.held_item.type.id == ITEM_HAMMER) {
                   for (int y = -1; y <= 1; y++) {
                     for (int x = -1; x <= 1; x++) {
-                      world_remove_tile(&game.world, vec2i(x_index + x, y_index + y));
+                      world_remove_tile(&game->world, vec2i(x_index + x, y_index + y));
                     }
                   }
                 } else {
-                  world_remove_tile(&game.world, vec2i(x_index, y_index));
+                  world_remove_tile(&game->world, vec2i(x_index, y_index));
                 }
-                game.player.last_broken_tile = tile;
+                game->player.last_broken_tile = tile;
                 TraceLog(LOG_DEBUG, "selected: %s", tile_type_to_string(&tile.type));
               }
             }
 
             if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
-              game.player.last_broken_tile = TILE_INSTANCE_EMPTY;
+              game->player.last_broken_tile = TILE_INSTANCE_EMPTY;
             }
 
             if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && !slot_selected && interaction_in_range) {
-              TileInstance *selected_tile = world_ground_tile_at(&game.world, vec2i(x_index, y_index));
+              TileInstance *selected_tile = world_ground_tile_at(&game->world, vec2i(x_index, y_index));
               if (CheckCollisionPointRec(mouse_world_pos, selected_tile->box)) {
                 TileInstance new_tile =
                     tile_new(&TILES[selected_tile_to_place], x_index * TILE_SIZE, y_index * TILE_SIZE);
-                bool placed = world_place_tile(&game.world, vec2i(x_index, y_index), new_tile);
+                bool placed = world_place_tile(&game->world, vec2i(x_index, y_index), new_tile);
                 if (placed && sound_timer >= SOUND_COOLDOWN) {
                   PlaySound(sound_buffer[cur_sound++]);
                   if (cur_sound >= SOUND_BUFFER_LIMIT) {
@@ -252,29 +221,29 @@ int main(void) {
             }
 
             if (IsKeyReleased(KEYBINDS.open_close_save_menu_key)) {
-              if (game.cur_menu == MENU_SAVE) {
-                game.cur_menu = MENU_NONE;
-                game.paused = false;
+              if (game->cur_menu == MENU_SAVE) {
+                game->cur_menu = MENU_NONE;
+                game->paused = false;
               } else {
-                game.cur_menu = MENU_SAVE;
-                game.paused = true;
+                game->cur_menu = MENU_SAVE;
+                game->paused = true;
               }
             }
           }
 
           if (IsKeyPressed(KEY_F1)) {
-            world_add_being(&game.world,
+            world_add_being(&game->world,
                             being_new(BEING_ITEM,
                                       (BeingInstanceEx){.type = BEING_INSTANCE_ITEM,
-                                                        .var = {.item_instance = {.item = game.player.held_item}}},
-                                      game.player.box.x, game.player.box.y, 16, 16));
+                                                        .var = {.item_instance = {.item = game->player.held_item}}},
+                                      game->player.box.x, game->player.box.y, 16, 16));
           }
 
           // TODO: optimize this
-          for (int i = 0; i < game.world.beings_amount; i++) {
-            if (CheckCollisionRecs(game.world.beings[i].context.box, game.player.box)) {
-              if (GetTime() - game.world.beings[i].context.creation_time > CONFIG.item_pickup_delay) {
-                world_remove_being(&game.world, &game.world.beings[i]);
+          for (int i = 0; i < game->world.beings_amount; i++) {
+            if (CheckCollisionRecs(game->world.beings[i].context.box, game->player.box)) {
+              if (GetTime() - game->world.beings[i].context.creation_time > CONFIG.item_pickup_delay) {
+                world_remove_being(&game->world, &game->world.beings[i]);
                 break;
               }
             }
@@ -283,7 +252,7 @@ int main(void) {
           if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
           }
 
-          game_render_particles();
+          game_render_particles(game);
 
           // DrawTexture(water_animation.frames[currentFrame].texture, 0, 0,
           // WHITE); update_gif_animation(&water_animation, GetFrameTime());
@@ -306,7 +275,7 @@ int main(void) {
         }
       }
 
-      if (game.cur_menu != MENU_START) {
+      if (game->cur_menu != MENU_START) {
         BeginShaderMode(shader);
         {
           DrawTextureRec(world_texture.texture,
@@ -317,7 +286,7 @@ int main(void) {
 
         Vec2i pos = vec2i(SCREEN_WIDTH - (3.5 * 16) - 30, (SCREEN_HEIGHT / 2.0f) - (3.5 * 8));
         DrawTextureEx(slot_texture, (Vector2){pos.x, pos.y}, 0, 4.5, WHITE);
-        item_render(&game.player.held_item, pos.x + 2 * 3.5, pos.y + 2 * 3.5);
+        item_render(&game->player.held_item, pos.x + 2 * 3.5, pos.y + 2 * 3.5);
 
         tile_render_scaled(&selected_tile_to_place_instance, 4);
       }
@@ -325,9 +294,9 @@ int main(void) {
       if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && slot_selected) {
       }
 
-      menu_render(&ui_renderer, &game);
+      game_render_menu(game);
 
-      if (game.player.held_item.type.id != ITEM_EMPTY) {
+      if (game->player.held_item.type.id != ITEM_EMPTY) {
         HideCursor();
         // item_render(&game.player.held_item, mousePos.x - 8 * 3.5,
         //             mousePos.y - 8 * 3.5);
@@ -344,7 +313,7 @@ int main(void) {
       update_animation(&TILES[i], GetFrameTime());
     }
 
-    TileInstance *tile_under_player = world_ground_tile_at(&game.world, game.player.tile_pos);
+    TileInstance *tile_under_player = world_ground_tile_at(&game->world, game->player.tile_pos);
     if (tile_under_player->type.id != TILE_EMPTY) {
     }
   }
@@ -354,7 +323,7 @@ int main(void) {
   UnloadShader(shader);
   UnloadSound(place_sound);
 
-  game_unload(&game);
+  game_unload(game);
 
   CloseAudioDevice();
   CloseWindow();
