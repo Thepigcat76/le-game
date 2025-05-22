@@ -11,6 +11,7 @@ void empty_tile_init() {
       .layer = TILE_LAYER_GROUND,
       .tile_color = {},
       .tile_height = -1,
+      .tile_item = NULL,
 
       .is_ticking = false,
       .stores_custom_data = false,
@@ -30,6 +31,7 @@ void dirt_tile_init() {
       .layer = TILE_LAYER_GROUND,
       .tile_color = BROWN,
       .tile_height = TILE_SIZE,
+      .tile_item = NULL,
 
       .is_ticking = false,
       .stores_custom_data = false,
@@ -49,6 +51,7 @@ void grass_tile_init() {
       .layer = TILE_LAYER_GROUND,
       .tile_color = DARKGREEN,
       .tile_height = TILE_SIZE,
+      .tile_item = &ITEMS[ITEM_GRASS],
 
       .is_ticking = false,
       .stores_custom_data = false,
@@ -59,6 +62,7 @@ void grass_tile_init() {
 }
 
 void stone_tile_init() {
+  TraceLog(LOG_INFO, "Tile item: %s", item_type_to_string(&ITEMS[ITEM_STONE]));
   TileType type = {
       .id = TILE_STONE,
       .texture_path = "res/assets/stone.png",
@@ -68,6 +72,7 @@ void stone_tile_init() {
       .layer = TILE_LAYER_GROUND,
       .tile_color = GRAY,
       .tile_height = TILE_SIZE,
+      .tile_item = &ITEMS[ITEM_STONE],
 
       .is_ticking = false,
       .stores_custom_data = false,
@@ -87,6 +92,7 @@ void workstation_tile_init() {
       .layer = TILE_LAYER_TOP,
       .tile_color = BROWN,
       .tile_height = 32,
+      .tile_item = NULL,
 
       .is_ticking = false,
       .stores_custom_data = false,
@@ -106,6 +112,7 @@ void oven_tile_init() {
       .layer = TILE_LAYER_TOP,
       .tile_color = GRAY,
       .tile_height = 48,
+      .tile_item = NULL,
 
       .is_ticking = false,
       .stores_custom_data = false,
@@ -125,6 +132,7 @@ void water_tile_init() {
       .layer = TILE_LAYER_GROUND,
       .tile_color = BLUE,
       .tile_height = TILE_SIZE,
+      .tile_item = NULL,
 
       .is_ticking = false,
       .stores_custom_data = false,

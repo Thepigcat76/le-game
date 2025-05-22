@@ -63,8 +63,8 @@ int main(void) {
 
   shared_init();
 
-  tile_types_init();
   item_types_init();
+  tile_types_init();
 
   game_reload();
 

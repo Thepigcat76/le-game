@@ -10,3 +10,12 @@ void grass_item_init() {
   };
   ITEMS[type.id] = type;
 }
+
+void stone_item_init() {
+  ItemType type = {
+      .id = ITEM_STONE,
+      .texture = load_texture("res/assets/stone_inv.png"),
+      .light_source = false,
+  };
+  ITEMS[type.id] = type;
+}

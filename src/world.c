@@ -132,13 +132,17 @@ void world_remove_tile(World *world, TilePos tile_pos) {
   TileInstance *tile = world_highest_tile_at(world, tile_pos);
   TraceLog(LOG_INFO, "Remove Layer: %d", tile->type.layer);
   Color color = tile->type.tile_color;
+  ItemType *item_type = tile->type.tile_item;
   if (world_set_tile_on_layer(world, tile_pos, empty_instance, tile->type.layer)) {
-    world_add_being(world,
-                    being_new(BEING_ITEM,
-                              (BeingInstanceEx){.type = BEING_INSTANCE_ITEM,
-                                                .var = {.item_instance = {.item = {.type = ITEMS[ITEM_GRASS]}}}},
-                              (tile_pos.x * TILE_SIZE) + GetRandomValue(-12, 12),
-                              (tile_pos.y * TILE_SIZE) + GetRandomValue(-12, 12), 16, 16));
+    if (item_type != NULL) {
+      TraceLog(LOG_DEBUG, "Drop item");
+      world_add_being(world,
+                      being_new(BEING_ITEM,
+                                (BeingInstanceEx){.type = BEING_INSTANCE_ITEM,
+                                                  .var = {.item_instance = {.item = {.type = *item_type}}}},
+                                (tile_pos.x * TILE_SIZE) + GetRandomValue(-7, 9),
+                                (tile_pos.y * TILE_SIZE) + GetRandomValue(-7, 9), 16, 16));
+    }
 
     for (int i = 0; i < 5; i++) {
       game_emit_particle(tile_pos.x * TILE_SIZE + GetRandomValue(-9, 14),

@@ -62,22 +62,32 @@ typedef struct {
   int y;
 } Vec2i;
 
+// RAYLIB Typedefs
+typedef Vector2 Vec2f;
+typedef Rectangle Rectf;
+
 typedef Vec2i ChunkPos;
 typedef Vec2i TilePos;
 
 void shared_init();
 
-void rec_draw_outline(Rectangle rec, Color color);
+void rec_draw_outline(Rectf rec, Color color);
 
 Vec2i vec2i(int x, int y);
+
+Vec2i vec2i_add(Vec2i vec0, Vec2i vec1);
+
+Vec2i vec2i_sub(Vec2i vec0, Vec2i vec1);
+
+Vec2f vec2f(float x, float y);
 
 bool vec2_eq(const Vec2i *vec1, const Vec2i *vec2);
 
 Texture2D load_texture(char *path);
 
-Rectangle rect(float x, float y, float w, float h);
+Rectf rectf(float x, float y, float w, float h);
 
-void DrawTextureRecEx(Texture2D texture, Rectangle source, Vector2 pos, float rotation, float scale, Color tint);
+void DrawTextureRecEx(Texture2D texture, Rectf source, Vector2 pos, float rotation, float scale, Color tint);
 
 int floor_div(int a, int b);
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "data.h"
+#include "item.h"
 #include "shared.h"
 #include <raylib.h>
 
@@ -32,6 +33,7 @@ typedef struct {
   TileLayer layer;
   Color tile_color;
   int tile_height;
+  ItemType *tile_item;
 
   // ADVANCED TILE PROPERTIES
   bool is_ticking;
@@ -68,6 +70,8 @@ TileInstance tile_new(const TileType *type, int x, int y);
 void tile_render(TileInstance *tile);
 
 void tile_render_scaled(TileInstance *tile, float scale);
+
+void tile_render_new(TileInstance *tiles, int x, int y);
 
 void tile_right_click(TileInstance *tile);
 

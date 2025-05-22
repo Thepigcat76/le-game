@@ -1,7 +1,8 @@
 #pragma once
 
 #include <raylib.h>
-#define ITEMS_AMOUNT 5
+
+#define ITEMS_AMOUNT 6
 
 typedef enum {
   ITEM_EMPTY,
@@ -9,6 +10,7 @@ typedef enum {
   ITEM_STICK,
   ITEM_HAMMER,
   ITEM_GRASS,
+  ITEM_STONE,
 } ItemId;
 
 typedef struct {
