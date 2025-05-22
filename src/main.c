@@ -49,6 +49,7 @@ int main(void) {
   TileInstance selected_tile_to_place_instance =
       tile_new(&TILES[selected_tile_to_place], selected_tile_to_place_render_pos.x + 35,
                selected_tile_to_place_render_pos.y - 60);
+  bool hitboxes_visible = false;
 
   GAME = (Game){
       .player = player_new(),
@@ -70,7 +71,7 @@ int main(void) {
   if (FileExists("save/game.bin")) {
     game_load(game);
   } else {
-    player_set_pos_ex(&game->player, TILE_SIZE * ((float)CHUNK_SIZE / 2), TILE_SIZE * ((float)CHUNK_SIZE / 2), false);
+    player_set_pos_ex(&game->player, TILE_SIZE * ((float)CHUNK_SIZE / 2), TILE_SIZE * ((float)CHUNK_SIZE / 2), false, false, false);
     world_gen(&game->world);
   }
 
@@ -177,9 +178,10 @@ int main(void) {
 
             player_render(&game->player);
 
-            rec_draw_outline(game->player.box, BLUE);
+            if (hitboxes_visible) {
+              rec_draw_outline(game->player.box, BLUE);
+            }
 
-            // TODO: Use IsMouseButtonDown again
             if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !slot_selected && interaction_in_range) {
               TileInstance *selected_tile = world_highest_tile_at(&game->world, vec2i(x_index, y_index));
               TileInstance tile = *selected_tile;
@@ -231,6 +233,14 @@ int main(void) {
             }
           }
 
+          if (IsKeyReleased(KEYBINDS.open_backpack_menu_key)) {
+            game_set_menu(game, MENU_BACKPACK);
+          }
+
+          if (IsKeyReleased(KEYBINDS.toggle_hitbox_key)) {
+            hitboxes_visible = !hitboxes_visible;
+          }
+
           if (IsKeyPressed(KEY_F1)) {
             world_add_being(&game->world,
                             being_new(BEING_ITEM,
@@ -249,13 +259,7 @@ int main(void) {
             }
           }
 
-          if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-          }
-
           game_render_particles(game);
-
-          // DrawTexture(water_animation.frames[currentFrame].texture, 0, 0,
-          // WHITE); update_gif_animation(&water_animation, GetFrameTime());
 
           // CAMERA END
         }

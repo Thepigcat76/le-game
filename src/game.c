@@ -22,7 +22,6 @@ void game_render(Game *game) {
 
   for (int i = 0; i < game->world.beings_amount; i++) {
     being_render(&game->world.beings[i]);
-    rec_draw_outline(game->world.beings[i].context.box, WHITE);
   }
 }
 
@@ -130,27 +129,33 @@ void game_unload(Game *game) {
 
 // -- PARTICLES --
 
-void game_emit_particle(Game *game, int x, int y, ParticleId particle_id, ParticleInstanceEx particle_extra) {
+ParticleInstance *game_emit_particle_ex(Game *game, ParticleInstance particle_instance) {
   ParticleInstance *particles = GAME.particle_manager.particles;
-  Vector2 pos = {x, y};
 
   for (int i = 0; i < MAX_PARTICLES_AMOUNT; i++) {
     if (!GAME.particle_manager.particles[i].active) {
       float angle = (float)(rand() % 360) * DEG2RAD;
       float speed = 20 + (rand() % 100);
-
-      particles[i].position = pos;
-      particles[i].velocity = (Vector2){0, 0};
-      //(Vector2){cosf(angle) * speed, sinf(angle) * speed};
-      particles[i].lifetime = (1.5f + (float)(rand() % 100) / 1000.0f) / 3;
-      particles[i].age = 0;
-      particles[i].color = particle_extra.var.tile_break.tint;
-      particles[i].active = true;
-      particles[i].id = particle_id;
-      particles[i].extra = particle_extra;
-      break;
+      game->particle_manager.particles[i] = particle_instance;
+      return &game->particle_manager.particles[i];
     }
   }
+  return NULL;
+}
+
+ParticleInstance *game_emit_particle(Game *game, int x, int y, ParticleId particle_id,
+                                     ParticleInstanceEx particle_extra) {
+  Vector2 pos = {x, y};
+  ParticleInstance particle_instance = {
+      .position = pos,
+      .velocity = vec2f(0, 0),
+      .lifetime = (1.5f + (float)(rand() % 100) / 1000.0f) / 3,
+      .age = 0,
+      .color = particle_extra.type == PARTICLE_INSTANCE_TILE_BREAK ? particle_extra.var.tile_break.tint : WHITE,
+      .active = true,
+      .id = particle_id,
+      .extra = particle_extra}; 
+  return game_emit_particle_ex(game, particle_instance);
 }
 
 static void particles_update(Game *game) {

@@ -1,3 +1,3 @@
 surtur build --win
-mv ./build/le-game.exe ./
-git add le-game.exe
+mv ./build/cozy-wrath.exe ./
+git add cozy-wrath.exe

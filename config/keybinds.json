@@ -4,5 +4,7 @@
   "move-left": "A",
   "move-right": "D",
   "open-close-save-menu": "Esc",
-  "reload": "R"
+  "reload": "R",
+  "open-backpack-menu": "B",
+  "toggle-hitbox": "H"
 }

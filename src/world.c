@@ -157,10 +157,12 @@ bool world_remove_tile(World *world, TilePos tile_pos) {
     }
 
     for (int i = 0; i < 5; i++) {
-      game_emit_particle(&GAME, tile_pos.x * TILE_SIZE + GetRandomValue(-9, 14),
-                         tile_pos.y * TILE_SIZE + GetRandomValue(-9, 14), PARTICLE_TILE_BREAK,
-                         (ParticleInstanceEx){.type = PARTICLE_INSTANCE_TILE_BREAK,
-                                              .var = {.tile_break = {.texture = particle_texture, .tint = color}}});
+      ParticleInstance *particle =
+          game_emit_particle(&GAME, tile_pos.x * TILE_SIZE + GetRandomValue(-9, 14),
+                             tile_pos.y * TILE_SIZE + GetRandomValue(-9, 14), PARTICLE_TILE_BREAK,
+                             (ParticleInstanceEx){.type = PARTICLE_INSTANCE_TILE_BREAK,
+                                                  .var = {.tile_break = {.texture = particle_texture, .tint = color}}});
+      particle->velocity = vec2f(0, 0);
       TraceLog(LOG_INFO, "r: %d g: %d b: %d a: %d", color.r, color.g, color.b, color.a);
     }
     return true;

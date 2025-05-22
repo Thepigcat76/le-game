@@ -1,11 +1,15 @@
 #include "../include/player.h"
 #include "../include/camera.h"
 #include "../include/config.h"
+#include "../include/game.h"
 #include "../include/shared.h"
 #include "math.h"
 #include <raylib.h>
 
+Texture2D particle_texture0;
+
 Player player_new() {
+  particle_texture0 = load_texture("res/assets/particle.png");
   return (Player){.world = NULL,
                   .cam = camera_new(SCREEN_WIDTH, SCREEN_HEIGHT),
                   .animated_textures = {load_texture("res/assets/player_front_walk.png"),
@@ -61,9 +65,10 @@ void player_render(Player *player) {
   double scale = 1;
   Texture2D player_texture = player_get_texture(player);
   DrawTexturePro(
-      player_texture, (Rectangle){0, player->walking ? 32 * player->animation_frame : 32, 16, 32},
+      player_texture,
+      (Rectangle){0, player->walking ? 32 * player->animation_frame : 32, 16, player->in_water ? 24 : 32},
       (Rectangle){
-          .x = player->box.x + 8 * scale, .y = player->box.y + 16 * scale, .width = 16 * scale, .height = 32 * scale},
+          .x = player->box.x + 8 * scale, .y = player->box.y + 16 * scale, .width = 16 * scale, .height = (player->in_water ? 24 : 32) * scale},
       (Vector2){.x = 8 * scale, .y = 16 * scale}, 0, WHITE);
 
   if (player->walking) {
@@ -71,7 +76,14 @@ void player_render(Player *player) {
   }
 }
 
-void player_set_pos_ex(Player *player, float x, float y, bool update_chunk) {
+void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool walking_particles,
+                       bool check_for_water) {
+  player->in_water = world_ground_tile_at(player->world, player->tile_pos)->type.id == TILE_WATER;
+  if (check_for_water && player->in_water) {
+    x -= (x - player->box.x) / 2;
+    y -= (y - player->box.y) / 2;
+  }
+
   ChunkPos old_chunk_pos = player->chunk_pos;
   player->box.x = x;
   player->box.y = y;
@@ -105,9 +117,20 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk) {
               player->world, vec2i(player->chunk_pos.x + offset.x, player->chunk_pos.y + offset.y))]);
     }
   }
+
+  if (walking_particles && GetRandomValue(0, 4) == 0) {
+    TraceLog(LOG_DEBUG, "WALKING PARTICLES");
+    TileInstance *tile = world_ground_tile_at(&GAME.world, player->tile_pos);
+    ParticleInstance *particle = game_emit_particle(
+        &GAME, x + GetRandomValue(-5, 7), y + GetRandomValue(-5, 7) + 26, PARTICLE_TILE_BREAK,
+        (ParticleInstanceEx){.type = PARTICLE_INSTANCE_TILE_BREAK,
+                             .var = {.tile_break = {.texture = particle_texture0, .tint = tile->type.tile_color}}});
+    particle->lifetime /= 2.5;
+    particle->velocity = vec2f(0, 0);
+  }
 }
 
-void player_set_pos(Player *player, float x, float y) { player_set_pos_ex(player, x, y, true); }
+void player_set_pos(Player *player, float x, float y) { player_set_pos_ex(player, x, y, true, true, true); }
 
 void player_handle_zoom(Player *player, bool zoom_in, bool zoom_out) {
   Camera2D *cam = &player->cam;

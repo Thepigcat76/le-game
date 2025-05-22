@@ -1,5 +1,5 @@
 -- properties
-Name = "ballz"
+Name = "cozy-wrath"
 Props = {
     std = "c23",
     version = "0.1",

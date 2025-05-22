@@ -15,6 +15,8 @@ typedef struct {
     int move_right_key;
     int open_close_save_menu_key;
     int reload_key;
+    int open_backpack_menu_key;
+    int toggle_hitbox_key;
 } Keybinds;
 
 extern Config CONFIG;

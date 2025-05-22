@@ -9,21 +9,21 @@
 Config CONFIG;
 Keybinds KEYBINDS;
 
-#define CONFIG_READ(file_name, json_object_name, block)                        \
-  char *file = read_file_to_string("config/" file_name ".json");               \
-  cJSON *json_object_name = cJSON_Parse(file);                                 \
-  if (json_object_name == NULL) {                                              \
-    printf("Error parsing JSON\n");                                            \
-    exit(1);                                                                   \
-  }                                                                            \
-  {block};                                                                     \
-  cJSON_Delete(json_object_name);                                              \
+#define CONFIG_READ(file_name, json_object_name, block)                                                                \
+  char *file = read_file_to_string("config/" file_name ".json");                                                       \
+  cJSON *json_object_name = cJSON_Parse(file);                                                                         \
+  if (json_object_name == NULL) {                                                                                      \
+    printf("Error parsing JSON\n");                                                                                    \
+    exit(1);                                                                                                           \
+  }                                                                                                                    \
+  {block};                                                                                                             \
+  cJSON_Delete(json_object_name);                                                                                      \
   free(file);
 
 static int key_from_str(char *key) {
-  int keys_amount = 7;
-  char *key_strings[] = {"W", "A", "S", "D", "R", "E", "Esc"};
-  int keys[] = {KEY_W, KEY_A, KEY_S, KEY_D, KEY_R, KEY_E, KEY_ESCAPE};
+  int keys_amount = 9;
+  char *key_strings[] = {"W", "A", "S", "D", "R", "E", "B", "H", "Esc"};
+  int keys[] = {KEY_W, KEY_A, KEY_S, KEY_D, KEY_R, KEY_E, KEY_B, KEY_H, KEY_ESCAPE};
   for (int i = 0; i < keys_amount; i++) {
     if (strcmp(key, key_strings[i]) == 0) {
       return keys[i];
@@ -34,16 +34,14 @@ static int key_from_str(char *key) {
 
 static void keybinds_on_reload() {
   CONFIG_READ("keybinds", json, {
-    cJSON *move_foreward_key =
-        cJSON_GetObjectItemCaseSensitive(json, "move-foreward");
-    cJSON *move_backward_key =
-        cJSON_GetObjectItemCaseSensitive(json, "move-backward");
+    cJSON *move_foreward_key = cJSON_GetObjectItemCaseSensitive(json, "move-foreward");
+    cJSON *move_backward_key = cJSON_GetObjectItemCaseSensitive(json, "move-backward");
     cJSON *move_left_key = cJSON_GetObjectItemCaseSensitive(json, "move-left");
-    cJSON *move_right_key =
-        cJSON_GetObjectItemCaseSensitive(json, "move-right");
-    cJSON *open_close_save_menu_key =
-        cJSON_GetObjectItemCaseSensitive(json, "open-close-save-menu");
+    cJSON *move_right_key = cJSON_GetObjectItemCaseSensitive(json, "move-right");
+    cJSON *open_close_save_menu_key = cJSON_GetObjectItemCaseSensitive(json, "open-close-save-menu");
     cJSON *reload_key = cJSON_GetObjectItemCaseSensitive(json, "reload");
+    cJSON *open_backpack_menu = cJSON_GetObjectItemCaseSensitive(json, "open-backpack-menu");
+    cJSON *toggle_hitbox = cJSON_GetObjectItemCaseSensitive(json, "toggle-hitbox");
 
     if (cJSON_IsString(move_foreward_key)) {
       KEYBINDS.move_foreward_key = key_from_str(move_foreward_key->valuestring);
@@ -62,28 +60,30 @@ static void keybinds_on_reload() {
     }
 
     if (cJSON_IsString(open_close_save_menu_key)) {
-      KEYBINDS.open_close_save_menu_key =
-          key_from_str(open_close_save_menu_key->valuestring);
+      KEYBINDS.open_close_save_menu_key = key_from_str(open_close_save_menu_key->valuestring);
     }
 
     if (cJSON_IsString(reload_key)) {
       KEYBINDS.reload_key = key_from_str(reload_key->valuestring);
+    }
+
+    if (cJSON_IsString(open_backpack_menu)) {
+      KEYBINDS.open_backpack_menu_key = key_from_str(open_backpack_menu->valuestring);
+    }
+
+    if (cJSON_IsString(toggle_hitbox)) {
+      KEYBINDS.toggle_hitbox_key = key_from_str(toggle_hitbox->valuestring);
     }
   });
 }
 
 void config_on_reload() {
   CONFIG_READ("game", json, {
-    cJSON *ambient_light =
-        cJSON_GetObjectItemCaseSensitive(json, "ambient-light");
-    cJSON *player_speed =
-        cJSON_GetObjectItemCaseSensitive(json, "player-speed");
-    cJSON *default_font_size =
-        cJSON_GetObjectItemCaseSensitive(json, "default-font-size");
-    cJSON *interaction_range =
-        cJSON_GetObjectItemCaseSensitive(json, "interaction-range");
-    cJSON *item_pickup_delay =
-        cJSON_GetObjectItemCaseSensitive(json, "item-pickup-delay");
+    cJSON *ambient_light = cJSON_GetObjectItemCaseSensitive(json, "ambient-light");
+    cJSON *player_speed = cJSON_GetObjectItemCaseSensitive(json, "player-speed");
+    cJSON *default_font_size = cJSON_GetObjectItemCaseSensitive(json, "default-font-size");
+    cJSON *interaction_range = cJSON_GetObjectItemCaseSensitive(json, "interaction-range");
+    cJSON *item_pickup_delay = cJSON_GetObjectItemCaseSensitive(json, "item-pickup-delay");
 
     if (cJSON_IsNumber(ambient_light)) {
       CONFIG.ambient_light = ambient_light->valuedouble;

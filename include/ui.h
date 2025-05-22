@@ -84,6 +84,8 @@ void ui_button_render(UiRenderer *renderer, const char *text, Texture2D texture,
 
 void ui_text_render_ex(UiRenderer *renderer, TextUiComponent component);
 
+void ui_text_render_offset(UiRenderer *renderer, const char *text, Vec2i offset);
+
 void ui_text_render(UiRenderer *renderer, const char *text);
 
 void ui_spacing_render_ex(UiRenderer *renderer, SpacingUiComponent component);
