@@ -125,7 +125,19 @@ bool world_set_tile_on_layer(World *world, TilePos tile_pos, TileInstance tile, 
   return false;
 }
 
-void world_remove_tile(World *world, TilePos tile_pos) {
+bool world_place_tile(World *world, TilePos tile_pos, TileInstance tile) {
+  TileLayer layer = tile.type.layer;
+  for (int l = layer - 1; l >= 0; l--) {
+    if (world_tile_at(world, tile_pos, l)->type.id == TILE_EMPTY)
+      return false;
+    if (l == 0)
+      break;
+  }
+
+  return world_set_tile_on_layer(world, tile_pos, tile, layer);
+}
+
+bool world_remove_tile(World *world, TilePos tile_pos) {
   TileInstance empty_instance = TILE_INSTANCE_EMPTY;
   empty_instance.box.x = tile_pos.x * TILE_SIZE;
   empty_instance.box.y = tile_pos.y * TILE_SIZE;
@@ -151,7 +163,9 @@ void world_remove_tile(World *world, TilePos tile_pos) {
                                               .var = {.tile_break = {.texture = particle_texture, .tint = color}}});
       TraceLog(LOG_INFO, "r: %d g: %d b: %d a: %d", color.r, color.g, color.b, color.a);
     }
+    return true;
   }
+  return false;
 }
 
 void world_add_being(World *world, BeingInstance being) {

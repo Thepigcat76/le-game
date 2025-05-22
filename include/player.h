@@ -3,6 +3,7 @@
 #include "item.h"
 #include "shared.h"
 #include "data.h"
+#include "tile.h"
 #include "world.h"
 #include <raylib.h>
 
@@ -15,6 +16,7 @@ typedef struct {
   int animation_frame;
   int frame_timer;
   bool walking;
+  TileInstance last_broken_tile;
 
   // PLAYER DATA
   Rectangle box;

@@ -15,6 +15,7 @@ Player player_new() {
                   .textures = {load_texture("res/assets/player_front.png"), load_texture("res/assets/player_back.png"),
                                load_texture("res/assets/player_left.png"), load_texture("res/assets/player_right.png")},
                   .direction = DIRECTION_DOWN,
+                  .last_broken_tile = TILE_INSTANCE_EMPTY,
                   .essence = 0,
                   .animation_frame = 0,
                   .frame_timer = 0,

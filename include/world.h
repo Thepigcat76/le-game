@@ -43,7 +43,9 @@ bool world_set_tile(World *world, TilePos tile_pos, TileInstance tile);
 
 bool world_set_tile_on_layer(World *world, TilePos tile_pos, TileInstance tile, TileLayer layer);
 
-void world_remove_tile(World *world, TilePos tile_pos);
+bool world_place_tile(World *world, TilePos tile_pos, TileInstance tile);
+
+bool world_remove_tile(World *world, TilePos tile_pos);
 
 void world_prepare_rendering(World *world);
 

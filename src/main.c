@@ -211,9 +211,12 @@ int main(void) {
             rec_draw_outline(game.player.box, BLUE);
 
             // TODO: Use IsMouseButtonDown again
-            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !slot_selected && interaction_in_range) {
-              TileInstance *selected_tile = world_ground_tile_at(&game.world, vec2i(x_index, y_index));
-              if (CheckCollisionPointRec(mouse_world_pos, selected_tile->box)) {
+            if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !slot_selected && interaction_in_range) {
+              TileInstance *selected_tile = world_highest_tile_at(&game.world, vec2i(x_index, y_index));
+              TileInstance tile = *selected_tile;
+              if (CheckCollisionPointRec(mouse_world_pos, selected_tile->box) &&
+                  (game.player.last_broken_tile.type.layer == selected_tile->type.layer ||
+                   game.player.last_broken_tile.type.id == TILE_EMPTY)) {
                 if (game.player.held_item.type.id == ITEM_HAMMER) {
                   for (int y = -1; y <= 1; y++) {
                     for (int x = -1; x <= 1; x++) {
@@ -223,7 +226,13 @@ int main(void) {
                 } else {
                   world_remove_tile(&game.world, vec2i(x_index, y_index));
                 }
+                game.player.last_broken_tile = tile;
+                TraceLog(LOG_DEBUG, "selected: %s", tile_type_to_string(&tile.type));
               }
+            }
+
+            if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+              game.player.last_broken_tile = TILE_INSTANCE_EMPTY;
             }
 
             if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && !slot_selected && interaction_in_range) {
@@ -231,7 +240,7 @@ int main(void) {
               if (CheckCollisionPointRec(mouse_world_pos, selected_tile->box)) {
                 TileInstance new_tile =
                     tile_new(&TILES[selected_tile_to_place], x_index * TILE_SIZE, y_index * TILE_SIZE);
-                bool placed = world_set_tile(&game.world, vec2i(x_index, y_index), new_tile);
+                bool placed = world_place_tile(&game.world, vec2i(x_index, y_index), new_tile);
                 if (placed && sound_timer >= SOUND_COOLDOWN) {
                   PlaySound(sound_buffer[cur_sound++]);
                   if (cur_sound >= SOUND_BUFFER_LIMIT) {
