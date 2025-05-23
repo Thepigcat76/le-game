@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+Texture2D DEBUG_BUTTON_TEXTURE;
+Texture2D DEBUG_BUTTON_SELECTED_TEXTURE;
+
 Texture2D BUTTON_TEXTURE;
 Texture2D BUTTON_SELECTED_TEXTURE;
 
@@ -63,6 +66,9 @@ char *read_file_to_string(const char *filename) {
 }
 
 void shared_init() {
+  DEBUG_BUTTON_TEXTURE = load_texture("res/assets/gui/debug_button.png");
+  DEBUG_BUTTON_SELECTED_TEXTURE = load_texture("res/assets/gui/debug_button_selected.png");
+  
   BUTTON_TEXTURE = load_texture("res/assets/gui/button.png");
   BUTTON_SELECTED_TEXTURE = load_texture("res/assets/gui/button_selected.png");
 

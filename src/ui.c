@@ -14,13 +14,54 @@ void ui_setup(UiRenderer *renderer) {
     renderer->cur_x = renderer->context.screen_width / 2;
     renderer->cur_y = (renderer->context.screen_height - renderer->ui_height) / 2;
   }
+  switch (renderer->cur_style.alignment) {
+  case UI_VERTICAL: {
+    if (renderer->cur_style.positions[0] == UI_LEFT || renderer->cur_style.positions[1] == UI_LEFT) {
+      renderer->cur_x = 0;
+    }
+
+    if (renderer->cur_style.positions[0] == UI_TOP || renderer->cur_style.positions[1] == UI_TOP) {
+      renderer->cur_y = 0;
+    }
+    break;
+  }
+  case UI_HORIZONTAL: {
+    if (renderer->cur_style.positions[0] == UI_LEFT || renderer->cur_style.positions[1] == UI_LEFT) {
+      renderer->cur_x = 0;
+    }
+
+    if (renderer->cur_style.positions[0] == UI_TOP || renderer->cur_style.positions[1] == UI_TOP) {
+      renderer->cur_y = 0;
+    }
+    break;
+  }
+  }
 }
 
 void ui_set_style(UiRenderer *renderer, UiStyle style) { renderer->cur_style = style; }
 
+float ui_scale(UiRenderer *renderer) { return (float)CONFIG.default_font_size / 10; }
+
 void ui_button_render_ex(UiRenderer *renderer, ButtonUiComponent component) {
   float scale = (float)CONFIG.default_font_size / 10;
-  renderer->cur_x = (renderer->context.screen_width - component.width * scale) / 2;
+  UiStyle style = renderer->cur_style;
+  switch (renderer->cur_style.alignment) {
+  case UI_VERTICAL: {
+    if (style.positions[0] == UI_CENTER || style.positions[1] == UI_CENTER) {
+      renderer->cur_x = (renderer->context.screen_width - component.width * scale) / 2;
+    }
+
+    renderer->cur_x += component.x_offset;
+    break;
+  }
+  case UI_HORIZONTAL: {
+    //
+    renderer->cur_x += component.x_offset;
+    break;
+  }
+  }
+
+  renderer->cur_x += component.x_offset;
   renderer->cur_y += component.y_offset;
 
   bool hovered = CheckCollisionPointRec(GetMousePosition(),
@@ -35,7 +76,21 @@ void ui_button_render_ex(UiRenderer *renderer, ButtonUiComponent component) {
   float text_y = renderer->cur_y + ((component.height * scale) / 2 - (float)CONFIG.default_font_size / 2) +
       component.text_y_offset;
   DrawText(component.message, text_x, text_y, CONFIG.default_font_size, WHITE);
-  renderer->cur_y += component.height * scale + renderer->cur_style.padding;
+
+  if (renderer->cur_style.alignment == UI_VERTICAL) {
+  } else if (renderer->cur_style.alignment == UI_HORIZONTAL) {
+  }
+
+  switch (renderer->cur_style.alignment) {
+  case UI_VERTICAL: {
+    renderer->cur_y += component.height * scale + renderer->cur_style.padding;
+    break;
+  }
+  case UI_HORIZONTAL: {
+    renderer->cur_x += component.width * scale + renderer->cur_style.padding;
+    break;
+  }
+  }
 
   if (hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
     component.on_click_func();
@@ -75,7 +130,8 @@ void ui_button_render_offset(UiRenderer *renderer, const char *text, Texture2D t
 void ui_text_render_ex(UiRenderer *renderer, TextUiComponent component) {
   renderer->cur_x = (renderer->context.screen_width - component.width) / 2;
   if (!renderer->simulate) {
-    DrawText(component.text, renderer->cur_x + component.x_offset, renderer->cur_y + component.y_offset, CONFIG.default_font_size, component.color);
+    DrawText(component.text, renderer->cur_x + component.x_offset, renderer->cur_y + component.y_offset,
+             CONFIG.default_font_size, component.color);
   }
   // TODO: Move cur coordinate by dimension depdening on style
   // renderer->cur_x += component->dimensions.x + component->offset.x;

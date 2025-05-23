@@ -72,6 +72,8 @@ void ui_setup(UiRenderer *renderer);
 
 void ui_set_style(UiRenderer *renderer, UiStyle style);
 
+float ui_scale(UiRenderer *renderer);
+
 void ui_button_render_ex(UiRenderer *renderer, ButtonUiComponent component);
 
 void ui_button_render_offset(UiRenderer *renderer, const char *text,

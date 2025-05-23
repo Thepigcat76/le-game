@@ -5,4 +5,5 @@ typedef enum {
     MENU_SAVE,
     MENU_START,
     MENU_BACKPACK,
+    MENU_DEBUG,
 } MenuId;

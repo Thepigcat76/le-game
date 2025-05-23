@@ -20,7 +20,7 @@ Game GAME;
 void game_render(Game *game) {
   world_render_layer(&game->world, TILE_LAYER_GROUND);
 
-  world_render_layer_top_split(&game->world, &game->player, true); 
+  world_render_layer_top_split(&game->world, &game->player, true);
 
   for (int i = 0; i < game->world.beings_amount; i++) {
     being_render(&game->world.beings[i]);
@@ -28,7 +28,7 @@ void game_render(Game *game) {
 
   player_render(&game->player);
 
-  world_render_layer_top_split(&game->world, &game->player, false); 
+  world_render_layer_top_split(&game->world, &game->player, false);
 }
 
 void game_tick(Game *game) {
@@ -60,6 +60,10 @@ void game_render_menu(Game *game) {
   }
   case MENU_BACKPACK: {
     RENDER_MENU(ui_renderer, backpack_menu);
+    break;
+  }
+  case MENU_DEBUG: {
+    RENDER_MENU(ui_renderer, debug_menu);
     break;
   }
   case MENU_NONE: {
@@ -160,7 +164,7 @@ ParticleInstance *game_emit_particle(Game *game, int x, int y, ParticleId partic
       .color = particle_extra.type == PARTICLE_INSTANCE_TILE_BREAK ? particle_extra.var.tile_break.tint : WHITE,
       .active = true,
       .id = particle_id,
-      .extra = particle_extra}; 
+      .extra = particle_extra};
   return game_emit_particle_ex(game, particle_instance);
 }
 

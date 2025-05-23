@@ -52,6 +52,7 @@ int main(void) {
   bool hitboxes_visible = false;
 
   bool debug_inventory = false;
+  bool debug_menu = false;
 
   GAME = (Game){
       .player = player_new(),
@@ -161,12 +162,6 @@ int main(void) {
           if (game->cur_menu != MENU_START) {
             game_render(game);
 
-            // DrawTextureEx(workstation_texture, (Vector2){.x = 0, .y = 0}, 0,
-            // 1,
-            //               WHITE);
-
-            // rec_draw_outline(&tile_box, BLUE);
-
             int x_index = floor_div(mouse_world_pos.x, TILE_SIZE);
             int y_index = floor_div(mouse_world_pos.y, TILE_SIZE);
             Rectangle rec = (Rectangle){
@@ -259,6 +254,16 @@ int main(void) {
             debug_inventory = !debug_inventory;
           }
 
+          if (IsKeyPressed(KEY_F3)) {
+            debug_menu = !debug_menu;
+
+            if (debug_menu) {
+              game_set_menu(game, MENU_DEBUG);
+            } else {
+              game_set_menu(game, MENU_NONE);
+            }
+          }
+
           // TODO: optimize this
           for (int i = 0; i < game->world.beings_amount; i++) {
             if (CheckCollisionRecs(game->world.beings[i].context.box, game->player.box)) {
@@ -339,6 +344,7 @@ int main(void) {
         ShowCursor();
       }
     }
+
     EndDrawing();
 
     for (int i = 0; i < TILE_TYPE_AMOUNT; i++) {
