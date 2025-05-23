@@ -196,11 +196,10 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
     Rectangle old_hitbox = player_hitbox;
     player_hitbox.height = 12;
     player_hitbox.y -= 26;
-    player_hitbox.y += 10;
+    player_hitbox.y += 16;
     TileInstance *tile = world_tile_at(player->world, vec2i_add(tile_pos, vec2i(0, 1)), TILE_LAYER_TOP);
-    TileInstance *this_tile = world_tile_at(player->world, tile_pos, TILE_LAYER_TOP);
-    player->collisions[DIRECTION_DOWN] = (tile->type.id != TILE_EMPTY &&
-            CheckCollisionRecs(tile->box, rec_offset_direction(player_hitbox, DIRECTION_DOWN, distance)));
+    player->collisions[DIRECTION_DOWN] = tile->type.id != TILE_EMPTY &&
+        CheckCollisionRecs(tile->box, rec_offset_direction(player_hitbox, DIRECTION_DOWN, distance));
     player->direction = DIRECTION_DOWN;
 
     if (!player->collisions[DIRECTION_DOWN]) {

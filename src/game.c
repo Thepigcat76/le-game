@@ -18,11 +18,17 @@ void game_reload() {
 Game GAME;
 
 void game_render(Game *game) {
-  world_render(&game->world);
+  world_render_layer(&game->world, TILE_LAYER_GROUND);
+
+  world_render_layer_top_split(&game->world, &game->player, true); 
 
   for (int i = 0; i < game->world.beings_amount; i++) {
     being_render(&game->world.beings[i]);
   }
+
+  player_render(&game->player);
+
+  world_render_layer_top_split(&game->world, &game->player, false); 
 }
 
 void game_tick(Game *game) {

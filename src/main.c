@@ -179,8 +179,6 @@ int main(void) {
               rec_draw_outline(rec, BLUE);
             }
 
-            player_render(&game->player);
-
             if (hitboxes_visible) {
               Rectangle player_hitbox = game->player.box;
               player_hitbox.height = 6;

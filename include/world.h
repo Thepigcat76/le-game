@@ -53,7 +53,9 @@ void world_prepare_chunk_rendering(World *world, Chunk *chunk);
 
 void world_set_tile_texture_data(World *world, TileInstance *tile, int x, int y);
 
-void world_render(World *world);
+void world_render_layer(World *world, TileLayer layer);
+
+void world_render_layer_top_split(World *world, void *player, bool draw_before_player);
 
 void world_add_being(World *world, BeingInstance being);
 

@@ -233,27 +233,55 @@ void world_prepare_rendering(World *world) {
   }
 }
 
-void world_render(World *world) {
+void world_render_layer(World *world, TileLayer layer) {
   for (int i = 0; i < world->chunks_amount; i++) {
     Vec2i chunk_pos = world->chunk_lookup.chunks_positions[i];
     int chunk_x = chunk_pos.x * CHUNK_SIZE;
     int chunk_y = chunk_pos.y * CHUNK_SIZE;
     Chunk *chunk = &world->chunks[i];
-    for (int y = chunk_y; y < chunk_y + CHUNK_SIZE; y++) {
-      for (int x = chunk_x; x < chunk_x + CHUNK_SIZE; x++) {
-        DrawTexture(tile_variants_by_index(chunk->variant_index, 0,
-                                           0)[chunk->background_texture_variants[y - chunk_y][x - chunk_x]],
-                    x * TILE_SIZE, y * TILE_SIZE, WHITE);
+    if (layer == TILE_LAYER_GROUND) {
+      for (int y = chunk_y; y < chunk_y + CHUNK_SIZE; y++) {
+        for (int x = chunk_x; x < chunk_x + CHUNK_SIZE; x++) {
+          DrawTexture(tile_variants_by_index(chunk->variant_index, 0,
+                                             0)[chunk->background_texture_variants[y - chunk_y][x - chunk_x]],
+                      x * TILE_SIZE, y * TILE_SIZE, WHITE);
+        }
       }
     }
-    for (int l = 0; l < TILE_LAYERS_AMOUNT; l++) {
-      for (int y = 0; y < CHUNK_SIZE; y++) {
-        for (int x = 0; x < CHUNK_SIZE; x++) {
-          TileInstance *tile = &chunk->tiles[y][x][l];
+
+    for (int y = 0; y < CHUNK_SIZE; y++) {
+      for (int x = 0; x < CHUNK_SIZE; x++) {
+        TileInstance *tile = &chunk->tiles[y][x][layer];
+        tile_render(tile);
+      }
+    }
+  }
+}
+
+void world_render_layer_top_split(World *world, void *_player, bool draw_before_player) {
+  Player *player = (Player *)_player;
+  float player_feet_y = player->box.y + player->box.height;
+
+  for (int i = 0; i < world->chunks_amount; i++) {
+    Chunk *chunk = &world->chunks[i];
+    Vec2i chunk_pos = world->chunk_lookup.chunks_positions[i];
+    int chunk_x = chunk_pos.x * CHUNK_SIZE;
+    int chunk_y = chunk_pos.y * CHUNK_SIZE;
+
+    for (int y = 0; y < CHUNK_SIZE; y++) {
+      int world_y = chunk_y + y;
+
+      for (int x = 0; x < CHUNK_SIZE; x++) {
+        int world_x = chunk_x + x;
+
+        TileInstance *tile = &chunk->tiles[y][x][TILE_LAYER_TOP];
+        float tile_screen_y = (world_y + 1) * TILE_SIZE;
+
+        bool should_draw = (tile_screen_y <= player_feet_y && draw_before_player) ||
+            (tile_screen_y > player_feet_y && !draw_before_player);
+
+        if (should_draw) {
           tile_render(tile);
-          if (l == TILE_LAYER_TOP && tile->type.id != TILE_EMPTY) {
-            rec_draw_outline(tile->box, GREEN);
-          }
         }
       }
     }

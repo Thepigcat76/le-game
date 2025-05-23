@@ -7,7 +7,7 @@
 #include "world.h"
 #include <raylib.h>
 
-typedef struct {
+typedef struct _player {
   World *world;
   Camera2D cam;
   Texture2D animated_textures[DIRECTIONS_AMOUNT];
