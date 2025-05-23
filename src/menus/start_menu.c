@@ -27,7 +27,7 @@ void start_menu_render(UiRenderer *renderer, const Game *game) {
   int x_offset = 0;
   int y_offset = -2;
 
-  ui_text_render(renderer, "LE GAME");
+  ui_text_render(renderer, "COZY WRATH");
   ui_spacing_render(renderer, 100);
   ui_button_render_offset(renderer, "Create World", BUTTON_TEXTURE,
                           BUTTON_SELECTED_TEXTURE, start_menu_create_world,

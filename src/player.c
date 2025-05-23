@@ -9,7 +9,7 @@
 Texture2D particle_texture0;
 
 Player player_new() {
-  particle_texture0 = load_texture("res/assets/particle.png");
+  particle_texture0 = load_texture("res/assets/walk_particles.png");
   return (Player){.world = NULL,
                   .cam = camera_new(SCREEN_WIDTH, SCREEN_HEIGHT),
                   .animated_textures = {load_texture("res/assets/player_front_walk.png"),
@@ -64,12 +64,13 @@ static void update_animation(Player *player, float deltaTime) {
 void player_render(Player *player) {
   double scale = 1;
   Texture2D player_texture = player_get_texture(player);
-  DrawTexturePro(
-      player_texture,
-      (Rectangle){0, player->walking ? 32 * player->animation_frame : 32, 16, player->in_water ? 24 : 32},
-      (Rectangle){
-          .x = player->box.x + 8 * scale, .y = player->box.y + 16 * scale, .width = 16 * scale, .height = (player->in_water ? 24 : 32) * scale},
-      (Vector2){.x = 8 * scale, .y = 16 * scale}, 0, WHITE);
+  DrawTexturePro(player_texture,
+                 (Rectangle){0, player->walking ? 32 * player->animation_frame : 32, 16, player->in_water ? 24 : 32},
+                 (Rectangle){.x = player->box.x + 8 * scale,
+                             .y = player->box.y + 16 * scale,
+                             .width = 16 * scale,
+                             .height = (player->in_water ? 24 : 32) * scale},
+                 (Vector2){.x = 8 * scale, .y = 16 * scale}, 0, WHITE);
 
   if (player->walking) {
     update_animation(player, GetFrameTime());
@@ -89,14 +90,10 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool
   player->box.y = y;
   player->cam.target.x = x;
   player->cam.target.y = y;
-  player->tile_pos.x = floor_div(x, TILE_SIZE);
-  player->tile_pos.y = floor_div(y, TILE_SIZE) + 1;
+  player->tile_pos.x = floor_div(x + 8, TILE_SIZE);
+  player->tile_pos.y = floor_div(y + 8, TILE_SIZE) + 1;
   player->chunk_pos.x = floor_div(x, CHUNK_SIZE * TILE_SIZE);
   player->chunk_pos.y = floor_div(y, CHUNK_SIZE * TILE_SIZE);
-
-  if (old_chunk_pos.x != player->chunk_pos.x || old_chunk_pos.y != player->chunk_pos.y) {
-    TraceLog(LOG_INFO, "Entering New chunk");
-  }
 
   if (update_chunk && !world_has_chunk_at(player->world, player->chunk_pos)) {
     world_gen_chunk_at(player->world, player->chunk_pos);
@@ -119,13 +116,12 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool
   }
 
   if (walking_particles && GetRandomValue(0, 4) == 0) {
-    TraceLog(LOG_DEBUG, "WALKING PARTICLES");
     TileInstance *tile = world_ground_tile_at(&GAME.world, player->tile_pos);
     ParticleInstance *particle = game_emit_particle(
-        &GAME, x + GetRandomValue(-5, 7), y + GetRandomValue(-5, 7) + 26, PARTICLE_TILE_BREAK,
+        &GAME, x + GetRandomValue(-5, 7), y + GetRandomValue(-5, 7) + 27, PARTICLE_TILE_BREAK,
         (ParticleInstanceEx){.type = PARTICLE_INSTANCE_TILE_BREAK,
                              .var = {.tile_break = {.texture = particle_texture0, .tint = tile->type.tile_color}}});
-    particle->lifetime /= 2.5;
+    particle->lifetime /= 1.5;
     particle->velocity = vec2f(0, 0);
   }
 }
@@ -144,6 +140,29 @@ void player_handle_zoom(Player *player, bool zoom_in, bool zoom_out) {
   }
 }
 
+Rectangle rec_offset(Rectangle rectangle, int32_t x_offset, int32_t y_offset, int32_t width_offset,
+                     int32_t height_offset) {
+  return (Rectangle){
+      .x = rectangle.x + x_offset,
+      .y = rectangle.y + y_offset,
+      .width = rectangle.width + width_offset,
+      .height = rectangle.height + height_offset,
+  };
+}
+
+Rectangle rec_offset_direction(Rectangle rec, Direction direction, int32_t distance) {
+  switch (direction) {
+  case DIRECTION_RIGHT:
+    return rec_offset(rec, distance, 0, 0, 0);
+  case DIRECTION_LEFT:
+    return rec_offset(rec, -distance, 0, 0, 0);
+  case DIRECTION_UP:
+    return rec_offset(rec, 0, -distance, 0, 0);
+  case DIRECTION_DOWN:
+    return rec_offset(rec, 0, distance, 0, 0);
+  }
+}
+
 void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
   Camera2D *cam = &player->cam;
 
@@ -151,25 +170,72 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
 
   bool walking = false;
 
+  TilePos tile_pos = player->tile_pos;
+  Rectangle player_hitbox = player->box;
+  player_hitbox.height = 6;
+  player_hitbox.y += 26;
+
   if (w) {
-    player_set_pos(player, player_pos(player).x, player_pos(player).y - distance);
+    Rectangle old_hitbox = player_hitbox;
+    player_hitbox.height = 12;
+    player_hitbox.y -= 26;
+    player_hitbox.y += 20;
+    TileInstance *tile = world_tile_at(player->world, vec2i_add(tile_pos, vec2i(0, 0)), TILE_LAYER_TOP);
+    player->collisions[DIRECTION_UP] =
+        (tile->type.id != TILE_EMPTY &&
+         CheckCollisionRecs(tile->box, rec_offset_direction(player_hitbox, DIRECTION_UP, distance)));
     player->direction = DIRECTION_UP;
-    walking = true;
+
+    if (!player->collisions[DIRECTION_UP]) {
+      player_set_pos(player, player_pos(player).x, player_pos(player).y - distance);
+      walking = true;
+    }
+    player_hitbox = old_hitbox;
   }
   if (s) {
-    player_set_pos(player, player_pos(player).x, player_pos(player).y + distance);
+    Rectangle old_hitbox = player_hitbox;
+    player_hitbox.height = 12;
+    player_hitbox.y -= 26;
+    player_hitbox.y += 10;
+    TileInstance *tile = world_tile_at(player->world, vec2i_add(tile_pos, vec2i(0, 1)), TILE_LAYER_TOP);
+    TileInstance *this_tile = world_tile_at(player->world, tile_pos, TILE_LAYER_TOP);
+    player->collisions[DIRECTION_DOWN] = (tile->type.id != TILE_EMPTY &&
+            CheckCollisionRecs(tile->box, rec_offset_direction(player_hitbox, DIRECTION_DOWN, distance)));
     player->direction = DIRECTION_DOWN;
-    walking = true;
+
+    if (!player->collisions[DIRECTION_DOWN]) {
+      player_set_pos(player, player_pos(player).x, player_pos(player).y + distance);
+      walking = true;
+    }
+    player_hitbox = old_hitbox;
   }
   if (a) {
-    player_set_pos(player, player_pos(player).x - distance, player_pos(player).y);
+    TileInstance *tile = world_tile_at(player->world, vec2i_add(tile_pos, vec2i(-1, 0)), TILE_LAYER_TOP);
+    // TileInstance *tile_above = world_tile_at(player->world, vec2i_add(tile_pos, vec2i(-1, -1)), TILE_LAYER_TOP);
+    player->collisions[DIRECTION_LEFT] =
+        (tile->type.id != TILE_EMPTY &&
+         CheckCollisionRecs(player_hitbox, rec_offset_direction(tile->box, DIRECTION_LEFT, distance)));
+    //||
+    //  (tile_above->type.id != TILE_EMPTY && CheckCollisionRecs(player->box, tile_above->box));
     player->direction = DIRECTION_LEFT;
-    walking = true;
+
+    if (!player->collisions[DIRECTION_LEFT]) {
+      player_set_pos(player, player_pos(player).x - distance, player_pos(player).y);
+      walking = true;
+    }
   }
   if (d) {
-    player_set_pos(player, player_pos(player).x + distance, player_pos(player).y);
+    TileInstance *tile = world_tile_at(player->world, vec2i_add(tile_pos, vec2i(1, 0)), TILE_LAYER_TOP);
+    ;
+    player->collisions[DIRECTION_RIGHT] =
+        (tile->type.id != TILE_EMPTY &&
+         CheckCollisionRecs(player_hitbox, rec_offset_direction(tile->box, DIRECTION_RIGHT, distance)));
     player->direction = DIRECTION_RIGHT;
-    walking = true;
+
+    if (!player->collisions[DIRECTION_RIGHT]) {
+      player_set_pos(player, player_pos(player).x + distance, player_pos(player).y);
+      walking = true;
+    }
   }
 
   player->walking = walking;

@@ -5,15 +5,18 @@
   extern void src_file_name##_item_init();                                                                             \
   src_file_name##_item_init();
 
-ItemType ITEMS[ITEMS_AMOUNT];
+ItemType ITEMS[ITEM_TYPE_AMOUNT];
 
 void item_types_init() {
   INIT_ITEM(empty);
   INIT_ITEM(torch);
   INIT_ITEM(stick);
   INIT_ITEM(hammer);
-  INIT_ITEM(grass)
-  INIT_ITEM(stone)
+  INIT_ITEM(backpack);
+  INIT_ITEM(map);
+  INIT_ITEM(grass);
+  INIT_ITEM(stone);
+  INIT_ITEM(dirt);
 }
 
 void item_render(const ItemInstance *item, int x, int y) {

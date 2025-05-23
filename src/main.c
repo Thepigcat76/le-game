@@ -51,6 +51,8 @@ int main(void) {
                selected_tile_to_place_render_pos.y - 60);
   bool hitboxes_visible = false;
 
+  bool debug_inventory = false;
+
   GAME = (Game){
       .player = player_new(),
       .world = world_new(),
@@ -71,7 +73,8 @@ int main(void) {
   if (FileExists("save/game.bin")) {
     game_load(game);
   } else {
-    player_set_pos_ex(&game->player, TILE_SIZE * ((float)CHUNK_SIZE / 2), TILE_SIZE * ((float)CHUNK_SIZE / 2), false, false, false);
+    player_set_pos_ex(&game->player, TILE_SIZE * ((float)CHUNK_SIZE / 2), TILE_SIZE * ((float)CHUNK_SIZE / 2), false,
+                      false, false);
     world_gen(&game->world);
   }
 
@@ -179,7 +182,12 @@ int main(void) {
             player_render(&game->player);
 
             if (hitboxes_visible) {
-              rec_draw_outline(game->player.box, BLUE);
+              Rectangle player_hitbox = game->player.box;
+              player_hitbox.height = 6;
+              player_hitbox.y += 26;
+              rec_draw_outline(player_hitbox, BLUE);
+              rec_draw_outline(rectf(game->player.tile_pos.x * TILE_SIZE, game->player.tile_pos.y * TILE_SIZE, 16, 16),
+                               RED);
             }
 
             if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !slot_selected && interaction_in_range) {
@@ -249,12 +257,26 @@ int main(void) {
                                       game->player.box.x, game->player.box.y, 16, 16));
           }
 
+          if (IsKeyPressed(KEY_F2)) {
+            debug_inventory = !debug_inventory;
+          }
+
           // TODO: optimize this
           for (int i = 0; i < game->world.beings_amount; i++) {
             if (CheckCollisionRecs(game->world.beings[i].context.box, game->player.box)) {
               if (GetTime() - game->world.beings[i].context.creation_time > CONFIG.item_pickup_delay) {
                 world_remove_being(&game->world, &game->world.beings[i]);
                 break;
+              }
+            }
+          }
+
+          ssize_t index = world_chunk_index_by_pos(&game->world, game->player.chunk_pos);
+          Chunk chunk = game->world.chunks[index];
+          for (int y = 0; y < 16; y++) {
+            for (int x = 0; x < 16; x++) {
+              TileInstance tile = chunk.tiles[y][x][TILE_LAYER_GROUND];
+              if (CheckCollisionRecs(game->player.box, tile.box)) {
               }
             }
           }
@@ -271,7 +293,7 @@ int main(void) {
 
       if (keycode >= 48 && keycode <= 57) {
         int tile_index = keycode - 48;
-        if (tile_index < TILES_AMOUNT) {
+        if (tile_index < TILE_TYPE_AMOUNT) {
           selected_tile_to_place = tile_index;
           selected_tile_to_place_instance =
               tile_new(&TILES[selected_tile_to_place], selected_tile_to_place_render_pos.x + 35,
@@ -298,6 +320,14 @@ int main(void) {
       if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && slot_selected) {
       }
 
+      if (debug_inventory) {
+        for (int i = 0; i < ITEM_TYPE_AMOUNT; i++) {
+          ItemInstance item = (ItemInstance){.type = ITEMS[i]};
+          item_render(&item, ((float)SCREEN_WIDTH / 2) - (ITEM_TYPE_AMOUNT * 16 * 3.5) / 2 + (i * 20 * 3.5),
+                      ((float)SCREEN_HEIGHT / 2) - 8 * 3.5);
+        }
+      }
+
       game_render_menu(game);
 
       if (game->player.held_item.type.id != ITEM_EMPTY) {
@@ -313,7 +343,7 @@ int main(void) {
     }
     EndDrawing();
 
-    for (int i = 0; i < TILES_AMOUNT; i++) {
+    for (int i = 0; i < TILE_TYPE_AMOUNT; i++) {
       update_animation(&TILES[i], GetFrameTime());
     }
 

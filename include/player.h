@@ -18,6 +18,7 @@ typedef struct {
   bool walking;
   bool in_water;
   TileInstance last_broken_tile;
+  bool collisions[DIRECTIONS_AMOUNT];
 
   // PLAYER DATA
   Rectangle box;

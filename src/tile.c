@@ -18,6 +18,7 @@ void tile_types_init() {
   INIT_TILE(water)
   INIT_TILE(workstation)
   INIT_TILE(oven)
+  INIT_TILE(tree)
 
   TILE_INSTANCE_EMPTY = tile_new(&TILES[TILE_EMPTY], 0, 0);
 }
@@ -38,6 +39,8 @@ char *tile_type_to_string(const TileType *type) {
     return "workstation";
   case TILE_OVEN:
     return "oven";
+  case TILE_TREE:
+    return "tree";
   }
 }
 

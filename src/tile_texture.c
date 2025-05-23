@@ -19,7 +19,7 @@ void tile_on_reload() {
   init_tile_variants();
 
   debug_variant_info();
-  for (int i = 0; i < TILES_AMOUNT; i++) {
+  for (int i = 0; i < TILE_TYPE_AMOUNT; i++) {
     if (TILES[i].id != TILE_EMPTY) {
       tile_type_init(&TILES[i]);
     }
@@ -41,7 +41,7 @@ typedef struct {
   int connections_amount;
 } ConnectedInfo;
 
-TileType TILES[TILES_AMOUNT];
+TileType TILES[TILE_TYPE_AMOUNT];
 TileInstance TILE_INSTANCE_EMPTY;
 static ConnectedInfo CONNECTED_INFO;
 

@@ -1,16 +1,19 @@
 #pragma once
 
+#include "shared.h"
 #include <raylib.h>
-
-#define ITEMS_AMOUNT 6
 
 typedef enum {
   ITEM_EMPTY,
   ITEM_TORCH,
   ITEM_STICK,
   ITEM_HAMMER,
+  ITEM_BACKPACK,
+  ITEM_MAP,
+  // TILE ITEMS
   ITEM_GRASS,
   ITEM_STONE,
+  ITEM_DIRT,
 } ItemId;
 
 typedef struct {
@@ -19,7 +22,7 @@ typedef struct {
   bool light_source;
 } ItemType;
 
-extern ItemType ITEMS[ITEMS_AMOUNT];
+extern ItemType ITEMS[ITEM_TYPE_AMOUNT];
 
 typedef struct {
   ItemType type;

@@ -17,8 +17,6 @@
 
 #define PATH_MAX 4096
 
-#define TILES_AMOUNT 7
-
 #define SAVE_DATA_BYTES 10000
 
 #define MAX_ENTITIES_AMOUNT 100
@@ -28,6 +26,10 @@
 #define TILE_LAYERS_AMOUNT 2
 
 #define MAX_PARTICLES_AMOUNT 500
+
+#define TILE_TYPE_AMOUNT 8
+
+#define ITEM_TYPE_AMOUNT 9
 
 extern Texture2D BUTTON_TEXTURE;
 extern Texture2D BUTTON_SELECTED_TEXTURE;
@@ -44,7 +46,7 @@ extern Texture2D LEAVE_GAME_SELECTED_BUTTON_TEXTURE;
 
 extern Texture2D BACKPACK_BACK_GROUND;
 
-extern int TILE_ANIMATION_FRAMES[TILES_AMOUNT];
+extern int TILE_ANIMATION_FRAMES[TILE_TYPE_AMOUNT];
 
 char *read_file_to_string(const char *filename);
 

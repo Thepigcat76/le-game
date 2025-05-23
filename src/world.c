@@ -251,6 +251,9 @@ void world_render(World *world) {
         for (int x = 0; x < CHUNK_SIZE; x++) {
           TileInstance *tile = &chunk->tiles[y][x][l];
           tile_render(tile);
+          if (l == TILE_LAYER_TOP && tile->type.id != TILE_EMPTY) {
+            rec_draw_outline(tile->box, GREEN);
+          }
         }
       }
     }
