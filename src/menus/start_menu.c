@@ -1,3 +1,4 @@
+#include "../../include/config.h"
 #include "../../include/game.h"
 #include "../../include/ui.h"
 #include <raylib.h>
@@ -17,11 +18,14 @@ static void start_menu_leave_game() {
 }
 
 void start_menu_render(UiRenderer *renderer, const Game *game) {
-  ui_set_style(renderer, (UiStyle){
-                             .positions = {UI_CENTER, UI_CENTER},
-                             .alignment = UI_VERTICAL,
-                             .padding = 24,
-                         });
+  ui_set_style(renderer,
+               (UiStyle){
+                   .positions = {UI_CENTER, UI_CENTER},
+                   .alignment = UI_VERTICAL,
+                   .padding = 24,
+                   .scale = 1,
+                   .font_scale = CONFIG.default_font_size,
+               });
   ui_setup(renderer);
 
   int x_offset = 0;
@@ -29,10 +33,8 @@ void start_menu_render(UiRenderer *renderer, const Game *game) {
 
   ui_text_render(renderer, "COZY WRATH");
   ui_spacing_render(renderer, 100);
-  ui_button_render_offset(renderer, "Create World", BUTTON_TEXTURE,
-                          BUTTON_SELECTED_TEXTURE, start_menu_create_world,
+  ui_button_render_offset(renderer, "Create World", BUTTON_TEXTURE, BUTTON_SELECTED_TEXTURE, start_menu_create_world,
                           vec2i(x_offset, y_offset));
-  ui_button_render_offset(renderer, "Leave Game", BUTTON_TEXTURE,
-                          BUTTON_SELECTED_TEXTURE, start_menu_leave_game,
+  ui_button_render_offset(renderer, "Leave Game", BUTTON_TEXTURE, BUTTON_SELECTED_TEXTURE, start_menu_leave_game,
                           vec2i(x_offset, y_offset));
 }

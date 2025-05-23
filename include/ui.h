@@ -21,6 +21,8 @@ typedef struct {
   UiPosition positions[2];
   UiAlignment alignment;
   int padding;
+  float scale;
+  float font_scale;
 } UiStyle;
 
 typedef struct {
@@ -76,12 +78,14 @@ float ui_scale(UiRenderer *renderer);
 
 void ui_button_render_ex(UiRenderer *renderer, ButtonUiComponent component);
 
-void ui_button_render_offset(UiRenderer *renderer, const char *text,
-                             Texture2D texture, Texture2D selected_texture,
+void ui_button_render_dimensions_offset(UiRenderer *renderer, const char *text, Texture2D texture,
+                                        Texture2D selected_texture, ButtonClickFunction on_click_func, Vec2i offset,
+                                        Vec2i dimensions);
+
+void ui_button_render_offset(UiRenderer *renderer, const char *text, Texture2D texture, Texture2D selected_texture,
                              ButtonClickFunction on_click_func, Vec2i offset);
 
-void ui_button_render(UiRenderer *renderer, const char *text, Texture2D texture,
-                      Texture2D selected_texture,
+void ui_button_render(UiRenderer *renderer, const char *text, Texture2D texture, Texture2D selected_texture,
                       ButtonClickFunction on_click_func);
 
 void ui_text_render_ex(UiRenderer *renderer, TextUiComponent component);

@@ -4,6 +4,7 @@
 #include "../include/ui.h"
 #include "raylib.h"
 #include <math.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -32,6 +33,7 @@ int main(void) {
 #ifdef SURTUR_DEBUG
   SetTraceLogLevel(LOG_DEBUG);
 #endif
+  SetConfigFlags(FLAG_WINDOW_RESIZABLE);
   InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Ballz");
   InitAudioDevice();
   SetExitKey(0);
@@ -49,8 +51,6 @@ int main(void) {
   TileInstance selected_tile_to_place_instance =
       tile_new(&TILES[selected_tile_to_place], selected_tile_to_place_render_pos.x + 35,
                selected_tile_to_place_render_pos.y - 60);
-  bool hitboxes_visible = false;
-
   bool debug_inventory = false;
   bool debug_menu = false;
 
@@ -65,7 +65,7 @@ int main(void) {
                                   .ui_height = -1,
                                   .cur_style = {0},
                                   .context = {.screen_width = SCREEN_WIDTH, .screen_height = SCREEN_HEIGHT}},
-  };
+      .debug_options = {.game_object_display = DISPLAY_NONE, .collisions_enabled = true, .hitboxes_shown = false}};
 
   Game *game = &GAME;
 
@@ -82,6 +82,9 @@ int main(void) {
   world_prepare_rendering(&game->world);
 
   SetTargetFPS(60);
+
+  int prevWidth = GetScreenWidth();
+  int prevHeight = GetScreenHeight();
 
   float speed = 2.0f;
 
@@ -117,6 +120,16 @@ int main(void) {
   while (!WindowShouldClose()) {
     ui_renderer->cur_x = 0;
     ui_renderer->cur_y = 0;
+
+    int width = GetScreenWidth();
+    int height = GetScreenHeight();
+
+    if (width != prevWidth || height != prevHeight) {
+      prevWidth = width;
+      prevHeight = height;
+
+      world_texture = LoadRenderTexture(width, height);
+    }
 
     game_tick(game);
 
@@ -174,7 +187,7 @@ int main(void) {
               rec_draw_outline(rec, BLUE);
             }
 
-            if (hitboxes_visible) {
+            if (GAME.debug_options.hitboxes_shown) {
               Rectangle player_hitbox = game->player.box;
               player_hitbox.height = 6;
               player_hitbox.y += 26;
@@ -199,7 +212,6 @@ int main(void) {
                   world_remove_tile(&game->world, vec2i(x_index, y_index));
                 }
                 game->player.last_broken_tile = tile;
-                TraceLog(LOG_DEBUG, "selected: %s", tile_type_to_string(&tile.type));
               }
             }
 
@@ -238,10 +250,6 @@ int main(void) {
             game_set_menu(game, MENU_BACKPACK);
           }
 
-          if (IsKeyReleased(KEYBINDS.toggle_hitbox_key)) {
-            hitboxes_visible = !hitboxes_visible;
-          }
-
           if (IsKeyPressed(KEY_F1)) {
             world_add_being(&game->world,
                             being_new(BEING_ITEM,
@@ -250,10 +258,7 @@ int main(void) {
                                       game->player.box.x, game->player.box.y, 16, 16));
           }
 
-          if (IsKeyPressed(KEY_F2)) {
-            debug_inventory = !debug_inventory;
-          }
-
+#ifdef SURTUR_DEBUG
           if (IsKeyPressed(KEY_F3)) {
             debug_menu = !debug_menu;
 
@@ -263,6 +268,7 @@ int main(void) {
               game_set_menu(game, MENU_NONE);
             }
           }
+#endif
 
           // TODO: optimize this
           for (int i = 0; i < game->world.beings_amount; i++) {
@@ -323,13 +329,9 @@ int main(void) {
       if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && slot_selected) {
       }
 
-      if (debug_inventory) {
-        for (int i = 0; i < ITEM_TYPE_AMOUNT; i++) {
-          ItemInstance item = (ItemInstance){.type = ITEMS[i]};
-          item_render(&item, ((float)SCREEN_WIDTH / 2) - (ITEM_TYPE_AMOUNT * 16 * 3.5) / 2 + (i * 20 * 3.5),
-                      ((float)SCREEN_HEIGHT / 2) - 8 * 3.5);
-        }
-      }
+#ifdef SURTUR_DEBUG
+      debug_render();
+#endif
 
       game_render_menu(game);
 

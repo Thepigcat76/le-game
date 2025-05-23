@@ -2,6 +2,7 @@
 
 #include "being.h"
 #include "data.h"
+#include "debug.h"
 #include "item.h"
 #include "menu.h"
 #include "particle.h"
@@ -15,8 +16,11 @@ typedef struct _game {
   World world;
   MenuId cur_menu;
   bool paused;
+  // RENDERING
   ParticleManager particle_manager;
   UiRenderer ui_renderer;
+  // DEBUGGING
+  DebugOptions debug_options;
 } Game;
 
 extern Game GAME;

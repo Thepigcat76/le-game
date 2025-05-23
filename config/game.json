@@ -1,7 +1,7 @@
 {
     "ambient-light": 0.85,
-    "player-speed": 1.25,
-    "default-font-size": 24,
+    "player-speed": 1.1,
+    "default-font-size": 34,
     "interaction-range": 8,
     "item-pickup-delay": 0.65
 }

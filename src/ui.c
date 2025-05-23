@@ -36,14 +36,17 @@ void ui_setup(UiRenderer *renderer) {
     break;
   }
   }
+
+  renderer->context.screen_width = GetScreenWidth();
+  renderer->context.screen_height = GetScreenHeight();
 }
 
 void ui_set_style(UiRenderer *renderer, UiStyle style) { renderer->cur_style = style; }
 
-float ui_scale(UiRenderer *renderer) { return (float)CONFIG.default_font_size / 10; }
+float ui_scale(UiRenderer *renderer) { return ((float)CONFIG.default_font_size / 10) * renderer->cur_style.scale; }
 
 void ui_button_render_ex(UiRenderer *renderer, ButtonUiComponent component) {
-  float scale = (float)CONFIG.default_font_size / 10;
+  float scale = renderer->cur_style.scale * ui_scale(renderer);
   UiStyle style = renderer->cur_style;
   switch (renderer->cur_style.alignment) {
   case UI_VERTICAL: {
@@ -55,7 +58,6 @@ void ui_button_render_ex(UiRenderer *renderer, ButtonUiComponent component) {
     break;
   }
   case UI_HORIZONTAL: {
-    //
     renderer->cur_x += component.x_offset;
     break;
   }
@@ -69,13 +71,18 @@ void ui_button_render_ex(UiRenderer *renderer, ButtonUiComponent component) {
                                                     .y = renderer->cur_y,
                                                     .width = component.width * scale,
                                                     .height = component.height * scale});
-  DrawTextureEx(hovered ? component.selected_texture : component.texture,
-                (Vector2){.x = renderer->cur_x, .y = renderer->cur_y}, 0, scale, WHITE);
-  int text_width = MeasureText(component.message, CONFIG.default_font_size);
+  DrawTexturePro(hovered ? component.selected_texture : component.texture,
+                 (Rectangle){.x = 0, .y = 0, .width = component.texture.width, .height = component.texture.height},
+                 (Rectangle){.x = renderer->cur_x + (component.width * scale) / 2,
+                             .y = renderer->cur_y + (component.height * scale) / 2,
+                             .width = component.width * scale,
+                             .height = component.height * scale},
+                 (Vector2){.x = (component.width * scale) / 2, .y = (component.height * scale) / 2}, 0, WHITE);
+  int text_width = MeasureText(component.message, renderer->cur_style.font_scale);
   float text_x = renderer->cur_x + component.text_x_offset + (float)(component.width * scale - text_width) / 2;
-  float text_y = renderer->cur_y + ((component.height * scale) / 2 - (float)CONFIG.default_font_size / 2) +
+  float text_y = renderer->cur_y + ((component.height * scale) / 2 - (float)renderer->cur_style.font_scale / 2) +
       component.text_y_offset;
-  DrawText(component.message, text_x, text_y, CONFIG.default_font_size, WHITE);
+  DrawText(component.message, text_x, text_y, renderer->cur_style.font_scale, WHITE);
 
   if (renderer->cur_style.alignment == UI_VERTICAL) {
   } else if (renderer->cur_style.alignment == UI_HORIZONTAL) {
@@ -112,6 +119,22 @@ void ui_button_render(UiRenderer *renderer, const char *text, Texture2D texture,
                                           .text_y_offset = -4});
 }
 
+void ui_button_render_dimensions_offset(UiRenderer *renderer, const char *text, Texture2D texture,
+                                        Texture2D selected_texture, ButtonClickFunction on_click_func, Vec2i offset,
+                                        Vec2i dimensions) {
+  ui_button_render_ex(renderer,
+                      (ButtonUiComponent){.message = text,
+                                          .on_click_func = on_click_func,
+                                          .texture = texture,
+                                          .selected_texture = selected_texture,
+                                          .width = dimensions.x,
+                                          .height = dimensions.y,
+                                          .x_offset = 0,
+                                          .y_offset = 0,
+                                          .text_x_offset = offset.x,
+                                          .text_y_offset = offset.y - 4});
+}
+
 void ui_button_render_offset(UiRenderer *renderer, const char *text, Texture2D texture, Texture2D selected_texture,
                              ButtonClickFunction on_click_func, Vec2i offset) {
   ui_button_render_ex(renderer,
@@ -131,7 +154,7 @@ void ui_text_render_ex(UiRenderer *renderer, TextUiComponent component) {
   renderer->cur_x = (renderer->context.screen_width - component.width) / 2;
   if (!renderer->simulate) {
     DrawText(component.text, renderer->cur_x + component.x_offset, renderer->cur_y + component.y_offset,
-             CONFIG.default_font_size, component.color);
+             renderer->cur_style.font_scale, component.color);
   }
   // TODO: Move cur coordinate by dimension depdening on style
   // renderer->cur_x += component->dimensions.x + component->offset.x;

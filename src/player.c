@@ -163,6 +163,11 @@ Rectangle rec_offset_direction(Rectangle rec, Direction direction, int32_t dista
   }
 }
 
+#define CHECK_COLLISIONS_ENABLED(direction)                                                                            \
+  if (!GAME.debug_options.collisions_enabled)                                                                          \
+    player->collisions[direction] = false;                                                                             \
+  if (GAME.debug_options.collisions_enabled)
+
 void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
   Camera2D *cam = &player->cam;
 
@@ -181,9 +186,14 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
     player_hitbox.y -= 26;
     player_hitbox.y += 20;
     TileInstance *tile = world_tile_at(player->world, vec2i_add(tile_pos, vec2i(0, 0)), TILE_LAYER_TOP);
-    player->collisions[DIRECTION_UP] =
-        (tile->type.id != TILE_EMPTY &&
-         CheckCollisionRecs(tile->box, rec_offset_direction(player_hitbox, DIRECTION_UP, distance)));
+#ifdef SURTUR_DEBUG
+    CHECK_COLLISIONS_ENABLED(DIRECTION_UP)
+#endif
+    {
+      player->collisions[DIRECTION_UP] =
+          (tile->type.id != TILE_EMPTY &&
+           CheckCollisionRecs(tile->box, rec_offset_direction(player_hitbox, DIRECTION_UP, distance)));
+    }
     player->direction = DIRECTION_UP;
 
     if (!player->collisions[DIRECTION_UP]) {
@@ -198,8 +208,13 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
     player_hitbox.y -= 26;
     player_hitbox.y += 16;
     TileInstance *tile = world_tile_at(player->world, vec2i_add(tile_pos, vec2i(0, 1)), TILE_LAYER_TOP);
-    player->collisions[DIRECTION_DOWN] = tile->type.id != TILE_EMPTY &&
-        CheckCollisionRecs(tile->box, rec_offset_direction(player_hitbox, DIRECTION_DOWN, distance));
+#ifdef SURTUR_DEBUG
+    CHECK_COLLISIONS_ENABLED(DIRECTION_DOWN)
+#endif
+    {
+      player->collisions[DIRECTION_DOWN] = tile->type.id != TILE_EMPTY &&
+          CheckCollisionRecs(tile->box, rec_offset_direction(player_hitbox, DIRECTION_DOWN, distance));
+    }
     player->direction = DIRECTION_DOWN;
 
     if (!player->collisions[DIRECTION_DOWN]) {
@@ -210,10 +225,15 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
   }
   if (a) {
     TileInstance *tile = world_tile_at(player->world, vec2i_add(tile_pos, vec2i(-1, 0)), TILE_LAYER_TOP);
-    // TileInstance *tile_above = world_tile_at(player->world, vec2i_add(tile_pos, vec2i(-1, -1)), TILE_LAYER_TOP);
-    player->collisions[DIRECTION_LEFT] =
-        (tile->type.id != TILE_EMPTY &&
-         CheckCollisionRecs(player_hitbox, rec_offset_direction(tile->box, DIRECTION_LEFT, distance)));
+// TileInstance *tile_above = world_tile_at(player->world, vec2i_add(tile_pos, vec2i(-1, -1)), TILE_LAYER_TOP);
+#ifdef SURTUR_DEBUG
+    CHECK_COLLISIONS_ENABLED(DIRECTION_LEFT)
+#endif
+    {
+      player->collisions[DIRECTION_LEFT] =
+          (tile->type.id != TILE_EMPTY &&
+           CheckCollisionRecs(player_hitbox, rec_offset_direction(tile->box, DIRECTION_LEFT, distance)));
+    }
     //||
     //  (tile_above->type.id != TILE_EMPTY && CheckCollisionRecs(player->box, tile_above->box));
     player->direction = DIRECTION_LEFT;
@@ -225,10 +245,15 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
   }
   if (d) {
     TileInstance *tile = world_tile_at(player->world, vec2i_add(tile_pos, vec2i(1, 0)), TILE_LAYER_TOP);
-    ;
-    player->collisions[DIRECTION_RIGHT] =
-        (tile->type.id != TILE_EMPTY &&
-         CheckCollisionRecs(player_hitbox, rec_offset_direction(tile->box, DIRECTION_RIGHT, distance)));
+
+#ifdef SURTUR_DEBUG
+    CHECK_COLLISIONS_ENABLED(DIRECTION_RIGHT)
+#endif
+    {
+      player->collisions[DIRECTION_RIGHT] =
+          (tile->type.id != TILE_EMPTY &&
+           CheckCollisionRecs(player_hitbox, rec_offset_direction(tile->box, DIRECTION_RIGHT, distance)));
+    }
     player->direction = DIRECTION_RIGHT;
 
     if (!player->collisions[DIRECTION_RIGHT]) {

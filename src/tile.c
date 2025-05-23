@@ -1,4 +1,5 @@
 #include "../include/tile.h"
+#include "../include/game.h"
 #include "../include/shared.h"
 #include <dirent.h>
 #include <limits.h>
@@ -99,6 +100,11 @@ void tile_render(TileInstance *tile) {
       }
       int offset_y = tile->type.tile_height - TILE_SIZE;
       DrawTextureRec(tile->type.texture, sprite_rect, (Vector2){tile->box.x, tile->box.y - offset_y}, WHITE);
+#ifdef SURTUR_DEBUG
+      if (GAME.debug_options.hitboxes_shown && tile->type.layer == TILE_LAYER_TOP) {
+        rec_draw_outline(tile->box, GREEN);
+      }
+#endif
     }
   }
 }
