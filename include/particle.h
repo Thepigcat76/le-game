@@ -6,12 +6,14 @@
 
 typedef enum {
   PARTICLE_TILE_BREAK,
+  PARTICLE_WALKING,
 } ParticleId;
 
 typedef struct {
   enum {
     PARTICLE_INSTANCE_DEFAULT,
     PARTICLE_INSTANCE_TILE_BREAK,
+    PARTICLE_INSTANCE_WALKING,
   } type;
   union {
     Texture2D default_texture;
@@ -19,6 +21,10 @@ typedef struct {
       Texture2D texture;
       Color tint;
     } tile_break;
+    struct {
+      Texture2D texture;
+      Color tint;
+    } walking;
   } var;
 } ParticleInstanceEx;
 

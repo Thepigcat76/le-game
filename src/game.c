@@ -10,6 +10,10 @@
   extern void menu_name##_render(UiRenderer *renderer, const Game *game);                                              \
   menu_name##_render(ui_renderer, game);
 
+#define INIT_MENU(menu_name)                                                                                           \
+  extern void menu_name##_init();                                                                                      \
+  menu_name##_init();
+
 void game_reload() {
   RELOAD(tile);
   RELOAD(config);
@@ -25,6 +29,8 @@ void game_render(Game *game) {
   for (int i = 0; i < game->world.beings_amount; i++) {
     being_render(&game->world.beings[i]);
   }
+
+  game_render_particles(game, true);
 
   player_render(&game->player);
 
@@ -45,6 +51,12 @@ void game_tick(Game *game) {
 
     player_handle_movement(&game->player, w, a, s, d);
   }
+}
+
+void game_init_menu(Game *game) {
+  INIT_MENU(save_menu);
+  // INIT_MENU(start_menu);
+  // INIT_MENU(debug_menu);
 }
 
 void game_render_menu(Game *game) {
@@ -156,15 +168,20 @@ ParticleInstance *game_emit_particle_ex(Game *game, ParticleInstance particle_in
 ParticleInstance *game_emit_particle(Game *game, int x, int y, ParticleId particle_id,
                                      ParticleInstanceEx particle_extra) {
   Vector2 pos = {x, y};
-  ParticleInstance particle_instance = {
-      .position = pos,
-      .velocity = vec2f(0, 0),
-      .lifetime = (1.5f + (float)(rand() % 100) / 1000.0f) / 3,
-      .age = 0,
-      .color = particle_extra.type == PARTICLE_INSTANCE_TILE_BREAK ? particle_extra.var.tile_break.tint : WHITE,
-      .active = true,
-      .id = particle_id,
-      .extra = particle_extra};
+  Color particle_color = WHITE;
+  if (particle_extra.type == PARTICLE_INSTANCE_TILE_BREAK) {
+    particle_color = particle_extra.var.tile_break.tint;
+  } else if (particle_extra.type == PARTICLE_INSTANCE_WALKING) {
+    particle_color = particle_extra.var.walking.tint;
+  }
+  ParticleInstance particle_instance = {.position = pos,
+                                        .velocity = vec2f(0, 0),
+                                        .lifetime = (1.5f + (float)(rand() % 100) / 1000.0f) / 3,
+                                        .age = 0,
+                                        .color = particle_color,
+                                        .active = true,
+                                        .id = particle_id,
+                                        .extra = particle_extra};
   return game_emit_particle_ex(game, particle_instance);
 }
 
@@ -190,23 +207,41 @@ static void particles_update(Game *game) {
   }
 }
 
-void game_render_particles(Game *game) {
+void game_render_particle(Game *game, ParticleInstance particle, bool behind_player) {
+  if (particle.active) {
+    switch (particle.extra.type) {
+    case PARTICLE_INSTANCE_DEFAULT: {
+      if (!behind_player) {
+        DrawTexture(particle.extra.var.default_texture, particle.position.x, particle.position.y, WHITE);
+      }
+      break;
+    }
+    case PARTICLE_INSTANCE_TILE_BREAK: {
+      if (!behind_player) {
+        DrawTextureV(particle.extra.var.tile_break.texture, (Vector2){particle.position.x, particle.position.y},
+                     particle.color);
+      }
+      break;
+    }
+    case PARTICLE_INSTANCE_WALKING: {
+      if (game->player.direction == DIRECTION_DOWN && behind_player) {
+        DrawTextureV(particle.extra.var.walking.texture, (Vector2){particle.position.x, particle.position.y},
+                     particle.color);
+      } else if (game->player.direction != DIRECTION_DOWN && !behind_player) {
+        DrawTextureV(particle.extra.var.walking.texture, (Vector2){particle.position.x, particle.position.y},
+                     particle.color);
+      }
+      break;
+    }
+    }
+  }
+}
+
+void game_render_particles(Game *game, bool behind_player) {
   particles_update(game);
 
   ParticleInstance *particles = GAME.particle_manager.particles;
   for (int i = 0; i < MAX_PARTICLES_AMOUNT; i++) {
-    if (particles[i].active) {
-      switch (particles[i].extra.type) {
-      case PARTICLE_INSTANCE_DEFAULT: {
-        DrawTexture(particles[i].extra.var.default_texture, particles[i].position.x, particles[i].position.y, WHITE);
-        break;
-      }
-      case PARTICLE_INSTANCE_TILE_BREAK: {
-        DrawTextureV(particles[i].extra.var.tile_break.texture,
-                     (Vector2){particles[i].position.x, particles[i].position.y}, particles[i].color);
-        break;
-      }
-      }
-    }
+    game_render_particle(game, particles[i], behind_player);
   }
 }

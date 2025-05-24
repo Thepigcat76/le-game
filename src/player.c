@@ -118,8 +118,8 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool
   if (walking_particles && GetRandomValue(0, 4) == 0) {
     TileInstance *tile = world_ground_tile_at(&GAME.world, player->tile_pos);
     ParticleInstance *particle = game_emit_particle(
-        &GAME, x + GetRandomValue(-5, 7), y + GetRandomValue(-5, 7) + 27, PARTICLE_TILE_BREAK,
-        (ParticleInstanceEx){.type = PARTICLE_INSTANCE_TILE_BREAK,
+        &GAME, x + GetRandomValue(-5, 7), y + GetRandomValue(-5, 7) + 27, PARTICLE_WALKING,
+        (ParticleInstanceEx){.type = PARTICLE_INSTANCE_WALKING,
                              .var = {.tile_break = {.texture = particle_texture0, .tint = tile->type.tile_color}}});
     particle->lifetime /= 1.5;
     particle->velocity = vec2f(0, 0);

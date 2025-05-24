@@ -45,6 +45,10 @@ void ui_set_style(UiRenderer *renderer, UiStyle style) { renderer->cur_style = s
 
 float ui_scale(UiRenderer *renderer) { return ((float)CONFIG.default_font_size / 10) * renderer->cur_style.scale; }
 
+// COMPONENTS
+
+// BUTTONS
+
 void ui_button_render_ex(UiRenderer *renderer, ButtonUiComponent component) {
   float scale = renderer->cur_style.scale * ui_scale(renderer);
   UiStyle style = renderer->cur_style;
@@ -53,7 +57,6 @@ void ui_button_render_ex(UiRenderer *renderer, ButtonUiComponent component) {
     if (style.positions[0] == UI_CENTER || style.positions[1] == UI_CENTER) {
       renderer->cur_x = (renderer->context.screen_width - component.width * scale) / 2;
     }
-
     renderer->cur_x += component.x_offset;
     break;
   }
@@ -150,6 +153,8 @@ void ui_button_render_offset(UiRenderer *renderer, const char *text, Texture2D t
                                           .text_y_offset = offset.y - 4});
 }
 
+// TEXT
+
 void ui_text_render_ex(UiRenderer *renderer, TextUiComponent component) {
   renderer->cur_x = (renderer->context.screen_width - component.width) / 2;
   if (!renderer->simulate) {
@@ -180,6 +185,61 @@ void ui_text_render(UiRenderer *renderer, const char *text) {
                                       .x_offset = 0,
                                       .y_offset = 0});
 }
+
+// TEXT INPUT
+
+void ui_text_input_render_ex(UiRenderer *renderer, TextInputUiComponent component) {
+  float scale = ui_scale(renderer) * renderer->cur_style.scale;
+  int x = renderer->cur_x + (component.width * scale) / 2;
+  int y = renderer->cur_y + (component.height * scale) / 2;
+  DrawTexturePro(component.texture,
+                 (Rectangle){.x = 0, .y = 0, .width = component.texture.width, .height = component.texture.height},
+                 (Rectangle){.x = x, .y = y, .width = component.width * scale, .height = component.height * scale},
+                 (Vector2){.x = (component.width * scale) / 2, .y = (component.height * scale) / 2}, 0, WHITE);
+
+  DrawText(component.text_input->buf, renderer->cur_x + 3 * scale, renderer->cur_y + 3,
+           renderer->cur_style.font_scale, WHITE);
+
+  int line_x = renderer->cur_x + MeasureText(component.text_input->buf, renderer->cur_style.font_scale);
+
+  if (((int)(GetTime() * 1.5)) % 2 == 0) {
+    DrawLineEx(vec2f(line_x + 3 * scale, renderer->cur_y + (component.height - 3) * scale),
+               vec2f(line_x + 11 * scale, renderer->cur_y + (component.height - 3) * scale), 3, WHITE);
+  }
+
+  KeyboardKey keycode_ch = GetCharPressed();
+  if (keycode_ch != KEY_NULL) {
+    char c = (char)keycode_ch;
+    if (component.text_input->len < component.text_input->max_len) {
+      component.text_input->buf[component.text_input->len++] = c;
+    }
+  }
+
+  if (IsKeyPressed(KEY_BACKSPACE)) {
+    if (component.text_input->len > 0) {
+      component.text_input->buf[component.text_input->len - 1] = '\0';
+      component.text_input->len--;
+    }
+  }
+}
+
+void ui_text_input_render_dimensions(UiRenderer *renderer, Texture2D texture, TextInputBuffer *text_input_buf,
+                                     Vec2i dimensions) {
+  ui_text_input_render_ex(renderer,
+                          (TextInputUiComponent){.texture = texture,
+                                                 .text_input = text_input_buf,
+                                                 .color = WHITE,
+                                                 .width = dimensions.x,
+                                                 .height = dimensions.y,
+                                                 .x_offset = 0,
+                                                 .y_offset = 0});
+}
+
+void ui_text_input_render(UiRenderer *renderer, Texture2D texture, TextInputBuffer *text_input_buf) {
+  ui_text_input_render_dimensions(renderer, texture, text_input_buf, vec2i(texture.width, texture.height));
+}
+
+// SPACING
 
 void ui_spacing_render_ex(UiRenderer *renderer, SpacingUiComponent component) {
   renderer->cur_y += component.height + component.y_offset + renderer->cur_style.padding;

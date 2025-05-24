@@ -69,6 +69,8 @@ int main(void) {
 
   Game *game = &GAME;
 
+  game_init_menu(game);
+
   player_set_world(&game->player, &game->world);
 
   if (FileExists("save/game.bin")) {
@@ -196,6 +198,10 @@ int main(void) {
                                RED);
             }
 
+            // TODO: MOVE TO GAME RENDER FUNCTION
+
+            game_render_particles(game, false);
+
             if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !slot_selected && interaction_in_range) {
               TileInstance *selected_tile = world_highest_tile_at(&game->world, vec2i(x_index, y_index));
               TileInstance tile = *selected_tile;
@@ -247,7 +253,7 @@ int main(void) {
           }
 
           if (IsKeyReleased(KEYBINDS.open_backpack_menu_key)) {
-            game_set_menu(game, MENU_BACKPACK);
+            // game_set_menu(game, MENU_BACKPACK);
           }
 
           if (IsKeyPressed(KEY_F1)) {
@@ -289,8 +295,6 @@ int main(void) {
               }
             }
           }
-
-          game_render_particles(game);
 
           // CAMERA END
         }

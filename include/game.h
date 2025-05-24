@@ -37,6 +37,8 @@ void game_unload(Game *game);
 
 // MENUS
 
+void game_init_menu(Game *game);
+
 void game_render_menu(Game *game);
 
 void game_set_menu(Game *game, MenuId menu_id);
@@ -45,6 +47,9 @@ void game_set_menu(Game *game, MenuId menu_id);
 
 ParticleInstance *game_emit_particle_ex(Game *game, ParticleInstance particle_instance);
 
-ParticleInstance *game_emit_particle(Game *game, int x, int y, ParticleId particle_id, ParticleInstanceEx particle_extra);
+ParticleInstance *game_emit_particle(Game *game, int x, int y, ParticleId particle_id,
+                                     ParticleInstanceEx particle_extra);
 
-void game_render_particles(Game *game);
+void game_render_particle(Game *game, ParticleInstance particle, bool behind_player);
+
+void game_render_particles(Game *game, bool behind_player);
