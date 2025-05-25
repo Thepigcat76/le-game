@@ -1,6 +1,9 @@
 #include "../include/game.h"
 #include "../include/config.h"
-#include <raylib.h>
+#include "raylib.h"
+#include <dirent.h>
+#include <stdio.h>
+#include <string.h>
 
 #define RELOAD(src_file_prefix)                                                                                        \
   extern void src_file_prefix##_on_reload();                                                                           \
@@ -21,6 +24,60 @@ void game_reload() {
 
 Game GAME;
 
+void game_create_world(Game *game, float seed) {
+  player_set_pos_ex(&game->player, TILE_SIZE * ((float)CHUNK_SIZE / 2), TILE_SIZE * ((float)CHUNK_SIZE / 2), false,
+                    false, false);
+  game->world.seed = seed;
+  world_gen(&game->world);
+}
+
+void game_detect_saves(Game *game) {
+  game->detected_saves = 0;
+  DIR *dir = opendir(SAVE_DIR);
+
+  if (dir == NULL) {
+    perror("Failed to open save directory to load saves");
+    exit(1);
+  }
+
+  struct dirent *entry;
+
+  while ((entry = readdir(dir)) != NULL) {
+    if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+      continue;
+    }
+
+    const char *full_dir_name = TextFormat("%s%s", SAVE_DIR, entry->d_name);
+
+    TraceLog(LOG_DEBUG, "Dir entry: %s", full_dir_name);
+    if (is_dir(full_dir_name) && string_starts_with(entry->d_name, "save")) {
+      game->detected_saves++;
+    }
+  }
+
+  closedir(dir);
+}
+
+// TICKING
+
+void game_tick(Game *game) {
+  if (!game->paused) {
+    bool zoom_in = IsKeyDown(KEY_UP);
+    bool zoom_out = IsKeyDown(KEY_DOWN);
+
+    player_handle_zoom(&game->player, zoom_in, zoom_out);
+
+    bool w = IsKeyDown(KEYBINDS.move_backward_key);
+    bool a = IsKeyDown(KEYBINDS.move_left_key);
+    bool s = IsKeyDown(KEYBINDS.move_foreward_key);
+    bool d = IsKeyDown(KEYBINDS.move_right_key);
+
+    player_handle_movement(&game->player, w, a, s, d);
+  }
+}
+
+// RENDERING
+
 void game_render(Game *game) {
   world_render_layer(&game->world, TILE_LAYER_GROUND);
 
@@ -37,20 +94,22 @@ void game_render(Game *game) {
   world_render_layer_top_split(&game->world, &game->player, false);
 }
 
-void game_tick(Game *game) {
-  if (!game->paused) {
-    bool zoom_in = IsKeyDown(KEY_UP);
-    bool zoom_out = IsKeyDown(KEY_DOWN);
+void game_render_overlay(Game *game) {
+  Vec2i pos = vec2i(SCREEN_WIDTH - (3.5 * 16) - 30, (SCREEN_HEIGHT / 2.0f) - (3.5 * 8));
+  DrawTextureEx(MAIN_HAND_SLOT_TEXTURE, (Vector2){pos.x, pos.y}, 0, 4.5, WHITE);
+  item_render(&game->player.held_item, pos.x + 2 * 3.5, pos.y + 2 * 3.5);
 
-    player_handle_zoom(&game->player, zoom_in, zoom_out);
+#ifdef SURTUR_DEBUG
+  tile_render_scaled(&game->debug_options.selected_tile_to_place_instance, 4);
+#endif
 
-    bool w = IsKeyDown(KEYBINDS.move_backward_key);
-    bool a = IsKeyDown(KEYBINDS.move_left_key);
-    bool s = IsKeyDown(KEYBINDS.move_foreward_key);
-    bool d = IsKeyDown(KEYBINDS.move_right_key);
+  game_render_menu(game);
+}
 
-    player_handle_movement(&game->player, w, a, s, d);
-  }
+// UI/MENUS
+
+bool game_cur_menu_hides_game(Game *game) {
+  return game->cur_menu == MENU_START || game->cur_menu == MENU_NEW_SAVE || game->cur_menu == MENU_LOAD_SAVE;
 }
 
 void game_init_menu(Game *game) {
@@ -78,6 +137,14 @@ void game_render_menu(Game *game) {
     RENDER_MENU(ui_renderer, debug_menu);
     break;
   }
+  case MENU_NEW_SAVE: {
+    RENDER_MENU(ui_renderer, new_save_menu);
+    break;
+  }
+  case MENU_LOAD_SAVE: {
+    RENDER_MENU(ui_renderer, load_save_menu);
+    break;
+  }
   case MENU_NONE: {
     break;
   }
@@ -102,6 +169,10 @@ void game_set_menu(Game *game, MenuId menu_id) {
   ui_renderer_calc_height(&game->ui_renderer);
 }
 
+// GAME LOAD/SAVE
+
+// LOAD
+
 static void load_game(Game *game, ByteBuf *bytebuf) {
   Data data_map_0 = byte_buf_read_data(bytebuf);
   DataMap *player_map = &data_map_0.var.data_map;
@@ -114,6 +185,16 @@ static void load_game(Game *game, ByteBuf *bytebuf) {
   data_free(&data_map_0);
   data_free(&data_map_1);
 }
+
+void game_load(Game *game) {
+  uint8_t bytes[SAVE_DATA_BYTES];
+  ByteBuf buf = {.bytes = bytes, .writer_index = 0, .reader_index = 0, .capacity = SAVE_DATA_BYTES};
+  byte_buf_from_file(&buf, "save/game.bin");
+  load_game(game, &buf);
+  TraceLog(LOG_INFO, "Successfully loaded game");
+}
+
+// UNLOAD
 
 static void save_game(Game *game, ByteBuf *bytebuf) {
   DataMap player_map = data_map_new(200);
@@ -128,14 +209,6 @@ static void save_game(Game *game, ByteBuf *bytebuf) {
 
   data_free(&player_data);
   data_free(&world_data);
-}
-
-void game_load(Game *game) {
-  uint8_t bytes[SAVE_DATA_BYTES];
-  ByteBuf buf = {.bytes = bytes, .writer_index = 0, .reader_index = 0, .capacity = SAVE_DATA_BYTES};
-  byte_buf_from_file(&buf, "save/game.bin");
-  load_game(game, &buf);
-  TraceLog(LOG_INFO, "Successfully loaded game");
 }
 
 void game_unload(Game *game) {

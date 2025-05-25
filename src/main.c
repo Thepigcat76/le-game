@@ -48,38 +48,32 @@ int main(void) {
 
   TileId selected_tile_to_place = TILE_DIRT;
   Vec2i selected_tile_to_place_render_pos = vec2i(SCREEN_WIDTH - (3.5 * 16) - 30, (SCREEN_HEIGHT / 2.0f) - (3.5 * 8));
-  TileInstance selected_tile_to_place_instance =
-      tile_new(&TILES[selected_tile_to_place], selected_tile_to_place_render_pos.x + 35,
-               selected_tile_to_place_render_pos.y - 60);
   bool debug_inventory = false;
   bool debug_menu = false;
 
-  GAME = (Game){
-      .player = player_new(),
-      .world = world_new(),
-      .cur_menu = MENU_START,
-      .paused = false,
-      .ui_renderer = (UiRenderer){.cur_x = 0,
-                                  .cur_y = 0,
-                                  .simulate = false,
-                                  .ui_height = -1,
-                                  .cur_style = {0},
-                                  .context = {.screen_width = SCREEN_WIDTH, .screen_height = SCREEN_HEIGHT}},
-      .debug_options = {.game_object_display = DISPLAY_NONE, .collisions_enabled = true, .hitboxes_shown = false}};
+  GAME = (Game){.player = player_new(),
+                .world = world_new(),
+                .cur_menu = MENU_START,
+                .paused = false,
+                .ui_renderer = (UiRenderer){.cur_x = 0,
+                                            .cur_y = 0,
+                                            .simulate = false,
+                                            .ui_height = -1,
+                                            .cur_style = {0},
+                                            .context = {.screen_width = SCREEN_WIDTH, .screen_height = SCREEN_HEIGHT}},
+                .detected_saves = 0,
+                .debug_options = {.game_object_display = DISPLAY_NONE,
+                                  .collisions_enabled = true,
+                                  .hitboxes_shown = false,
+                                  .selected_tile_to_place_instance =
+                                      tile_new(&TILES[selected_tile_to_place], selected_tile_to_place_render_pos.x + 35,
+                                               selected_tile_to_place_render_pos.y - 60)}};
 
   Game *game = &GAME;
 
   game_init_menu(game);
 
   player_set_world(&game->player, &game->world);
-
-  if (FileExists("save/game.bin")) {
-    game_load(game);
-  } else {
-    player_set_pos_ex(&game->player, TILE_SIZE * ((float)CHUNK_SIZE / 2), TILE_SIZE * ((float)CHUNK_SIZE / 2), false,
-                      false, false);
-    world_gen(&game->world);
-  }
 
   world_prepare_rendering(&game->world);
 
@@ -103,6 +97,9 @@ int main(void) {
 
   Sound place_sound = LoadSound("res/sounds/place_sound.wav");
 
+  Music music = LoadMusicStream("res/music/main_menu_music.wav");
+  PlayMusicStream(music);
+
   for (int i = 0; i < SOUND_BUFFER_LIMIT; i++) {
     sound_buffer[i] = LoadSoundAlias(place_sound);
     SetSoundPitch(sound_buffer[i], 0.5);
@@ -122,6 +119,8 @@ int main(void) {
   while (!WindowShouldClose()) {
     ui_renderer->cur_x = 0;
     ui_renderer->cur_y = 0;
+
+    UpdateMusicStream(music);
 
     int width = GetScreenWidth();
     int height = GetScreenHeight();
@@ -174,7 +173,7 @@ int main(void) {
         {
           ClearBackground(DARKGRAY);
 
-          if (game->cur_menu != MENU_START) {
+          if (!game_cur_menu_hides_game(game)) {
             game_render(game);
 
             int x_index = floor_div(mouse_world_pos.x, TILE_SIZE);
@@ -286,12 +285,14 @@ int main(void) {
             }
           }
 
-          ssize_t index = world_chunk_index_by_pos(&game->world, game->player.chunk_pos);
-          Chunk chunk = game->world.chunks[index];
-          for (int y = 0; y < 16; y++) {
-            for (int x = 0; x < 16; x++) {
-              TileInstance tile = chunk.tiles[y][x][TILE_LAYER_GROUND];
-              if (CheckCollisionRecs(game->player.box, tile.box)) {
+          if (game->world.initialized) {
+            ssize_t index = world_chunk_index_by_pos(&game->world, game->player.chunk_pos);
+            Chunk chunk = game->world.chunks[index];
+            for (int y = 0; y < 16; y++) {
+              for (int x = 0; x < 16; x++) {
+                TileInstance tile = chunk.tiles[y][x][TILE_LAYER_GROUND];
+                if (CheckCollisionRecs(game->player.box, tile.box)) {
+                }
               }
             }
           }
@@ -308,13 +309,13 @@ int main(void) {
         int tile_index = keycode - 48;
         if (tile_index < TILE_TYPE_AMOUNT) {
           selected_tile_to_place = tile_index;
-          selected_tile_to_place_instance =
+          game->debug_options.selected_tile_to_place_instance =
               tile_new(&TILES[selected_tile_to_place], selected_tile_to_place_render_pos.x + 35,
                        selected_tile_to_place_render_pos.y - 60);
         }
       }
 
-      if (game->cur_menu != MENU_START) {
+      if (!game_cur_menu_hides_game(game)) {
         BeginShaderMode(shader);
         {
           DrawTextureRec(world_texture.texture,
@@ -323,11 +324,7 @@ int main(void) {
         }
         EndShaderMode();
 
-        Vec2i pos = vec2i(SCREEN_WIDTH - (3.5 * 16) - 30, (SCREEN_HEIGHT / 2.0f) - (3.5 * 8));
-        DrawTextureEx(slot_texture, (Vector2){pos.x, pos.y}, 0, 4.5, WHITE);
-        item_render(&game->player.held_item, pos.x + 2 * 3.5, pos.y + 2 * 3.5);
-
-        tile_render_scaled(&selected_tile_to_place_instance, 4);
+        game_render_overlay(game);
       }
 
       if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && slot_selected) {
@@ -341,8 +338,6 @@ int main(void) {
 
       if (game->player.held_item.type.id != ITEM_EMPTY) {
         HideCursor();
-        // item_render(&game.player.held_item, mousePos.x - 8 * 3.5,
-        //             mousePos.y - 8 * 3.5);
         float scale = 3;
         DrawTextureEx(cursor_texture, (Vector2){.x = mousePos.x - 2 * scale, .y = mousePos.y - 1 * scale}, 0, scale,
                       WHITE);
@@ -369,6 +364,7 @@ int main(void) {
 
   game_unload(game);
 
+  UnloadMusicStream(music);
   CloseAudioDevice();
   CloseWindow();
 }

@@ -103,7 +103,16 @@ void ui_button_render_ex(UiRenderer *renderer, ButtonUiComponent component) {
   }
 
   if (hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
-    component.on_click_func();
+    switch (component.on_click_func.func_type) {
+    case BUTTON_CLICK_FUNC_NO_ARGS: {
+      component.on_click_func.func_var.on_click_no_args();
+      break;
+    }
+    case BUTTON_CLICK_FUNC_WITH_ARGS: {
+      component.on_click_func.func_var.on_click_with_args(component.on_click_func.args);
+      break;
+    }
+    }
   }
 }
 
@@ -197,8 +206,8 @@ void ui_text_input_render_ex(UiRenderer *renderer, TextInputUiComponent componen
                  (Rectangle){.x = x, .y = y, .width = component.width * scale, .height = component.height * scale},
                  (Vector2){.x = (component.width * scale) / 2, .y = (component.height * scale) / 2}, 0, WHITE);
 
-  DrawText(component.text_input->buf, renderer->cur_x + 3 * scale, renderer->cur_y + 3,
-           renderer->cur_style.font_scale, WHITE);
+  DrawText(component.text_input->buf, renderer->cur_x + 3 * scale, renderer->cur_y + 3, renderer->cur_style.font_scale,
+           WHITE);
 
   int line_x = renderer->cur_x + MeasureText(component.text_input->buf, renderer->cur_style.font_scale);
 
@@ -220,6 +229,17 @@ void ui_text_input_render_ex(UiRenderer *renderer, TextInputUiComponent componen
       component.text_input->buf[component.text_input->len - 1] = '\0';
       component.text_input->len--;
     }
+  }
+
+  switch (renderer->cur_style.alignment) {
+  case UI_VERTICAL: {
+    renderer->cur_y += component.height * scale + renderer->cur_style.padding;
+    break;
+  }
+  case UI_HORIZONTAL: {
+    renderer->cur_x += component.width * scale + renderer->cur_style.padding;
+    break;
+  }
   }
 }
 

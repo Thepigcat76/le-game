@@ -281,9 +281,8 @@ void tile_variants_free() {
 }
 
 static void init_tile_variants() {
-  const char *assets_path = "res/assets/";
   struct dirent *entry;
-  DIR *dir = opendir(assets_path);
+  DIR *dir = opendir(ASSETS_DIR);
 
   if (dir == NULL) {
     perror("opendir");

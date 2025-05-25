@@ -19,9 +19,13 @@ typedef struct world {
   ChunkLookup chunk_lookup;
   struct being_instance beings[MAX_ENTITIES_AMOUNT];
   int beings_amount;
+  float seed;
+  bool initialized;
 } World;
 
 World world_new();
+
+void world_initialize(World *world);
 
 bool world_has_chunk_at(const World *world, Vec2i chunk_pos);
 

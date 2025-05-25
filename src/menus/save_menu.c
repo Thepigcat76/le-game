@@ -43,13 +43,13 @@ void save_menu_render(UiRenderer *renderer, const Game *game) {
 
   ui_text_render(renderer, "Game Paused");
   ui_button_render_offset(renderer, "Back To Game", BACK_TO_GAME_BUTTON_TEXTURE, BACK_TO_GAME_BUTTON_TEXTURE_SELECTED,
-                          save_menu_back_to_game_button_clicked, vec2i(x_offset, y_offset));
+                          button_click_simple(save_menu_back_to_game_button_clicked), vec2i(x_offset, y_offset));
   ui_button_render_offset(renderer, "General Settings", VISUAL_SETTINGS_BUTTON_TEXTURE,
-                          VISUAL_SETTINGS_BUTTON_TEXTURE_SELECTED, save_menu_general_settings_button_clicked,
-                          vec2i(x_offset, y_offset));
+                          VISUAL_SETTINGS_BUTTON_TEXTURE_SELECTED,
+                          button_click_simple(save_menu_general_settings_button_clicked), vec2i(x_offset, y_offset));
   ui_button_render_offset(renderer, "Gameplay Settings", GAME_SETTINGS_BUTTON_TEXTURE,
-                          GAME_SETTINGS_BUTTON_TEXTURE_SELECTED, save_menu_gameplay_settings_button_clicked,
-                          vec2i(x_offset, y_offset));
+                          GAME_SETTINGS_BUTTON_TEXTURE_SELECTED,
+                          button_click_simple(save_menu_gameplay_settings_button_clicked), vec2i(x_offset, y_offset));
   ui_button_render_offset(renderer, "Save Game", LEAVE_GAME_BUTTON_TEXTURE, LEAVE_GAME_BUTTON_TEXTURE_SELECTED,
-                          save_menu_save_game_button_clicked, vec2i(x_offset, y_offset));
+                          button_click_simple(save_menu_save_game_button_clicked), vec2i(x_offset, y_offset));
 }

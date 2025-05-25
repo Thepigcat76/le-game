@@ -16,6 +16,8 @@ typedef struct _game {
   World world;
   MenuId cur_menu;
   bool paused;
+  // LOADING
+  int detected_saves;
   // RENDERING
   ParticleManager particle_manager;
   UiRenderer ui_renderer;
@@ -25,17 +27,29 @@ typedef struct _game {
 
 extern Game GAME;
 
+void game_create_world(Game *game, float seed);
+
+void game_detect_saves(Game *game);
+
 void game_reload();
+
+void game_tick(Game *game);
+
+// GAME RENDER
 
 void game_render(Game *game);
 
-void game_tick(Game *game);
+void game_render_overlay(Game *game);
+
+// GAME LOAD/SAVE
 
 void game_load(Game *game);
 
 void game_unload(Game *game);
 
 // MENUS
+
+bool game_cur_menu_hides_game(Game *game);
 
 void game_init_menu(Game *game);
 

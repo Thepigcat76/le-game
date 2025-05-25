@@ -15,6 +15,8 @@
 
 #define ASSETS_DIR "res/assets/"
 
+#define SAVE_DIR "save/"
+
 #define PATH_MAX 4096
 
 #define SAVE_DATA_BYTES 10000
@@ -40,9 +42,12 @@ extern Texture2D BUTTON_SELECTED_TEXTURE;
 
 extern Texture2D BACKPACK_BACK_GROUND;
 
-extern int TILE_ANIMATION_FRAMES[TILE_TYPE_AMOUNT];
+extern Texture2D MAIN_HAND_SLOT_TEXTURE;
+extern Texture2D OFF_HAND_SLOT_TEXTURE;
 
-char *read_file_to_string(const char *filename);
+extern Texture2D SAVE_SLOT_TEXTURE;
+
+extern int TILE_ANIMATION_FRAMES[TILE_TYPE_AMOUNT];
 
 #define DIRECTIONS_AMOUNT 4
 
@@ -67,6 +72,12 @@ typedef Vec2i TilePos;
 
 void shared_init();
 
+char *read_file_to_string(const char *filename);
+
+bool string_starts_with(const char *str, const char *prefix);
+
+bool is_dir(const char *path);
+
 void rec_draw_outline(Rectf rec, Color color);
 
 Vec2i vec2i(int x, int y);
@@ -88,3 +99,5 @@ void DrawTextureRecEx(Texture2D texture, Rectf source, Vector2 pos, float rotati
 int floor_div(int a, int b);
 
 int floor_mod(int a, int b);
+
+float string_to_world_seed(const char *str);

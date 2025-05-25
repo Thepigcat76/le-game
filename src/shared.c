@@ -2,6 +2,8 @@
 #include <raylib.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
 
 Texture2D TEXT_INPUT_TEXTURE;
 
@@ -13,7 +15,38 @@ Texture2D BUTTON_SELECTED_TEXTURE;
 
 Texture2D BACKPACK_BACK_GROUND;
 
+Texture2D MAIN_HAND_SLOT_TEXTURE;
+Texture2D OFF_HAND_SLOT_TEXTURE;
+
+Texture2D SAVE_SLOT_TEXTURE;
+
 int TILE_ANIMATION_FRAMES[TILE_TYPE_AMOUNT];
+
+void shared_init() {
+  TEXT_INPUT_TEXTURE = load_texture("res/assets/gui/text_input.png");
+
+  DEBUG_BUTTON_TEXTURE = load_texture("res/assets/gui/debug_button.png");
+  DEBUG_BUTTON_SELECTED_TEXTURE = load_texture("res/assets/gui/debug_button_selected.png");
+
+  BUTTON_TEXTURE = load_texture("res/assets/gui/button.png");
+  BUTTON_SELECTED_TEXTURE = load_texture("res/assets/gui/button_selected.png");
+
+  BACKPACK_BACK_GROUND = load_texture("res/assets/gui/backpack_slots.png");
+
+  MAIN_HAND_SLOT_TEXTURE = load_texture("res/assets/gui/main_hand_slot.png");
+  OFF_HAND_SLOT_TEXTURE = load_texture("res/assets/gui/off_hand_slot.png");
+
+  SAVE_SLOT_TEXTURE = load_texture("res/assets/gui/save_slot.png");
+}
+
+bool is_dir(const char *path) {
+    struct stat s;
+    return stat(path, &s) == 0 && S_ISDIR(s.st_mode);
+}
+
+bool string_starts_with(const char *str, const char *prefix) {
+    return strncmp(str, prefix, strlen(prefix)) == 0;
+}
 
 char *read_file_to_string(const char *filename) {
   FILE *file = fopen(filename, "rb");
@@ -57,18 +90,6 @@ char *read_file_to_string(const char *filename) {
   return buffer;
 }
 
-void shared_init() {
-  TEXT_INPUT_TEXTURE = load_texture("res/assets/gui/text_input.png");
-
-  DEBUG_BUTTON_TEXTURE = load_texture("res/assets/gui/debug_button.png");
-  DEBUG_BUTTON_SELECTED_TEXTURE = load_texture("res/assets/gui/debug_button_selected.png");
-
-  BUTTON_TEXTURE = load_texture("res/assets/gui/button.png");
-  BUTTON_SELECTED_TEXTURE = load_texture("res/assets/gui/button_selected.png");
-
-  BACKPACK_BACK_GROUND = load_texture("res/assets/gui/backpack_slots.png");
-}
-
 Vec2i vec2i(int x, int y) { return (Vec2i){.x = x, .y = y}; }
 
 Vec2f vec2f(float x, float y) { return (Vec2f){.x = x, .y = y}; }
@@ -101,4 +122,12 @@ int floor_div(int a, int b) { return (a >= 0) ? (a / b) : ((a - b + 1) / b); }
 int floor_mod(int a, int b) {
   int r = a % b;
   return (r < 0) ? r + b : r;
+}
+
+float string_to_world_seed(const char *str) {
+  unsigned int hash = 0;
+  while (*str) {
+    hash = hash * 101 + (unsigned char)(*str++);
+  }
+  return (hash % 100000) / 100000.0f;
 }

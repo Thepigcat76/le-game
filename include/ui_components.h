@@ -3,7 +3,18 @@
 #include "raylib.h"
 #include <stdlib.h>
 
-typedef void (*ButtonClickFunction)();
+typedef struct {
+  enum { BUTTON_CLICK_FUNC_NO_ARGS, BUTTON_CLICK_FUNC_WITH_ARGS } func_type;
+  union {
+    void (*on_click_no_args)();
+    void (*on_click_with_args)(void *);
+  } func_var;
+  void *args;
+} ButtonClickFunction;
+
+ButtonClickFunction button_click_simple(void (*on_click_func)());
+
+ButtonClickFunction button_click_args(void (*on_click_func)(void *), void *args);
 
 typedef struct {
   Texture2D texture;

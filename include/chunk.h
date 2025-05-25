@@ -11,7 +11,7 @@ typedef struct {
   int background_texture_variants[CHUNK_SIZE][CHUNK_SIZE];
 } Chunk;
 
-void chunk_gen(Chunk *chunk, ChunkPos chunk_pos);
+void chunk_gen(Chunk *chunk, ChunkPos chunk_pos, float world_seed);
 
 bool chunk_can_place_tile_on_layer(Chunk *chunk, TileInstance tile, int x, int y, TileLayer layer);
 

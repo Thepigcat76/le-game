@@ -8,8 +8,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define WORLD_SEED 0.234253089766
-
 static void chunk_assign_dirt_variants(Chunk *chunk) {
   chunk->variant_index =
       tile_variants_index_for_name("res/assets/dirt.png", 0, 0);
@@ -21,10 +19,10 @@ static void chunk_assign_dirt_variants(Chunk *chunk) {
   }
 }
 
-void chunk_gen(Chunk *chunk, ChunkPos chunk_pos) {
+void chunk_gen(Chunk *chunk, ChunkPos chunk_pos, float world_seed) {
   int chunk_x = chunk_pos.x * CHUNK_SIZE;
   int chunk_y = chunk_pos.y * CHUNK_SIZE;
-  float seed_offset = WORLD_SEED * 37.77f;
+  float seed_offset = world_seed * 37.77f;
   for (int l = 0; l < TILE_LAYERS_AMOUNT; l++) {
     for (int y = 0; y < CHUNK_SIZE; y++) {
       for (int x = 0; x < CHUNK_SIZE; x++) {
@@ -74,7 +72,6 @@ bool chunk_set_tile(Chunk *chunk, TileInstance tile, int x, int y, TileLayer lay
   }
 
   chunk->tiles[y][x][layer] = tile;
-  TraceLog(LOG_DEBUG, "Layer: %d", layer);
   return true;
 }
 

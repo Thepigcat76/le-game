@@ -15,7 +15,14 @@ World world_new() {
   return (World){
       .chunks = malloc(WORLD_LOADED_CHUNKS * sizeof(Chunk)),
       .chunks_amount = 0,
+      .initialized = false,
   };
+}
+
+void world_initialize(World *world) {
+  world->initialized = true;
+  world_prepare_rendering(world);
+  player_set_world(&GAME.player, world);
 }
 
 void world_add_chunk(World *world, ChunkPos pos, Chunk chunk) {
@@ -42,7 +49,7 @@ bool world_has_chunk_at(const World *world, Vec2i chunk_pos) {
 void world_gen_chunk_at(World *world, Vec2i chunk_pos) {
   Chunk chunk;
 
-  chunk_gen(&chunk, chunk_pos);
+  chunk_gen(&chunk, chunk_pos, world->seed);
 
   world_add_chunk(world, chunk_pos, chunk);
 }
@@ -54,10 +61,7 @@ TileInstance *world_ground_tile_at(World *world, TilePos tile_pos) {
 TileInstance *world_highest_tile_at(World *world, TilePos tile_pos) {
   for (int l = TILE_LAYERS_AMOUNT - 1; l >= 0; l--) {
     TileInstance *tile = world_tile_at(world, tile_pos, l);
-    TraceLog(LOG_INFO, "Loop Layer: %d", l);
     if (tile->type.id != TILE_EMPTY || l == 0) {
-      TraceLog(LOG_DEBUG, "Tile: %s, tile on layer 1: %s", tile_type_to_string(&tile->type),
-               tile_type_to_string(&world_tile_at(world, tile_pos, TILE_LAYER_TOP)->type));
       return tile;
     }
   }
@@ -142,12 +146,10 @@ bool world_remove_tile(World *world, TilePos tile_pos) {
   empty_instance.box.x = tile_pos.x * TILE_SIZE;
   empty_instance.box.y = tile_pos.y * TILE_SIZE;
   TileInstance *tile = world_highest_tile_at(world, tile_pos);
-  TraceLog(LOG_INFO, "Remove Layer: %d", tile->type.layer);
   Color color = tile->type.tile_color;
   ItemType *item_type = tile->type.tile_item;
   if (world_set_tile_on_layer(world, tile_pos, empty_instance, tile->type.layer)) {
     if (item_type != NULL) {
-      TraceLog(LOG_DEBUG, "Drop item");
       world_add_being(world,
                       being_new(BEING_ITEM,
                                 (BeingInstanceEx){.type = BEING_INSTANCE_ITEM,
@@ -163,7 +165,6 @@ bool world_remove_tile(World *world, TilePos tile_pos) {
                              (ParticleInstanceEx){.type = PARTICLE_INSTANCE_TILE_BREAK,
                                                   .var = {.tile_break = {.texture = particle_texture, .tint = color}}});
       particle->velocity = vec2f(0, 0);
-      TraceLog(LOG_INFO, "r: %d g: %d b: %d a: %d", color.r, color.g, color.b, color.a);
     }
     return true;
   }

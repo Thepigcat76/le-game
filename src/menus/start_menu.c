@@ -4,9 +4,11 @@
 #include <raylib.h>
 #include <stdlib.h>
 
-static void start_menu_create_world() {
-  game_set_menu(&GAME, MENU_NONE);
-  GAME.paused = false;
+static void start_menu_new_save() { game_set_menu(&GAME, MENU_NEW_SAVE); }
+
+static void start_menu_load_save() {
+  game_detect_saves(&GAME);
+  game_set_menu(&GAME, MENU_LOAD_SAVE);
 }
 
 static void start_menu_leave_game() {
@@ -33,8 +35,12 @@ void start_menu_render(UiRenderer *renderer, const Game *game) {
 
   ui_text_render(renderer, "COZY WRATH");
   ui_spacing_render(renderer, 100);
-  ui_button_render_offset(renderer, "Create World", BUTTON_TEXTURE, BUTTON_SELECTED_TEXTURE, start_menu_create_world,
-                          vec2i(x_offset, y_offset));
-  ui_button_render_offset(renderer, "Leave Game", BUTTON_TEXTURE, BUTTON_SELECTED_TEXTURE, start_menu_leave_game,
-                          vec2i(x_offset, y_offset));
+  ui_button_render_offset(renderer, "New Save", BUTTON_TEXTURE, BUTTON_SELECTED_TEXTURE,
+                          button_click_simple(start_menu_new_save), vec2i(x_offset, y_offset));
+  ui_button_render_offset(renderer, "Load Save", BUTTON_TEXTURE, BUTTON_SELECTED_TEXTURE,
+                          button_click_simple(start_menu_load_save), vec2i(x_offset, y_offset));
+  ui_button_render_offset(renderer, "Settings", BUTTON_TEXTURE, BUTTON_SELECTED_TEXTURE,
+                          button_click_simple(start_menu_leave_game), vec2i(x_offset, y_offset));
+  ui_button_render_offset(renderer, "Leave Game", BUTTON_TEXTURE, BUTTON_SELECTED_TEXTURE,
+                          button_click_simple(start_menu_leave_game), vec2i(x_offset, y_offset));
 }
