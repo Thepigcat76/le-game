@@ -4,6 +4,7 @@
 #include <dirent.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #define RELOAD(src_file_prefix)                                                                                        \
   extern void src_file_prefix##_on_reload();                                                                           \
@@ -23,6 +24,11 @@ void game_reload() {
 }
 
 Game GAME;
+Music MUSIC;
+
+void game_create_save(Game *game, const char *save_name, float seed) {
+  create_dir(TextFormat("save/save%d", game->detected_saves));
+}
 
 void game_create_world(Game *game, float seed) {
   player_set_pos_ex(&game->player, TILE_SIZE * ((float)CHUNK_SIZE / 2), TILE_SIZE * ((float)CHUNK_SIZE / 2), false,
@@ -102,8 +108,6 @@ void game_render_overlay(Game *game) {
 #ifdef SURTUR_DEBUG
   tile_render_scaled(&game->debug_options.selected_tile_to_place_instance, 4);
 #endif
-
-  game_render_menu(game);
 }
 
 // UI/MENUS

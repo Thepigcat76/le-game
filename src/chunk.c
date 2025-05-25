@@ -1,5 +1,5 @@
 #include "../include/chunk.h"
-#ifndef SURTUR_BUILD_WIN
+#ifndef _WIN32
 #define STB_PERLIN_IMPLEMENTATION
 #endif
 #include "../vendor/stb_perlin.h"

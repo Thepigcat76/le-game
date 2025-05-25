@@ -13,6 +13,7 @@ static void new_save_create_world() {
   game_set_menu(&GAME, MENU_NONE);
   GAME.paused = false;
 
+  game_create_save(&GAME, "Test", seed);
   game_create_world(&GAME, seed);
   world_initialize(&GAME.world);
 }
@@ -34,6 +35,6 @@ void new_save_menu_render(UiRenderer *renderer, const Game *game) {
   ui_text_render(renderer, "Create new save");
   ui_spacing_render(renderer, 100);
   ui_text_input_render_dimensions(renderer, TEXT_INPUT_TEXTURE, &text_input_buffer, vec2i(128, 16));
-  ui_button_render_offset(renderer, "Create World", BUTTON_TEXTURE, BUTTON_SELECTED_TEXTURE, button_click_simple(new_save_create_world),
-                          vec2i(x_offset, y_offset));
+  ui_button_render_offset(renderer, "Create World", BUTTON_TEXTURE, BUTTON_SELECTED_TEXTURE,
+                          button_click_simple(new_save_create_world), vec2i(x_offset, y_offset));
 }

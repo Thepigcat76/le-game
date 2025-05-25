@@ -39,14 +39,23 @@ void shared_init() {
   SAVE_SLOT_TEXTURE = load_texture("res/assets/gui/save_slot.png");
 }
 
-bool is_dir(const char *path) {
-    struct stat s;
-    return stat(path, &s) == 0 && S_ISDIR(s.st_mode);
+void create_dir(const char *dir_name) {
+#ifdef _WIN32
+#include <direct.h> // For _mkdir on Windows
+  _mkdir(dir_name);
+#else
+#include <sys/stat.h>
+#include <sys/types.h>
+  mkdir((dir_name), 0777);
+#endif
 }
 
-bool string_starts_with(const char *str, const char *prefix) {
-    return strncmp(str, prefix, strlen(prefix)) == 0;
+bool is_dir(const char *path) {
+  struct stat s;
+  return stat(path, &s) == 0 && S_ISDIR(s.st_mode);
 }
+
+bool string_starts_with(const char *str, const char *prefix) { return strncmp(str, prefix, strlen(prefix)) == 0; }
 
 char *read_file_to_string(const char *filename) {
   FILE *file = fopen(filename, "rb");
@@ -125,6 +134,10 @@ int floor_mod(int a, int b) {
 }
 
 float string_to_world_seed(const char *str) {
+  if (strlen(str) == 0) {
+    return (float)rand() / (float)RAND_MAX;
+  }
+
   unsigned int hash = 0;
   while (*str) {
     hash = hash * 101 + (unsigned char)(*str++);

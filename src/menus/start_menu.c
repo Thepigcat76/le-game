@@ -4,12 +4,19 @@
 #include <raylib.h>
 #include <stdlib.h>
 
-static void start_menu_new_save() { game_set_menu(&GAME, MENU_NEW_SAVE); }
+static void start_menu_new_save() {
+  game_detect_saves(&GAME);
+  game_set_menu(&GAME, MENU_NEW_SAVE);
+  StopMusicStream(MUSIC);
+}
 
 static void start_menu_load_save() {
   game_detect_saves(&GAME);
   game_set_menu(&GAME, MENU_LOAD_SAVE);
+  StopMusicStream(MUSIC);
 }
+
+static void start_menu_settings() {}
 
 static void start_menu_leave_game() {
   game_unload(&GAME);
@@ -40,7 +47,7 @@ void start_menu_render(UiRenderer *renderer, const Game *game) {
   ui_button_render_offset(renderer, "Load Save", BUTTON_TEXTURE, BUTTON_SELECTED_TEXTURE,
                           button_click_simple(start_menu_load_save), vec2i(x_offset, y_offset));
   ui_button_render_offset(renderer, "Settings", BUTTON_TEXTURE, BUTTON_SELECTED_TEXTURE,
-                          button_click_simple(start_menu_leave_game), vec2i(x_offset, y_offset));
+                          button_click_simple(start_menu_settings), vec2i(x_offset, y_offset));
   ui_button_render_offset(renderer, "Leave Game", BUTTON_TEXTURE, BUTTON_SELECTED_TEXTURE,
                           button_click_simple(start_menu_leave_game), vec2i(x_offset, y_offset));
 }

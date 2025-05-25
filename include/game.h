@@ -26,8 +26,11 @@ typedef struct _game {
 } Game;
 
 extern Game GAME;
+extern Music MUSIC;
 
 void game_create_world(Game *game, float seed);
+
+void game_create_save(Game *game, const char *save_name, float seed);
 
 void game_detect_saves(Game *game);
 

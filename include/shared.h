@@ -72,6 +72,8 @@ typedef Vec2i TilePos;
 
 void shared_init();
 
+void create_dir(const char *dir_name);
+
 char *read_file_to_string(const char *filename);
 
 bool string_starts_with(const char *str, const char *prefix);

@@ -97,8 +97,10 @@ int main(void) {
 
   Sound place_sound = LoadSound("res/sounds/place_sound.wav");
 
-  Music music = LoadMusicStream("res/music/main_menu_music.wav");
-  PlayMusicStream(music);
+  MUSIC = LoadMusicStream("res/music/main_menu_music.ogg");
+  SetMusicVolume(MUSIC, 0.15);
+  SetMusicPitch(MUSIC, 0.85);
+  PlayMusicStream(MUSIC);
 
   for (int i = 0; i < SOUND_BUFFER_LIMIT; i++) {
     sound_buffer[i] = LoadSoundAlias(place_sound);
@@ -120,7 +122,7 @@ int main(void) {
     ui_renderer->cur_x = 0;
     ui_renderer->cur_y = 0;
 
-    UpdateMusicStream(music);
+    UpdateMusicStream(MUSIC);
 
     int width = GetScreenWidth();
     int height = GetScreenHeight();
@@ -327,14 +329,14 @@ int main(void) {
         game_render_overlay(game);
       }
 
+      game_render_menu(game);
+
       if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && slot_selected) {
       }
 
 #ifdef SURTUR_DEBUG
       debug_render();
 #endif
-
-      game_render_menu(game);
 
       if (game->player.held_item.type.id != ITEM_EMPTY) {
         HideCursor();
@@ -364,7 +366,7 @@ int main(void) {
 
   game_unload(game);
 
-  UnloadMusicStream(music);
+  UnloadMusicStream(MUSIC);
   CloseAudioDevice();
   CloseWindow();
 }

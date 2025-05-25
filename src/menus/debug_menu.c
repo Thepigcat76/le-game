@@ -18,6 +18,7 @@ static void debug_menu_collisions_button_clicked() {
   GAME.debug_options.collisions_enabled = !GAME.debug_options.collisions_enabled;
 }
 static void debug_menu_hitboxes_button_clicked() {
+  TraceLog(LOG_DEBUG, "Deez nuts");
   GAME.debug_options.hitboxes_shown = !GAME.debug_options.hitboxes_shown;
 }
 

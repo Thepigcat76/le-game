@@ -105,6 +105,7 @@ void ui_button_render_ex(UiRenderer *renderer, ButtonUiComponent component) {
   if (hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
     switch (component.on_click_func.func_type) {
     case BUTTON_CLICK_FUNC_NO_ARGS: {
+      TraceLog(LOG_DEBUG, "CLick no args");
       component.on_click_func.func_var.on_click_no_args();
       break;
     }
