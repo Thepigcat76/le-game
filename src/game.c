@@ -18,6 +18,10 @@
   extern void menu_name##_init();                                                                                      \
   menu_name##_init();
 
+static void game_init_menu(Game *game);
+
+static bool game_slot_selected();
+
 void game_reload() {
   RELOAD(tile);
   RELOAD(config);
@@ -25,6 +29,8 @@ void game_reload() {
 
 Game GAME;
 Music MUSIC;
+
+static Sound PLACE_SOUND;
 
 void game_create_save(Game *game, const char *save_name, float seed) {
   create_dir(TextFormat("save/save%d", game->detected_saves));
@@ -35,6 +41,18 @@ void game_create_world(Game *game, float seed) {
                     false, false);
   game->world.seed = seed;
   world_gen(&game->world);
+}
+
+void game_init(Game *game) {
+  game_init_menu(game);
+
+  PLACE_SOUND = LoadSound("res/sounds/place_sound.wav");
+
+  for (int i = 0; i < SOUND_BUFFER_LIMIT; i++) {
+    game->sound_manager.sound_buffer[i] = LoadSoundAlias(PLACE_SOUND);
+    SetSoundPitch(game->sound_manager.sound_buffer[i], 0.5);
+    SetSoundVolume(game->sound_manager.sound_buffer[i], 0.25);
+  }
 }
 
 void game_detect_saves(Game *game) {
@@ -66,6 +84,74 @@ void game_detect_saves(Game *game) {
 
 // TICKING
 
+static void handle_tile_interaction(Game *game) {
+  Vec2f mouse_pos = GetMousePosition();
+  Vec2f mouse_world_pos = GetScreenToWorld2D(mouse_pos, game->player.cam);
+  int x_index = floor_div(mouse_world_pos.x, TILE_SIZE);
+  int y_index = floor_div(mouse_world_pos.y, TILE_SIZE);
+
+  bool interaction_in_range =
+      abs((int)game->player.box.x - x_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE &&
+      abs((int)game->player.box.y - y_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE;
+
+  Rectangle slot_rect = {.x = SCREEN_WIDTH - (3.5 * 16) - 30,
+                         .y = (SCREEN_HEIGHT / 2.0f) - (3.5 * 8),
+                         .width = 20 * 3.5,
+                         .height = 20 * 3.5};
+  bool slot_selected = CheckCollisionPointRec(GetMousePosition(), slot_rect);
+
+  if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !slot_selected && interaction_in_range) {
+    TileInstance *selected_tile = world_highest_tile_at(&game->world, vec2i(x_index, y_index));
+    TileInstance tile = *selected_tile;
+    if (CheckCollisionPointRec(mouse_world_pos, selected_tile->box) &&
+        (game->player.last_broken_tile.type.layer == selected_tile->type.layer ||
+         game->player.last_broken_tile.type.id == TILE_EMPTY)) {
+      if (game->player.held_item.type.id == ITEM_HAMMER) {
+        for (int y = -1; y <= 1; y++) {
+          for (int x = -1; x <= 1; x++) {
+            world_remove_tile(&game->world, vec2i(x_index + x, y_index + y));
+          }
+        }
+      } else {
+        world_remove_tile(&game->world, vec2i(x_index, y_index));
+      }
+      game->player.last_broken_tile = tile;
+    }
+  }
+
+  if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+    game->player.last_broken_tile = TILE_INSTANCE_EMPTY;
+  }
+
+  if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && !slot_selected && interaction_in_range) {
+    TileInstance *selected_tile = world_ground_tile_at(&game->world, vec2i(x_index, y_index));
+    if (CheckCollisionPointRec(mouse_world_pos, selected_tile->box)) {
+      TileInstance new_tile =
+          tile_new(&game->debug_options.selected_tile_to_place_instance.type, x_index * TILE_SIZE, y_index * TILE_SIZE);
+      bool placed = world_place_tile(&game->world, vec2i(x_index, y_index), new_tile);
+      if (placed && game->sound_manager.sound_timer >= SOUND_COOLDOWN) {
+        PlaySound(game->sound_manager.sound_buffer[game->sound_manager.cur_sound++]);
+        if (game->sound_manager.cur_sound >= SOUND_BUFFER_LIMIT) {
+          game->sound_manager.cur_sound = 0;
+        }
+        game->sound_manager.sound_timer = 0;
+      }
+    }
+  }
+}
+
+static void handle_item_pickup(Game *game) {
+  for (int i = 0; i < game->world.beings_amount; i++) {
+    if (game->world.beings[i].id == BEING_ITEM &&
+        CheckCollisionRecs(game->world.beings[i].context.box, game->player.box)) {
+      if (GetTime() - game->world.beings[i].context.creation_time > CONFIG.item_pickup_delay) {
+        world_remove_being(&game->world, &game->world.beings[i]);
+        break;
+      }
+    }
+  }
+}
+
 void game_tick(Game *game) {
   if (!game->paused) {
     bool zoom_in = IsKeyDown(KEY_UP);
@@ -79,12 +165,31 @@ void game_tick(Game *game) {
     bool d = IsKeyDown(KEYBINDS.move_right_key);
 
     player_handle_movement(&game->player, w, a, s, d);
+
+    if (IsKeyReleased(KEYBINDS.open_close_save_menu_key)) {
+      if (game->cur_menu == MENU_SAVE) {
+        game->cur_menu = MENU_NONE;
+        game->paused = false;
+      } else {
+        game->cur_menu = MENU_SAVE;
+        game->paused = true;
+      }
+    }
   }
+
+  handle_tile_interaction(game);
+
+  handle_item_pickup(game);
+
+  game->sound_manager.sound_timer += GetFrameTime();
 }
 
 // RENDERING
 
 void game_render(Game *game) {
+  Vec2f mouse_pos = GetMousePosition();
+  Vec2f mouse_world_pos = GetScreenToWorld2D(mouse_pos, game->player.cam);
+
   world_render_layer(&game->world, TILE_LAYER_GROUND);
 
   world_render_layer_top_split(&game->world, &game->player, true);
@@ -98,6 +203,19 @@ void game_render(Game *game) {
   player_render(&game->player);
 
   world_render_layer_top_split(&game->world, &game->player, false);
+
+  int x_index = floor_div(mouse_world_pos.x, TILE_SIZE);
+  int y_index = floor_div(mouse_world_pos.y, TILE_SIZE);
+  Rectangle rec =
+      (Rectangle){.x = x_index * (TILE_SIZE), .y = y_index * (TILE_SIZE), .width = (TILE_SIZE), .height = (TILE_SIZE)};
+  bool slot_selected = game_slot_selected();
+  bool interaction_in_range =
+      abs((int)game->player.box.x - x_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE &&
+      abs((int)game->player.box.y - y_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE;
+
+  if (!slot_selected && interaction_in_range) {
+    rec_draw_outline(rec, BLUE);
+  }
 }
 
 void game_render_overlay(Game *game) {
@@ -112,11 +230,19 @@ void game_render_overlay(Game *game) {
 
 // UI/MENUS
 
+static bool game_slot_selected() {
+  Rectangle slot_rect = {.x = SCREEN_WIDTH - (3.5 * 16) - 30,
+                         .y = (SCREEN_HEIGHT / 2.0f) - (3.5 * 8),
+                         .width = 20 * 3.5,
+                         .height = 20 * 3.5};
+  return CheckCollisionPointRec(GetMousePosition(), slot_rect);
+}
+
 bool game_cur_menu_hides_game(Game *game) {
   return game->cur_menu == MENU_START || game->cur_menu == MENU_NEW_SAVE || game->cur_menu == MENU_LOAD_SAVE;
 }
 
-void game_init_menu(Game *game) {
+static void game_init_menu(Game *game) {
   INIT_MENU(save_menu);
   // INIT_MENU(start_menu);
   // INIT_MENU(debug_menu);
@@ -224,6 +350,11 @@ void game_unload(Game *game) {
   byte_buf_to_file(&buf, "save/game.bin");
 
   free(game->world.chunks);
+
+  UnloadSound(PLACE_SOUND);
+  for (int i = 0; i < SOUND_BUFFER_LIMIT; i++) {
+    UnloadSoundAlias(game->sound_manager.sound_buffer[i]);
+  }
 }
 
 // -- PARTICLES --

@@ -22,6 +22,9 @@ Texture2D SAVE_SLOT_TEXTURE;
 
 int TILE_ANIMATION_FRAMES[TILE_TYPE_AMOUNT];
 
+Texture2D NPC_TEXTURES[DIRECTIONS_AMOUNT];
+Texture2D NPC_ANIMATED_TEXTURES[DIRECTIONS_AMOUNT];
+
 void shared_init() {
   TEXT_INPUT_TEXTURE = load_texture("res/assets/gui/text_input.png");
 
@@ -37,6 +40,16 @@ void shared_init() {
   OFF_HAND_SLOT_TEXTURE = load_texture("res/assets/gui/off_hand_slot.png");
 
   SAVE_SLOT_TEXTURE = load_texture("res/assets/gui/save_slot.png");
+
+  NPC_TEXTURES[DIRECTION_UP] = load_texture("res/assets/beings/npc_back.png");
+  NPC_TEXTURES[DIRECTION_DOWN] = load_texture("res/assets/beings/npc_front.png");
+  NPC_TEXTURES[DIRECTION_LEFT] = load_texture("res/assets/beings/npc_left.png");
+  NPC_TEXTURES[DIRECTION_RIGHT] = load_texture("res/assets/beings/npc_right.png");
+
+  NPC_ANIMATED_TEXTURES[DIRECTION_UP] = load_texture("res/assets/beings/npc_back_walking.png");
+  NPC_ANIMATED_TEXTURES[DIRECTION_DOWN] = load_texture("res/assets/beings/npc_front_walking.png");
+  NPC_ANIMATED_TEXTURES[DIRECTION_LEFT] = load_texture("res/assets/beings/npc_left_walking.png");
+  NPC_ANIMATED_TEXTURES[DIRECTION_RIGHT] = load_texture("res/assets/beings/npc_right_walking.png");
 }
 
 void create_dir(const char *dir_name) {

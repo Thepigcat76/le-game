@@ -1,4 +1,4 @@
-#include "../include/ui_components.h"
+#include "../include/ui/ui_components.h"
 
 ButtonClickFunction button_click_simple(void (*on_click_func)()) {
   return (ButtonClickFunction){

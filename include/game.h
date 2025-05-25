@@ -8,6 +8,7 @@
 #include "particle.h"
 #include "player.h"
 #include "shared.h"
+#include "sounds.h"
 #include "ui.h"
 #include "world.h"
 
@@ -21,6 +22,8 @@ typedef struct _game {
   // RENDERING
   ParticleManager particle_manager;
   UiRenderer ui_renderer;
+  // SOUNDS
+  SoundManager sound_manager;
   // DEBUGGING
   DebugOptions debug_options;
 } Game;
@@ -35,6 +38,8 @@ void game_create_save(Game *game, const char *save_name, float seed);
 void game_detect_saves(Game *game);
 
 void game_reload();
+
+void game_init(Game *game);
 
 void game_tick(Game *game);
 
@@ -53,8 +58,6 @@ void game_unload(Game *game);
 // MENUS
 
 bool game_cur_menu_hides_game(Game *game);
-
-void game_init_menu(Game *game);
 
 void game_render_menu(Game *game);
 

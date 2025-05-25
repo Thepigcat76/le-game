@@ -1,8 +1,8 @@
 #pragma once
 
 #include "shared.h"
-#include "ui_components.h"
-#include "ui_style.h"
+#include "ui/ui_components.h"
+#include "ui/ui_style.h"
 #include <raylib.h>
 #include <stdlib.h>
 

@@ -8,16 +8,13 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define SOUND_BUFFER_LIMIT 64
-#define SOUND_COOLDOWN 0.125f
-
-static Sound sound_buffer[SOUND_BUFFER_LIMIT] = {0};
-
 void debug_rect(Rectangle *rect) {
   TraceLog(LOG_DEBUG, "Rect{x=%f, y=%f, w=%f, h=%f}", rect->x, rect->y, rect->width, rect->height);
 }
 
 float frame_timer = 0;
+
+#define MAX_ANIMATIONS 2
 
 static void update_animation(const TileType *type, float deltaTime) {
   frame_timer += deltaTime * 1000.0f; // to ms
@@ -25,7 +22,7 @@ static void update_animation(const TileType *type, float deltaTime) {
   if (frame_timer >= delay) {
     frame_timer = 0.0f;
     // TODO: Make the 2 dynamic
-    TILE_ANIMATION_FRAMES[type->id] = (TILE_ANIMATION_FRAMES[type->id] + 1) % 2;
+    TILE_ANIMATION_FRAMES[type->id] = (TILE_ANIMATION_FRAMES[type->id] + 1) % MAX_ANIMATIONS;
   }
 }
 
@@ -46,32 +43,27 @@ int main(void) {
 
   game_reload();
 
-  TileId selected_tile_to_place = TILE_DIRT;
-  Vec2i selected_tile_to_place_render_pos = vec2i(SCREEN_WIDTH - (3.5 * 16) - 30, (SCREEN_HEIGHT / 2.0f) - (3.5 * 8));
-  bool debug_inventory = false;
-  bool debug_menu = false;
-
-  GAME = (Game){.player = player_new(),
-                .world = world_new(),
-                .cur_menu = MENU_START,
-                .paused = false,
-                .ui_renderer = (UiRenderer){.cur_x = 0,
-                                            .cur_y = 0,
-                                            .simulate = false,
-                                            .ui_height = -1,
-                                            .cur_style = {0},
-                                            .context = {.screen_width = SCREEN_WIDTH, .screen_height = SCREEN_HEIGHT}},
-                .detected_saves = 0,
-                .debug_options = {.game_object_display = DISPLAY_NONE,
-                                  .collisions_enabled = true,
-                                  .hitboxes_shown = false,
-                                  .selected_tile_to_place_instance =
-                                      tile_new(&TILES[selected_tile_to_place], selected_tile_to_place_render_pos.x + 35,
-                                               selected_tile_to_place_render_pos.y - 60)}};
+  GAME = (Game){
+      .player = player_new(),
+      .world = world_new(),
+      .cur_menu = MENU_START,
+      .paused = false,
+      .ui_renderer = (UiRenderer){.cur_x = 0,
+                                  .cur_y = 0,
+                                  .simulate = false,
+                                  .ui_height = -1,
+                                  .cur_style = {0},
+                                  .context = {.screen_width = SCREEN_WIDTH, .screen_height = SCREEN_HEIGHT}},
+      .detected_saves = 0,
+      .debug_options = {.game_object_display = DISPLAY_NONE,
+                        .collisions_enabled = true,
+                        .hitboxes_shown = false,
+                        .selected_tile_to_place_instance = tile_new(&TILES[TILE_DIRT], SELECTED_TILE_RENDER_POS.x + 35,
+                                                                    SELECTED_TILE_RENDER_POS.y - 60)}};
 
   Game *game = &GAME;
 
-  game_init_menu(game);
+  game_init(game);
 
   player_set_world(&game->player, &game->world);
 
@@ -81,8 +73,6 @@ int main(void) {
 
   int prevWidth = GetScreenWidth();
   int prevHeight = GetScreenHeight();
-
-  float speed = 2.0f;
 
   Shader shader = LoadShader(NULL, "res/shaders/lighting.fs");
   int light_pos_loc = GetShaderLocation(shader, "lightPos");
@@ -95,18 +85,10 @@ int main(void) {
   Texture2D cursor_texture = load_texture("res/assets/cursor.png");
   Texture2D cursor_fist_texture = load_texture("res/assets/cursor_fist.png");
 
-  Sound place_sound = LoadSound("res/sounds/place_sound.wav");
-
   MUSIC = LoadMusicStream("res/music/main_menu_music.ogg");
   SetMusicVolume(MUSIC, 0.15);
   SetMusicPitch(MUSIC, 0.85);
   PlayMusicStream(MUSIC);
-
-  for (int i = 0; i < SOUND_BUFFER_LIMIT; i++) {
-    sound_buffer[i] = LoadSoundAlias(place_sound);
-    SetSoundPitch(sound_buffer[i], 0.5);
-    SetSoundVolume(sound_buffer[i], 0.25);
-  }
 
   RenderTexture2D world_texture = LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
 
@@ -114,9 +96,7 @@ int main(void) {
 
   game_set_menu(game, MENU_START);
 
-  int cur_sound = 0;
-
-  float sound_timer = 0;
+  bool debug_menu = false;
 
   while (!WindowShouldClose()) {
     ui_renderer->cur_x = 0;
@@ -148,8 +128,6 @@ int main(void) {
                            .height = 20 * 3.5};
     bool slot_selected = CheckCollisionPointRec(GetMousePosition(), slot_rect);
 
-    sound_timer += GetFrameTime();
-
     BeginDrawing();
     {
       ClearBackground(DARKGRAY);
@@ -178,191 +156,94 @@ int main(void) {
           if (!game_cur_menu_hides_game(game)) {
             game_render(game);
 
-            int x_index = floor_div(mouse_world_pos.x, TILE_SIZE);
-            int y_index = floor_div(mouse_world_pos.y, TILE_SIZE);
-            Rectangle rec = (Rectangle){
-                .x = x_index * (TILE_SIZE), .y = y_index * (TILE_SIZE), .width = (TILE_SIZE), .height = (TILE_SIZE)};
-            bool interaction_in_range =
-                abs((int)game->player.box.x - x_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE &&
-                abs((int)game->player.box.y - y_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE;
-
-            if (!slot_selected && interaction_in_range) {
-              rec_draw_outline(rec, BLUE);
-            }
-
-            if (GAME.debug_options.hitboxes_shown) {
-              Rectangle player_hitbox = game->player.box;
-              player_hitbox.height = 6;
-              player_hitbox.y += 26;
-              rec_draw_outline(player_hitbox, BLUE);
-              rec_draw_outline(rectf(game->player.tile_pos.x * TILE_SIZE, game->player.tile_pos.y * TILE_SIZE, 16, 16),
-                               RED);
-            }
-
             // TODO: MOVE TO GAME RENDER FUNCTION
 
             game_render_particles(game, false);
 
-            if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !slot_selected && interaction_in_range) {
-              TileInstance *selected_tile = world_highest_tile_at(&game->world, vec2i(x_index, y_index));
-              TileInstance tile = *selected_tile;
-              if (CheckCollisionPointRec(mouse_world_pos, selected_tile->box) &&
-                  (game->player.last_broken_tile.type.layer == selected_tile->type.layer ||
-                   game->player.last_broken_tile.type.id == TILE_EMPTY)) {
-                if (game->player.held_item.type.id == ITEM_HAMMER) {
-                  for (int y = -1; y <= 1; y++) {
-                    for (int x = -1; x <= 1; x++) {
-                      world_remove_tile(&game->world, vec2i(x_index + x, y_index + y));
-                    }
-                  }
-                } else {
-                  world_remove_tile(&game->world, vec2i(x_index, y_index));
-                }
-                game->player.last_broken_tile = tile;
-              }
+            if (IsKeyReleased(KEYBINDS.open_backpack_menu_key)) {
+              // game_set_menu(game, MENU_BACKPACK);
             }
 
-            if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
-              game->player.last_broken_tile = TILE_INSTANCE_EMPTY;
+#ifdef SURTUR_DEBUG
+            debug_tick();
+
+            if (IsKeyPressed(KEY_F1)) {
+              world_add_being(&game->world, being_npc_new(game->player.box.x, game->player.box.y));
             }
 
-            if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && !slot_selected && interaction_in_range) {
-              TileInstance *selected_tile = world_ground_tile_at(&game->world, vec2i(x_index, y_index));
-              if (CheckCollisionPointRec(mouse_world_pos, selected_tile->box)) {
-                TileInstance new_tile =
-                    tile_new(&TILES[selected_tile_to_place], x_index * TILE_SIZE, y_index * TILE_SIZE);
-                bool placed = world_place_tile(&game->world, vec2i(x_index, y_index), new_tile);
-                if (placed && sound_timer >= SOUND_COOLDOWN) {
-                  PlaySound(sound_buffer[cur_sound++]);
-                  if (cur_sound >= SOUND_BUFFER_LIMIT) {
-                    cur_sound = 0;
-                  }
-                  sound_timer = 0;
-                }
-              }
-            }
+            if (IsKeyPressed(KEY_F3)) {
+              debug_menu = !debug_menu;
 
-            if (IsKeyReleased(KEYBINDS.open_close_save_menu_key)) {
-              if (game->cur_menu == MENU_SAVE) {
-                game->cur_menu = MENU_NONE;
-                game->paused = false;
+              if (debug_menu) {
+                game_set_menu(game, MENU_DEBUG);
               } else {
-                game->cur_menu = MENU_SAVE;
-                game->paused = true;
+                game_set_menu(game, MENU_NONE);
               }
             }
-          }
-
-          if (IsKeyReleased(KEYBINDS.open_backpack_menu_key)) {
-            // game_set_menu(game, MENU_BACKPACK);
-          }
-
-          if (IsKeyPressed(KEY_F1)) {
-            world_add_being(&game->world,
-                            being_new(BEING_ITEM,
-                                      (BeingInstanceEx){.type = BEING_INSTANCE_ITEM,
-                                                        .var = {.item_instance = {.item = game->player.held_item}}},
-                                      game->player.box.x, game->player.box.y, 16, 16));
-          }
-
-#ifdef SURTUR_DEBUG
-          if (IsKeyPressed(KEY_F3)) {
-            debug_menu = !debug_menu;
-
-            if (debug_menu) {
-              game_set_menu(game, MENU_DEBUG);
-            } else {
-              game_set_menu(game, MENU_NONE);
-            }
-          }
 #endif
 
-          // TODO: optimize this
-          for (int i = 0; i < game->world.beings_amount; i++) {
-            if (CheckCollisionRecs(game->world.beings[i].context.box, game->player.box)) {
-              if (GetTime() - game->world.beings[i].context.creation_time > CONFIG.item_pickup_delay) {
-                world_remove_being(&game->world, &game->world.beings[i]);
-                break;
-              }
-            }
-          }
-
-          if (game->world.initialized) {
-            ssize_t index = world_chunk_index_by_pos(&game->world, game->player.chunk_pos);
-            Chunk chunk = game->world.chunks[index];
-            for (int y = 0; y < 16; y++) {
-              for (int x = 0; x < 16; x++) {
-                TileInstance tile = chunk.tiles[y][x][TILE_LAYER_GROUND];
-                if (CheckCollisionRecs(game->player.box, tile.box)) {
+            if (game->world.initialized) {
+              ssize_t index = world_chunk_index_by_pos(&game->world, game->player.chunk_pos);
+              Chunk chunk = game->world.chunks[index];
+              for (int y = 0; y < 16; y++) {
+                for (int x = 0; x < 16; x++) {
+                  TileInstance tile = chunk.tiles[y][x][TILE_LAYER_GROUND];
+                  if (CheckCollisionRecs(game->player.box, tile.box)) {
+                  }
                 }
               }
             }
+
+            // CAMERA END
           }
-
-          // CAMERA END
+          EndMode2D();
         }
-        EndMode2D();
-      }
-      EndTextureMode();
+        EndTextureMode();
 
-      int keycode = GetKeyPressed();
+        if (!game_cur_menu_hides_game(game)) {
+          // RENDER WORLD
+          BeginShaderMode(shader);
+          {
+            DrawTextureRec(world_texture.texture,
+                           (Rectangle){0, 0, (float)world_texture.texture.width, -(float)world_texture.texture.height},
+                           (Vector2){0, 0}, WHITE);
+          }
+          EndShaderMode();
 
-      if (keycode >= 48 && keycode <= 57) {
-        int tile_index = keycode - 48;
-        if (tile_index < TILE_TYPE_AMOUNT) {
-          selected_tile_to_place = tile_index;
-          game->debug_options.selected_tile_to_place_instance =
-              tile_new(&TILES[selected_tile_to_place], selected_tile_to_place_render_pos.x + 35,
-                       selected_tile_to_place_render_pos.y - 60);
+          game_render_overlay(game);
         }
-      }
 
-      if (!game_cur_menu_hides_game(game)) {
-        BeginShaderMode(shader);
-        {
-          DrawTextureRec(world_texture.texture,
-                         (Rectangle){0, 0, (float)world_texture.texture.width, -(float)world_texture.texture.height},
-                         (Vector2){0, 0}, WHITE);
-        }
-        EndShaderMode();
-
-        game_render_overlay(game);
-      }
-
-      game_render_menu(game);
-
-      if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && slot_selected) {
-      }
+        game_render_menu(game);
 
 #ifdef SURTUR_DEBUG
-      debug_render();
+        debug_render();
 #endif
 
-      if (game->player.held_item.type.id != ITEM_EMPTY) {
-        HideCursor();
-        float scale = 3;
-        DrawTextureEx(cursor_texture, (Vector2){.x = mousePos.x - 2 * scale, .y = mousePos.y - 1 * scale}, 0, scale,
-                      WHITE);
-      } else {
-        ShowCursor();
+        if (game->player.held_item.type.id != ITEM_EMPTY) {
+          HideCursor();
+          float scale = 3;
+          DrawTextureEx(cursor_texture, (Vector2){.x = mousePos.x - 2 * scale, .y = mousePos.y - 1 * scale}, 0, scale,
+                        WHITE);
+        } else {
+          ShowCursor();
+        }
       }
-    }
 
-    EndDrawing();
+      EndDrawing();
 
-    for (int i = 0; i < TILE_TYPE_AMOUNT; i++) {
-      update_animation(&TILES[i], GetFrameTime());
-    }
+      for (int i = 0; i < TILE_TYPE_AMOUNT; i++) {
+        update_animation(&TILES[i], GetFrameTime());
+      }
 
-    TileInstance *tile_under_player = world_ground_tile_at(&game->world, game->player.tile_pos);
-    if (tile_under_player->type.id != TILE_EMPTY) {
+      TileInstance *tile_under_player = world_ground_tile_at(&game->world, game->player.tile_pos);
+      if (tile_under_player->type.id != TILE_EMPTY) {
+      }
     }
   }
 
   // animation_unload(&water_animation);
 
   UnloadShader(shader);
-  UnloadSound(place_sound);
 
   game_unload(game);
 

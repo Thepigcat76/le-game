@@ -24,4 +24,24 @@ void debug_render() {
     break;
   }
   }
+
+  if (GAME.debug_options.hitboxes_shown) {
+    Rectangle player_hitbox = GAME.player.box;
+    player_hitbox.height = 6;
+    player_hitbox.y += 26;
+    rec_draw_outline(player_hitbox, BLUE);
+    rec_draw_outline(rectf(GAME.player.tile_pos.x * TILE_SIZE, GAME.player.tile_pos.y * TILE_SIZE, 16, 16), RED);
+  }
+}
+
+void debug_tick() {
+  int keycode = GetKeyPressed();
+
+  if (keycode >= KEY_ZERO && keycode <= KEY_NINE) {
+    int tile_index = keycode - KEY_ZERO;
+    if (tile_index < TILE_TYPE_AMOUNT) {
+      GAME.debug_options.selected_tile_to_place_instance =
+          tile_new(&TILES[tile_index], SELECTED_TILE_RENDER_POS.x + 35, SELECTED_TILE_RENDER_POS.y - 60);
+    }
+  }
 }

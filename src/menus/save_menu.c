@@ -1,7 +1,7 @@
 #include "../../include/config.h"
 #include "../../include/game.h"
 #include "../../include/ui.h"
-#include "../../include/ui_helper.h"
+#include "../../include/ui/ui_helper.h"
 #include <raylib.h>
 
 static void save_menu_back_to_game_button_clicked() {
