@@ -3,11 +3,11 @@
 #include "../shared.h"
 
 typedef struct {
-
+    Vec2f target_position;
 } BeingActivityWalkAround;
 
 typedef struct {
-    Vec2i target_position;
+    Vec2f target_position;
 } BeingActivityGoToPosition;
 
 typedef struct {

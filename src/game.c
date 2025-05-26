@@ -53,6 +53,10 @@ void game_init(Game *game) {
     SetSoundPitch(game->sound_manager.sound_buffer[i], 0.5);
     SetSoundVolume(game->sound_manager.sound_buffer[i], 0.25);
   }
+
+#ifdef SURTUR_DEBUG
+  debug_init();
+#endif
 }
 
 void game_detect_saves(Game *game) {
@@ -123,6 +127,13 @@ static void handle_tile_interaction(Game *game) {
     game->player.last_broken_tile = TILE_INSTANCE_EMPTY;
   }
 
+  if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON)) {
+    if (game->cur_menu == MENU_DEBUG) {
+      DEBUG_GO_TO_POSITION = vec2f(x_index * TILE_SIZE, y_index * TILE_SIZE);
+      TraceLog(LOG_DEBUG, "Set target position");
+    }
+  }
+
   if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && !slot_selected && interaction_in_range) {
     TileInstance *selected_tile = world_ground_tile_at(&game->world, vec2i(x_index, y_index));
     if (CheckCollisionPointRec(mouse_world_pos, selected_tile->box)) {
@@ -177,11 +188,19 @@ void game_tick(Game *game) {
     }
   }
 
+  for (int i = 0; i < game->world.beings_amount; i++) {
+    being_tick(&game->world.beings[i]);
+  }
+
   handle_tile_interaction(game);
 
   handle_item_pickup(game);
 
   game->sound_manager.sound_timer += GetFrameTime();
+
+#ifdef SURTUR_DEBUG
+  debug_tick();
+#endif
 }
 
 // RENDERING
@@ -225,6 +244,7 @@ void game_render_overlay(Game *game) {
 
 #ifdef SURTUR_DEBUG
   tile_render_scaled(&game->debug_options.selected_tile_to_place_instance, 4);
+  debug_render();
 #endif
 }
 

@@ -4,20 +4,30 @@
 #include <stdlib.h>
 #include <string.h>
 
-BeingInstance being_new(BeingId id, BeingInstanceEx extra, int x, int y, int width, int height) {
-  return (BeingInstance){.id = id,
-                         .extra = extra,
-                         .context = {.box = {.x = x, .y = y, .width = width, .height = height},
-                                     .removed = false,
-                                     .creation_time = GetTime()},
-                         .world = NULL,
-                         .brain = {0},
-                         .has_brain = false};
+static Vec2f being_width_height(BeingId id);
+
+static BeingInstanceEx being_ex_default(BeingId id);
+
+static bool being_has_brain(BeingId id);
+
+BeingInstance being_new(BeingId id, BeingInstanceEx extra, int x, int y) {
+  return (BeingInstance){
+      .id = id,
+      .extra = extra,
+      .context = {.box = {.x = x, .y = y, .width = being_width_height(id).x, .height = being_width_height(id).y},
+                  .removed = false,
+                  .creation_time = GetTime()},
+      .brain = {0},
+      .has_brain = being_has_brain(id)};
 }
 
+BeingInstance being_new_default(BeingId id) { return being_new(id, being_ex_default(id), 0, 0); }
+
 BeingInstance being_item_new(ItemInstance item, int x, int y) {
-  return being_new(BEING_ITEM, (BeingInstanceEx){.type = BEING_INSTANCE_ITEM, .var = {.item_instance = {.item = item}}},
-                   x, y, 16, 16);
+  return being_new(
+      BEING_ITEM,
+      (BeingInstanceEx){.type = BEING_INSTANCE_ITEM, .var = {.item_instance = {.item = item, .should_hover = true}}}, x,
+      y);
 }
 
 BeingInstance being_npc_new(int x, int y) {
@@ -28,21 +38,74 @@ BeingInstance being_npc_new(int x, int y) {
                                                                                       .frame_timer = 0,
                                                                                       .in_water = false,
                                                                                       .walking = true}}},
-                                           x, y, 16, 32);
+                                           x, y);
+                                           TraceLog(LOG_DEBUG, "Created new npc, has brain: %s", being_instance.has_brain ? "true" : "false");
   return being_instance;
 }
 
-void being_tick(BeingInstance *being) { being_brain_tick(being, &being->brain); }
+static Vec2f being_width_height(BeingId id) {
+  switch (id) {
+  case BEING_ITEM:
+    return vec2f(16, 16);
+  case BEING_NPC:
+    return vec2f(16, 32);
+  }
+}
+
+static BeingInstanceEx being_ex_default(BeingId id) {
+  switch (id) {
+  case BEING_NPC: {
+    return (BeingInstanceEx){.type = BEING_INSTANCE_NPC,
+                             .var = {.npc_instance = {.animation_frame = 0,
+                                                      .frame_timer = 0,
+                                                      .walking = false,
+                                                      .in_water = false,
+                                                      .direction = DIRECTION_DOWN}}};
+  }
+  case BEING_ITEM: {
+    return (BeingInstanceEx){
+        .type = BEING_INSTANCE_ITEM,
+        .var = {.item_instance = {.item = (ItemInstance){.type = ITEMS[ITEM_STICK]}, .should_hover = false}}};
+  }
+  }
+}
+
+static bool being_has_brain(BeingId id) {
+  switch (id) {
+  case BEING_ITEM:
+    return false;
+  case BEING_NPC:
+    return true;
+  }
+}
+
+void being_tick(BeingInstance *being) {
+  // TraceLog(LOG_INFO, "tick being");
+  being_brain_tick(being, &being->brain);
+}
 
 void being_brain_tick(BeingInstance *being, BeingBrain *brain) {
   for (size_t i = 0; i < brain->activities_amount; i++) {
+    TraceLog(LOG_INFO, "tick brain");
     being_activity_tick(being, &brain->activities[i]);
   }
+}
+
+static void being_activity_walk_around(BeingInstance *being_instance, BeingActivityWalkAround *activity) {
+  Rectangle *being_box = &being_instance->context.box;
+  float sig_x = signum(activity->target_position.x - being_box->x);
+  float sig_y = signum(activity->target_position.y - being_box->y);
+
+  being_box->x += 2 * sig_x;
+  being_box->y += 2 * sig_y;
+  TraceLog(LOG_DEBUG, "new box pos: %f", being_box->x, being_box->y);
 }
 
 void being_activity_tick(BeingInstance *being, BeingActivity *activity) {
   switch (activity->type) {
   case BEING_ACTIVITY_WALK_AROUND: {
+    TraceLog(LOG_INFO, "Walk around");
+    being_activity_walk_around(being, &activity->var.activity_walk_around);
     break;
   }
   case BEING_ACTIVITY_GO_TO_POSITION: {
@@ -85,7 +148,7 @@ void being_render(BeingInstance *being) {
     float amplitude = 2.0f;
     float speed = 5.0f;
     float t = (GetTime() - being->context.creation_time) * speed;
-    float hover_offset = sinf(t) * fabs(sinf(t)); // sin^2 with sign
+    float hover_offset = being->extra.var.item_instance.should_hover ? sinf(t) * fabs(sinf(t)) : 0; // sin^2 with sign
     hover_offset *= amplitude;
     DrawTexture(being->extra.var.item_instance.item.type.texture, being->context.box.x,
                 being->context.box.y + hover_offset, WHITE);
@@ -95,13 +158,8 @@ void being_render(BeingInstance *being) {
     double scale = 1;
     BeingInstanceExNpc *ex = &being->extra.var.npc_instance;
     Texture2D being_texture = being_npc_get_texture(ex);
-    DrawTexturePro(being_texture,
-                   (Rectangle){0, ex->walking ? 32 * ex->animation_frame : 32, 16, ex->in_water ? 24 : 32},
-                   (Rectangle){.x = being->context.box.x + 8 * scale,
-                               .y = being->context.box.y + 16 * scale,
-                               .width = 16 * scale,
-                               .height = (ex->in_water ? 24 : 32) * scale},
-                   (Vector2){.x = 8 * scale, .y = 16 * scale}, 0, WHITE);
+    DrawTextureRecEx(being_texture, rectf(0, ex->walking ? 32 * ex->animation_frame : 32, 16, ex->in_water ? 24 : 32),
+                     vec2f(being->context.box.x + 8 * scale, being->context.box.y + 16 * scale), 0, scale, WHITE);
 
     if (ex->walking) {
       npc_update_animation(ex, GetFrameTime());
@@ -110,3 +168,18 @@ void being_render(BeingInstance *being) {
   }
   }
 }
+
+void being_brain_reset(BeingInstance *being) {
+  BeingBrain *brain = &being->brain;
+  brain->activities_amount = 0;
+  brain->memories_amount = 0;
+}
+
+void being_add_activity(BeingInstance *being, BeingActivity activity) {
+  if (being->has_brain) {
+    BeingBrain *brain = &being->brain;
+    brain->activities[brain->activities_amount++] = activity;
+  }
+}
+
+void being_add_memory(BeingInstance *being, BeingMemory memory) {}

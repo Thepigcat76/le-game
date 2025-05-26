@@ -146,6 +146,8 @@ int floor_mod(int a, int b) {
   return (r < 0) ? r + b : r;
 }
 
+int signum(int s) { return s == 0 ? 0 : s / abs(s); }
+
 float string_to_world_seed(const char *str) {
   if (strlen(str) == 0) {
     return (float)rand() / (float)RAND_MAX;

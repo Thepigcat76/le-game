@@ -55,7 +55,7 @@ int main(void) {
                                   .cur_style = {0},
                                   .context = {.screen_width = SCREEN_WIDTH, .screen_height = SCREEN_HEIGHT}},
       .detected_saves = 0,
-      .debug_options = {.game_object_display = DISPLAY_NONE,
+      .debug_options = {.game_object_display = DEBUG_DISPLAY_NONE,
                         .collisions_enabled = true,
                         .hitboxes_shown = false,
                         .selected_tile_to_place_instance = tile_new(&TILES[TILE_DIRT], SELECTED_TILE_RENDER_POS.x + 35,
@@ -169,6 +169,8 @@ int main(void) {
 
             if (IsKeyPressed(KEY_F1)) {
               world_add_being(&game->world, being_npc_new(game->player.box.x, game->player.box.y));
+              WORLD_BEING_ID = game->world.beings_amount - 1;
+              TraceLog(LOG_DEBUG, "Set id for being: %d", WORLD_BEING_ID);
             }
 
             if (IsKeyPressed(KEY_F3)) {
@@ -214,10 +216,6 @@ int main(void) {
         }
 
         game_render_menu(game);
-
-#ifdef SURTUR_DEBUG
-        debug_render();
-#endif
 
         if (game->player.held_item.type.id != ITEM_EMPTY) {
           HideCursor();

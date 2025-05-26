@@ -17,7 +17,7 @@ typedef struct _world {
   Chunk *chunks;
   size_t chunks_amount;
   ChunkLookup chunk_lookup;
-  struct _being_instance beings[MAX_ENTITIES_AMOUNT];
+  struct _being_instance beings[MAX_WORLD_BEINGS_AMOUNT];
   int beings_amount;
   float seed;
   bool initialized;

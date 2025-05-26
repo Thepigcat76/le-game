@@ -155,7 +155,7 @@ bool world_remove_tile(World *world, TilePos tile_pos) {
                                 (BeingInstanceEx){.type = BEING_INSTANCE_ITEM,
                                                   .var = {.item_instance = {.item = {.type = *item_type}}}},
                                 (tile_pos.x * TILE_SIZE) + GetRandomValue(-7, 9),
-                                (tile_pos.y * TILE_SIZE) + GetRandomValue(-7, 9), 16, 16));
+                                (tile_pos.y * TILE_SIZE) + GetRandomValue(-7, 9)));
     }
 
     for (int i = 0; i < 5; i++) {
@@ -172,7 +172,7 @@ bool world_remove_tile(World *world, TilePos tile_pos) {
 }
 
 void world_add_being(World *world, BeingInstance being) {
-  if (world->beings_amount < MAX_ENTITIES_AMOUNT) {
+  if (world->beings_amount < MAX_WORLD_BEINGS_AMOUNT) {
     world->beings[world->beings_amount] = being;
     world->beings[world->beings_amount].being_instance_id = world->beings_amount;
     world->beings_amount++;

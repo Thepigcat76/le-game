@@ -21,7 +21,7 @@
 
 #define SAVE_DATA_BYTES 10000
 
-#define MAX_ENTITIES_AMOUNT 100
+#define MAX_WORLD_BEINGS_AMOUNT 100
 
 #define MAX_UI_TEXTURES_AMOUNT 100
 
@@ -37,11 +37,15 @@
 
 #define ITEM_TYPE_AMOUNT 9
 
+#define BEINGS_AMOUNT 2
+
 #define SOUND_BUFFER_LIMIT 64
 
 #define SOUND_COOLDOWN 0.125f
 
 #define DIRECTIONS_AMOUNT 4
+
+#define DEFAULT_ITEM_BEING_ITEM ITEM_GRASS
 
 extern Texture2D DEBUG_BUTTON_TEXTURE;
 extern Texture2D DEBUG_BUTTON_SELECTED_TEXTURE;
@@ -112,5 +116,7 @@ void DrawTextureRecEx(Texture2D texture, Rectf source, Vector2 pos, float rotati
 int floor_div(int a, int b);
 
 int floor_mod(int a, int b);
+
+int signum(int s);
 
 float string_to_world_seed(const char *str);

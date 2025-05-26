@@ -37,6 +37,7 @@ typedef struct {
     } default_instance;
     struct {
       ItemInstance item;
+      bool should_hover;
     } item_instance;
     BeingInstanceExNpc npc_instance;
   } var;
@@ -56,19 +57,34 @@ typedef struct _being_instance {
   BeingContext context;
   BeingBrain brain;
   bool has_brain;
-  struct _world *world;
 } BeingInstance;
 
-BeingInstance being_new(BeingId id, BeingInstanceEx extra, int x, int y, int width, int height);
+// BEING CREATION
+
+BeingInstance being_new(BeingId id, BeingInstanceEx extra, int x, int y);
+
+BeingInstance being_new_default(BeingId id);
 
 BeingInstance being_item_new(ItemInstance item, int x, int y);
 
 BeingInstance being_npc_new(int x, int y);
 
-void being_tick(BeingInstance *being);
+// BEING RENDERING
 
 void being_render(BeingInstance *being);
+
+// BEING TICKING
+
+void being_tick(BeingInstance *being);
 
 void being_brain_tick(BeingInstance *being, BeingBrain *brain);
 
 void being_activity_tick(BeingInstance *being, BeingActivity *activity);
+
+// BEING BRAIN STUFFS
+
+void being_brain_reset(BeingInstance *being);
+
+void being_add_activity(BeingInstance *being, BeingActivity activity);
+
+void being_add_memory(BeingInstance *being, BeingMemory memory);

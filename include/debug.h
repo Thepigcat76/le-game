@@ -5,18 +5,24 @@
 
 #define SELECTED_TILE_RENDER_POS vec2i(SCREEN_WIDTH - (3.5 * 16) - 30, (SCREEN_HEIGHT / 2.0f) - (3.5 * 8))
 
+extern Vec2f DEBUG_GO_TO_POSITION;
+extern int WORLD_BEING_ID;
+
 typedef enum {
-    DISPLAY_NONE,
-    DISPLAY_ALL_ITEMS,
-    DISPLAY_ALL_TILES,
-} DisplayMode;
+    DEBUG_DISPLAY_NONE,
+    DEBUG_DISPLAY_ALL_ITEMS,
+    DEBUG_DISPLAY_ALL_TILES,
+    DEBUG_DISPLAY_ALL_BEINGS,
+} DebugDisplayMode;
 
 typedef struct {
-    DisplayMode game_object_display;
+    DebugDisplayMode game_object_display;
     bool collisions_enabled;
     bool hitboxes_shown;
     TileInstance selected_tile_to_place_instance;
 } DebugOptions;
+
+void debug_init();
 
 void debug_render();
 
