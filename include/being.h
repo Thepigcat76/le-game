@@ -18,7 +18,13 @@ typedef struct {
   double creation_time;
 } BeingContext;
 
+typedef enum {
+  BROTHER,
+  OLD_MAN,
+} NpcVariant;
+
 typedef struct {
+  NpcVariant variant;
   Direction direction;
   int animation_frame;
   int frame_timer;

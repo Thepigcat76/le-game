@@ -25,6 +25,8 @@ int TILE_ANIMATION_FRAMES[TILE_TYPE_AMOUNT];
 Texture2D NPC_TEXTURES[DIRECTIONS_AMOUNT];
 Texture2D NPC_ANIMATED_TEXTURES[DIRECTIONS_AMOUNT];
 
+Texture NPC_TEXTURE_OLD_MAN;
+
 void shared_init() {
   TEXT_INPUT_TEXTURE = load_texture("res/assets/gui/text_input.png");
 
@@ -50,6 +52,8 @@ void shared_init() {
   NPC_ANIMATED_TEXTURES[DIRECTION_DOWN] = load_texture("res/assets/beings/npc_front_walking.png");
   NPC_ANIMATED_TEXTURES[DIRECTION_LEFT] = load_texture("res/assets/beings/npc_left_walking.png");
   NPC_ANIMATED_TEXTURES[DIRECTION_RIGHT] = load_texture("res/assets/beings/npc_right_walking.png");
+
+  NPC_TEXTURE_OLD_MAN = load_texture("res/assets/old_man.png");
 }
 
 void create_dir(const char *dir_name) {
@@ -144,6 +148,18 @@ int floor_div(int a, int b) { return (a >= 0) ? (a / b) : ((a - b + 1) / b); }
 int floor_mod(int a, int b) {
   int r = a % b;
   return (r < 0) ? r + b : r;
+}
+
+Direction direction_from_delta(int x, int y) {
+  if (x < 0) {
+    return DIRECTION_LEFT;
+  } else if (x > 0) {
+    return DIRECTION_RIGHT;
+  } else if (y > 0) {
+    return DIRECTION_UP;
+  } else {
+    return DIRECTION_DOWN;
+  }
 }
 
 int signum(int s) { return s == 0 ? 0 : s / abs(s); }

@@ -84,5 +84,4 @@ void debug_tick() {
                                        .var = {.activity_walk_around = {.target_position = DEBUG_GO_TO_POSITION}}});
     TraceLog(LOG_DEBUG, "Added activity");
   }
-
 }

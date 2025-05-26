@@ -66,6 +66,8 @@ extern int TILE_ANIMATION_FRAMES[TILE_TYPE_AMOUNT];
 extern Texture2D NPC_TEXTURES[DIRECTIONS_AMOUNT];
 extern Texture2D NPC_ANIMATED_TEXTURES[DIRECTIONS_AMOUNT];
 
+extern Texture2D NPC_TEXTURE_OLD_MAN;
+
 typedef enum {
   DIRECTION_UP,
   DIRECTION_DOWN,
@@ -118,5 +120,7 @@ int floor_div(int a, int b);
 int floor_mod(int a, int b);
 
 int signum(int s);
+
+Direction direction_from_delta(int x, int y);
 
 float string_to_world_seed(const char *str);

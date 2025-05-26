@@ -151,11 +151,9 @@ bool world_remove_tile(World *world, TilePos tile_pos) {
   if (world_set_tile_on_layer(world, tile_pos, empty_instance, tile->type.layer)) {
     if (item_type != NULL) {
       world_add_being(world,
-                      being_new(BEING_ITEM,
-                                (BeingInstanceEx){.type = BEING_INSTANCE_ITEM,
-                                                  .var = {.item_instance = {.item = {.type = *item_type}}}},
-                                (tile_pos.x * TILE_SIZE) + GetRandomValue(-7, 9),
-                                (tile_pos.y * TILE_SIZE) + GetRandomValue(-7, 9)));
+                      being_item_new((ItemInstance){.type = *item_type},
+                                     (tile_pos.x * TILE_SIZE) + GetRandomValue(-7, 9),
+                                     (tile_pos.y * TILE_SIZE) + GetRandomValue(-7, 9)));
     }
 
     for (int i = 0; i < 5; i++) {

@@ -33,13 +33,14 @@ BeingInstance being_item_new(ItemInstance item, int x, int y) {
 BeingInstance being_npc_new(int x, int y) {
   BeingInstance being_instance = being_new(BEING_NPC,
                                            (BeingInstanceEx){.type = BEING_INSTANCE_NPC,
-                                                             .var = {.npc_instance = {.direction = DIRECTION_DOWN,
+                                                             .var = {.npc_instance = {.variant = GetRandomValue(0, 1),
+                                                                                      .direction = DIRECTION_DOWN,
                                                                                       .animation_frame = 0,
                                                                                       .frame_timer = 0,
                                                                                       .in_water = false,
                                                                                       .walking = true}}},
                                            x, y);
-                                           TraceLog(LOG_DEBUG, "Created new npc, has brain: %s", being_instance.has_brain ? "true" : "false");
+  TraceLog(LOG_DEBUG, "Created new npc, has brain: %s", being_instance.has_brain ? "true" : "false");
   return being_instance;
 }
 
@@ -96,9 +97,13 @@ static void being_activity_walk_around(BeingInstance *being_instance, BeingActiv
   float sig_x = signum(activity->target_position.x - being_box->x);
   float sig_y = signum(activity->target_position.y - being_box->y);
 
-  being_box->x += 2 * sig_x;
-  being_box->y += 2 * sig_y;
+  being_box->x += 0.75 * sig_x;
+  being_box->y += 0.75 * sig_y;
   TraceLog(LOG_DEBUG, "new box pos: %f", being_box->x, being_box->y);
+
+  if (being_instance->id == BEING_NPC) {
+    being_instance->extra.var.npc_instance.direction = direction_from_delta(sig_x, sig_y);
+  }
 }
 
 void being_activity_tick(BeingInstance *being, BeingActivity *activity) {
@@ -115,12 +120,18 @@ void being_activity_tick(BeingInstance *being, BeingActivity *activity) {
 }
 
 static Texture2D being_npc_get_texture(BeingInstanceExNpc *being_ex) {
+  if (being_ex->variant == OLD_MAN) {
+    return NPC_TEXTURE_OLD_MAN;
+  }
+
   Texture2D *textures;
+  
   if (being_ex->walking) {
     textures = NPC_ANIMATED_TEXTURES;
   } else {
     textures = NPC_TEXTURES;
   }
+
   switch (being_ex->direction) {
   case DIRECTION_DOWN:
     return textures[0];
@@ -133,23 +144,27 @@ static Texture2D being_npc_get_texture(BeingInstanceExNpc *being_ex) {
   }
 }
 
-static void npc_update_animation(BeingInstanceExNpc *player, float deltaTime) {
-  player->frame_timer += deltaTime * 1000.0f; // to ms
+static void npc_update_animation(BeingInstanceExNpc *npc, float deltaTime) {
+  npc->frame_timer += deltaTime * 1000.0f; // to ms
   float delay = 125;
-  if (player->frame_timer >= delay) {
-    player->frame_timer = 0.0f;
-    player->animation_frame = (player->animation_frame + 1) % 5;
+  int frames = npc->variant == OLD_MAN ? 2 : 5;
+  if (npc->frame_timer >= delay) {
+    npc->frame_timer = 0.0f;
+    npc->animation_frame = (npc->animation_frame + 1) % frames;
   }
 }
 
 void being_render(BeingInstance *being) {
   switch (being->id) {
   case BEING_ITEM: {
-    float amplitude = 2.0f;
-    float speed = 5.0f;
-    float t = (GetTime() - being->context.creation_time) * speed;
-    float hover_offset = being->extra.var.item_instance.should_hover ? sinf(t) * fabs(sinf(t)) : 0; // sin^2 with sign
-    hover_offset *= amplitude;
+    float hover_offset = 0;
+    if (being->extra.var.item_instance.should_hover) {
+      float amplitude = 2.0f;
+      float speed = 5.0f;
+      float t = (GetTime() - being->context.creation_time) * speed;
+      hover_offset = sinf(t) * fabs(sinf(t)); // sin^2 with sign
+      hover_offset *= amplitude;
+    }
     DrawTexture(being->extra.var.item_instance.item.type.texture, being->context.box.x,
                 being->context.box.y + hover_offset, WHITE);
     break;
@@ -161,7 +176,7 @@ void being_render(BeingInstance *being) {
     DrawTextureRecEx(being_texture, rectf(0, ex->walking ? 32 * ex->animation_frame : 32, 16, ex->in_water ? 24 : 32),
                      vec2f(being->context.box.x + 8 * scale, being->context.box.y + 16 * scale), 0, scale, WHITE);
 
-    if (ex->walking) {
+    if (ex->walking || being->extra.var.npc_instance.variant == OLD_MAN) {
       npc_update_animation(ex, GetFrameTime());
     }
     break;
