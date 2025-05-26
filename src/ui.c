@@ -199,9 +199,24 @@ void ui_text_render(UiRenderer *renderer, const char *text) {
 // TEXT INPUT
 
 void ui_text_input_render_ex(UiRenderer *renderer, TextInputUiComponent component) {
-  float scale = ui_scale(renderer) * renderer->cur_style.scale;
+  float scale = renderer->cur_style.scale * ui_scale(renderer);
+  UiStyle style = renderer->cur_style;
+  switch (renderer->cur_style.alignment) {
+  case UI_VERTICAL: {
+    if (style.positions[0] == UI_CENTER || style.positions[1] == UI_CENTER) {
+      renderer->cur_x = (renderer->context.screen_width - component.width * scale) / 2;
+    }
+    renderer->cur_x += component.x_offset;
+    break;
+  }
+  case UI_HORIZONTAL: {
+    renderer->cur_x += component.x_offset;
+    break;
+  }
+  }
   int x = renderer->cur_x + (component.width * scale) / 2;
   int y = renderer->cur_y + (component.height * scale) / 2;
+  
   DrawTexturePro(component.texture,
                  (Rectangle){.x = 0, .y = 0, .width = component.texture.width, .height = component.texture.height},
                  (Rectangle){.x = x, .y = y, .width = component.width * scale, .height = component.height * scale},
