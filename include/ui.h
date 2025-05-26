@@ -56,10 +56,10 @@ void ui_text_render(UiRenderer *renderer, const char *text);
 
 void ui_text_input_render_ex(UiRenderer *renderer, TextInputUiComponent component);
 
-void ui_text_input_render(UiRenderer *renderer, Texture2D texture, TextInputBuffer *text_input_buf);
+void ui_text_input_render(UiRenderer *renderer, Texture2D texture, TextInputBuffer *text_input_buf, bool *selected);
 
 void ui_text_input_render_dimensions(UiRenderer *renderer, Texture2D texture, TextInputBuffer *text_input_buf,
-                                     Vec2i dimensions);
+                                     bool *selected, Vec2i dimensions);
 
 // SPACING
 

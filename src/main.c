@@ -88,7 +88,7 @@ int main(void) {
   MUSIC = LoadMusicStream("res/music/main_menu_music.ogg");
   SetMusicVolume(MUSIC, 0.15);
   SetMusicPitch(MUSIC, 0.85);
-  PlayMusicStream(MUSIC);
+  //PlayMusicStream(MUSIC);
 
   RenderTexture2D world_texture = LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
 

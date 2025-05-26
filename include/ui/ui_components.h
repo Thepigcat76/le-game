@@ -54,6 +54,7 @@ typedef struct {
 typedef struct {
   Texture2D texture;
   TextInputBuffer *text_input;
+  bool *selected;
   int width;
   int height;
   int x_offset;

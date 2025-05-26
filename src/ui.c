@@ -227,7 +227,7 @@ void ui_text_input_render_ex(UiRenderer *renderer, TextInputUiComponent componen
 
   int line_x = renderer->cur_x + MeasureText(component.text_input->buf, renderer->cur_style.font_scale);
 
-  if (((int)(GetTime() * 1.5)) % 2 == 0) {
+  if (((int)(GetTime() * 1.5)) % 2 == 0 && *component.selected) {
     DrawLineEx(vec2f(line_x + 3 * scale, renderer->cur_y + (component.height - 3) * scale),
                vec2f(line_x + 11 * scale, renderer->cur_y + (component.height - 3) * scale), 3, WHITE);
   }
@@ -259,7 +259,7 @@ void ui_text_input_render_ex(UiRenderer *renderer, TextInputUiComponent componen
   }
 }
 
-void ui_text_input_render_dimensions(UiRenderer *renderer, Texture2D texture, TextInputBuffer *text_input_buf,
+void ui_text_input_render_dimensions(UiRenderer *renderer, Texture2D texture, TextInputBuffer *text_input_buf, bool *selected,
                                      Vec2i dimensions) {
   ui_text_input_render_ex(renderer,
                           (TextInputUiComponent){.texture = texture,
@@ -267,12 +267,13 @@ void ui_text_input_render_dimensions(UiRenderer *renderer, Texture2D texture, Te
                                                  .color = WHITE,
                                                  .width = dimensions.x,
                                                  .height = dimensions.y,
+                                                 .selected = selected,
                                                  .x_offset = 0,
                                                  .y_offset = 0});
 }
 
-void ui_text_input_render(UiRenderer *renderer, Texture2D texture, TextInputBuffer *text_input_buf) {
-  ui_text_input_render_dimensions(renderer, texture, text_input_buf, vec2i(texture.width, texture.height));
+void ui_text_input_render(UiRenderer *renderer, Texture2D texture, TextInputBuffer *text_input_buf, bool *selected) {
+  ui_text_input_render_dimensions(renderer, texture, text_input_buf, selected, vec2i(texture.width, texture.height));
 }
 
 // SPACING

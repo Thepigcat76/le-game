@@ -39,7 +39,6 @@ void debug_render() {
     for (int i = 0; i < BEINGS_AMOUNT; i++) {
       int start_x = 0;
       BeingInstance being = DEBUG_BEINGS[i];
-      TraceLog(LOG_DEBUG, "Id: %d", being.id);
       being.context.box.x =
           ((float)(GetScreenWidth() - DEBUG_BEINGS_WIDTH) / 2 + i * being.context.box.width * scale) / scale;
       being.context.box.y = 100;
