@@ -60,6 +60,7 @@ extern Texture2D MAIN_HAND_SLOT_TEXTURE;
 extern Texture2D OFF_HAND_SLOT_TEXTURE;
 
 extern Texture2D SAVE_SLOT_TEXTURE;
+extern Texture2D SAVE_SLOT_SELECTED_TEXTURE;
 
 extern int TILE_ANIMATION_FRAMES[TILE_TYPE_AMOUNT];
 
@@ -112,6 +113,10 @@ bool vec2_eq(const Vec2i *vec1, const Vec2i *vec2);
 Texture2D load_texture(char *path);
 
 Rectf rectf(float x, float y, float w, float h);
+
+Color color_rgb(int r, int g, int b);
+
+Color color_rgba(int r, int g, int b, int a);
 
 void DrawTextureRecEx(Texture2D texture, Rectf source, Vector2 pos, float rotation, float scale, Color tint);
 

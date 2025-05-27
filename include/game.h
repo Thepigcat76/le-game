@@ -17,6 +17,7 @@ typedef struct _game {
   World world;
   MenuId cur_menu;
   bool paused;
+  int cur_save;
   // LOADING
   int detected_saves;
   // RENDERING
@@ -31,9 +32,12 @@ typedef struct _game {
 extern Game GAME;
 extern Music MUSIC;
 
+// Returns a pointer to an array of two strings (first one being the adjective, second one the noun)
+char **game_save_name_random(Game *game);
+
 void game_create_world(Game *game, float seed);
 
-void game_create_save(Game *game, const char *save_name, float seed);
+void game_create_save(Game *game, const char *save_name, const char *seed_lit);
 
 void game_detect_saves(Game *game);
 
@@ -50,6 +54,10 @@ void game_render(Game *game);
 void game_render_overlay(Game *game);
 
 // GAME LOAD/SAVE
+
+void game_load_cur_save(Game *game);
+
+void game_save_cur_save(Game *game);
 
 void game_load(Game *game);
 

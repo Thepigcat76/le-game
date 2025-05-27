@@ -13,7 +13,12 @@ static void save_menu_general_settings_button_clicked() { TraceLog(LOG_DEBUG, "B
 
 static void save_menu_gameplay_settings_button_clicked() { TraceLog(LOG_DEBUG, "Button clicked"); }
 
-static void save_menu_save_game_button_clicked() { GAME.cur_menu = MENU_START; }
+static void save_menu_save_game_button_clicked() {
+  game_set_menu(&GAME, MENU_START);
+  game_save_cur_save(&GAME);
+  GAME.world.chunk_lookup = (ChunkLookup){.indices = {}, .chunks_positions = {}};
+  GAME.world.chunks_amount = 0;
+}
 
 static Texture2D DECLARE_BUTTON_TEXTURE(BACK_TO_GAME_BUTTON_TEXTURE);
 static Texture2D DECLARE_BUTTON_TEXTURE(VISUAL_SETTINGS_BUTTON_TEXTURE);

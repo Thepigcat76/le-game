@@ -3,7 +3,7 @@
 #include "../../include/ui.h"
 #include <raylib.h>
 
-static bool save_name_input_selected = false;
+static bool save_name_input_selected = true;
 static bool seed_input_selected = false;
 
 static char _text_buf_0[256];
@@ -13,13 +13,10 @@ static char _text_buf_1[256];
 static TextInputBuffer seed_text_input_buffer = {.buf = _text_buf_1, .len = 0, .max_len = 256};
 
 static void new_save_create_world() {
-  float seed = string_to_world_seed(seed_text_input_buffer.buf);
-  TraceLog(LOG_DEBUG, "World seed: %f", seed);
   game_set_menu(&GAME, MENU_NONE);
   GAME.paused = false;
 
-  game_create_save(&GAME, "Test", seed);
-  game_create_world(&GAME, seed);
+  game_create_save(&GAME, save_name_text_input_buffer.buf, seed_text_input_buffer.buf);
   world_initialize(&GAME.world);
 }
 

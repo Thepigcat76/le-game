@@ -59,5 +59,7 @@ typedef struct {
   int height;
   int x_offset;
   int y_offset;
+  float text_x_offset;
+  float text_y_offset;
   Color color;
 } TextInputUiComponent;

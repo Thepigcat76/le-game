@@ -199,6 +199,7 @@ void ui_text_render(UiRenderer *renderer, const char *text) {
 // TEXT INPUT
 
 void ui_text_input_render_ex(UiRenderer *renderer, TextInputUiComponent component) {
+  bool selected = *component.selected;
   float scale = renderer->cur_style.scale * ui_scale(renderer);
   UiStyle style = renderer->cur_style;
   switch (renderer->cur_style.alignment) {
@@ -216,35 +217,44 @@ void ui_text_input_render_ex(UiRenderer *renderer, TextInputUiComponent componen
   }
   int x = renderer->cur_x + (component.width * scale) / 2;
   int y = renderer->cur_y + (component.height * scale) / 2;
-  
+
   DrawTexturePro(component.texture,
                  (Rectangle){.x = 0, .y = 0, .width = component.texture.width, .height = component.texture.height},
                  (Rectangle){.x = x, .y = y, .width = component.width * scale, .height = component.height * scale},
                  (Vector2){.x = (component.width * scale) / 2, .y = (component.height * scale) / 2}, 0, WHITE);
 
-  DrawText(component.text_input->buf, renderer->cur_x + 3 * scale, renderer->cur_y + 3, renderer->cur_style.font_scale,
+  DrawText(component.text_input->buf, renderer->cur_x + 3 * scale + component.text_x_offset, renderer->cur_y + 3 + component.text_y_offset, renderer->cur_style.font_scale,
            WHITE);
 
   int line_x = renderer->cur_x + MeasureText(component.text_input->buf, renderer->cur_style.font_scale);
 
-  if (((int)(GetTime() * 1.5)) % 2 == 0 && *component.selected) {
+  if (((int)(GetTime() * 1.5)) % 2 == 0 && selected) {
     DrawLineEx(vec2f(line_x + 3 * scale, renderer->cur_y + (component.height - 3) * scale),
                vec2f(line_x + 11 * scale, renderer->cur_y + (component.height - 3) * scale), 3, WHITE);
   }
 
-  KeyboardKey keycode_ch = GetCharPressed();
-  if (keycode_ch != KEY_NULL) {
-    char c = (char)keycode_ch;
-    if (component.text_input->len < component.text_input->max_len) {
-      component.text_input->buf[component.text_input->len++] = c;
+  if (selected) {
+    KeyboardKey keycode_ch = GetCharPressed();
+    if (keycode_ch != KEY_NULL) {
+      char c = (char)keycode_ch;
+      TraceLog(LOG_INFO, "Text: %s", component.text_input->buf);
+      if (component.text_input->len < component.text_input->max_len) {
+        component.text_input->buf[component.text_input->len++] = c;
+      }
     }
   }
 
-  if (IsKeyPressed(KEY_BACKSPACE)) {
+  if (IsKeyPressed(KEY_BACKSPACE) && selected) {
     if (component.text_input->len > 0) {
       component.text_input->buf[component.text_input->len - 1] = '\0';
       component.text_input->len--;
     }
+  }
+
+  if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+
+  Rectangle text_input_box = rectf(renderer->cur_x, renderer->cur_y, component.width * scale, component.height * scale);
+    (*component.selected) = CheckCollisionPointRec(GetMousePosition(), text_input_box);
   }
 
   switch (renderer->cur_style.alignment) {
@@ -259,8 +269,8 @@ void ui_text_input_render_ex(UiRenderer *renderer, TextInputUiComponent componen
   }
 }
 
-void ui_text_input_render_dimensions(UiRenderer *renderer, Texture2D texture, TextInputBuffer *text_input_buf, bool *selected,
-                                     Vec2i dimensions) {
+void ui_text_input_render_dimensions(UiRenderer *renderer, Texture2D texture, TextInputBuffer *text_input_buf,
+                                     bool *selected, Vec2i dimensions) {
   ui_text_input_render_ex(renderer,
                           (TextInputUiComponent){.texture = texture,
                                                  .text_input = text_input_buf,
@@ -268,6 +278,8 @@ void ui_text_input_render_dimensions(UiRenderer *renderer, Texture2D texture, Te
                                                  .width = dimensions.x,
                                                  .height = dimensions.y,
                                                  .selected = selected,
+                                                 .text_x_offset = 0,
+                                                 .text_y_offset = 4,
                                                  .x_offset = 0,
                                                  .y_offset = 0});
 }

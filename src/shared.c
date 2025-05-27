@@ -19,6 +19,7 @@ Texture2D MAIN_HAND_SLOT_TEXTURE;
 Texture2D OFF_HAND_SLOT_TEXTURE;
 
 Texture2D SAVE_SLOT_TEXTURE;
+Texture2D SAVE_SLOT_SELECTED_TEXTURE;
 
 int TILE_ANIMATION_FRAMES[TILE_TYPE_AMOUNT];
 
@@ -42,6 +43,7 @@ void shared_init() {
   OFF_HAND_SLOT_TEXTURE = load_texture("res/assets/gui/off_hand_slot.png");
 
   SAVE_SLOT_TEXTURE = load_texture("res/assets/gui/save_slot.png");
+  SAVE_SLOT_SELECTED_TEXTURE = load_texture("res/assets/gui/save_slot_selected.png");
 
   NPC_TEXTURES[DIRECTION_UP] = load_texture("res/assets/beings/npc_back.png");
   NPC_TEXTURES[DIRECTION_DOWN] = load_texture("res/assets/beings/npc_front.png");
@@ -136,6 +138,10 @@ Texture2D load_texture(char *path) {
 }
 
 Rectf rectf(float x, float y, float w, float h) { return (Rectf){.x = x, .y = y, .width = w, .height = h}; }
+
+Color color_rgb(int r, int g, int b) { return color_rgba(r, g, b, 255); }
+
+Color color_rgba(int r, int g, int b, int a) { return (Color){.r = r, .g = g, .b = b, .a = a}; }
 
 void DrawTextureRecEx(Texture2D texture, Rectangle source, Vector2 pos, float rotation, float scale, Color tint) {
   DrawTexturePro(texture, source,

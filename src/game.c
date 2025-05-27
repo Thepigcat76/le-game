@@ -1,5 +1,6 @@
 #include "../include/game.h"
 #include "../include/config.h"
+#include "../vendor/cJSON.h"
 #include "raylib.h"
 #include <dirent.h>
 #include <stdio.h>
@@ -32,8 +33,37 @@ Music MUSIC;
 
 static Sound PLACE_SOUND;
 
-void game_create_save(Game *game, const char *save_name, float seed) {
-  create_dir(TextFormat("save/save%d", game->detected_saves));
+static void game_create_save_config(Game *game, int save_index, const char *save_name, float seed) {
+  cJSON *json = cJSON_CreateObject();
+  cJSON_AddStringToObject(json, "name", save_name);
+  {
+    cJSON *world_json = cJSON_AddObjectToObject(json, "world");
+    cJSON_AddNumberToObject(world_json, "seed", seed);
+  }
+  // TO FILE
+  char *json_str = cJSON_Print(json);
+  FILE *fp = fopen(TextFormat("save/save%d/game.json", save_index), "w");
+  if (fp) {
+    fputs(json_str, fp);
+    fclose(fp);
+    printf("Successfully created game.json\n");
+  } else {
+    perror("Failed to open file");
+  }
+  free(json_str);
+  cJSON_Delete(json);
+}
+
+void game_create_save(Game *game, const char *save_name, const char *seed_lit) {
+  if (!DirectoryExists("save")) {
+    create_dir("save");
+  }
+
+  game->cur_save = game->detected_saves;
+  create_dir(TextFormat("save/save%d", game->cur_save));
+  float seed = string_to_world_seed(seed_lit);
+  game_create_save_config(game, game->cur_save, save_name, seed);
+  game_create_world(&GAME, seed);
 }
 
 void game_create_world(Game *game, float seed) {
@@ -60,6 +90,10 @@ void game_init(Game *game) {
 }
 
 void game_detect_saves(Game *game) {
+  if (!DirectoryExists("save")) {
+    create_dir("save");
+  }
+
   game->detected_saves = 0;
   DIR *dir = opendir(SAVE_DIR);
 
@@ -321,53 +355,75 @@ void game_set_menu(Game *game, MenuId menu_id) {
 
 // GAME LOAD/SAVE
 
+#define SAVE_DATA(save_file_name, byte_buf_name, block)                                                                \
+  {                                                                                                                    \
+    uint8_t byte_buf_name##_bytes[SAVE_DATA_BYTES];                                                                    \
+    ByteBuf byte_buf_name = {                                                                                          \
+        .bytes = byte_buf_name##_bytes, .writer_index = 0, .reader_index = 0, .capacity = SAVE_DATA_BYTES};            \
+    block byte_buf_to_file(&byte_buf_name, TextFormat("save/save%d/" save_file_name ".bin", game->cur_save));          \
+  }
+
+#define LOAD_DATA(save_file_name, byte_buf_name, block)                                                                \
+  {                                                                                                                    \
+    uint8_t byte_buf_name##_bytes[SAVE_DATA_BYTES];                                                                    \
+    ByteBuf byte_buf_name = {                                                                                          \
+        .bytes = byte_buf_name##_bytes, .writer_index = 0, .reader_index = 0, .capacity = SAVE_DATA_BYTES};            \
+    byte_buf_from_file(&byte_buf_name, TextFormat("save/save%d/" save_file_name ".bin", game->cur_save));              \
+    block                                                                                                              \
+  }
+
 // LOAD
 
-static void load_game(Game *game, ByteBuf *bytebuf) {
-  Data data_map_0 = byte_buf_read_data(bytebuf);
-  DataMap *player_map = &data_map_0.var.data_map;
-  player_load(&game->player, player_map);
-
-  Data data_map_1 = byte_buf_read_data(bytebuf);
-  DataMap *world_map = &data_map_1.var.data_map;
-  load_world(&game->world, world_map);
-
-  data_free(&data_map_0);
-  data_free(&data_map_1);
+void game_load(Game *game) {
+  game_load_cur_save(game);
 }
 
-void game_load(Game *game) {
-  uint8_t bytes[SAVE_DATA_BYTES];
-  ByteBuf buf = {.bytes = bytes, .writer_index = 0, .reader_index = 0, .capacity = SAVE_DATA_BYTES};
-  byte_buf_from_file(&buf, "save/game.bin");
-  load_game(game, &buf);
-  TraceLog(LOG_INFO, "Successfully loaded game");
+void game_load_cur_save(Game *game) {
+  LOAD_DATA("player", byte_buf, {
+    Data data_map_0 = byte_buf_read_data(&byte_buf);
+    DataMap *player_map = &data_map_0.var.data_map;
+    player_load(&game->player, player_map);
+
+    data_free(&data_map_0);
+  });
+
+  LOAD_DATA("world", byte_buf, {
+    Data data_map_1 = byte_buf_read_data(&byte_buf);
+    DataMap *world_map = &data_map_1.var.data_map;
+    load_world(&game->world, world_map);
+
+    data_free(&data_map_1);
+  });
 }
 
 // UNLOAD
 
-static void save_game(Game *game, ByteBuf *bytebuf) {
-  DataMap player_map = data_map_new(200);
-  player_save(&game->player, &player_map);
-  DataMap world_map = data_map_new(400);
-  save_world(&game->world, &world_map);
+void game_save_cur_save(Game *game) {
+  SAVE_DATA("player", byte_buf, {
+    DataMap player_map = data_map_new(200);
+    player_save(&game->player, &player_map);
 
-  Data player_data = (Data){.type = DATA_TYPE_MAP, .var = {.data_map = player_map}};
-  byte_buf_write_data(bytebuf, &player_data);
-  Data world_data = (Data){.type = DATA_TYPE_MAP, .var = {.data_map = world_map}};
-  byte_buf_write_data(bytebuf, &world_data);
+    Data player_data = data_map(player_map);
+    byte_buf_write_data(&byte_buf, &player_data);
 
-  data_free(&player_data);
-  data_free(&world_data);
+    data_free(&player_data);
+  });
+
+  SAVE_DATA("world", byte_buf, {
+    DataMap world_map = data_map_new(400);
+    save_world(&game->world, &world_map);
+
+    Data world_data = data_map(world_map);
+    byte_buf_write_data(&byte_buf, &world_data);
+
+    data_free(&world_data);
+  });
 }
 
 void game_unload(Game *game) {
   tile_variants_free();
 
-  uint8_t bytes[SAVE_DATA_BYTES];
-  ByteBuf buf = {.bytes = bytes, .writer_index = 0, .reader_index = 0, .capacity = SAVE_DATA_BYTES};
-  save_game(game, &buf);
-  byte_buf_to_file(&buf, "save/game.bin");
+  game_save_cur_save(game);
 
   free(game->world.chunks);
 

@@ -54,6 +54,7 @@ int main(void) {
                                   .ui_height = -1,
                                   .cur_style = {0},
                                   .context = {.screen_width = SCREEN_WIDTH, .screen_height = SCREEN_HEIGHT}},
+      .cur_save = -1,
       .detected_saves = 0,
       .debug_options = {.game_object_display = DEBUG_DISPLAY_NONE,
                         .collisions_enabled = true,
@@ -88,7 +89,7 @@ int main(void) {
   MUSIC = LoadMusicStream("res/music/main_menu_music.ogg");
   SetMusicVolume(MUSIC, 0.15);
   SetMusicPitch(MUSIC, 0.85);
-  PlayMusicStream(MUSIC);
+  // PlayMusicStream(MUSIC);
 
   RenderTexture2D world_texture = LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
 
