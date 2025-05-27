@@ -65,7 +65,7 @@ void byte_buf_write_data_map(ByteBuf *buf, const DataMap *map) {
 void byte_buf_read_data_map(ByteBuf *buf, DataMap *map, int len) {
   for (int i = 0; i < len; i++) {
     int key_str_len = byte_buf_read_int(buf);
-    char key_buf[key_str_len];
+    char key_buf[key_str_len + 1];
     byte_buf_read_string(buf, key_buf, key_str_len);
     data_map_insert(map, key_buf, byte_buf_read_data(buf));
   }
@@ -146,7 +146,7 @@ Data byte_buf_read_data(ByteBuf *buf) {
     return (Data){.type = type, .var = {.data_list = list}};
   }
   default: {
-    fprintf(stderr, "Error reading data");
+    fprintf(stderr, "Error reading data, type: %u, wi: %zu, ri: %zu", type, buf->writer_index, buf->reader_index);
     exit(1);
   }
   }

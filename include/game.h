@@ -12,6 +12,11 @@
 #include "ui.h"
 #include "world.h"
 
+typedef struct {
+  char *save_name;
+  float seed;
+} GameConfig;
+
 typedef struct _game {
   Player player;
   World world;
@@ -20,6 +25,7 @@ typedef struct _game {
   int cur_save;
   // LOADING
   int detected_saves;
+  GameConfig *configs;
   // RENDERING
   ParticleManager particle_manager;
   UiRenderer ui_renderer;

@@ -290,14 +290,15 @@ void world_render_layer_top_split(World *world, void *_player, bool draw_before_
 void load_world(World *world, const DataMap *data) {
   uint8_t chunks = data_map_get(data, "len").var.data_byte;
   for (int i = 0; i < chunks; i++) {
-    char key[2];
-    snprintf(key, 2, "%u", i);
+    TraceLog(LOG_DEBUG, "Loading chunk: %d", i);
+    char key[2] = {i, '\0'};
     Data data_map = data_map_get(data, key);
     DataMap map = data_map.var.data_map;
     Chunk chunk;
     chunk_load(&chunk, &map);
     world_add_chunk(world, chunk.chunk_pos, chunk);
   }
+  TraceLog(LOG_DEBUG, "Total chunks: %u", chunks);
 }
 
 // TODO: Dealloc... pretty much everything
@@ -307,8 +308,7 @@ void save_world(const World *world, DataMap *data) {
     DataMap map = data_map_new(300);
     const Chunk *chunk = &world->chunks[i];
     chunk_save(chunk, &map);
-    char key[2];
-    snprintf(key, 2, "%u", i);
+    char key[2] = {i, '\0'};
     data_map_insert(data, key, data_map(map));
   }
 }

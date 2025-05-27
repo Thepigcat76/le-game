@@ -85,10 +85,10 @@ void byte_buf_from_file(ByteBuf *buf, const char *name) {
     exit(1);
   }
 
-  char file_content[buf->capacity * 8 + 1];
-  fread(file_content, sizeof(char), sizeof(file_content) - 1, f);
+  char *file_content = malloc(300000 + 1);
+  fread(file_content, sizeof(char), 300000, f);
   fclose(f);
-  file_content[sizeof(file_content) - 1] = '\0';
+  file_content[300000] = '\0';
 
   byte_buf_from_bin(buf, file_content);
 }
@@ -102,7 +102,7 @@ void byte_buf_to_file(const ByteBuf *buf, const char *name) {
 
   TraceLog(LOG_DEBUG, "writer index of bytebuf before saving to file: %d", buf->writer_index);
 
-  char bin_str[80000 + 1];
+  char *bin_str = malloc(300000 + 1);
   int size = byte_buf_to_bin(buf, bin_str);
 
   fwrite(bin_str, sizeof(char), size, f);

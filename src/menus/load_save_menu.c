@@ -35,7 +35,7 @@ void load_save_menu_render(UiRenderer *renderer, const Game *game) {
   ui_spacing_render(renderer, 100);
   ui_text_render(renderer, TextFormat("Loaded Saves: %d", game->detected_saves));
   for (int i = 0; i < game->detected_saves; i++) {
-    ui_button_render_offset(renderer, TextFormat("Save #%d", i), SAVE_SLOT_TEXTURE, SAVE_SLOT_SELECTED_TEXTURE,
+    ui_button_render_offset(renderer, TextFormat("%s", game->configs[i].save_name), SAVE_SLOT_TEXTURE, SAVE_SLOT_SELECTED_TEXTURE,
                             button_click_args(load_save_menu_load_save, &i), vec2i(x_offset, y_offset));
   }
   ui_button_render_offset(renderer, "Back", BUTTON_TEXTURE, BUTTON_SELECTED_TEXTURE,

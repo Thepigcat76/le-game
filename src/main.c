@@ -185,7 +185,7 @@ int main(void) {
             }
 #endif
 
-            if (game->world.initialized) {
+            if (false && game->world.initialized) {
               ssize_t index = world_chunk_index_by_pos(&game->world, game->player.chunk_pos);
               Chunk chunk = game->world.chunks[index];
               for (int y = 0; y < 16; y++) {

@@ -3,7 +3,9 @@
 #include "../vendor/cJSON.h"
 #include "raylib.h"
 #include <dirent.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 
@@ -94,6 +96,10 @@ void game_detect_saves(Game *game) {
     create_dir("save");
   }
 
+  if (game->detected_saves > 0) {
+    free(game->configs);
+  }
+
   game->detected_saves = 0;
   DIR *dir = opendir(SAVE_DIR);
 
@@ -118,6 +124,26 @@ void game_detect_saves(Game *game) {
   }
 
   closedir(dir);
+
+  game->configs = malloc(game->detected_saves * sizeof(GameConfig));
+  for (int i = 0; i < game->detected_saves; i++) {
+    GameConfig config;
+    char *file_content = read_file_to_string(TextFormat("save/save%d/game.json", i));
+    cJSON *json = cJSON_Parse(file_content);
+    free(file_content);
+    cJSON *json_save_name = cJSON_GetObjectItemCaseSensitive(json, "name");
+    cJSON *json_world = cJSON_GetObjectItemCaseSensitive(json, "world");
+    cJSON *json_seed = cJSON_GetObjectItemCaseSensitive(json_world, "seed");
+    if (cJSON_IsNumber(json_seed)) {
+      config.seed = json_seed->valuedouble;
+    }
+    if (cJSON_IsString(json_save_name)) {
+      config.save_name = malloc(strlen(json_save_name->valuestring) + 1);
+      strcpy(config.save_name, json_save_name->valuestring);
+    }
+    cJSON_Delete(json);
+    game->configs[i] = config;
+  }
 }
 
 // TICKING
@@ -357,7 +383,7 @@ void game_set_menu(Game *game, MenuId menu_id) {
 
 #define SAVE_DATA(save_file_name, byte_buf_name, block)                                                                \
   {                                                                                                                    \
-    uint8_t byte_buf_name##_bytes[SAVE_DATA_BYTES];                                                                    \
+    uint8_t *byte_buf_name##_bytes = (uint8_t *)malloc(SAVE_DATA_BYTES);                                               \
     ByteBuf byte_buf_name = {                                                                                          \
         .bytes = byte_buf_name##_bytes, .writer_index = 0, .reader_index = 0, .capacity = SAVE_DATA_BYTES};            \
     block byte_buf_to_file(&byte_buf_name, TextFormat("save/save%d/" save_file_name ".bin", game->cur_save));          \
@@ -365,7 +391,7 @@ void game_set_menu(Game *game, MenuId menu_id) {
 
 #define LOAD_DATA(save_file_name, byte_buf_name, block)                                                                \
   {                                                                                                                    \
-    uint8_t byte_buf_name##_bytes[SAVE_DATA_BYTES];                                                                    \
+    uint8_t *byte_buf_name##_bytes = (uint8_t *)malloc(SAVE_DATA_BYTES);                                               \
     ByteBuf byte_buf_name = {                                                                                          \
         .bytes = byte_buf_name##_bytes, .writer_index = 0, .reader_index = 0, .capacity = SAVE_DATA_BYTES};            \
     byte_buf_from_file(&byte_buf_name, TextFormat("save/save%d/" save_file_name ".bin", game->cur_save));              \
@@ -374,9 +400,7 @@ void game_set_menu(Game *game, MenuId menu_id) {
 
 // LOAD
 
-void game_load(Game *game) {
-  game_load_cur_save(game);
-}
+void game_load(Game *game) { game_load_cur_save(game); }
 
 void game_load_cur_save(Game *game) {
   LOAD_DATA("player", byte_buf, {
@@ -410,7 +434,7 @@ void game_save_cur_save(Game *game) {
   });
 
   SAVE_DATA("world", byte_buf, {
-    DataMap world_map = data_map_new(400);
+    DataMap world_map = data_map_new(800);
     save_world(&game->world, &world_map);
 
     Data world_data = data_map(world_map);
