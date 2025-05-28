@@ -10,6 +10,7 @@ static void load_save_menu_load_save(void *args) {
   int save_index = *(int *)args;
   GAME.cur_save = save_index;
   game_load_cur_save(&GAME);
+  game_cur_save_init(&GAME);
   world_initialize(&GAME.world);
   game_set_menu(&GAME, MENU_NONE);
   GAME.paused = false;

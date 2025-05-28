@@ -298,7 +298,7 @@ void load_world(World *world, const DataMap *data) {
     chunk_load(&chunk, &map);
     world_add_chunk(world, chunk.chunk_pos, chunk);
   }
-  TraceLog(LOG_DEBUG, "Total chunks: %u", chunks);
+  TraceLog(LOG_DEBUG, "Total loaded chunks: %u", chunks);
 }
 
 // TODO: Dealloc... pretty much everything
@@ -311,4 +311,5 @@ void save_world(const World *world, DataMap *data) {
     char key[2] = {i, '\0'};
     data_map_insert(data, key, data_map(map));
   }
+  TraceLog(LOG_DEBUG, "Total saved chunks: %u", world->chunks_amount);
 }

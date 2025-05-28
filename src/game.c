@@ -91,6 +91,10 @@ void game_init(Game *game) {
 #endif
 }
 
+void game_cur_save_init(Game *game) { 
+  game->world.seed = game->configs[game->cur_save].seed;
+}
+
 void game_detect_saves(Game *game) {
   if (!DirectoryExists("save")) {
     create_dir("save");
@@ -446,8 +450,6 @@ void game_save_cur_save(Game *game) {
 
 void game_unload(Game *game) {
   tile_variants_free();
-
-  game_save_cur_save(game);
 
   free(game->world.chunks);
 

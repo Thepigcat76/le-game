@@ -51,6 +51,8 @@ void game_reload();
 
 void game_init(Game *game);
 
+void game_cur_save_init(Game *game);
+
 void game_tick(Game *game);
 
 // GAME RENDER
