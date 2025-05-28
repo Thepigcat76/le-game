@@ -21,13 +21,13 @@ static void start_menu_settings() {}
 static void start_menu_leave_game() {
   game_unload(&GAME);
 
-  CloseWindow();
   CloseAudioDevice();
+  CloseWindow();
   exit(0);
 }
 
 void start_menu_render(UiRenderer *renderer, const Game *game) {
-  ui_set_style(renderer,
+  ui_setup(renderer,
                (UiStyle){
                    .positions = {UI_CENTER, UI_CENTER},
                    .alignment = UI_VERTICAL,
@@ -35,7 +35,6 @@ void start_menu_render(UiRenderer *renderer, const Game *game) {
                    .scale = 1,
                    .font_scale = CONFIG.default_font_size,
                });
-  ui_setup(renderer);
 
   int x_offset = 0;
   int y_offset = -2;

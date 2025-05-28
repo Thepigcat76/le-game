@@ -2,6 +2,7 @@
 
 #include "being/being_activities.h"
 #include "being/being_memories.h"
+#include "data.h"
 #include "item.h"
 #include "shared.h"
 #include <raylib.h>
@@ -18,6 +19,7 @@ typedef struct {
   double creation_time;
 } BeingContext;
 
+// TODO: Proper naming
 typedef enum {
   BROTHER,
   OLD_MAN,
@@ -94,3 +96,8 @@ void being_brain_reset(BeingInstance *being);
 void being_add_activity(BeingInstance *being, BeingActivity activity);
 
 void being_add_memory(BeingInstance *being, BeingMemory memory);
+
+// LOADING/SAVING
+void being_load(BeingInstance *being, const DataMap *data);
+
+void being_save(const BeingInstance *being, DataMap *data);

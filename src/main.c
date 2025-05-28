@@ -53,6 +53,7 @@ int main(void) {
                                   .simulate = false,
                                   .ui_height = -1,
                                   .cur_style = {0},
+                                  .initial_style = {0},
                                   .context = {.screen_width = SCREEN_WIDTH, .screen_height = SCREEN_HEIGHT}},
       .cur_save = -1,
       .detected_saves = 0,
@@ -115,7 +116,9 @@ int main(void) {
       world_texture = LoadRenderTexture(width, height);
     }
 
-    game_tick(game);
+    if (!game->paused) {
+      game_tick(game);
+    }
 
     if (IsKeyPressed(KEYBINDS.reload_key)) {
       UnloadShader(shader);

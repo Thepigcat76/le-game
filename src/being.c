@@ -1,4 +1,6 @@
 #include "../include/being.h"
+#include "../include/data.h"
+#include "../include/data_ex.h"
 #include <math.h>
 #include <raylib.h>
 #include <stdlib.h>
@@ -82,7 +84,9 @@ static bool being_has_brain(BeingId id) {
 
 void being_tick(BeingInstance *being) {
   // TraceLog(LOG_INFO, "tick being");
-  being_brain_tick(being, &being->brain);
+  if (being->has_brain) {
+    being_brain_tick(being, &being->brain);
+  }
 }
 
 void being_brain_tick(BeingInstance *being, BeingBrain *brain) {
@@ -125,7 +129,7 @@ static Texture2D being_npc_get_texture(BeingInstanceExNpc *being_ex) {
   }
 
   Texture2D *textures;
-  
+
   if (being_ex->walking) {
     textures = NPC_ANIMATED_TEXTURES;
   } else {
@@ -198,3 +202,60 @@ void being_add_activity(BeingInstance *being, BeingActivity activity) {
 }
 
 void being_add_memory(BeingInstance *being, BeingMemory memory) {}
+
+static void being_load_ex(BeingInstanceEx *extra, DataMap *data) {
+  switch (extra->type) {
+  case BEING_INSTANCE_ITEM: {
+    extra->var.item_instance.item =
+        (ItemInstance){.type = ITEMS[data_map_get_or_default(data, "item_id", data_int(ITEM_EMPTY)).var.data_int]};
+    break;
+  }
+  case BEING_INSTANCE_NPC: {
+    extra->var.npc_instance.variant = data_map_get_or_default(data, "npc_var", data_int(BROTHER)).var.data_int;
+    extra->var.npc_instance.direction =
+        data_map_get_or_default(data, "direction", data_int(DIRECTION_DOWN)).var.data_int;
+    break;
+  }
+  case BEING_INSTANCE_DEFAULT: {
+    break;
+  }
+  }
+}
+
+void being_load(BeingInstance *being, const DataMap *data) {
+  DataMap extra_data_map = data_map_get_or_default(data, "extra", data_map(data_map_new(0))).var.data_map;
+  being_load_ex(&being->extra, &extra_data_map);
+  being->context.creation_time = data_map_get_or_default(data, "creation_time", data_int(0)).var.data_int;
+  being->context.box =
+      data_map_get_rectf_static_dimensions(data, "box", being->context.box.width, being->context.box.height);
+}
+
+static void being_save_ex(const BeingInstanceEx *extra, DataMap *data) {
+  switch (extra->type) {
+  case BEING_INSTANCE_ITEM: {
+    data_map_insert(data, "item_id", data_int(extra->var.item_instance.item.type.id));
+    break;
+  }
+  case BEING_INSTANCE_NPC: {
+    data_map_insert(data, "npc_var", data_int(extra->var.npc_instance.variant));
+    data_map_insert(data, "direction", data_int(extra->var.npc_instance.direction));
+    break;
+  }
+  case BEING_INSTANCE_DEFAULT: {
+    break;
+  }
+  }
+}
+
+void being_save(const BeingInstance *being, DataMap *data) {
+  // Being id is already initialized
+  // Don't save being_instance_id, cuz we can assign that after loading
+  // extra
+  DataMap extra_data_map = data_map_new(20);
+  being_save_ex(&being->extra, &extra_data_map);
+  data_map_insert(data, "extra", data_map(extra_data_map));
+  // context
+  data_map_insert(data, "creation_time", data_int(being->context.creation_time));
+  data_map_insert_rectf_static_dimensions(data, "box", being->context.box);
+  // TODO: Save brain
+}

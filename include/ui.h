@@ -7,11 +7,20 @@
 #include <stdlib.h>
 
 typedef struct {
+  GroupUiComponent component;
+  int prev_x;
+  int prev_y;
+} UiGroup;
+
+typedef struct {
   int cur_x;
   int cur_y;
   int ui_height;
-  UiStyle cur_style;
   bool simulate;
+  UiStyle cur_style;
+  UiStyle initial_style;
+  UiGroup groups[MAX_UI_GROUPS_AMOUNT];
+  size_t groups_amount;
   struct {
     int screen_width;
     int screen_height;
@@ -20,9 +29,8 @@ typedef struct {
 
 // Setup (Order of declaratiion should also be)
 
-void ui_set_style(UiRenderer *renderer, UiStyle style);
-
-void ui_setup(UiRenderer *renderer);
+// Needs to be called after setting the style
+void ui_setup(UiRenderer *renderer, UiStyle style);
 
 void ui_set_background(UiRenderer *renderer, Texture2D texture);
 
@@ -71,8 +79,16 @@ void ui_spacing_render(UiRenderer *renderer, int spacing_height);
 
 void ui_texture_render(UiRenderer *renderer, Texture2D texture);
 
-// CONTAINER
+// GROUP
 
-void ui_group_create(UiRenderer *renderer);
+void ui_group_create_ex(UiRenderer *renderer, GroupUiComponent component);
+
+void ui_group_create_offset_dimensions(UiRenderer *renderer, UiStyle ui_style, bool has_scrollbar, int offset_x, int offset_y, int width, int height, int *scroll_y_offset);
+
+void ui_group_create_dimensions(UiRenderer *renderer, UiStyle ui_style, bool has_scrollbar, int width, int height, int *scroll_y_offset);
+
+void ui_group_create_offset(UiRenderer *renderer, UiStyle ui_style, bool has_scrollbar, int offset_x, int offset_y);
+
+void ui_group_create(UiRenderer *renderer, UiStyle ui_style, bool has_scrollbar);
 
 void ui_group_destroy(UiRenderer *renderer);

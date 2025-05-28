@@ -91,9 +91,7 @@ void game_init(Game *game) {
 #endif
 }
 
-void game_cur_save_init(Game *game) { 
-  game->world.seed = game->configs[game->cur_save].seed;
-}
+void game_cur_save_init(Game *game) { game->world.seed = game->configs[game->cur_save].seed; }
 
 void game_detect_saves(Game *game) {
   if (!DirectoryExists("save")) {
@@ -228,27 +226,25 @@ static void handle_item_pickup(Game *game) {
 }
 
 void game_tick(Game *game) {
-  if (!game->paused) {
-    bool zoom_in = IsKeyDown(KEY_UP);
-    bool zoom_out = IsKeyDown(KEY_DOWN);
+  bool zoom_in = IsKeyDown(KEY_UP);
+  bool zoom_out = IsKeyDown(KEY_DOWN);
 
-    player_handle_zoom(&game->player, zoom_in, zoom_out);
+  player_handle_zoom(&game->player, zoom_in, zoom_out);
 
-    bool w = IsKeyDown(KEYBINDS.move_backward_key);
-    bool a = IsKeyDown(KEYBINDS.move_left_key);
-    bool s = IsKeyDown(KEYBINDS.move_foreward_key);
-    bool d = IsKeyDown(KEYBINDS.move_right_key);
+  bool w = IsKeyDown(KEYBINDS.move_backward_key);
+  bool a = IsKeyDown(KEYBINDS.move_left_key);
+  bool s = IsKeyDown(KEYBINDS.move_foreward_key);
+  bool d = IsKeyDown(KEYBINDS.move_right_key);
 
-    player_handle_movement(&game->player, w, a, s, d);
+  player_handle_movement(&game->player, w, a, s, d);
 
-    if (IsKeyReleased(KEYBINDS.open_close_save_menu_key)) {
-      if (game->cur_menu == MENU_SAVE) {
-        game->cur_menu = MENU_NONE;
-        game->paused = false;
-      } else {
-        game->cur_menu = MENU_SAVE;
-        game->paused = true;
-      }
+  if (IsKeyReleased(KEYBINDS.open_close_save_menu_key)) {
+    if (game->cur_menu == MENU_SAVE) {
+      game->cur_menu = MENU_NONE;
+      game->paused = false;
+    } else {
+      game->cur_menu = MENU_SAVE;
+      game->paused = true;
     }
   }
 
@@ -385,21 +381,24 @@ void game_set_menu(Game *game, MenuId menu_id) {
 
 // GAME LOAD/SAVE
 
-#define SAVE_DATA(save_file_name, byte_buf_name, block)                                                                \
+#define SAVE_DATA(save_file_name, byte_buf_size, byte_buf_name, block)                                                 \
   {                                                                                                                    \
-    uint8_t *byte_buf_name##_bytes = (uint8_t *)malloc(SAVE_DATA_BYTES);                                               \
+    uint8_t *byte_buf_name##_bytes = (uint8_t *)malloc(byte_buf_size);                                                 \
     ByteBuf byte_buf_name = {                                                                                          \
-        .bytes = byte_buf_name##_bytes, .writer_index = 0, .reader_index = 0, .capacity = SAVE_DATA_BYTES};            \
+        .bytes = byte_buf_name##_bytes, .writer_index = 0, .reader_index = 0, .capacity = byte_buf_size};              \
     block byte_buf_to_file(&byte_buf_name, TextFormat("save/save%d/" save_file_name ".bin", game->cur_save));          \
+    TraceLog(LOG_INFO, "Saved " save_file_name " data, writer index: %d", byte_buf_name.writer_index);                 \
+    free(byte_buf_name##_bytes);                                                                                       \
   }
 
-#define LOAD_DATA(save_file_name, byte_buf_name, block)                                                                \
+#define LOAD_DATA(save_file_name, byte_buf_size, byte_buf_name, block)                                                 \
   {                                                                                                                    \
-    uint8_t *byte_buf_name##_bytes = (uint8_t *)malloc(SAVE_DATA_BYTES);                                               \
+    uint8_t *byte_buf_name##_bytes = (uint8_t *)malloc(byte_buf_size);                                                 \
     ByteBuf byte_buf_name = {                                                                                          \
-        .bytes = byte_buf_name##_bytes, .writer_index = 0, .reader_index = 0, .capacity = SAVE_DATA_BYTES};            \
+        .bytes = byte_buf_name##_bytes, .writer_index = 0, .reader_index = 0, .capacity = byte_buf_size};              \
     byte_buf_from_file(&byte_buf_name, TextFormat("save/save%d/" save_file_name ".bin", game->cur_save));              \
-    block                                                                                                              \
+    block TraceLog(LOG_INFO, "Loaded " save_file_name " data, reader index: %d", byte_buf_name.reader_index);          \
+    free(byte_buf_name##_bytes);                                                                                       \
   }
 
 // LOAD
@@ -407,15 +406,14 @@ void game_set_menu(Game *game, MenuId menu_id) {
 void game_load(Game *game) { game_load_cur_save(game); }
 
 void game_load_cur_save(Game *game) {
-  LOAD_DATA("player", byte_buf, {
+  LOAD_DATA("player", sizeof(Player), byte_buf, {
     Data data_map_0 = byte_buf_read_data(&byte_buf);
     DataMap *player_map = &data_map_0.var.data_map;
     player_load(&game->player, player_map);
-
     data_free(&data_map_0);
   });
 
-  LOAD_DATA("world", byte_buf, {
+  LOAD_DATA("world", sizeof(Chunk) * WORLD_LOADED_CHUNKS + 100 + sizeof(BeingInstance) * 200, byte_buf, {
     Data data_map_1 = byte_buf_read_data(&byte_buf);
     DataMap *world_map = &data_map_1.var.data_map;
     load_world(&game->world, world_map);
@@ -427,7 +425,7 @@ void game_load_cur_save(Game *game) {
 // UNLOAD
 
 void game_save_cur_save(Game *game) {
-  SAVE_DATA("player", byte_buf, {
+  SAVE_DATA("player", sizeof(Player), byte_buf, {
     DataMap player_map = data_map_new(200);
     player_save(&game->player, &player_map);
 
@@ -437,8 +435,8 @@ void game_save_cur_save(Game *game) {
     data_free(&player_data);
   });
 
-  SAVE_DATA("world", byte_buf, {
-    DataMap world_map = data_map_new(800);
+  SAVE_DATA("world", sizeof(Chunk) * WORLD_LOADED_CHUNKS + 100 + sizeof(BeingInstance) * 200, byte_buf, {
+    DataMap world_map = data_map_new(2000);
     save_world(&game->world, &world_map);
 
     Data world_data = data_map(world_map);

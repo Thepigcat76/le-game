@@ -43,17 +43,25 @@ typedef struct _data {
   } var;
 } Data;
 
+// DATAMAP
+
 DataMap data_map_new(size_t capacity);
 
-Data data_map_get(const DataMap *data_map, char *key);
+Data data_map_get(const DataMap *data_map, const char *key);
 
-Data data_map_get_or_default(const DataMap *data_map, char *key, Data default_val);
+Data data_map_get_or_default(const DataMap *data_map, const char *key, Data default_val);
 
-void data_map_insert(DataMap *data_map, char *key, Data val);
+void data_map_insert(DataMap *data_map, const char *key, Data val);
 
-void byte_buf_write_data(ByteBuf *buf, const Data *data);
+// DATALIST
 
-Data byte_buf_read_data(ByteBuf *buf);
+DataList data_list_new(size_t capacity);
+
+Data data_list_get(const DataList *data_list, size_t i);
+
+void data_list_add(DataList *data_list, Data data);
+
+// FANCY CREATOR METHODS
 
 Data data_map(DataMap map);
 
@@ -72,5 +80,13 @@ Data data_float(float f);
 Data data_double(double d);
 
 Data data_string(char *str);
+
+// BYTEBUF CONVERSION
+
+void byte_buf_write_data(ByteBuf *buf, const Data *data);
+
+Data byte_buf_read_data(ByteBuf *buf);
+
+// MEMORY
 
 void data_free(Data *data);

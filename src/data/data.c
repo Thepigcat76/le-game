@@ -8,14 +8,14 @@
 
 DataMap data_map_new(size_t capacity) {
   return (DataMap){
-      .keys = malloc(capacity * sizeof(char *)),
-      .values = malloc(capacity * sizeof(Data)),
+      .keys = capacity != 0 ? malloc(capacity * sizeof(char *)) : NULL,
+      .values = capacity != 0 ? malloc(capacity * sizeof(Data)) : NULL,
       .capacity = capacity,
       .len = 0,
   };
 }
 
-bool data_map_contains(const DataMap *data_map, char *key) {
+bool data_map_contains(const DataMap *data_map, const char *key) {
   for (size_t i = 0; i < data_map->len; i++) {
     if (strcmp(key, data_map->keys[i]) == 0) {
       return true;
@@ -24,7 +24,7 @@ bool data_map_contains(const DataMap *data_map, char *key) {
   return false;
 }
 
-Data data_map_get(const DataMap *data_map, char *key) {
+Data data_map_get(const DataMap *data_map, const char *key) {
   for (size_t i = 0; i < data_map->len; i++) {
     if (strcmp(key, data_map->keys[i]) == 0) {
       return data_map->values[i];
@@ -34,17 +34,15 @@ Data data_map_get(const DataMap *data_map, char *key) {
   exit(EXIT_FAILURE);
 }
 
-Data data_map_get_or_default(const DataMap *data_map, char *key,
-                             Data default_val) {
+Data data_map_get_or_default(const DataMap *data_map, const char *key, Data default_val) {
   if (data_map_contains(data_map, key)) {
     return data_map_get(data_map, key);
   }
   return default_val;
 }
 
-void data_map_insert(DataMap *data_map, char *key, Data val) {
-  data_map->keys[data_map->len] =
-      malloc(strlen(key) + 1); // allocate enough space
+void data_map_insert(DataMap *data_map, const char *key, Data val) {
+  data_map->keys[data_map->len] = malloc(strlen(key) + 1); // allocate enough space
   if (!data_map->keys[data_map->len]) {
     fprintf(stderr, "Failed to allocate memory for key\n");
     exit(1);
@@ -53,6 +51,14 @@ void data_map_insert(DataMap *data_map, char *key, Data val) {
   data_map->values[data_map->len] = val;
   data_map->len++;
 }
+
+DataList data_list_new(size_t capacity) {
+  return (DataList){.items = capacity == 0 ? NULL : malloc(capacity * sizeof(Data)), .len = 0};
+}
+
+Data data_list_get(const DataList *data_list, size_t i) { return data_list->items[i]; }
+
+void data_list_add(DataList *data_list, Data data) { data_list->items[data_list->len++] = data; }
 
 void byte_buf_write_data_map(ByteBuf *buf, const DataMap *map) {
   byte_buf_write_int(buf, map->len);
@@ -152,41 +158,23 @@ Data byte_buf_read_data(ByteBuf *buf) {
   }
 }
 
-Data data_map(DataMap map) {
-  return (Data){.type = DATA_TYPE_MAP, .var = {.data_map = map}};
-}
+Data data_map(DataMap map) { return (Data){.type = DATA_TYPE_MAP, .var = {.data_map = map}}; }
 
-Data data_list(DataList list) {
-  return (Data){.type = DATA_TYPE_LIST, .var = {.data_list = list}};
-}
+Data data_list(DataList list) { return (Data){.type = DATA_TYPE_LIST, .var = {.data_list = list}}; }
 
-Data data_byte(signed char c) {
-  return (Data){.type = DATA_TYPE_BYTE, .var = {.data_byte = c}};
-}
+Data data_byte(signed char c) { return (Data){.type = DATA_TYPE_BYTE, .var = {.data_byte = c}}; }
 
-Data data_short(short s) {
-  return (Data){.type = DATA_TYPE_SHORT, .var = {.data_short = s}};
-}
+Data data_short(short s) { return (Data){.type = DATA_TYPE_SHORT, .var = {.data_short = s}}; }
 
-Data data_int(int i) {
-  return (Data){.type = DATA_TYPE_INT, .var = {.data_int = i}};
-}
+Data data_int(int i) { return (Data){.type = DATA_TYPE_INT, .var = {.data_int = i}}; }
 
-Data data_long(long l) {
-  return (Data){.type = DATA_TYPE_LONG, .var = {.data_long = l}};
-}
+Data data_long(long l) { return (Data){.type = DATA_TYPE_LONG, .var = {.data_long = l}}; }
 
-Data data_float(float f) {
-  return (Data){.type = DATA_TYPE_FLOAT, .var = {.data_float = f}};
-}
+Data data_float(float f) { return (Data){.type = DATA_TYPE_FLOAT, .var = {.data_float = f}}; }
 
-Data data_double(double d) {
-  return (Data){.type = DATA_TYPE_DOUBLE, .var = {.data_double = d}};
-}
+Data data_double(double d) { return (Data){.type = DATA_TYPE_DOUBLE, .var = {.data_double = d}}; }
 
-Data data_string(char *str) {
-  return (Data){.type = DATA_TYPE_STRING, .var = {.data_string = str}};
-}
+Data data_string(char *str) { return (Data){.type = DATA_TYPE_STRING, .var = {.data_string = str}}; }
 
 void data_free(Data *data) {
   switch (data->type) {

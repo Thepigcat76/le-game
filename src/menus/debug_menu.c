@@ -34,7 +34,7 @@ static void debug_menu_hitboxes_button_clicked() {
 }
 
 void debug_menu_render(UiRenderer *renderer, const Game *game) {
-  ui_set_style(renderer,
+  ui_setup(renderer,
                (UiStyle){
                    .positions = {UI_LEFT, UI_TOP},
                    .alignment = UI_HORIZONTAL,
@@ -42,7 +42,6 @@ void debug_menu_render(UiRenderer *renderer, const Game *game) {
                    .scale = 0.75,
                    .font_scale = CONFIG.default_font_size * 0.75,
                });
-  ui_setup(renderer);
 
   int x_offset = 0;
   int y_offset = 4 + 1 * ui_scale(renderer);

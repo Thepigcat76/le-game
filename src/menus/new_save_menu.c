@@ -24,7 +24,7 @@ static void new_save_back_to_start_menu() { game_set_menu(&GAME, MENU_START); }
 
 void new_save_menu_render(UiRenderer *renderer, const Game *game) {
   float scale = 0.85;
-  ui_set_style(renderer,
+  ui_setup(renderer,
                (UiStyle){
                    .positions = {UI_CENTER, UI_CENTER},
                    .alignment = UI_VERTICAL,
@@ -32,7 +32,6 @@ void new_save_menu_render(UiRenderer *renderer, const Game *game) {
                    .scale = scale,
                    .font_scale = CONFIG.default_font_size * scale,
                });
-  ui_setup(renderer);
 
   int x_offset = 0;
   int y_offset = -2;

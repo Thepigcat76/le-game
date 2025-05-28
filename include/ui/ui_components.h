@@ -1,6 +1,7 @@
 #pragma once
 
 #include "raylib.h"
+#include "ui_style.h"
 #include <stdlib.h>
 
 typedef struct {
@@ -63,3 +64,13 @@ typedef struct {
   float text_y_offset;
   Color color;
 } TextInputUiComponent;
+
+typedef struct {
+  int width;
+  int height;
+  int x_offset;
+  int y_offset;
+  bool has_scrollbar;
+  int *scroll_y_offset;
+  UiStyle group_style;
+} GroupUiComponent;

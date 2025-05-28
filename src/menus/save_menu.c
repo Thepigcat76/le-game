@@ -16,8 +16,9 @@ static void save_menu_gameplay_settings_button_clicked() { TraceLog(LOG_DEBUG, "
 static void save_menu_save_game_button_clicked() {
   game_set_menu(&GAME, MENU_START);
   game_save_cur_save(&GAME);
-  GAME.world.chunk_lookup = (ChunkLookup){.indices = {}, .chunks_positions = {}};
-  GAME.world.chunks_amount = 0;
+  // TODO: We might not even have to dealloc this
+  //free(GAME.world.chunks);
+  //GAME.world = world_new();
 }
 
 static Texture2D DECLARE_BUTTON_TEXTURE(BACK_TO_GAME_BUTTON_TEXTURE);
@@ -33,7 +34,7 @@ void save_menu_init() {
 }
 
 void save_menu_render(UiRenderer *renderer, const Game *game) {
-  ui_set_style(renderer,
+  ui_setup(renderer,
                (UiStyle){
                    .positions = {UI_CENTER, UI_CENTER},
                    .alignment = UI_VERTICAL,
@@ -41,7 +42,6 @@ void save_menu_render(UiRenderer *renderer, const Game *game) {
                    .scale = 1,
                    .font_scale = CONFIG.default_font_size,
                });
-  ui_setup(renderer);
 
   int x_offset = 8 * (CONFIG.default_font_size / 10);
   int y_offset = -2;

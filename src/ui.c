@@ -9,7 +9,14 @@ void ui_set_background(UiRenderer *renderer, Texture2D texture) {
                 4.5, WHITE);
 }
 
-void ui_setup(UiRenderer *renderer) {
+static void ui_set_style(UiRenderer *renderer, UiStyle style) { renderer->cur_style = style; }
+
+void ui_setup(UiRenderer *renderer, UiStyle ui_style) {
+  renderer->groups_amount = 0;
+
+  renderer->initial_style = ui_style;
+  ui_set_style(renderer, ui_style);
+
   if (renderer->ui_height != -1) {
     renderer->cur_x = renderer->context.screen_width / 2;
     renderer->cur_y = (renderer->context.screen_height - renderer->ui_height) / 2;
@@ -40,8 +47,6 @@ void ui_setup(UiRenderer *renderer) {
   renderer->context.screen_width = GetScreenWidth();
   renderer->context.screen_height = GetScreenHeight();
 }
-
-void ui_set_style(UiRenderer *renderer, UiStyle style) { renderer->cur_style = style; }
 
 float ui_scale(UiRenderer *renderer) { return ((float)CONFIG.default_font_size / 10) * renderer->cur_style.scale; }
 
@@ -223,8 +228,8 @@ void ui_text_input_render_ex(UiRenderer *renderer, TextInputUiComponent componen
                  (Rectangle){.x = x, .y = y, .width = component.width * scale, .height = component.height * scale},
                  (Vector2){.x = (component.width * scale) / 2, .y = (component.height * scale) / 2}, 0, WHITE);
 
-  DrawText(component.text_input->buf, renderer->cur_x + 3 * scale + component.text_x_offset, renderer->cur_y + 3 + component.text_y_offset, renderer->cur_style.font_scale,
-           WHITE);
+  DrawText(component.text_input->buf, renderer->cur_x + 3 * scale + component.text_x_offset,
+           renderer->cur_y + 3 + component.text_y_offset, renderer->cur_style.font_scale, WHITE);
 
   int line_x = renderer->cur_x + MeasureText(component.text_input->buf, renderer->cur_style.font_scale);
 
@@ -253,7 +258,8 @@ void ui_text_input_render_ex(UiRenderer *renderer, TextInputUiComponent componen
 
   if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
 
-  Rectangle text_input_box = rectf(renderer->cur_x, renderer->cur_y, component.width * scale, component.height * scale);
+    Rectangle text_input_box =
+        rectf(renderer->cur_x, renderer->cur_y, component.width * scale, component.height * scale);
     (*component.selected) = CheckCollisionPointRec(GetMousePosition(), text_input_box);
   }
 
@@ -297,4 +303,77 @@ void ui_spacing_render_ex(UiRenderer *renderer, SpacingUiComponent component) {
 void ui_spacing_render(UiRenderer *renderer, int spacing_height) {
   ui_spacing_render_ex(renderer,
                        (SpacingUiComponent){.height = spacing_height, .width = 100, .x_offset = 0, .y_offset = 0});
+}
+
+// GROUP
+
+void ui_group_create_ex(UiRenderer *renderer, GroupUiComponent component) {
+  renderer->groups[renderer->groups_amount++] =
+      (UiGroup){.component = component, .prev_x = renderer->cur_x, renderer->cur_y};
+  ui_set_style(renderer, renderer->cur_style);
+
+  bool scissors = (component.width != -1 && component.height != -1);
+
+  if (scissors) {
+    BeginScissorMode(renderer->cur_x, renderer->cur_y, component.width, component.height);
+  }
+
+  if (component.scroll_y_offset != NULL) {
+    int *scroll = component.scroll_y_offset;
+    float wheel = GetMouseWheelMove();
+    *scroll += (int)(wheel * 20); // Invert direction
+    if (*scroll > 0)
+      *scroll = 0; // Top of content (can't scroll past)
+    if (*scroll < -200)
+      *scroll = -200; // Bottom of content
+
+    renderer->cur_y += *scroll;
+  }
+}
+
+void ui_group_create_offset_dimensions(UiRenderer *renderer, UiStyle ui_style, bool has_scrollbar, int offset_x,
+                                       int offset_y, int width, int height, int *scroll_y_offset) {
+  ui_group_create_ex(renderer,
+                     (GroupUiComponent){.group_style = ui_style,
+                                        .has_scrollbar = has_scrollbar,
+                                        .width = width,
+                                        .height = height,
+                                        .x_offset = offset_x,
+                                        .y_offset = offset_y,
+                                        .scroll_y_offset = scroll_y_offset});
+}
+
+void ui_group_create_dimensions(UiRenderer *renderer, UiStyle ui_style, bool has_scrollbar, int width, int height,
+                                int *scroll_y_offset) {
+  ui_group_create_offset_dimensions(renderer, ui_style, has_scrollbar, 0, 0, width, height, scroll_y_offset);
+}
+
+void ui_group_create_offset(UiRenderer *renderer, UiStyle ui_style, bool has_scrollbar, int offset_x, int offset_y) {
+  ui_group_create_offset_dimensions(renderer, ui_style, has_scrollbar, offset_x, offset_y, -1, -1, NULL);
+}
+
+void ui_group_create(UiRenderer *renderer, UiStyle ui_style, bool has_scrollbar) {
+  ui_group_create_offset(renderer, ui_style, has_scrollbar, 0, 0);
+}
+
+void ui_group_destroy(UiRenderer *renderer) {
+  if (renderer->groups_amount <= 0) {
+    TraceLog(LOG_WARNING, "Tried to destroy nonexistent ui group");
+    return;
+  }
+
+  UiGroup group = renderer->groups[--renderer->groups_amount];
+
+  bool scissors = (group.component.width != -1 && group.component.height != -1);
+
+  if (scissors) {
+    EndScissorMode();
+    // renderer->cur_x  = group.prev_x + group.component.width;
+    renderer->cur_y = group.prev_y + group.component.height;
+  }
+
+  UiStyle prev_ui_style = renderer->groups_amount > 0
+      ? renderer->groups[renderer->groups_amount - 1].component.group_style
+      : renderer->initial_style;
+  ui_set_style(renderer, prev_ui_style);
 }

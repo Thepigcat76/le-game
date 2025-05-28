@@ -287,6 +287,17 @@ void world_render_layer_top_split(World *world, void *_player, bool draw_before_
   }
 }
 
+static void world_load_beings(World *world, const DataMap *data) {
+  DataList list = data_map_get_or_default(data, "beings", data_list(data_list_new(0))).var.data_list;
+  for (int i = 0; i < list.len; i++) {
+    DataMap being_data = data_list_get(&list, i).var.data_map;
+    BeingId id = data_map_get_or_default(&being_data, "id", data_int(BEING_NPC)).var.data_int;
+    BeingInstance being_instance = being_new_default(id);
+    being_load(&being_instance, &being_data);
+    world_add_being(world, being_instance);
+  }
+}
+
 void load_world(World *world, const DataMap *data) {
   uint8_t chunks = data_map_get(data, "len").var.data_byte;
   for (int i = 0; i < chunks; i++) {
@@ -299,6 +310,20 @@ void load_world(World *world, const DataMap *data) {
     world_add_chunk(world, chunk.chunk_pos, chunk);
   }
   TraceLog(LOG_DEBUG, "Total loaded chunks: %u", chunks);
+  //world_load_beings(world, data);
+  TraceLog(LOG_DEBUG, "Total loaded beings: %d", world->beings_amount);
+}
+
+static void world_save_beings(const World *world, DataMap *data) {
+  DataList list = data_list_new(world->beings_amount);
+  for (int i = 0; i < world->beings_amount; i++) {
+    const BeingInstance *instance = &world->beings[i];
+    DataMap being_data = data_map_new(10);
+    data_map_insert(&being_data, "id", data_int(instance->id));
+    being_save(instance, &being_data);
+    data_list_add(&list, data_map(being_data));
+  }
+  data_map_insert(data, "beings", data_list(list));
 }
 
 // TODO: Dealloc... pretty much everything
@@ -312,4 +337,6 @@ void save_world(const World *world, DataMap *data) {
     data_map_insert(data, key, data_map(map));
   }
   TraceLog(LOG_DEBUG, "Total saved chunks: %u", world->chunks_amount);
+ // world_save_beings(world, data);
+  TraceLog(LOG_DEBUG, "Total saved beings: %d", world->beings_amount);
 }
