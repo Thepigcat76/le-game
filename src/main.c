@@ -247,6 +247,8 @@ int main(void) {
 
   UnloadShader(shader);
 
+  game_save_cur_save(game);
+
   game_unload(game);
 
   UnloadMusicStream(MUSIC);

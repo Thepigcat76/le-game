@@ -46,14 +46,14 @@ void oven_tile_init() {
 void tree_tile_init() {
   TileType type = {
       .id = TILE_TREE,
-      .texture_path = "res/assets/tree_4.png",
-      .texture = load_texture("res/assets/tree_4.png"),
+      .texture_path = "res/assets/tree_5.png",
+      .texture = load_texture("res/assets/tree_5.png"),
       .has_texture = true,
       .is_solid = true,
       .layer = TILE_LAYER_TOP,
       .tile_color = BROWN,
-      .tile_width = 32,
-      .tile_height = 48,
+      .tile_width = 48,
+      .tile_height = 80,
       .tile_item = NULL,
 
       .is_ticking = false,
