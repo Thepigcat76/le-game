@@ -52,6 +52,15 @@ void data_map_insert(DataMap *data_map, const char *key, Data val) {
   data_map->len++;
 }
 
+void data_map_keys_debug(const DataMap *data_map) {
+  TraceLog(LOG_DEBUG, "-----");
+  TraceLog(LOG_DEBUG, "Data Map Keys:");
+  for (int i = 0; i < data_map->len; i++) {
+    TraceLog(LOG_DEBUG, "Key: %s", data_map->keys[i]);
+  }
+  TraceLog(LOG_DEBUG, "-----");
+}
+
 DataList data_list_new(size_t capacity) {
   return (DataList){.items = capacity == 0 ? NULL : malloc(capacity * sizeof(Data)), .len = 0};
 }

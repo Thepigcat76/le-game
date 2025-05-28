@@ -208,12 +208,14 @@ static void being_load_ex(BeingInstanceEx *extra, DataMap *data) {
   case BEING_INSTANCE_ITEM: {
     extra->var.item_instance.item =
         (ItemInstance){.type = ITEMS[data_map_get_or_default(data, "item_id", data_int(ITEM_EMPTY)).var.data_int]};
+    extra->var.item_instance.should_hover = data_map_get_or_default(data, "should_hover", data_byte(false)).var.data_byte;
     break;
   }
   case BEING_INSTANCE_NPC: {
     extra->var.npc_instance.variant = data_map_get_or_default(data, "npc_var", data_int(BROTHER)).var.data_int;
     extra->var.npc_instance.direction =
         data_map_get_or_default(data, "direction", data_int(DIRECTION_DOWN)).var.data_int;
+    extra->var.npc_instance.walking = data_map_get_or_default(data, "walking", data_byte(false)).var.data_byte;
     break;
   }
   case BEING_INSTANCE_DEFAULT: {
@@ -234,11 +236,13 @@ static void being_save_ex(const BeingInstanceEx *extra, DataMap *data) {
   switch (extra->type) {
   case BEING_INSTANCE_ITEM: {
     data_map_insert(data, "item_id", data_int(extra->var.item_instance.item.type.id));
+    data_map_insert(data, "should_hover", data_byte(extra->var.item_instance.should_hover));
     break;
   }
   case BEING_INSTANCE_NPC: {
     data_map_insert(data, "npc_var", data_int(extra->var.npc_instance.variant));
     data_map_insert(data, "direction", data_int(extra->var.npc_instance.direction));
+    data_map_insert(data, "walking", data_byte(extra->var.npc_instance.walking));
     break;
   }
   case BEING_INSTANCE_DEFAULT: {

@@ -22,12 +22,12 @@ Rectf data_map_get_rectf_static_dimensions(const DataMap *data, const char *key,
 
 void data_map_insert_vec2i(DataMap *data, const char *key, Vec2i vec2i) {
     data_map_insert(data, TextFormat("%s_x", key),  data_int(vec2i.x));
-    data_map_insert(data, TextFormat("%s_y"), data_int(vec2i.y));
+    data_map_insert(data, TextFormat("%s_y", key), data_int(vec2i.y));
 }
 
 void data_map_insert_vec2f(DataMap *data, const char *key, Vec2f vec2f) {
     data_map_insert(data, TextFormat("%s_x", key),  data_int(vec2f.x));
-    data_map_insert(data, TextFormat("%s_y"), data_int(vec2f.y));
+    data_map_insert(data, TextFormat("%s_y", key), data_int(vec2f.y));
 }
 
 void data_map_insert_rectf_static_dimensions(DataMap *data, const char *key, Rectf rectf) {

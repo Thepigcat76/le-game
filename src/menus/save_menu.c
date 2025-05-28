@@ -16,9 +16,9 @@ static void save_menu_gameplay_settings_button_clicked() { TraceLog(LOG_DEBUG, "
 static void save_menu_save_game_button_clicked() {
   game_set_menu(&GAME, MENU_START);
   game_save_cur_save(&GAME);
-  // TODO: We might not even have to dealloc this
-  //free(GAME.world.chunks);
-  //GAME.world = world_new();
+  Chunk *chunks = GAME.world.chunks;
+  GAME.world = world_new();
+  GAME.world.chunks = chunks;
 }
 
 static Texture2D DECLARE_BUTTON_TEXTURE(BACK_TO_GAME_BUTTON_TEXTURE);

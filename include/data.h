@@ -1,6 +1,7 @@
 //! A format for game data
 #pragma once
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include "bytebuf.h"
 
@@ -47,11 +48,15 @@ typedef struct _data {
 
 DataMap data_map_new(size_t capacity);
 
+bool data_map_contains(const DataMap *data_map, const char *key);
+
 Data data_map_get(const DataMap *data_map, const char *key);
 
 Data data_map_get_or_default(const DataMap *data_map, const char *key, Data default_val);
 
 void data_map_insert(DataMap *data_map, const char *key, Data val);
+
+void data_map_keys_debug(const DataMap *data_map);
 
 // DATALIST
 
