@@ -308,8 +308,6 @@ void game_render(Game *game) {
 
   world_render_layer_top_split(&game->world, &game->player, true);
 
-  game_render_break_progress(game, game->player.break_tile_pos, game->player.break_progress);
-
   for (int i = 0; i < game->world.beings_amount; i++) {
     being_render(&game->world.beings[i]);
   }
@@ -319,6 +317,8 @@ void game_render(Game *game) {
   player_render(&game->player);
 
   world_render_layer_top_split(&game->world, &game->player, false);
+
+  game_render_break_progress(game, game->player.break_tile_pos, game->player.break_progress);
 
   int x_index = floor_div(mouse_world_pos.x, TILE_SIZE);
   int y_index = floor_div(mouse_world_pos.y, TILE_SIZE);
