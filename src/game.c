@@ -21,6 +21,10 @@
   extern void menu_name##_init();                                                                                      \
   menu_name##_init();
 
+#define OPEN_MENU(ui_renderer, menu_name)                                                                              \
+  extern void menu_name##_open(UiRenderer *renderer, const Game *game);                                                \
+  menu_name##_open(ui_renderer, game);
+
 static void game_init_menu(Game *game);
 
 static bool game_slot_selected();
@@ -28,12 +32,14 @@ static bool game_slot_selected();
 void game_reload() {
   RELOAD(tile);
   RELOAD(config);
+  RELOAD(save_names);
 }
 
 Game GAME;
 Music MUSIC;
 
 static Sound PLACE_SOUND;
+static Texture2D BREAK_PROGRESS_TEXTURE;
 
 static void game_create_save_config(Game *game, int save_index, const char *save_name, float seed) {
   cJSON *json = cJSON_CreateObject();
@@ -85,6 +91,8 @@ void game_init(Game *game) {
     SetSoundPitch(game->sound_manager.sound_buffer[i], 0.5);
     SetSoundVolume(game->sound_manager.sound_buffer[i], 0.25);
   }
+
+  BREAK_PROGRESS_TEXTURE = load_texture("res/assets/breaking_overlay.png");
 
 #ifdef SURTUR_DEBUG
   debug_init();
@@ -168,21 +176,37 @@ static void handle_tile_interaction(Game *game) {
 
   if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !slot_selected && interaction_in_range) {
     TileInstance *selected_tile = world_highest_tile_at(&game->world, vec2i(x_index, y_index));
-    TileInstance tile = *selected_tile;
-    if (CheckCollisionPointRec(mouse_world_pos, selected_tile->box) &&
-        (game->player.last_broken_tile.type.layer == selected_tile->type.layer ||
-         game->player.last_broken_tile.type.id == TILE_EMPTY)) {
-      if (game->player.held_item.type.id == ITEM_HAMMER) {
-        for (int y = -1; y <= 1; y++) {
-          for (int x = -1; x <= 1; x++) {
-            world_remove_tile(&game->world, vec2i(x_index + x, y_index + y));
-          }
-        }
-      } else {
-        world_remove_tile(&game->world, vec2i(x_index, y_index));
-      }
-      game->player.last_broken_tile = tile;
+    if (selected_tile->type.id == TILE_EMPTY) {
+      game->player.break_progress = -1;
+      return;
     }
+
+    if (game->player.last_broken_tile.type.layer == selected_tile->type.layer ||
+        game->player.last_broken_tile.type.id == TILE_EMPTY) {
+
+      TileInstance tile = *selected_tile;
+      TraceLog(LOG_DEBUG, "Break x: %d, y: %d", x_index * TILE_SIZE, y_index* TILE_SIZE);
+      if (CheckCollisionPointRec(mouse_world_pos,
+                                 rectf_from_dimf(x_index * TILE_SIZE, y_index * TILE_SIZE, selected_tile->box))) {
+        game->player.break_progress++;
+        game->player.break_tile_pos = vec2i(x_index, y_index);
+        if (game->player.break_progress >= 64) {
+          if (game->player.held_item.type.id == ITEM_HAMMER) {
+            for (int y = -1; y <= 1; y++) {
+              for (int x = -1; x <= 1; x++) {
+                world_remove_tile(&game->world, vec2i(x_index + x, y_index + y));
+              }
+            }
+          } else {
+            world_remove_tile(&game->world, vec2i(x_index, y_index));
+          }
+          game->player.break_progress = -1;
+          game->player.last_broken_tile = tile;
+        }
+      }
+    }
+  } else {
+    game->player.break_progress = -1;
   }
 
   if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
@@ -198,9 +222,9 @@ static void handle_tile_interaction(Game *game) {
 
   if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && !slot_selected && interaction_in_range) {
     TileInstance *selected_tile = world_ground_tile_at(&game->world, vec2i(x_index, y_index));
-    if (CheckCollisionPointRec(mouse_world_pos, selected_tile->box)) {
-      TileInstance new_tile =
-          tile_new(&game->debug_options.selected_tile_to_place_instance.type, x_index * TILE_SIZE, y_index * TILE_SIZE);
+    if (CheckCollisionPointRec(mouse_world_pos,
+                               rectf_from_dimf(x_index * TILE_SIZE, y_index * TILE_SIZE, selected_tile->box))) {
+      TileInstance new_tile = tile_new(game->debug_options.selected_tile_to_place_instance.type);
       bool placed = world_place_tile(&game->world, vec2i(x_index, y_index), new_tile);
       if (placed && game->sound_manager.sound_timer >= SOUND_COOLDOWN) {
         PlaySound(game->sound_manager.sound_buffer[game->sound_manager.cur_sound++]);
@@ -238,16 +262,6 @@ void game_tick(Game *game) {
 
   player_handle_movement(&game->player, w, a, s, d);
 
-  if (IsKeyReleased(KEYBINDS.open_close_save_menu_key)) {
-    if (game->cur_menu == MENU_SAVE) {
-      game->cur_menu = MENU_NONE;
-      game->paused = false;
-    } else {
-      game->cur_menu = MENU_SAVE;
-      game->paused = true;
-    }
-  }
-
   for (int i = 0; i < game->world.beings_amount; i++) {
     being_tick(&game->world.beings[i]);
   }
@@ -259,11 +273,32 @@ void game_tick(Game *game) {
   game->sound_manager.sound_timer += GetFrameTime();
 
 #ifdef SURTUR_DEBUG
-  debug_tick();
+  if (IsKeyPressed(KEY_F1)) {
+    world_add_being(&game->world, being_npc_new(game->player.box.x, game->player.box.y));
+    WORLD_BEING_ID = game->world.beings_amount - 1;
+    TraceLog(LOG_DEBUG, "Set id for being: %d", WORLD_BEING_ID);
+  }
+
+  if (IsKeyPressed(KEY_F3)) {
+    if (game->cur_menu == MENU_NONE) {
+      game_set_menu(game, MENU_DEBUG);
+    } else {
+      game_set_menu(game, MENU_NONE);
+    }
+  }
 #endif
 }
 
 // RENDERING
+
+static void game_render_break_progress(Game *game, TilePos break_pos, int break_progress) {
+  if (break_progress != -1) {
+    int index = floor_div(break_progress, 16);
+    DrawTextureRec(BREAK_PROGRESS_TEXTURE, rectf(0, index * TILE_SIZE, TILE_SIZE, TILE_SIZE),
+                   vec2f(break_pos.x * TILE_SIZE, break_pos.y * TILE_SIZE), WHITE);
+    TraceLog(LOG_DEBUG, "Texture index: %d", index);
+  }
+}
 
 void game_render(Game *game) {
   Vec2f mouse_pos = GetMousePosition();
@@ -272,6 +307,8 @@ void game_render(Game *game) {
   world_render_layer(&game->world, TILE_LAYER_GROUND);
 
   world_render_layer_top_split(&game->world, &game->player, true);
+
+  game_render_break_progress(game, game->player.break_tile_pos, game->player.break_progress);
 
   for (int i = 0; i < game->world.beings_amount; i++) {
     being_render(&game->world.beings[i]);
@@ -295,6 +332,10 @@ void game_render(Game *game) {
   if (!slot_selected && interaction_in_range) {
     rec_draw_outline(rec, BLUE);
   }
+
+#ifdef SURTUR_DEBUG
+  debug_render();
+#endif
 }
 
 void game_render_overlay(Game *game) {
@@ -303,8 +344,9 @@ void game_render_overlay(Game *game) {
   item_render(&game->player.held_item, pos.x + 2 * 3.5, pos.y + 2 * 3.5);
 
 #ifdef SURTUR_DEBUG
-  tile_render_scaled(&game->debug_options.selected_tile_to_place_instance, 4);
-  debug_render();
+  tile_render_scaled(&game->debug_options.selected_tile_to_place_instance, SELECTED_TILE_RENDER_POS.x + 35,
+                     SELECTED_TILE_RENDER_POS.y - 60, 4);
+  debug_render_overlay();
 #endif
 }
 
@@ -355,6 +397,10 @@ void game_render_menu(Game *game) {
     RENDER_MENU(ui_renderer, load_save_menu);
     break;
   }
+  case MENU_MAP: {
+    RENDER_MENU(ui_renderer, map_menu);
+    break;
+  }
   case MENU_NONE: {
     break;
   }
@@ -374,9 +420,22 @@ static void ui_renderer_calc_height(UiRenderer *ui_renderer) {
   }
 }
 
+static void game_open_menu(Game *game, MenuId menu_id) {
+  switch (menu_id) {
+  case MENU_NEW_SAVE: {
+    OPEN_MENU(&GAME.ui_renderer, new_save_menu);
+    break;
+  }
+  default: {
+    break;
+  }
+  }
+}
+
 void game_set_menu(Game *game, MenuId menu_id) {
   game->cur_menu = menu_id;
   ui_renderer_calc_height(&game->ui_renderer);
+  game_open_menu(game, menu_id);
 }
 
 // GAME LOAD/SAVE

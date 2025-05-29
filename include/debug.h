@@ -19,10 +19,13 @@ typedef struct {
     DebugDisplayMode game_object_display;
     bool collisions_enabled;
     bool hitboxes_shown;
+    bool instabreak;
     TileInstance selected_tile_to_place_instance;
 } DebugOptions;
 
 void debug_init();
+
+void debug_render_overlay();
 
 void debug_render();
 

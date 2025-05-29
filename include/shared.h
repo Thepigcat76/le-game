@@ -49,6 +49,8 @@
 
 #define RECOMMENDED_LOADED_CHUNKS 25
 
+#define MAX_SAVE_NAMES_AMOUNT 100
+
 #define DEFAULT_ITEM_BEING_ITEM ITEM_GRASS
 
 extern Texture2D DEBUG_BUTTON_TEXTURE;
@@ -85,6 +87,11 @@ typedef struct {
   int y;
 } Vec2i;
 
+typedef struct {
+  int width;
+  int height;
+} Dimensionsf;
+
 // RAYLIB Typedefs
 typedef Vector2 Vec2f;
 typedef Rectangle Rectf;
@@ -115,6 +122,10 @@ Vec2f vec2f(float x, float y);
 bool vec2_eq(const Vec2i *vec1, const Vec2i *vec2);
 
 Texture2D load_texture(char *path);
+
+Dimensionsf dimf(float width, float height);
+
+Rectf rectf_from_dimf(float x, float y, Dimensionsf dimf);
 
 Rectf rectf(float x, float y, float w, float h);
 

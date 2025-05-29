@@ -6,5 +6,8 @@
   "open-close-save-menu": "Esc",
   "reload": "R",
   "open-backpack-menu": "B",
-  "toggle-hitbox": "H"
+  "toggle-hitbox": "H",
+  "zoom-in": "Up",
+  "zoom-out": "Down",
+  "open-debug-menu": "F3"
 }

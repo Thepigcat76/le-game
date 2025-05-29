@@ -9,12 +9,11 @@
 #include <stdlib.h>
 
 static void chunk_assign_dirt_variants(Chunk *chunk) {
-  chunk->variant_index =
-      tile_variants_index_for_name("res/assets/dirt.png", 0, 0);
+  chunk->variant_index = tile_variants_index_for_name("res/assets/dirt.png", 0, 0);
   for (int y = 0; y < CHUNK_SIZE; y++) {
     for (int x = 0; x < CHUNK_SIZE; x++) {
-      chunk->background_texture_variants[y][x] = GetRandomValue(
-          0, tile_variants_amount_by_index(chunk->variant_index, 0, 0) - 1);
+      chunk->background_texture_variants[y][x] =
+          GetRandomValue(0, tile_variants_amount_by_index(chunk->variant_index, 0, 0) - 1);
     }
   }
 }
@@ -41,11 +40,9 @@ void chunk_gen(Chunk *chunk, ChunkPos chunk_pos, float world_seed) {
           } else {
             type = TILES[TILE_WATER];
           }
-          chunk->tiles[y][x][l] = tile_new(&type, (chunk_x + x) * TILE_SIZE,
-                                           (chunk_y + y) * TILE_SIZE);
+          chunk->tiles[y][x][l] = tile_new(type);
         } else {
-          chunk->tiles[y][x][l] =tile_new(&TILES[TILE_EMPTY], (chunk_x + x) * TILE_SIZE,
-                                           (chunk_y + y) * TILE_SIZE);
+          chunk->tiles[y][x][l] = tile_new(TILES[TILE_EMPTY]);
         }
       }
     }
@@ -88,9 +85,7 @@ void chunk_load(Chunk *chunk, const DataMap *data) {
       for (int x = 0; x < CHUNK_SIZE; x++) {
         int8_t id = list.items[y * CHUNK_SIZE + x].var.data_byte;
 
-        chunk->tiles[y][x][l] =
-            tile_new(&TILES[id], (chunk_pos.x * CHUNK_SIZE + x) * TILE_SIZE,
-                     (chunk_pos.y * CHUNK_SIZE + y) * TILE_SIZE);
+        chunk->tiles[y][x][l] = tile_new(TILES[id]);
         // TileInstance *tile = &chunk->tiles[y][x];
         // if (TILES[tile_id].stores_custom_data) {
         //   char custom_data[length + 13 + 1];

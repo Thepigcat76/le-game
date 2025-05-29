@@ -1,7 +1,8 @@
 #include "../../include/config.h"
 #include "../../include/game.h"
+#include "../../include/save_names.h"
 #include "../../include/ui.h"
-#include <raylib.h>
+#include <string.h>
 
 static bool save_name_input_selected = true;
 static bool seed_input_selected = false;
@@ -22,16 +23,24 @@ static void new_save_create_world() {
 
 static void new_save_back_to_start_menu() { game_set_menu(&GAME, MENU_START); }
 
+void new_save_menu_open(UiRenderer *renderer, const Game *game) {
+  char *random_save_name = save_names_random_name();
+  int len = strlen(random_save_name);
+  strcpy(save_name_text_input_buffer.buf, random_save_name);
+  save_name_text_input_buffer.len = len;
+  free(random_save_name);
+}
+
 void new_save_menu_render(UiRenderer *renderer, const Game *game) {
   float scale = 0.85;
   ui_setup(renderer,
-               (UiStyle){
-                   .positions = {UI_CENTER, UI_CENTER},
-                   .alignment = UI_VERTICAL,
-                   .padding = 12,
-                   .scale = scale,
-                   .font_scale = CONFIG.default_font_size * scale,
-               });
+           (UiStyle){
+               .positions = {UI_CENTER, UI_CENTER},
+               .alignment = UI_VERTICAL,
+               .padding = 12,
+               .scale = scale,
+               .font_scale = CONFIG.default_font_size * scale,
+           });
 
   int x_offset = 0;
   int y_offset = -2;

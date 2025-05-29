@@ -22,8 +22,9 @@ Keybinds KEYBINDS;
 
 static int key_from_str(char *key) {
   int keys_amount = 9;
-  char *key_strings[] = {"W", "A", "S", "D", "R", "E", "B", "H", "Esc"};
-  int keys[] = {KEY_W, KEY_A, KEY_S, KEY_D, KEY_R, KEY_E, KEY_B, KEY_H, KEY_ESCAPE};
+  char *key_strings[] = {"W", "A", "S", "D", "R", "E", "B", "H", "Esc", "Up", "Down", "Left", "Right", "F3"};
+  int keys[] = {KEY_W, KEY_A,      KEY_S,  KEY_D,    KEY_R,    KEY_E,     KEY_B,
+                KEY_H, KEY_ESCAPE, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_F3};
   for (int i = 0; i < keys_amount; i++) {
     if (strcmp(key, key_strings[i]) == 0) {
       return keys[i];
@@ -42,38 +43,36 @@ static void keybinds_on_reload() {
     cJSON *reload_key = cJSON_GetObjectItemCaseSensitive(json, "reload");
     cJSON *open_backpack_menu = cJSON_GetObjectItemCaseSensitive(json, "open-backpack-menu");
     cJSON *toggle_hitbox = cJSON_GetObjectItemCaseSensitive(json, "toggle-hitbox");
+    cJSON *zoom_in = cJSON_GetObjectItemCaseSensitive(json, "zoom-in");
+    cJSON *zoom_out = cJSON_GetObjectItemCaseSensitive(json, "zoom-out");
+    cJSON *open_debug_menu = cJSON_GetObjectItemCaseSensitive(json, "open-debug-menu");
 
-    if (cJSON_IsString(move_foreward_key)) {
+    if (cJSON_IsString(move_foreward_key))
       KEYBINDS.move_foreward_key = key_from_str(move_foreward_key->valuestring);
-    }
 
-    if (cJSON_IsString(move_backward_key)) {
+    if (cJSON_IsString(move_backward_key))
       KEYBINDS.move_backward_key = key_from_str(move_backward_key->valuestring);
-    }
 
-    if (cJSON_IsString(move_left_key)) {
+    if (cJSON_IsString(move_left_key))
       KEYBINDS.move_left_key = key_from_str(move_left_key->valuestring);
-    }
 
-    if (cJSON_IsString(move_right_key)) {
+    if (cJSON_IsString(move_right_key))
       KEYBINDS.move_right_key = key_from_str(move_right_key->valuestring);
-    }
 
-    if (cJSON_IsString(open_close_save_menu_key)) {
+    if (cJSON_IsString(open_close_save_menu_key))
       KEYBINDS.open_close_save_menu_key = key_from_str(open_close_save_menu_key->valuestring);
-    }
 
-    if (cJSON_IsString(reload_key)) {
+    if (cJSON_IsString(reload_key))
       KEYBINDS.reload_key = key_from_str(reload_key->valuestring);
-    }
 
-    if (cJSON_IsString(open_backpack_menu)) {
+    if (cJSON_IsString(open_backpack_menu))
       KEYBINDS.open_backpack_menu_key = key_from_str(open_backpack_menu->valuestring);
-    }
 
-    if (cJSON_IsString(toggle_hitbox)) {
-      KEYBINDS.toggle_hitbox_key = key_from_str(toggle_hitbox->valuestring);
-    }
+    if (cJSON_IsString(zoom_in))
+      KEYBINDS.zoom_in = key_from_str(zoom_in->valuestring);
+
+    if (cJSON_IsString(zoom_out))
+      KEYBINDS.zoom_out = key_from_str(zoom_out->valuestring);
   });
 }
 

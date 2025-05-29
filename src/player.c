@@ -24,9 +24,11 @@ Player player_new() {
                   .animation_frame = 0,
                   .frame_timer = 0,
                   .held_item = {.type = ITEMS[ITEM_GRASS]},
-                  .box = {.x = 0, .y = 0, .width = 16, .height = 32},
+                  .box = {.x = 0, .y = 20, .width = 16, .height = 12},
                   .chunk_pos = vec2i(0, 0),
-                  .tile_pos = vec2i(0, 0)};
+                  .tile_pos = vec2i(0, 0),
+                  .break_progress = -1,
+                  .break_tile_pos = vec2i(0, 0)};
 }
 
 void player_set_world(Player *player, World *world) { player->world = world; }
@@ -166,7 +168,7 @@ Rectangle rec_offset_direction(Rectangle rec, Direction direction, int32_t dista
 #define CHECK_COLLISIONS_ENABLED(direction)                                                                            \
   if (!GAME.debug_options.collisions_enabled)                                                                          \
     player->collisions[direction] = false;                                                                             \
-  if (GAME.debug_options.collisions_enabled)
+  else
 
 void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
   Camera2D *cam = &player->cam;
@@ -175,24 +177,20 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
 
   bool walking = false;
 
-  TilePos tile_pos = player->tile_pos;
-  Rectangle player_hitbox = player->box;
-  player_hitbox.height = 6;
-  player_hitbox.y += 26;
+  TilePos player_tile_pos = player->tile_pos;
+  Rectangle player_hitbox = player_collision_box(player);
 
   if (w) {
-    Rectangle old_hitbox = player_hitbox;
-    player_hitbox.height = 12;
-    player_hitbox.y -= 26;
-    player_hitbox.y += 20;
-    TileInstance *tile = world_tile_at(player->world, vec2i_add(tile_pos, vec2i(0, 0)), TILE_LAYER_TOP);
+    TilePos tile_pos = vec2i_add(player_tile_pos, vec2i(0, 0));
+    TileInstance *tile = world_tile_at(player->world, tile_pos, TILE_LAYER_TOP);
 #ifdef SURTUR_DEBUG
     CHECK_COLLISIONS_ENABLED(DIRECTION_UP)
 #endif
     {
       player->collisions[DIRECTION_UP] =
           (tile->type.id != TILE_EMPTY &&
-           CheckCollisionRecs(tile->box, rec_offset_direction(player_hitbox, DIRECTION_UP, distance)));
+           CheckCollisionRecs(rectf_from_dimf(tile_pos.x * TILE_SIZE, tile_pos.y * TILE_SIZE + 8, tile->box),
+                              rec_offset_direction(player_hitbox, DIRECTION_UP, distance)));
     }
     player->direction = DIRECTION_UP;
 
@@ -200,20 +198,18 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
       player_set_pos(player, player_pos(player).x, player_pos(player).y - distance);
       walking = true;
     }
-    player_hitbox = old_hitbox;
   }
   if (s) {
-    Rectangle old_hitbox = player_hitbox;
-    player_hitbox.height = 12;
-    player_hitbox.y -= 26;
-    player_hitbox.y += 16;
-    TileInstance *tile = world_tile_at(player->world, vec2i_add(tile_pos, vec2i(0, 1)), TILE_LAYER_TOP);
+    TilePos tile_pos = vec2i_add(player_tile_pos, vec2i(0, 0));
+    TileInstance *tile = world_tile_at(player->world, tile_pos, TILE_LAYER_TOP);
 #ifdef SURTUR_DEBUG
     CHECK_COLLISIONS_ENABLED(DIRECTION_DOWN)
 #endif
     {
+      TraceLog(LOG_DEBUG, "tile: %s, Rec w: %d, Rec h: %d", tile_type_to_string(&tile->type), tile->box.width, tile->box.height);
       player->collisions[DIRECTION_DOWN] = tile->type.id != TILE_EMPTY &&
-          CheckCollisionRecs(tile->box, rec_offset_direction(player_hitbox, DIRECTION_DOWN, distance));
+          CheckCollisionRecs(rectf_from_dimf(tile_pos.x * TILE_SIZE, tile_pos.y * TILE_SIZE + 8, tile->box),
+                             rec_offset_direction(player_hitbox, DIRECTION_DOWN, distance));
     }
     player->direction = DIRECTION_DOWN;
 
@@ -221,18 +217,19 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
       player_set_pos(player, player_pos(player).x, player_pos(player).y + distance);
       walking = true;
     }
-    player_hitbox = old_hitbox;
   }
   if (a) {
-    TileInstance *tile = world_tile_at(player->world, vec2i_add(tile_pos, vec2i(-1, 0)), TILE_LAYER_TOP);
+    TilePos tile_pos = vec2i_add(player_tile_pos, vec2i(0, 0));
+    TileInstance *tile = world_tile_at(player->world, tile_pos, TILE_LAYER_TOP);
 // TileInstance *tile_above = world_tile_at(player->world, vec2i_add(tile_pos, vec2i(-1, -1)), TILE_LAYER_TOP);
 #ifdef SURTUR_DEBUG
     CHECK_COLLISIONS_ENABLED(DIRECTION_LEFT)
 #endif
     {
-      player->collisions[DIRECTION_LEFT] =
-          (tile->type.id != TILE_EMPTY &&
-           CheckCollisionRecs(player_hitbox, rec_offset_direction(tile->box, DIRECTION_LEFT, distance)));
+      Rectf tile_box = rec_offset_direction(rectf_from_dimf(tile_pos.x * TILE_SIZE, tile_pos.y * TILE_SIZE + 8, tile->box),
+                                            DIRECTION_LEFT, distance);
+      rec_draw_outline(tile_box, ORANGE);
+      player->collisions[DIRECTION_LEFT] = (tile->type.id != TILE_EMPTY && CheckCollisionRecs(player_hitbox, tile_box));
     }
     //||
     //  (tile_above->type.id != TILE_EMPTY && CheckCollisionRecs(player->box, tile_above->box));
@@ -244,7 +241,8 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
     }
   }
   if (d) {
-    TileInstance *tile = world_tile_at(player->world, vec2i_add(tile_pos, vec2i(1, 0)), TILE_LAYER_TOP);
+    TilePos tile_pos = vec2i_add(player_tile_pos, vec2i(0, 0));
+    TileInstance *tile = world_tile_at(player->world, tile_pos, TILE_LAYER_TOP);
 
 #ifdef SURTUR_DEBUG
     CHECK_COLLISIONS_ENABLED(DIRECTION_RIGHT)
@@ -252,7 +250,10 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
     {
       player->collisions[DIRECTION_RIGHT] =
           (tile->type.id != TILE_EMPTY &&
-           CheckCollisionRecs(player_hitbox, rec_offset_direction(tile->box, DIRECTION_RIGHT, distance)));
+           CheckCollisionRecs(
+               player_hitbox,
+               rec_offset_direction(rectf_from_dimf(tile_pos.x * TILE_SIZE, tile_pos.y * TILE_SIZE + 8, tile->box),
+                                    DIRECTION_RIGHT, distance)));
     }
     player->direction = DIRECTION_RIGHT;
 
@@ -263,6 +264,10 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
   }
 
   player->walking = walking;
+}
+
+Rectf player_collision_box(const Player *player) {
+  return rectf(player->box.x, player->box.y + 20, player->box.width, player->box.height);
 }
 
 void player_load(Player *player, DataMap *map) {

@@ -137,6 +137,10 @@ Texture2D load_texture(char *path) {
   return texture;
 }
 
+Dimensionsf dimf(float width, float height) { return (Dimensionsf){.width = width, .height = height}; }
+
+Rectf rectf_from_dimf(float x, float y, Dimensionsf dimf) { return rectf(x, y, dimf.width, dimf.height); }
+
 Rectf rectf(float x, float y, float w, float h) { return (Rectf){.x = x, .y = y, .width = w, .height = h}; }
 
 Color color_rgb(int r, int g, int b) { return color_rgba(r, g, b, 255); }

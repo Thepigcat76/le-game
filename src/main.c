@@ -43,25 +43,23 @@ int main(void) {
 
   game_reload();
 
-  GAME = (Game){
-      .player = player_new(),
-      .world = world_new(),
-      .cur_menu = MENU_START,
-      .paused = false,
-      .ui_renderer = (UiRenderer){.cur_x = 0,
-                                  .cur_y = 0,
-                                  .simulate = false,
-                                  .ui_height = -1,
-                                  .cur_style = {0},
-                                  .initial_style = {0},
-                                  .context = {.screen_width = SCREEN_WIDTH, .screen_height = SCREEN_HEIGHT}},
-      .cur_save = -1,
-      .detected_saves = 0,
-      .debug_options = {.game_object_display = DEBUG_DISPLAY_NONE,
-                        .collisions_enabled = true,
-                        .hitboxes_shown = false,
-                        .selected_tile_to_place_instance = tile_new(&TILES[TILE_DIRT], SELECTED_TILE_RENDER_POS.x + 35,
-                                                                    SELECTED_TILE_RENDER_POS.y - 60)}};
+  GAME = (Game){.player = player_new(),
+                .world = world_new(),
+                .cur_menu = MENU_START,
+                .paused = false,
+                .ui_renderer = (UiRenderer){.cur_x = 0,
+                                            .cur_y = 0,
+                                            .simulate = false,
+                                            .ui_height = -1,
+                                            .cur_style = {0},
+                                            .initial_style = {0},
+                                            .context = {.screen_width = SCREEN_WIDTH, .screen_height = SCREEN_HEIGHT}},
+                .cur_save = -1,
+                .detected_saves = 0,
+                .debug_options = {.game_object_display = DEBUG_DISPLAY_NONE,
+                                  .collisions_enabled = true,
+                                  .hitboxes_shown = false,
+                                  .selected_tile_to_place_instance = tile_new(TILES[TILE_DIRT])}};
 
   Game *game = &GAME;
 
@@ -120,6 +118,20 @@ int main(void) {
       game_tick(game);
     }
 
+    if (IsKeyReleased(KEYBINDS.open_close_save_menu_key)) {
+      if (game->cur_menu == MENU_SAVE) {
+        game->cur_menu = MENU_NONE;
+        game->paused = false;
+      } else if (game->cur_menu == MENU_NONE) {
+        game->cur_menu = MENU_SAVE;
+        game->paused = true;
+      }
+    }
+
+#ifdef SURTUR_DEBUG
+    debug_tick();
+#endif
+
     if (IsKeyPressed(KEYBINDS.reload_key)) {
       UnloadShader(shader);
       shader = LoadShader(NULL, "res/shaders/lighting.fs");
@@ -168,38 +180,6 @@ int main(void) {
               // game_set_menu(game, MENU_BACKPACK);
             }
 
-#ifdef SURTUR_DEBUG
-            debug_tick();
-
-            if (IsKeyPressed(KEY_F1)) {
-              world_add_being(&game->world, being_npc_new(game->player.box.x, game->player.box.y));
-              WORLD_BEING_ID = game->world.beings_amount - 1;
-              TraceLog(LOG_DEBUG, "Set id for being: %d", WORLD_BEING_ID);
-            }
-
-            if (IsKeyPressed(KEY_F3)) {
-              debug_menu = !debug_menu;
-
-              if (debug_menu) {
-                game_set_menu(game, MENU_DEBUG);
-              } else {
-                game_set_menu(game, MENU_NONE);
-              }
-            }
-#endif
-
-            if (false && game->world.initialized) {
-              ssize_t index = world_chunk_index_by_pos(&game->world, game->player.chunk_pos);
-              Chunk chunk = game->world.chunks[index];
-              for (int y = 0; y < 16; y++) {
-                for (int x = 0; x < 16; x++) {
-                  TileInstance tile = chunk.tiles[y][x][TILE_LAYER_GROUND];
-                  if (CheckCollisionRecs(game->player.box, tile.box)) {
-                  }
-                }
-              }
-            }
-
             // CAMERA END
           }
           EndMode2D();
@@ -222,12 +202,12 @@ int main(void) {
         game_render_menu(game);
 
         if (game->player.held_item.type.id != ITEM_EMPTY) {
-          HideCursor();
+          //HideCursor();
           float scale = 3;
-          DrawTextureEx(cursor_texture, (Vector2){.x = mousePos.x - 2 * scale, .y = mousePos.y - 1 * scale}, 0, scale,
-                        WHITE);
+          //DrawTextureEx(cursor_texture, (Vector2){.x = mousePos.x, .y = mousePos.y}, 0, scale,
+           //             WHITE);
         } else {
-          ShowCursor();
+          //ShowCursor();
         }
       }
 

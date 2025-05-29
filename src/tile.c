@@ -21,7 +21,7 @@ void tile_types_init() {
   INIT_TILE(oven)
   INIT_TILE(tree)
 
-  TILE_INSTANCE_EMPTY = tile_new(&TILES[TILE_EMPTY], 0, 0);
+  TILE_INSTANCE_EMPTY = tile_new(TILES[TILE_EMPTY]);
 }
 
 char *tile_type_to_string(const TileType *type) {
@@ -47,51 +47,50 @@ char *tile_type_to_string(const TileType *type) {
 
 // TILE INSTANCE
 
-TileInstance tile_new(const TileType *type, int x, int y) {
+TileInstance tile_new(TileType type) {
   Vec2i default_pos = tile_default_sprite_pos();
   int default_sprite_res = tile_default_sprite_resolution();
   TileInstance instance = {
-      .type = *type,
-      .box = {.width = TILE_SIZE, .height = TILE_SIZE, .x = (float)x, .y = (float)y},
+      .type = type,
+      .box = {.width = TILE_SIZE, .height = type.layer == TILE_LAYER_GROUND ? TILE_SIZE : 8},
       .custom_data = {},
-      .cur_sprite_box = type->uses_tileset ? rectf(default_pos.x, default_pos.y, default_sprite_res, default_sprite_res)
-                                           : rectf(0, 0, type->texture.width, type->texture.height),
+      .cur_sprite_box = type.uses_tileset ? rectf(default_pos.x, default_pos.y, default_sprite_res, default_sprite_res)
+                                          : rectf(0, 0, type.texture.width, type.texture.height),
       .animation_frame = 0,
   };
 
-  if (type->id != TILE_EMPTY && type->variant_index != -1) {
-    int max = tile_variants_amount_for_tile(type, 0, 0) - 1;
+  if (type.id != TILE_EMPTY && type.variant_index != -1) {
+    int max = tile_variants_amount_for_tile(&type, 0, 0) - 1;
     if (max >= 0) {
       int r = GetRandomValue(0, max);
-      instance.variant_texture = tile_variants_for_tile(type, 0, 0)[r];
+      instance.variant_texture = tile_variants_for_tile(&type, 0, 0)[r];
     } else {
       // TODO: Properly fix this
-      instance.variant_texture = type->texture;
+      instance.variant_texture = type.texture;
     }
   }
   return instance;
 }
 
-void tile_render_scaled(TileInstance *tile, float scale) {
+void tile_render_scaled(TileInstance *tile, int x, int y, float scale) {
   if (tile->type.has_texture) {
     if (tile->type.variant_index != -1) {
-      DrawTextureRecEx(tile->variant_texture, tile->cur_sprite_box, (Vector2){tile->box.x, tile->box.y}, 0, scale,
-                       WHITE);
+      DrawTextureRecEx(tile->variant_texture, tile->cur_sprite_box, vec2f(x, y), 0, scale, WHITE);
     } else {
       Rectangle sprite_rect = tile->cur_sprite_box;
       if (tile->type.has_animation && tile->type.id == TILE_WATER) {
         int offset_y = 64 * TILE_ANIMATION_FRAMES[tile->type.id];
         sprite_rect.y += offset_y;
       }
-      DrawTextureRecEx(tile->type.texture, sprite_rect, (Vector2){tile->box.x, tile->box.y}, 0, scale, WHITE);
+      DrawTextureRecEx(tile->type.texture, sprite_rect, vec2f(x, y), 0, scale, WHITE);
     }
   }
 }
 
-void tile_render(TileInstance *tile) {
+void tile_render(TileInstance *tile, int x, int y) {
   if (tile->type.has_texture) {
     if (tile->type.variant_index != -1) {
-      DrawTextureRec(tile->variant_texture, tile->cur_sprite_box, (Vector2){tile->box.x, tile->box.y}, WHITE);
+      DrawTextureRec(tile->variant_texture, tile->cur_sprite_box, vec2f(x, y), WHITE);
     } else {
       Rectangle sprite_rect = tile->cur_sprite_box;
       if (tile->type.has_animation && tile->type.id == TILE_WATER) {
@@ -99,10 +98,10 @@ void tile_render(TileInstance *tile) {
         sprite_rect.y += offset_y;
       }
       int offset_y = tile->type.tile_height - TILE_SIZE;
-      DrawTextureRec(tile->type.texture, sprite_rect, (Vector2){tile->box.x, tile->box.y - offset_y}, WHITE);
+      DrawTextureRec(tile->type.texture, sprite_rect, vec2f(x, y - offset_y), WHITE);
 #ifdef SURTUR_DEBUG
       if (GAME.debug_options.hitboxes_shown && tile->type.layer == TILE_LAYER_TOP) {
-        rec_draw_outline(tile->box, GREEN);
+        rec_draw_outline(rectf_from_dimf(x, y + TILE_SIZE - tile->box.height, tile->box), GREEN);
       }
 #endif
     }

@@ -143,8 +143,6 @@ bool world_place_tile(World *world, TilePos tile_pos, TileInstance tile) {
 
 bool world_remove_tile(World *world, TilePos tile_pos) {
   TileInstance empty_instance = TILE_INSTANCE_EMPTY;
-  empty_instance.box.x = tile_pos.x * TILE_SIZE;
-  empty_instance.box.y = tile_pos.y * TILE_SIZE;
   TileInstance *tile = world_highest_tile_at(world, tile_pos);
   Color color = tile->type.tile_color;
   ItemType *item_type = tile->type.tile_item;
@@ -251,7 +249,7 @@ void world_render_layer(World *world, TileLayer layer) {
     for (int y = 0; y < CHUNK_SIZE; y++) {
       for (int x = 0; x < CHUNK_SIZE; x++) {
         TileInstance *tile = &chunk->tiles[y][x][layer];
-        tile_render(tile);
+        tile_render(tile, (chunk_x + x) * TILE_SIZE, (chunk_y + y) * TILE_SIZE);
       }
     }
   }
@@ -280,7 +278,7 @@ void world_render_layer_top_split(World *world, void *_player, bool draw_before_
             (tile_screen_y > player_feet_y && !draw_before_player);
 
         if (should_draw) {
-          tile_render(tile);
+          tile_render(tile, world_x * TILE_SIZE, world_y * TILE_SIZE);
         }
       }
     }

@@ -55,7 +55,7 @@ char *tile_type_to_string(const TileType *type);
 
 typedef struct {
   TileType type;
-  Rectangle box;
+  Dimensionsf box;
 
   // ADVANCED
   Data custom_data;
@@ -67,13 +67,11 @@ typedef struct {
 
 extern TileInstance TILE_INSTANCE_EMPTY;
 
-TileInstance tile_new(const TileType *type, int x, int y);
+TileInstance tile_new(TileType type);
 
-void tile_render(TileInstance *tile);
+void tile_render(TileInstance *tile, int x, int y);
 
-void tile_render_scaled(TileInstance *tile, float scale);
-
-void tile_render_new(TileInstance *tiles, int x, int y);
+void tile_render_scaled(TileInstance *tile, int x, int y, float scale);
 
 void tile_right_click(TileInstance *tile);
 
@@ -104,6 +102,7 @@ int tile_variants_index_for_name(const char *texture_name, int x, int y);
 int tile_variants_amount_for_tile(const TileType *type, int x, int y);
 
 Texture2D *tile_variants_by_index(int i, int x, int y);
+
 int tile_variants_amount_by_index(int index, int x, int y);
 
 void tile_variants_free();

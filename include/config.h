@@ -17,6 +17,9 @@ typedef struct {
     int reload_key;
     int open_backpack_menu_key;
     int toggle_hitbox_key;
+    int zoom_in;
+    int zoom_out;
+    int open_debug_menu;
 } Keybinds;
 
 extern Config CONFIG;
