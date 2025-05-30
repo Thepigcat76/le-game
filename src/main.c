@@ -202,12 +202,12 @@ int main(void) {
         game_render_menu(game);
 
         if (game->player.held_item.type.id != ITEM_EMPTY) {
-          //HideCursor();
+          HideCursor();
           float scale = 3;
-          //DrawTextureEx(cursor_texture, (Vector2){.x = mousePos.x, .y = mousePos.y}, 0, scale,
-           //             WHITE);
+          DrawTextureEx(cursor_texture, (Vector2){.x = mousePos.x, .y = mousePos.y}, 0, scale,
+                        WHITE);
         } else {
-          //ShowCursor();
+          ShowCursor();
         }
       }
 

@@ -185,7 +185,7 @@ static void handle_tile_interaction(Game *game) {
         game->player.last_broken_tile.type.id == TILE_EMPTY) {
 
       TileInstance tile = *selected_tile;
-      TraceLog(LOG_DEBUG, "Break x: %d, y: %d", x_index * TILE_SIZE, y_index* TILE_SIZE);
+      TraceLog(LOG_DEBUG, "Break x: %d, y: %d, break progress: %d, tile: %s", x_index * TILE_SIZE, y_index* TILE_SIZE, game->player.break_progress, tile_type_to_string(&tile.type));
       if (CheckCollisionPointRec(mouse_world_pos,
                                  rectf_from_dimf(x_index * TILE_SIZE, y_index * TILE_SIZE, selected_tile->box))) {
         game->player.break_progress++;

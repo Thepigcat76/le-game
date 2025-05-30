@@ -227,7 +227,7 @@ static void being_load_ex(BeingInstanceEx *extra, DataMap *data) {
 void being_load(BeingInstance *being, const DataMap *data) {
   DataMap extra_data_map = data_map_get_or_default(data, "extra", data_map(data_map_new(0))).var.data_map;
   being_load_ex(&being->extra, &extra_data_map);
-  being->context.creation_time = data_map_get_or_default(data, "creation_time", data_int(0)).var.data_int;
+  //being->context.creation_time = data_map_get_or_default(data, "creation_time", data_int(0)).var.data_int;
   being->context.box =
       data_map_get_rectf_static_dimensions(data, "box", being->context.box.width, being->context.box.height);
 }
@@ -259,7 +259,8 @@ void being_save(const BeingInstance *being, DataMap *data) {
   being_save_ex(&being->extra, &extra_data_map);
   data_map_insert(data, "extra", data_map(extra_data_map));
   // context
-  data_map_insert(data, "creation_time", data_int(being->context.creation_time));
+  // TODO: Reenable creation time serialization after we serialize game time
+  //data_map_insert(data, "creation_time", data_int(being->context.creation_time));
   data_map_insert_rectf_static_dimensions(data, "box", being->context.box);
   // TODO: Save brain
 }

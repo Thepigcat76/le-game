@@ -1,5 +1,4 @@
 #include "../include/tile.h"
-#include "../include/game.h"
 #include "../include/shared.h"
 #include <dirent.h>
 #include <limits.h>
@@ -52,7 +51,7 @@ TileInstance tile_new(TileType type) {
   int default_sprite_res = tile_default_sprite_resolution();
   TileInstance instance = {
       .type = type,
-      .box = {.width = TILE_SIZE, .height = type.layer == TILE_LAYER_GROUND ? TILE_SIZE : 8},
+      .box = {.width = TILE_SIZE, .height = TILE_SIZE},
       .custom_data = {},
       .cur_sprite_box = type.uses_tileset ? rectf(default_pos.x, default_pos.y, default_sprite_res, default_sprite_res)
                                           : rectf(0, 0, type.texture.width, type.texture.height),
@@ -70,6 +69,13 @@ TileInstance tile_new(TileType type) {
     }
   }
   return instance;
+}
+
+Rectf tile_collision_box_at(const TileInstance *tile, int x, int y) {
+  if (tile->type.layer == TILE_LAYER_TOP) {
+    return rectf(x, y + 8, tile->box.width, tile->box.height - 8);
+  }
+  return rectf_from_dimf(x, y, tile->box);
 }
 
 void tile_render_scaled(TileInstance *tile, int x, int y, float scale) {
@@ -101,7 +107,7 @@ void tile_render(TileInstance *tile, int x, int y) {
       DrawTextureRec(tile->type.texture, sprite_rect, vec2f(x, y - offset_y), WHITE);
 #ifdef SURTUR_DEBUG
       if (GAME.debug_options.hitboxes_shown && tile->type.layer == TILE_LAYER_TOP) {
-        rec_draw_outline(rectf_from_dimf(x, y + TILE_SIZE - tile->box.height, tile->box), GREEN);
+        rec_draw_outline(tile_collision_box_at(tile, x, y), GREEN);
       }
 #endif
     }

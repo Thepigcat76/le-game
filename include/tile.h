@@ -69,6 +69,8 @@ extern TileInstance TILE_INSTANCE_EMPTY;
 
 TileInstance tile_new(TileType type);
 
+Rectf tile_collision_box_at(const TileInstance *tile, int x, int y);
+
 void tile_render(TileInstance *tile, int x, int y);
 
 void tile_render_scaled(TileInstance *tile, int x, int y, float scale);

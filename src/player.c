@@ -189,7 +189,7 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
     {
       player->collisions[DIRECTION_UP] =
           (tile->type.id != TILE_EMPTY &&
-           CheckCollisionRecs(rectf_from_dimf(tile_pos.x * TILE_SIZE, tile_pos.y * TILE_SIZE + 8, tile->box),
+           CheckCollisionRecs(tile_collision_box_at(tile, tile_pos.x * TILE_SIZE, tile_pos.y * TILE_SIZE),
                               rec_offset_direction(player_hitbox, DIRECTION_UP, distance)));
     }
     player->direction = DIRECTION_UP;
@@ -206,9 +206,10 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
     CHECK_COLLISIONS_ENABLED(DIRECTION_DOWN)
 #endif
     {
-      TraceLog(LOG_DEBUG, "tile: %s, Rec w: %d, Rec h: %d", tile_type_to_string(&tile->type), tile->box.width, tile->box.height);
+      TraceLog(LOG_DEBUG, "tile: %s, Rec w: %d, Rec h: %d", tile_type_to_string(&tile->type), tile->box.width,
+               tile->box.height);
       player->collisions[DIRECTION_DOWN] = tile->type.id != TILE_EMPTY &&
-          CheckCollisionRecs(rectf_from_dimf(tile_pos.x * TILE_SIZE, tile_pos.y * TILE_SIZE + 8, tile->box),
+          CheckCollisionRecs(tile_collision_box_at(tile, tile_pos.x * TILE_SIZE, tile_pos.y * TILE_SIZE),
                              rec_offset_direction(player_hitbox, DIRECTION_DOWN, distance));
     }
     player->direction = DIRECTION_DOWN;
@@ -226,8 +227,9 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
     CHECK_COLLISIONS_ENABLED(DIRECTION_LEFT)
 #endif
     {
-      Rectf tile_box = rec_offset_direction(rectf_from_dimf(tile_pos.x * TILE_SIZE, tile_pos.y * TILE_SIZE + 8, tile->box),
+      Rectf tile_box = rec_offset_direction(tile_collision_box_at(tile, tile_pos.x * TILE_SIZE, tile_pos.y * TILE_SIZE),
                                             DIRECTION_LEFT, distance);
+
       rec_draw_outline(tile_box, ORANGE);
       player->collisions[DIRECTION_LEFT] = (tile->type.id != TILE_EMPTY && CheckCollisionRecs(player_hitbox, tile_box));
     }
@@ -252,7 +254,7 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
           (tile->type.id != TILE_EMPTY &&
            CheckCollisionRecs(
                player_hitbox,
-               rec_offset_direction(rectf_from_dimf(tile_pos.x * TILE_SIZE, tile_pos.y * TILE_SIZE + 8, tile->box),
+               rec_offset_direction(tile_collision_box_at(tile, tile_pos.x * TILE_SIZE, tile_pos.y * TILE_SIZE),
                                     DIRECTION_RIGHT, distance)));
     }
     player->direction = DIRECTION_RIGHT;
