@@ -6,18 +6,19 @@
 #include "math.h"
 #include <raylib.h>
 
+#define WORLD_PTR (&GAME.world)
+
 Texture2D particle_texture0;
 
 Player player_new() {
-  particle_texture0 = load_texture("res/assets/walk_particles.png");
-  return (Player){.world = NULL,
-                  .cam = camera_new(SCREEN_WIDTH, SCREEN_HEIGHT),
-                  .animated_textures = {load_texture("res/assets/player_front_walk.png"),
-                                        load_texture("res/assets/player_back_walk.png"),
-                                        load_texture("res/assets/player_left_walk.png"),
-                                        load_texture("res/assets/player_right_walk.png")},
-                  .textures = {load_texture("res/assets/player_front.png"), load_texture("res/assets/player_back.png"),
-                               load_texture("res/assets/player_left.png"), load_texture("res/assets/player_right.png")},
+  particle_texture0 = LoadTexture("res/assets/walk_particles.png");
+  return (Player){.cam = camera_new(SCREEN_WIDTH, SCREEN_HEIGHT),
+                  .animated_textures = {LoadTexture("res/assets/player_front_walk.png"),
+                                        LoadTexture("res/assets/player_back_walk.png"),
+                                        LoadTexture("res/assets/player_left_walk.png"),
+                                        LoadTexture("res/assets/player_right_walk.png")},
+                  .textures = {LoadTexture("res/assets/player_front.png"), LoadTexture("res/assets/player_back.png"),
+                               LoadTexture("res/assets/player_left.png"), LoadTexture("res/assets/player_right.png")},
                   .direction = DIRECTION_DOWN,
                   .last_broken_tile = TILE_INSTANCE_EMPTY,
                   .essence = 0,
@@ -30,8 +31,6 @@ Player player_new() {
                   .break_progress = -1,
                   .break_tile_pos = vec2i(0, 0)};
 }
-
-void player_set_world(Player *player, World *world) { player->world = world; }
 
 static Texture2D player_get_texture(Player *player) {
   Texture2D *textures;
@@ -81,7 +80,7 @@ void player_render(Player *player) {
 
 void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool walking_particles,
                        bool check_for_water) {
-  player->in_water = world_ground_tile_at(player->world, player->tile_pos)->type.id == TILE_WATER;
+  player->in_water = world_ground_tile_at(WORLD_PTR, player->tile_pos)->type.id == TILE_WATER;
   if (check_for_water && player->in_water) {
     x -= (x - player->box.x) / 2;
     y -= (y - player->box.y) / 2;
@@ -97,11 +96,11 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool
   player->chunk_pos.x = floor_div(x, CHUNK_SIZE * TILE_SIZE);
   player->chunk_pos.y = floor_div(y, CHUNK_SIZE * TILE_SIZE);
 
-  if (update_chunk && !world_has_chunk_at(player->world, player->chunk_pos)) {
-    world_gen_chunk_at(player->world, player->chunk_pos);
+  if (update_chunk && !world_has_chunk_at(WORLD_PTR, player->chunk_pos)) {
+    world_gen_chunk_at(WORLD_PTR, player->chunk_pos);
 
-    world_prepare_chunk_rendering(player->world,
-                                  &player->world->chunks[world_chunk_index_by_pos(player->world, player->chunk_pos)]);
+    world_prepare_chunk_rendering(WORLD_PTR,
+                                  &WORLD_PTR->chunks[world_chunk_index_by_pos(WORLD_PTR, player->chunk_pos)]);
     Vec2i offsets[4] = {
         vec2i(-1, 0),
         vec2i(+1, 0),
@@ -111,9 +110,9 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool
     for (int i = 0; i < 4; i++) {
       Vec2i offset = offsets[i];
       world_prepare_chunk_rendering(
-          player->world,
-          &player->world->chunks[world_chunk_index_by_pos(
-              player->world, vec2i(player->chunk_pos.x + offset.x, player->chunk_pos.y + offset.y))]);
+          WORLD_PTR,
+          &WORLD_PTR->chunks[world_chunk_index_by_pos(
+              WORLD_PTR, vec2i(player->chunk_pos.x + offset.x, player->chunk_pos.y + offset.y))]);
     }
   }
 
@@ -182,7 +181,7 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
 
   if (w) {
     TilePos tile_pos = vec2i_add(player_tile_pos, vec2i(0, 0));
-    TileInstance *tile = world_tile_at(player->world, tile_pos, TILE_LAYER_TOP);
+    TileInstance *tile = world_tile_at(WORLD_PTR, tile_pos, TILE_LAYER_TOP);
 #ifdef SURTUR_DEBUG
     CHECK_COLLISIONS_ENABLED(DIRECTION_UP)
 #endif
@@ -201,13 +200,11 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
   }
   if (s) {
     TilePos tile_pos = vec2i_add(player_tile_pos, vec2i(0, 0));
-    TileInstance *tile = world_tile_at(player->world, tile_pos, TILE_LAYER_TOP);
+    TileInstance *tile = world_tile_at(WORLD_PTR, tile_pos, TILE_LAYER_TOP);
 #ifdef SURTUR_DEBUG
     CHECK_COLLISIONS_ENABLED(DIRECTION_DOWN)
 #endif
     {
-      TraceLog(LOG_DEBUG, "tile: %s, Rec w: %d, Rec h: %d", tile_type_to_string(&tile->type), tile->box.width,
-               tile->box.height);
       player->collisions[DIRECTION_DOWN] = tile->type.id != TILE_EMPTY &&
           CheckCollisionRecs(tile_collision_box_at(tile, tile_pos.x * TILE_SIZE, tile_pos.y * TILE_SIZE),
                              rec_offset_direction(player_hitbox, DIRECTION_DOWN, distance));
@@ -221,8 +218,8 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
   }
   if (a) {
     TilePos tile_pos = vec2i_add(player_tile_pos, vec2i(0, 0));
-    TileInstance *tile = world_tile_at(player->world, tile_pos, TILE_LAYER_TOP);
-// TileInstance *tile_above = world_tile_at(player->world, vec2i_add(tile_pos, vec2i(-1, -1)), TILE_LAYER_TOP);
+    TileInstance *tile = world_tile_at(WORLD_PTR, tile_pos, TILE_LAYER_TOP);
+// TileInstance *tile_above = world_tile_at(WORLD_PTR, vec2i_add(tile_pos, vec2i(-1, -1)), TILE_LAYER_TOP);
 #ifdef SURTUR_DEBUG
     CHECK_COLLISIONS_ENABLED(DIRECTION_LEFT)
 #endif
@@ -244,7 +241,7 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
   }
   if (d) {
     TilePos tile_pos = vec2i_add(player_tile_pos, vec2i(0, 0));
-    TileInstance *tile = world_tile_at(player->world, tile_pos, TILE_LAYER_TOP);
+    TileInstance *tile = world_tile_at(&GAME.world, tile_pos, TILE_LAYER_TOP);
 
 #ifdef SURTUR_DEBUG
     CHECK_COLLISIONS_ENABLED(DIRECTION_RIGHT)

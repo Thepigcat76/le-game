@@ -10,8 +10,17 @@
 
 Texture2D particle_texture;
 
+World world_new_no_chunks() {
+  particle_texture = LoadTexture("res/assets/particle.png");
+  return (World){
+      .chunks = NULL,
+      .chunks_amount = 0,
+      .initialized = false,
+  };
+}
+
 World world_new() {
-  particle_texture = load_texture("res/assets/particle.png");
+  particle_texture = LoadTexture("res/assets/particle.png");
   return (World){
       .chunks = malloc(WORLD_LOADED_CHUNKS * sizeof(Chunk)),
       .chunks_amount = 0,
@@ -22,7 +31,6 @@ World world_new() {
 void world_initialize(World *world) {
   world->initialized = true;
   world_prepare_rendering(world);
-  player_set_world(&GAME.player, world);
 }
 
 void world_add_chunk(World *world, ChunkPos pos, Chunk chunk) {

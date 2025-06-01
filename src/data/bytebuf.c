@@ -2,6 +2,7 @@
 #include <raylib.h>
 #include <stdio.h>
 #include <string.h>
+#include "../../include/shared.h"
 
 void byte_buf_write_byte(ByteBuf *buf, uint8_t byte) {
   buf->bytes[buf->writer_index++] = byte;
@@ -85,12 +86,10 @@ void byte_buf_from_file(ByteBuf *buf, const char *name) {
     exit(1);
   }
 
-  char *file_content = malloc(300000 + 1);
-  fread(file_content, sizeof(char), 300000, f);
-  fclose(f);
-  file_content[300000] = '\0';
+  char *file_content = read_file_to_string(name);
 
   byte_buf_from_bin(buf, file_content);
+  free(file_content);
 }
 
 void byte_buf_to_file(const ByteBuf *buf, const char *name) {
@@ -102,9 +101,10 @@ void byte_buf_to_file(const ByteBuf *buf, const char *name) {
 
   TraceLog(LOG_DEBUG, "writer index of bytebuf before saving to file: %d", buf->writer_index);
 
-  char *bin_str = malloc(300000 + 1);
+  char *bin_str = malloc(buf->writer_index * BYTE_SIZE + 1);
   int size = byte_buf_to_bin(buf, bin_str);
 
   fwrite(bin_str, sizeof(char), size, f);
   fclose(f);
+  free(bin_str);
 }

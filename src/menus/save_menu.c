@@ -17,8 +17,9 @@ static void save_menu_save_game_button_clicked() {
   game_set_menu(&GAME, MENU_START);
   game_save_cur_save(&GAME);
   Chunk *chunks = GAME.world.chunks;
-  GAME.world = world_new();
+  GAME.world = world_new_no_chunks();
   GAME.world.chunks = chunks;
+  GAME.feature_store.game_features_amount = 0;
 }
 
 static Texture2D DECLARE_BUTTON_TEXTURE(BACK_TO_GAME_BUTTON_TEXTURE);

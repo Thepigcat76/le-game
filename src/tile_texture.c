@@ -1,6 +1,7 @@
 #include "../include/shared.h"
 #include "../include/tile.h"
 #include "../vendor/cJSON.h"
+#include "../include/game.h"
 #include <dirent.h>
 #include <raylib.h>
 #include <stdio.h>
@@ -14,7 +15,7 @@ static void debug_variant_info();
 
 static void on_tile_variants_reload();
 
-void tile_on_reload() {
+void tile_on_reload(Game *game) {
   init_connected_info();
 
   on_tile_variants_reload();

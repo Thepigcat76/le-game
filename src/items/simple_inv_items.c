@@ -3,7 +3,7 @@
 #include <stdbool.h>
 
 #define SIMPLE_INV_ITEM(item_id, texture_name)                                                                         \
-  (ItemType) { .id = item_id, .texture = load_texture("res/assets/" texture_name ".png"), .light_source = false }
+  (ItemType) { .id = item_id, .texture = LoadTexture("res/assets/" texture_name ".png"), .light_source = false }
 
 void grass_item_init() {
   ItemType type = SIMPLE_INV_ITEM(ITEM_GRASS, "grass_inv");

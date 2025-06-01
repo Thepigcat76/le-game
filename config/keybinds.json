@@ -3,11 +3,12 @@
   "move-backward": "W",
   "move-left": "A",
   "move-right": "D",
-  "open-close-save-menu": "Esc",
+  "open-close-save-menu": "Escape",
+  "close-cur-menu": "Escape",
   "reload": "R",
-  "open-backpack-menu": "B",
+  "open-close-backpack-menu": "B",
   "toggle-hitbox": "H",
   "zoom-in": "Up",
   "zoom-out": "Down",
-  "open-debug-menu": "F3"
+  "open-close-debug-menu": "F3"
 }

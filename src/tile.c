@@ -106,6 +106,7 @@ void tile_render(TileInstance *tile, int x, int y) {
       int offset_y = tile->type.tile_height - TILE_SIZE;
       DrawTextureRec(tile->type.texture, sprite_rect, vec2f(x, y - offset_y), WHITE);
 #ifdef SURTUR_DEBUG
+#include "../include/game.h"
       if (GAME.debug_options.hitboxes_shown && tile->type.layer == TILE_LAYER_TOP) {
         rec_draw_outline(tile_collision_box_at(tile, x, y), GREEN);
       }

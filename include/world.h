@@ -23,6 +23,8 @@ typedef struct _world {
   bool initialized;
 } World;
 
+World world_new_no_chunks();
+
 World world_new();
 
 void world_initialize(World *world);

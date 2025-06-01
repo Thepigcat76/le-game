@@ -1,9 +1,8 @@
 #include "../include/debug.h"
+#include "../include/config.h"
 #include "../include/game.h"
 #include "raylib.h"
 #include "rlgl.h"
-#include "../include/config.h"
-#include "../include/config.h"
 
 static BeingInstance DEBUG_BEINGS[BEINGS_AMOUNT];
 static int DEBUG_BEINGS_WIDTH = 0;
@@ -104,11 +103,11 @@ void debug_tick() {
     being_brain_reset(being);
     being_add_activity(being,
                        (BeingActivity){.type = BEING_ACTIVITY_WALK_AROUND,
-                                       .var = {.activity_walk_around = {.target_position = DEBUG_GO_TO_POSITION}}});
+                                       .var = {.activity_go_to_position = {.target_position = DEBUG_GO_TO_POSITION}}});
     TraceLog(LOG_DEBUG, "Added activity");
   }
 
-  if (IsKeyReleased(KEY_ESCAPE) && GAME.cur_menu == MENU_DEBUG) {
+  if (IsKeyReleased(KEYBINDS.close_cur_menu) && GAME.cur_menu == MENU_DEBUG) {
     if (GAME.debug_options.game_object_display != DEBUG_DISPLAY_NONE) {
       GAME.debug_options.game_object_display = DEBUG_DISPLAY_NONE;
     } else {

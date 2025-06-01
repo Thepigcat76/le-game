@@ -5,7 +5,7 @@ void workstation_tile_init() {
   TileType type = {
       .id = TILE_WORKSTATION,
       .texture_path = "res/assets/workstation.png",
-      .texture = load_texture("res/assets/workstation.png"),
+      .texture = LoadTexture("res/assets/workstation.png"),
       .has_texture = true,
       .is_solid = true,
       .layer = TILE_LAYER_TOP,
@@ -26,7 +26,7 @@ void oven_tile_init() {
   TileType type = {
       .id = TILE_OVEN,
       .texture_path = "res/assets/tall_oven.png",
-      .texture = load_texture("res/assets/tall_oven.png"),
+      .texture = LoadTexture("res/assets/tall_oven.png"),
       .has_texture = true,
       .is_solid = true,
       .layer = TILE_LAYER_TOP,
@@ -47,7 +47,7 @@ void tree_tile_init() {
   TileType type = {
       .id = TILE_TREE,
       .texture_path = "res/assets/tree_5.png",
-      .texture = load_texture("res/assets/tree_5.png"),
+      .texture = LoadTexture("res/assets/tree_5.png"),
       .has_texture = true,
       .is_solid = true,
       .layer = TILE_LAYER_TOP,

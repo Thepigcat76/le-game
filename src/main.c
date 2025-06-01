@@ -27,21 +27,11 @@ static void update_animation(const TileType *type, float deltaTime) {
 }
 
 int main(void) {
-#ifdef SURTUR_DEBUG
-  SetTraceLogLevel(LOG_DEBUG);
-#endif
-  SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-  InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Ballz");
-  InitAudioDevice();
-  SetExitKey(0);
-  srand(time(NULL));
+  game_begin();
 
   shared_init();
-
   item_types_init();
   tile_types_init();
-
-  game_reload();
 
   GAME = (Game){.player = player_new(),
                 .world = world_new(),
@@ -59,17 +49,21 @@ int main(void) {
                 .debug_options = {.game_object_display = DEBUG_DISPLAY_NONE,
                                   .collisions_enabled = true,
                                   .hitboxes_shown = false,
-                                  .selected_tile_to_place_instance = tile_new(TILES[TILE_DIRT])}};
+                                  .selected_tile_to_place_instance = tile_new(TILES[TILE_DIRT])},
+                .feature_store = {.game_features = malloc(sizeof(GameFeature) * MAX_GAME_FEATURES_AMOUNT),
+                                  .game_features_amount = 0,
+                                  .game_features_capacity = MAX_GAME_FEATURES_AMOUNT},
+                .sound_manager = {.cur_sound = 0, .sound_timer = 0},
+                .particle_manager = {},
+                .shader_manager = {}};
 
   Game *game = &GAME;
 
+  game_reload(game);
+
   game_init(game);
 
-  player_set_world(&game->player, &game->world);
-
   world_prepare_rendering(&game->world);
-
-  SetTargetFPS(60);
 
   int prevWidth = GetScreenWidth();
   int prevHeight = GetScreenHeight();
@@ -80,10 +74,10 @@ int main(void) {
   int light_radius_loc = GetShaderLocation(shader, "lightRadius");
   int ambient_light_loc = GetShaderLocation(shader, "ambientLight");
 
-  Texture2D torch_texture = load_texture("res/assets/torch.png");
-  Texture2D slot_texture = load_texture("res/assets/slot.png");
-  Texture2D cursor_texture = load_texture("res/assets/cursor.png");
-  Texture2D cursor_fist_texture = load_texture("res/assets/cursor_fist.png");
+  Texture2D torch_texture = LoadTexture("res/assets/torch.png");
+  Texture2D slot_texture = LoadTexture("res/assets/slot.png");
+  Texture2D cursor_texture = LoadTexture("res/assets/cursor.png");
+  Texture2D cursor_fist_texture = LoadTexture("res/assets/cursor_fist.png");
 
   MUSIC = LoadMusicStream("res/music/main_menu_music.ogg");
   SetMusicVolume(MUSIC, 0.15);
@@ -135,7 +129,7 @@ int main(void) {
     if (IsKeyPressed(KEYBINDS.reload_key)) {
       UnloadShader(shader);
       shader = LoadShader(NULL, "res/shaders/lighting.fs");
-      game_reload();
+      game_reload(game);
     }
 
     Rectangle slot_rect = {.x = SCREEN_WIDTH - (3.5 * 16) - 30,
@@ -176,7 +170,7 @@ int main(void) {
 
             game_render_particles(game, false);
 
-            if (IsKeyReleased(KEYBINDS.open_backpack_menu_key)) {
+            if (IsKeyReleased(KEYBINDS.open_close_backpack_menu_key)) {
               // game_set_menu(game, MENU_BACKPACK);
             }
 
@@ -204,8 +198,7 @@ int main(void) {
         if (game->player.held_item.type.id != ITEM_EMPTY) {
           HideCursor();
           float scale = 3;
-          DrawTextureEx(cursor_texture, (Vector2){.x = mousePos.x, .y = mousePos.y}, 0, scale,
-                        WHITE);
+          DrawTextureEx(cursor_texture, (Vector2){.x = mousePos.x, .y = mousePos.y}, 0, scale, WHITE);
         } else {
           ShowCursor();
         }
@@ -231,7 +224,5 @@ int main(void) {
 
   game_unload(game);
 
-  UnloadMusicStream(MUSIC);
-  CloseAudioDevice();
-  CloseWindow();
+  game_end();
 }

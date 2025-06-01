@@ -36,7 +36,7 @@ void load_save_menu_render(UiRenderer *renderer, const Game *game) {
   // Create the group for displaying the saves
   ui_group_create_dimensions(renderer, renderer->cur_style, true, 400, 300, &scroll_y_offset);
   for (int i = 0; i < game->detected_saves; i++) {
-    ui_button_render_offset(renderer, TextFormat("%s", game->configs[i].save_name), SAVE_SLOT_TEXTURE,
+    ui_button_render_offset(renderer, TextFormat("%s", game->save_configs[i].save_name), SAVE_SLOT_TEXTURE,
                             SAVE_SLOT_SELECTED_TEXTURE, button_click_args(load_save_menu_load_save, &i),
                             vec2i(x_offset, y_offset));
   }

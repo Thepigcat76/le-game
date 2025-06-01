@@ -17,6 +17,7 @@ void item_types_init() {
   INIT_ITEM(grass);
   INIT_ITEM(stone);
   INIT_ITEM(dirt);
+  INIT_ITEM(tool_items);
 }
 
 void item_render(const ItemInstance *item, int x, int y) {

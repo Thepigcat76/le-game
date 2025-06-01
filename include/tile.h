@@ -83,8 +83,6 @@ void tile_load(TileInstance *tile, const DataMap *data);
 
 void tile_save(const TileInstance *tile, DataMap *data);
 
-void tile_on_reload();
-
 // CONNECTED TEXTURES
 
 Vec2i tile_default_sprite_pos();

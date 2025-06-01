@@ -3,10 +3,12 @@
 #include "being.h"
 #include "data.h"
 #include "debug.h"
+#include "game_feature.h"
 #include "item.h"
 #include "menu.h"
 #include "particle.h"
 #include "player.h"
+#include "shaders.h"
 #include "shared.h"
 #include "sounds.h"
 #include "ui.h"
@@ -18,19 +20,23 @@ typedef struct {
 } GameConfig;
 
 typedef struct _game {
-  Player player;
-  World world;
   MenuId cur_menu;
   bool paused;
   int cur_save;
+  // SAVE SPECIFIC
+  Player player;
+  World world;
+  GameFeatureStore feature_store;
   // LOADING
   int detected_saves;
-  GameConfig *configs;
+  GameConfig *save_configs;
   // RENDERING
   ParticleManager particle_manager;
   UiRenderer ui_renderer;
   // SOUNDS
   SoundManager sound_manager;
+  // SHADERS
+  ShaderManager shader_manager;
   // DEBUGGING
   DebugOptions debug_options;
 } Game;
@@ -38,8 +44,14 @@ typedef struct _game {
 extern Game GAME;
 extern Music MUSIC;
 
-// Returns a pointer to an array of two strings (first one being the adjective, second one the noun)
-char **game_save_name_random(Game *game);
+// PRE/POST GAME INITIALIZATION
+void game_begin(void);
+
+void game_end(void);
+
+// GAME CREATION
+
+void game_feature_add(Game *game, GameFeature game_feature);
 
 void game_create_world(Game *game, float seed);
 
@@ -47,7 +59,12 @@ void game_create_save(Game *game, const char *save_name, const char *seed_lit);
 
 void game_detect_saves(Game *game);
 
-void game_reload();
+// Returns a pointer to an array of two strings (first one being the adjective, second one the noun)
+char **game_save_name_random(Game *game);
+
+void game_feature_create(Game *game);
+
+void game_reload(Game *game);
 
 void game_init(Game *game);
 

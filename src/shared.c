@@ -29,33 +29,33 @@ Texture2D NPC_ANIMATED_TEXTURES[DIRECTIONS_AMOUNT];
 Texture NPC_TEXTURE_OLD_MAN;
 
 void shared_init() {
-  TEXT_INPUT_TEXTURE = load_texture("res/assets/gui/text_input.png");
+  TEXT_INPUT_TEXTURE = LoadTexture("res/assets/gui/text_input.png");
 
-  DEBUG_BUTTON_TEXTURE = load_texture("res/assets/gui/debug_button.png");
-  DEBUG_BUTTON_SELECTED_TEXTURE = load_texture("res/assets/gui/debug_button_selected.png");
+  DEBUG_BUTTON_TEXTURE = LoadTexture("res/assets/gui/debug_button.png");
+  DEBUG_BUTTON_SELECTED_TEXTURE = LoadTexture("res/assets/gui/debug_button_selected.png");
 
-  BUTTON_TEXTURE = load_texture("res/assets/gui/button.png");
-  BUTTON_SELECTED_TEXTURE = load_texture("res/assets/gui/button_selected.png");
+  BUTTON_TEXTURE = LoadTexture("res/assets/gui/button.png");
+  BUTTON_SELECTED_TEXTURE = LoadTexture("res/assets/gui/button_selected.png");
 
-  BACKPACK_BACK_GROUND = load_texture("res/assets/gui/backpack_slots.png");
+  BACKPACK_BACK_GROUND = LoadTexture("res/assets/gui/backpack_slots.png");
 
-  MAIN_HAND_SLOT_TEXTURE = load_texture("res/assets/gui/main_hand_slot.png");
-  OFF_HAND_SLOT_TEXTURE = load_texture("res/assets/gui/off_hand_slot.png");
+  MAIN_HAND_SLOT_TEXTURE = LoadTexture("res/assets/gui/main_hand_slot.png");
+  OFF_HAND_SLOT_TEXTURE = LoadTexture("res/assets/gui/off_hand_slot.png");
 
-  SAVE_SLOT_TEXTURE = load_texture("res/assets/gui/save_slot.png");
-  SAVE_SLOT_SELECTED_TEXTURE = load_texture("res/assets/gui/save_slot_selected.png");
+  SAVE_SLOT_TEXTURE = LoadTexture("res/assets/gui/save_slot.png");
+  SAVE_SLOT_SELECTED_TEXTURE = LoadTexture("res/assets/gui/save_slot_selected.png");
 
-  NPC_TEXTURES[DIRECTION_UP] = load_texture("res/assets/beings/npc_back.png");
-  NPC_TEXTURES[DIRECTION_DOWN] = load_texture("res/assets/beings/npc_front.png");
-  NPC_TEXTURES[DIRECTION_LEFT] = load_texture("res/assets/beings/npc_left.png");
-  NPC_TEXTURES[DIRECTION_RIGHT] = load_texture("res/assets/beings/npc_right.png");
+  NPC_TEXTURES[DIRECTION_UP] = LoadTexture("res/assets/beings/npc_back.png");
+  NPC_TEXTURES[DIRECTION_DOWN] = LoadTexture("res/assets/beings/npc_front.png");
+  NPC_TEXTURES[DIRECTION_LEFT] = LoadTexture("res/assets/beings/npc_left.png");
+  NPC_TEXTURES[DIRECTION_RIGHT] = LoadTexture("res/assets/beings/npc_right.png");
 
-  NPC_ANIMATED_TEXTURES[DIRECTION_UP] = load_texture("res/assets/beings/npc_back_walking.png");
-  NPC_ANIMATED_TEXTURES[DIRECTION_DOWN] = load_texture("res/assets/beings/npc_front_walking.png");
-  NPC_ANIMATED_TEXTURES[DIRECTION_LEFT] = load_texture("res/assets/beings/npc_left_walking.png");
-  NPC_ANIMATED_TEXTURES[DIRECTION_RIGHT] = load_texture("res/assets/beings/npc_right_walking.png");
+  NPC_ANIMATED_TEXTURES[DIRECTION_UP] = LoadTexture("res/assets/beings/npc_back_walking.png");
+  NPC_ANIMATED_TEXTURES[DIRECTION_DOWN] = LoadTexture("res/assets/beings/npc_front_walking.png");
+  NPC_ANIMATED_TEXTURES[DIRECTION_LEFT] = LoadTexture("res/assets/beings/npc_left_walking.png");
+  NPC_ANIMATED_TEXTURES[DIRECTION_RIGHT] = LoadTexture("res/assets/beings/npc_right_walking.png");
 
-  NPC_TEXTURE_OLD_MAN = load_texture("res/assets/old_man.png");
+  NPC_TEXTURE_OLD_MAN = LoadTexture("res/assets/old_man.png");
 }
 
 void create_dir(const char *dir_name) {
@@ -129,13 +129,6 @@ Vec2i vec2i_add(Vec2i vec0, Vec2i vec1) { return vec2i(vec0.x + vec1.x, vec0.y +
 void rec_draw_outline(Rectangle rec, Color color) { DrawRectangleLinesEx(rec, 1, color); }
 
 bool vec2_eq(const Vec2i *vec1, const Vec2i *vec2) { return vec1->x == vec2->x && vec1->y == vec2->y; }
-
-Texture2D load_texture(char *path) {
-  Image image = LoadImage(path);
-  Texture2D texture = LoadTextureFromImage(image);
-  UnloadImage(image);
-  return texture;
-}
 
 Dimensionsf dimf(float width, float height) { return (Dimensionsf){.width = width, .height = height}; }
 

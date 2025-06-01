@@ -4,11 +4,9 @@
 #include "shared.h"
 #include "data.h"
 #include "tile.h"
-#include "world.h"
 #include <raylib.h>
 
-typedef struct _player {
-  World *world;
+typedef struct  {
   Camera2D cam;
   Texture2D animated_textures[DIRECTIONS_AMOUNT];
   Texture2D textures[DIRECTIONS_AMOUNT];
@@ -34,8 +32,6 @@ typedef struct _player {
 Player player_new();
 
 Rectf player_collision_box(const Player *player);
-
-void player_set_world(Player *player, World *world);
 
 void player_render(Player *player);
 

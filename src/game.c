@@ -8,10 +8,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <time.h>
 
-#define RELOAD(src_file_prefix)                                                                                        \
-  extern void src_file_prefix##_on_reload();                                                                           \
-  src_file_prefix##_on_reload();
+#define RELOAD(game_ptr, src_file_prefix)                                                                              \
+  extern void src_file_prefix##_on_reload(Game *game);                                                                 \
+  src_file_prefix##_on_reload(game_ptr);
 
 #define RENDER_MENU(ui_renderer, menu_name)                                                                            \
   extern void menu_name##_render(UiRenderer *renderer, const Game *game);                                              \
@@ -29,10 +30,10 @@ static void game_init_menu(Game *game);
 
 static bool game_slot_selected();
 
-void game_reload() {
-  RELOAD(tile);
-  RELOAD(config);
-  RELOAD(save_names);
+void game_reload(Game *game) {
+  RELOAD(game, tile);
+  RELOAD(game, config);
+  RELOAD(game, save_names);
 }
 
 Game GAME;
@@ -92,14 +93,20 @@ void game_init(Game *game) {
     SetSoundVolume(game->sound_manager.sound_buffer[i], 0.25);
   }
 
-  BREAK_PROGRESS_TEXTURE = load_texture("res/assets/breaking_overlay.png");
+  BREAK_PROGRESS_TEXTURE = LoadTexture("res/assets/breaking_overlay.png");
 
 #ifdef SURTUR_DEBUG
   debug_init();
 #endif
 }
 
-void game_cur_save_init(Game *game) { game->world.seed = game->configs[game->cur_save].seed; }
+void game_cur_save_init(Game *game) { game->world.seed = game->save_configs[game->cur_save].seed; }
+
+void game_feature_add(Game *game, GameFeature game_feature) {
+  if (game->feature_store.game_features_amount < game->feature_store.game_features_capacity) {
+    game->feature_store.game_features[game->feature_store.game_features_amount++] = game_feature;
+  }
+}
 
 void game_detect_saves(Game *game) {
   if (!DirectoryExists("save")) {
@@ -107,7 +114,7 @@ void game_detect_saves(Game *game) {
   }
 
   if (game->detected_saves > 0) {
-    free(game->configs);
+    free(game->save_configs);
   }
 
   game->detected_saves = 0;
@@ -135,7 +142,7 @@ void game_detect_saves(Game *game) {
 
   closedir(dir);
 
-  game->configs = malloc(game->detected_saves * sizeof(GameConfig));
+  game->save_configs = malloc(game->detected_saves * sizeof(GameConfig));
   for (int i = 0; i < game->detected_saves; i++) {
     GameConfig config;
     char *file_content = read_file_to_string(TextFormat("save/save%d/game.json", i));
@@ -152,7 +159,7 @@ void game_detect_saves(Game *game) {
       strcpy(config.save_name, json_save_name->valuestring);
     }
     cJSON_Delete(json);
-    game->configs[i] = config;
+    game->save_configs[i] = config;
   }
 }
 
@@ -185,10 +192,17 @@ static void handle_tile_interaction(Game *game) {
         game->player.last_broken_tile.type.id == TILE_EMPTY) {
 
       TileInstance tile = *selected_tile;
-      TraceLog(LOG_DEBUG, "Break x: %d, y: %d, break progress: %d, tile: %s", x_index * TILE_SIZE, y_index* TILE_SIZE, game->player.break_progress, tile_type_to_string(&tile.type));
+      TraceLog(LOG_DEBUG, "Break x: %d, y: %d, break progress: %d, tile: %s", x_index * TILE_SIZE, y_index * TILE_SIZE,
+               game->player.break_progress, tile_type_to_string(&tile.type));
       if (CheckCollisionPointRec(mouse_world_pos,
                                  rectf_from_dimf(x_index * TILE_SIZE, y_index * TILE_SIZE, selected_tile->box))) {
-        game->player.break_progress++;
+        if (game->player.break_tile_pos.x != x_index || game->player.break_tile_pos.y != y_index) {
+          game->player.break_tile_pos = vec2i(x_index, y_index);
+          game->player.break_progress = -1;
+          return;
+        }
+
+        game->player.break_progress += game->player.held_item.type.tool_properties.break_speed + 1;
         game->player.break_tile_pos = vec2i(x_index, y_index);
         if (game->player.break_progress >= 64) {
           if (game->player.held_item.type.id == ITEM_HAMMER) {
@@ -276,10 +290,9 @@ void game_tick(Game *game) {
   if (IsKeyPressed(KEY_F1)) {
     world_add_being(&game->world, being_npc_new(game->player.box.x, game->player.box.y));
     WORLD_BEING_ID = game->world.beings_amount - 1;
-    TraceLog(LOG_DEBUG, "Set id for being: %d", WORLD_BEING_ID);
   }
 
-  if (IsKeyPressed(KEY_F3)) {
+  if (IsKeyPressed(KEYBINDS.open_close_debug_menu_key)) {
     if (game->cur_menu == MENU_NONE) {
       game_set_menu(game, MENU_DEBUG);
     } else {
@@ -509,11 +522,31 @@ void game_unload(Game *game) {
   tile_variants_free();
 
   free(game->world.chunks);
+  free(game->feature_store.game_features);
 
   UnloadSound(PLACE_SOUND);
+  UnloadMusicStream(MUSIC);
   for (int i = 0; i < SOUND_BUFFER_LIMIT; i++) {
     UnloadSoundAlias(game->sound_manager.sound_buffer[i]);
   }
+}
+
+void game_begin(void) {
+#ifdef SURTUR_DEBUG
+  SetTraceLogLevel(LOG_DEBUG);
+#endif
+  SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+  InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Ballz");
+  InitAudioDevice();
+  SetExitKey(0);
+  srand(time(NULL));
+
+  SetTargetFPS(60);
+}
+
+void game_end(void) {
+  CloseAudioDevice();
+  CloseWindow();
 }
 
 // -- PARTICLES --

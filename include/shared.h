@@ -35,7 +35,7 @@
 
 #define TILE_TYPE_AMOUNT 8
 
-#define ITEM_TYPE_AMOUNT 9
+#define ITEM_TYPE_AMOUNT 10
 
 #define BEINGS_AMOUNT 2
 
@@ -50,6 +50,8 @@
 #define RECOMMENDED_LOADED_CHUNKS 25
 
 #define MAX_SAVE_NAMES_AMOUNT 100
+
+#define MAX_GAME_FEATURES_AMOUNT 1000
 
 #define DEFAULT_ITEM_BEING_ITEM ITEM_GRASS
 
@@ -120,8 +122,6 @@ Vec2i vec2i_sub(Vec2i vec0, Vec2i vec1);
 Vec2f vec2f(float x, float y);
 
 bool vec2_eq(const Vec2i *vec1, const Vec2i *vec2);
-
-Texture2D load_texture(char *path);
 
 Dimensionsf dimf(float width, float height);
 

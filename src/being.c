@@ -96,28 +96,36 @@ void being_brain_tick(BeingInstance *being, BeingBrain *brain) {
   }
 }
 
-static void being_activity_walk_around(BeingInstance *being_instance, BeingActivityWalkAround *activity) {
-  Rectangle *being_box = &being_instance->context.box;
-  float sig_x = signum(activity->target_position.x - being_box->x);
-  float sig_y = signum(activity->target_position.y - being_box->y);
+static void being_go_to(BeingInstance *being, Vec2f pos) {
+  Rectangle *being_box = &being->context.box;
+  float sig_x = signum(pos.x - being_box->x);
+  float sig_y = signum(pos.y - being_box->y);
 
   being_box->x += 0.75 * sig_x;
   being_box->y += 0.75 * sig_y;
   TraceLog(LOG_DEBUG, "new box pos: %f", being_box->x, being_box->y);
 
-  if (being_instance->id == BEING_NPC) {
-    being_instance->extra.var.npc_instance.direction = direction_from_delta(sig_x, sig_y);
+  if (being->id == BEING_NPC) {
+    being->extra.var.npc_instance.direction = direction_from_delta(sig_x, sig_y);
   }
+}
+
+static void being_activity_walk_around(BeingInstance *being, BeingActivityWalkAround *activity) {
+  being_go_to(being, activity->target_position);
+}
+
+static void being_activity_go_to_pos(BeingInstance *being, BeingActivityGoToPosition *activity) {
+  being_go_to(being, activity->target_position);
 }
 
 void being_activity_tick(BeingInstance *being, BeingActivity *activity) {
   switch (activity->type) {
   case BEING_ACTIVITY_WALK_AROUND: {
-    TraceLog(LOG_INFO, "Walk around");
     being_activity_walk_around(being, &activity->var.activity_walk_around);
     break;
   }
   case BEING_ACTIVITY_GO_TO_POSITION: {
+    being_activity_go_to_pos(being, &activity->var.activity_go_to_position);
     break;
   }
   }
@@ -208,7 +216,8 @@ static void being_load_ex(BeingInstanceEx *extra, DataMap *data) {
   case BEING_INSTANCE_ITEM: {
     extra->var.item_instance.item =
         (ItemInstance){.type = ITEMS[data_map_get_or_default(data, "item_id", data_int(ITEM_EMPTY)).var.data_int]};
-    extra->var.item_instance.should_hover = data_map_get_or_default(data, "should_hover", data_byte(false)).var.data_byte;
+    extra->var.item_instance.should_hover =
+        data_map_get_or_default(data, "should_hover", data_byte(false)).var.data_byte;
     break;
   }
   case BEING_INSTANCE_NPC: {
@@ -227,7 +236,7 @@ static void being_load_ex(BeingInstanceEx *extra, DataMap *data) {
 void being_load(BeingInstance *being, const DataMap *data) {
   DataMap extra_data_map = data_map_get_or_default(data, "extra", data_map(data_map_new(0))).var.data_map;
   being_load_ex(&being->extra, &extra_data_map);
-  //being->context.creation_time = data_map_get_or_default(data, "creation_time", data_int(0)).var.data_int;
+  // being->context.creation_time = data_map_get_or_default(data, "creation_time", data_int(0)).var.data_int;
   being->context.box =
       data_map_get_rectf_static_dimensions(data, "box", being->context.box.width, being->context.box.height);
 }
@@ -260,7 +269,7 @@ void being_save(const BeingInstance *being, DataMap *data) {
   data_map_insert(data, "extra", data_map(extra_data_map));
   // context
   // TODO: Reenable creation time serialization after we serialize game time
-  //data_map_insert(data, "creation_time", data_int(being->context.creation_time));
+  // data_map_insert(data, "creation_time", data_int(being->context.creation_time));
   data_map_insert_rectf_static_dimensions(data, "box", being->context.box);
   // TODO: Save brain
 }
