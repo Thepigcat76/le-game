@@ -5,10 +5,10 @@
 
 typedef enum {
   GAME_FEATURE_VILLAGE,
-  GAME_FEATURE_VILLAGE_HOUSE,
-  GAME_FEATURE_VILLAGE_HOUSE_RESIDENT,
+  GAME_FEATURE_HOUSE,
+  GAME_FEATURE_NPC,
   GAME_FEATURE_FOREST,
-  GAME_FEATURE_FOREST_TREE,
+  GAME_FEATURE_TREE,
 } GameFeatureId;
 
 typedef struct {
@@ -17,15 +17,12 @@ typedef struct {
 } GameFeatureType;
 
 typedef struct {
-  enum {
-    GAME_FEATURE_CONTENT_VILLAGE,
-    GAME_FEATURE_CONTENT_FOREST,
-    GAME_FEATURE_CONTENT_TREE,
-  } type;
+  GameFeatureId type;
   union {
     GameFeatureContentVillage village;
     GameFeatureContentForest forest;
     GameFeatureContentTree tree;
+    GameFeatureContentNpc npc;
   } var;
 } GameFeatureContent;
 

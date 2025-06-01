@@ -3,6 +3,9 @@
 #include "shared.h"
 
 typedef struct {
+} ForestType;
+
+typedef struct {
     int village_size;
     int residents;
     int development;
@@ -13,7 +16,8 @@ typedef struct {
 } GameFeatureContentTree;
 
 typedef struct {
-} ForestType;
+    
+} GameFeatureContentNpc;
 
 typedef struct {
     ForestType type;
