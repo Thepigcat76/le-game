@@ -1,5 +1,6 @@
 #include "../include/game.h"
 #include "../include/config.h"
+#include "../include/data_reader.h"
 #include "../vendor/cJSON.h"
 #include "raylib.h"
 #include <dirent.h>
@@ -479,18 +480,21 @@ void game_load(Game *game) { game_load_cur_save(game); }
 
 void game_load_cur_save(Game *game) {
   LOAD_DATA("player", sizeof(Player), byte_buf, {
-    Data data_map_0 = byte_buf_read_data(&byte_buf);
-    DataMap *player_map = &data_map_0.var.data_map;
+    Data data_map = byte_buf_read_data(&byte_buf);
+    DataMap *player_map = &data_map.var.data_map;
     player_load(&game->player, player_map);
-    data_free(&data_map_0);
+    data_free(&data_map);
   });
 
   LOAD_DATA("world", sizeof(Chunk) * WORLD_LOADED_CHUNKS + 100 + sizeof(BeingInstance) * 200, byte_buf, {
-    Data data_map_1 = byte_buf_read_data(&byte_buf);
-    DataMap *world_map = &data_map_1.var.data_map;
+    Data data_map = byte_buf_read_data(&byte_buf);
+    char *str = data_reader_read_data(&data_map);
+    printf("%s\n", str);
+    free(str);
+    DataMap *world_map = &data_map.var.data_map;
     load_world(&game->world, world_map);
 
-    data_free(&data_map_1);
+    data_free(&data_map);
   });
 }
 
