@@ -164,11 +164,6 @@ Rectangle rec_offset_direction(Rectangle rec, Direction direction, int32_t dista
   }
 }
 
-#define CHECK_COLLISIONS_ENABLED(direction)                                                                            \
-  if (!GAME.debug_options.collisions_enabled)                                                                          \
-    player->collisions[direction] = false;                                                                             \
-  else
-
 void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
   Camera2D *cam = &player->cam;
 
@@ -179,90 +174,71 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
   TilePos player_tile_pos = player->tile_pos;
   Rectangle player_hitbox = player_collision_box(player);
 
+  Vec2f player_move = vec2f(0, 0);
+  Vec2f player_pos_copy = player_pos(player);
+
   if (w) {
-    TilePos tile_pos = vec2i_add(player_tile_pos, vec2i(0, 0));
-    TileInstance *tile = world_tile_at(WORLD_PTR, tile_pos, TILE_LAYER_TOP);
-#ifdef SURTUR_DEBUG
-    CHECK_COLLISIONS_ENABLED(DIRECTION_UP)
-#endif
-    {
-      player->collisions[DIRECTION_UP] =
-          (tile->type.id != TILE_EMPTY &&
-           CheckCollisionRecs(tile_collision_box_at(tile, tile_pos.x * TILE_SIZE, tile_pos.y * TILE_SIZE),
-                              rec_offset_direction(player_hitbox, DIRECTION_UP, distance)));
-    }
     player->direction = DIRECTION_UP;
 
-    if (!player->collisions[DIRECTION_UP]) {
-      player_set_pos(player, player_pos(player).x, player_pos(player).y - distance);
-      walking = true;
-    }
+    player_move.y = -distance;
+    walking = true;
   }
   if (s) {
-    TilePos tile_pos = vec2i_add(player_tile_pos, vec2i(0, 0));
-    TileInstance *tile = world_tile_at(WORLD_PTR, tile_pos, TILE_LAYER_TOP);
-#ifdef SURTUR_DEBUG
-    CHECK_COLLISIONS_ENABLED(DIRECTION_DOWN)
-#endif
-    {
-      player->collisions[DIRECTION_DOWN] = tile->type.id != TILE_EMPTY &&
-          CheckCollisionRecs(tile_collision_box_at(tile, tile_pos.x * TILE_SIZE, tile_pos.y * TILE_SIZE),
-                             rec_offset_direction(player_hitbox, DIRECTION_DOWN, distance));
-    }
     player->direction = DIRECTION_DOWN;
 
-    if (!player->collisions[DIRECTION_DOWN]) {
-      player_set_pos(player, player_pos(player).x, player_pos(player).y + distance);
-      walking = true;
-    }
+    player_move.y = distance;
+    walking = true;
   }
   if (a) {
-    TilePos tile_pos = vec2i_add(player_tile_pos, vec2i(0, 0));
-    TileInstance *tile = world_tile_at(WORLD_PTR, tile_pos, TILE_LAYER_TOP);
-// TileInstance *tile_above = world_tile_at(WORLD_PTR, vec2i_add(tile_pos, vec2i(-1, -1)), TILE_LAYER_TOP);
-#ifdef SURTUR_DEBUG
-    CHECK_COLLISIONS_ENABLED(DIRECTION_LEFT)
-#endif
-    {
-      Rectf tile_box = rec_offset_direction(tile_collision_box_at(tile, tile_pos.x * TILE_SIZE, tile_pos.y * TILE_SIZE),
-                                            DIRECTION_LEFT, distance);
-
-      rec_draw_outline(tile_box, ORANGE);
-      player->collisions[DIRECTION_LEFT] = (tile->type.id != TILE_EMPTY && CheckCollisionRecs(player_hitbox, tile_box));
-    }
-    //||
-    //  (tile_above->type.id != TILE_EMPTY && CheckCollisionRecs(player->box, tile_above->box));
     player->direction = DIRECTION_LEFT;
 
-    if (!player->collisions[DIRECTION_LEFT]) {
-      player_set_pos(player, player_pos(player).x - distance, player_pos(player).y);
-      walking = true;
-    }
+    player_move.x = -distance;
+    walking = true;
   }
   if (d) {
-    TilePos tile_pos = vec2i_add(player_tile_pos, vec2i(0, 0));
-    TileInstance *tile = world_tile_at(&GAME.world, tile_pos, TILE_LAYER_TOP);
-
-#ifdef SURTUR_DEBUG
-    CHECK_COLLISIONS_ENABLED(DIRECTION_RIGHT)
-#endif
-    {
-      player->collisions[DIRECTION_RIGHT] =
-          (tile->type.id != TILE_EMPTY &&
-           CheckCollisionRecs(
-               player_hitbox,
-               rec_offset_direction(tile_collision_box_at(tile, tile_pos.x * TILE_SIZE, tile_pos.y * TILE_SIZE),
-                                    DIRECTION_RIGHT, distance)));
-    }
     player->direction = DIRECTION_RIGHT;
 
-    if (!player->collisions[DIRECTION_RIGHT]) {
-      player_set_pos(player, player_pos(player).x + distance, player_pos(player).y);
-      walking = true;
+    player_move.x = distance;
+    walking = true;
+  }
+
+  if (walking) {
+    player_pos_copy.x = player_pos(player).x + player_move.x;
+    player_pos_copy.y = player_pos(player).y + player_move.y;
+  }
+
+  if (walking) {
+    for (int y = -1; y < 1; y++) {
+      for (int x = -1; x < 1; x++) {
+        TilePos cur_pos = vec2i(player_tile_pos.x + x, player_tile_pos.y + y);
+        TileInstance *tile = world_tile_at(WORLD_PTR, cur_pos, TILE_LAYER_TOP);
+        if (tile->type.id != TILE_EMPTY) {
+          Rectf tile_box = rectf_from_dimf(cur_pos.x * TILE_SIZE, cur_pos.y * TILE_SIZE, tile->box);
+          if (CheckCollisionRecs(player_hitbox, tile_box)) {
+            if (player_move.x > 0) {
+              player_pos_copy.x = tile_box.x - player_hitbox.width;
+            }
+            if (player_move.x < 0) {
+              player_pos_copy.x = tile_box.x + tile_box.width;
+            }
+            if (player_move.y > 0) {
+              player_pos_copy.y = tile_box.y - player_hitbox.height;
+            }
+            if (player_move.y < 0) {
+              player_pos_copy.y = tile_box.y + tile_box.height;
+            }
+          break;
+          }
+        }
+      }
     }
   }
 
   player->walking = walking;
+
+  if (walking && ((fabs(player_pos(player).x - player_pos_copy.x) > 2) || fabs(player_pos(player).y - player_pos_copy.y) > 2)) {
+    player_set_pos(player, (int) player_pos_copy.x, (int) player_pos_copy.y);
+  }
 }
 
 Rectf player_collision_box(const Player *player) {

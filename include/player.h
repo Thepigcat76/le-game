@@ -16,7 +16,6 @@ typedef struct  {
   bool walking;
   bool in_water;
   TileInstance last_broken_tile;
-  bool collisions[DIRECTIONS_AMOUNT];
   // 0 - 64 ( / 16 for anim frames)
   int break_progress;
   TilePos break_tile_pos;

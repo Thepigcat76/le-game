@@ -305,9 +305,11 @@ void game_tick(Game *game) {
 
 // RENDERING
 
+#define BREAK_PROGRESS_FRAMES 6
+
 static void game_render_break_progress(Game *game, TilePos break_pos, int break_progress) {
   if (break_progress != -1) {
-    int index = floor_div(break_progress, 16);
+    int index = floor_div(break_progress, 64 / BREAK_PROGRESS_FRAMES);
     DrawTextureRec(BREAK_PROGRESS_TEXTURE, rectf(0, index * TILE_SIZE, TILE_SIZE, TILE_SIZE),
                    vec2f(break_pos.x * TILE_SIZE, break_pos.y * TILE_SIZE), WHITE);
     TraceLog(LOG_DEBUG, "Texture index: %d", index);
