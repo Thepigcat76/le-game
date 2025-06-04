@@ -2,6 +2,7 @@
 #include "../include/game.h"
 #include "../include/shared.h"
 #include "../include/ui.h"
+#include "../include/ui/ui_ecs.h"
 #include "raylib.h"
 #include <math.h>
 #include <stdbool.h>
@@ -91,6 +92,8 @@ int main(void) {
   game_set_menu(game, MENU_START);
 
   bool debug_menu = false;
+
+  ui_build();
 
   while (!WindowShouldClose()) {
     ui_renderer->cur_x = 0;
@@ -204,15 +207,16 @@ int main(void) {
         }
       }
 
-      EndDrawing();
+      ui_render();
+    }
+    EndDrawing();
 
-      for (int i = 0; i < TILE_TYPE_AMOUNT; i++) {
-        update_animation(&TILES[i], GetFrameTime());
-      }
+    for (int i = 0; i < TILE_TYPE_AMOUNT; i++) {
+      update_animation(&TILES[i], GetFrameTime());
+    }
 
-      TileInstance *tile_under_player = world_ground_tile_at(&game->world, game->player.tile_pos);
-      if (tile_under_player->type.id != TILE_EMPTY) {
-      }
+    TileInstance *tile_under_player = world_ground_tile_at(&game->world, game->player.tile_pos);
+    if (tile_under_player->type.id != TILE_EMPTY) {
     }
   }
 
