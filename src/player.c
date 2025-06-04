@@ -177,6 +177,8 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
   Vec2f player_move = vec2f(0, 0);
   Vec2f player_pos_copy = player_pos(player);
 
+  TraceLog(LOG_INFO, "Player Pos: x: %d, y: %d", (int) player_pos_copy.x, (int) player_pos_copy.y);
+
   if (w) {
     player->direction = DIRECTION_UP;
 
@@ -203,8 +205,11 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
   }
 
   if (walking) {
-    player_pos_copy.x = player_pos(player).x + player_move.x;
-    player_pos_copy.y = player_pos(player).y + player_move.y;
+    if (a || d) {
+      player_pos_copy.x = player_pos(player).x + player_move.x;
+    }
+    if (w || s)
+      player_pos_copy.y = player_pos(player).y + player_move.y;
   }
 
   if (walking) {
@@ -212,9 +217,10 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
       for (int x = -1; x < 1; x++) {
         TilePos cur_pos = vec2i(player_tile_pos.x + x, player_tile_pos.y + y);
         TileInstance *tile = world_tile_at(WORLD_PTR, cur_pos, TILE_LAYER_TOP);
-        if (tile->type.id != TILE_EMPTY) {
-          Rectf tile_box = rectf_from_dimf(cur_pos.x * TILE_SIZE, cur_pos.y * TILE_SIZE, tile->box);
+        if (tile->type.id != TILE_EMPTY && !(x == 0 && y == 0)) {
+          Rectf tile_box= tile_collision_box_at(tile, cur_pos.x * TILE_SIZE, cur_pos.y * TILE_SIZE);
           if (CheckCollisionRecs(player_hitbox, tile_box)) {
+            TraceLog(LOG_DEBUG, "Colliding");
             if (player_move.x > 0) {
               player_pos_copy.x = tile_box.x - player_hitbox.width;
             }
@@ -227,7 +233,7 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
             if (player_move.y < 0) {
               player_pos_copy.y = tile_box.y + tile_box.height;
             }
-          break;
+            break;
           }
         }
       }
@@ -236,8 +242,8 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
 
   player->walking = walking;
 
-  if (walking && ((fabs(player_pos(player).x - player_pos_copy.x) > 2) || fabs(player_pos(player).y - player_pos_copy.y) > 2)) {
-    player_set_pos(player, (int) player_pos_copy.x, (int) player_pos_copy.y);
+  if (walking) {
+    player_set_pos(player, player_pos_copy.x, player_pos_copy.y);
   }
 }
 

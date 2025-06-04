@@ -60,5 +60,6 @@ void debug_menu_render(UiRenderer *renderer, const Game *game) {
       renderer, GAME.debug_options.hitboxes_shown ? "Hitboxes: Shown" : "Hitboxes: Hidden", DEBUG_BUTTON_TEXTURE,
       DEBUG_BUTTON_SELECTED_TEXTURE, button_click_simple(debug_menu_hitboxes_button_clicked), vec2i(x_offset, y_offset),
       vec2i(120, 16));
+  ui_text_render(renderer, TextFormat("x: %d, y: %d"));
   // ui_text_input_render_dimensions(renderer, TEXT_INPUT_TEXTURE, &text_input_buffer, vec2i(128, 16));
 }

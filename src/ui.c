@@ -171,10 +171,30 @@ void ui_button_render_offset(UiRenderer *renderer, const char *text, Texture2D t
 // TEXT
 
 void ui_text_render_ex(UiRenderer *renderer, TextUiComponent component) {
-  renderer->cur_x = (renderer->context.screen_width - component.width) / 2;
+  float scale = renderer->cur_style.scale * ui_scale(renderer);
+  UiStyle style = renderer->cur_style;
+  switch (renderer->cur_style.alignment) {
+  case UI_VERTICAL: {
+    if (style.positions[0] == UI_CENTER || style.positions[1] == UI_CENTER) {
+      renderer->cur_x = (renderer->context.screen_width - component.width * scale) / 2;
+    }
+    renderer->cur_x += component.x_offset;
+    break;
+  }
+  case UI_HORIZONTAL: {
+    renderer->cur_x += component.x_offset;
+    break;
+  }
+  }
+
+  renderer->cur_x += component.x_offset;
+  renderer->cur_y += component.y_offset;
   if (!renderer->simulate) {
-    DrawText(component.text, renderer->cur_x + component.x_offset, renderer->cur_y + component.y_offset,
-             renderer->cur_style.font_scale, component.color);
+  int text_width = MeasureText(component.text, renderer->cur_style.font_scale);
+  float text_x = renderer->cur_x + component.x_offset + (float)(component.width * scale - text_width) / 2;
+  float text_y = renderer->cur_y + ((component.height * scale) / 2 - (float)renderer->cur_style.font_scale / 2) +
+      component.y_offset;
+  DrawText(component.text, text_x, text_y, renderer->cur_style.font_scale, WHITE);
   }
   // TODO: Move cur coordinate by dimension depdening on style
   // renderer->cur_x += component->dimensions.x + component->offset.x;
