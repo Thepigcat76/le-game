@@ -5,7 +5,7 @@
   (TileType){                                                                                                          \
       .id = tile_id,                                                                                                   \
       .texture_path = "res/assets/" texture_name ".png",                                                               \
-      .texture = LoadTexture("res/assets/" texture_name ".png"),                                                      \
+      .texture = adv_texture_load("res/assets/" texture_name ".png"),                                                      \
       .has_texture = true,                                                                                             \
       .is_solid = true,                                                                                                \
       .layer = TILE_LAYER_GROUND,                                                                                      \
@@ -23,7 +23,7 @@
   (TileType){                                                                                                          \
       .id = tile_id,                                                                                                   \
       .texture_path = "res/assets/" texture_name ".png",                                                               \
-      .texture = LoadTexture("res/assets/" texture_name ".png"),                                                      \
+      .texture = adv_texture_load("res/assets/" texture_name ".png"),                                                      \
       .has_texture = true,                                                                                             \
       .is_solid = true,                                                                                                \
       .layer = TILE_LAYER_GROUND,                                                                                      \

@@ -34,32 +34,50 @@ static void debug_menu_hitboxes_button_clicked() {
 }
 
 void debug_menu_render(UiRenderer *renderer, const Game *game) {
-  ui_setup(renderer,
-               (UiStyle){
-                   .positions = {UI_LEFT, UI_TOP},
-                   .alignment = UI_HORIZONTAL,
-                   .padding = 0,
-                   .scale = 0.75,
-                   .font_scale = CONFIG.default_font_size * 0.75,
-               });
+  UI_SETUP({
+               .positions = {UI_LEFT, UI_TOP},
+               .alignment = UI_HORIZONTAL,
+               .padding = 0,
+               .scale = 0.75,
+               .font_scale = CONFIG.default_font_size * 0.75,
+           });
 
   int x_offset = 0;
-  int y_offset = 4 + 1 * ui_scale(renderer);
+  int y_offset = 0;//4 + 1 * ui_scale(renderer);
 
-  ui_button_render_offset(renderer, "Items", DEBUG_BUTTON_TEXTURE, DEBUG_BUTTON_SELECTED_TEXTURE,
-                          button_click_simple(debug_menu_items_button_clicked), vec2i(x_offset, y_offset));
-  ui_button_render_offset(renderer, "Tiles", DEBUG_BUTTON_TEXTURE, DEBUG_BUTTON_SELECTED_TEXTURE,
-                          button_click_simple(debug_menu_tiles_button_clicked), vec2i(x_offset, y_offset));
-  ui_button_render_offset(renderer, "Beings", DEBUG_BUTTON_TEXTURE, DEBUG_BUTTON_SELECTED_TEXTURE,
-                          button_click_simple(debug_menu_beings_button_clicked), vec2i(x_offset, y_offset));
-  ui_button_render_dimensions_offset(
-      renderer, GAME.debug_options.collisions_enabled ? "Collisions: On" : "Collisions: Off", DEBUG_BUTTON_TEXTURE,
-      DEBUG_BUTTON_SELECTED_TEXTURE, button_click_simple(debug_menu_collisions_button_clicked),
-      vec2i(x_offset, y_offset), vec2i(100, 16));
-  ui_button_render_dimensions_offset(
-      renderer, GAME.debug_options.hitboxes_shown ? "Hitboxes: Shown" : "Hitboxes: Hidden", DEBUG_BUTTON_TEXTURE,
-      DEBUG_BUTTON_SELECTED_TEXTURE, button_click_simple(debug_menu_hitboxes_button_clicked), vec2i(x_offset, y_offset),
-      vec2i(120, 16));
-  ui_text_render(renderer, TextFormat("x: %d, y: %d"));
-  // ui_text_input_render_dimensions(renderer, TEXT_INPUT_TEXTURE, &text_input_buffer, vec2i(128, 16));
+  RENDER_BUTTON({.message = "Items",
+                 .texture = DEBUG_BUTTON_TEXTURE,
+                 .selected_texture = DEBUG_BUTTON_SELECTED_TEXTURE,
+                 .on_click_func = button_click_simple(debug_menu_items_button_clicked),
+                 .x_offset = x_offset,
+                 .y_offset = y_offset});
+  RENDER_BUTTON({.message = "Tiles",
+                 .texture = DEBUG_BUTTON_TEXTURE,
+                 .selected_texture = DEBUG_BUTTON_SELECTED_TEXTURE,
+                 .on_click_func = button_click_simple(debug_menu_tiles_button_clicked),
+                 .x_offset = x_offset,
+                 .y_offset = y_offset});
+  RENDER_BUTTON({.message = "Beings",
+                 .texture = DEBUG_BUTTON_TEXTURE,
+                 .selected_texture = DEBUG_BUTTON_SELECTED_TEXTURE,
+                 .on_click_func = button_click_simple(debug_menu_beings_button_clicked),
+                 .x_offset = x_offset,
+                 .y_offset = y_offset});
+  RENDER_BUTTON({.message = GAME.debug_options.collisions_enabled ? "Collisions: On" : "Collisions: Off",
+                 .texture = DEBUG_BUTTON_TEXTURE,
+                 .selected_texture = DEBUG_BUTTON_SELECTED_TEXTURE,
+                 .on_click_func = button_click_simple(debug_menu_collisions_button_clicked),
+                 .x_offset = x_offset,
+                 .y_offset = y_offset,
+                 .width = 100,
+                 .height = 16});
+  RENDER_BUTTON({.message = GAME.debug_options.hitboxes_shown ? "Hitboxes: Shown" : "Hitboxes: Hidden",
+                 .texture = DEBUG_BUTTON_TEXTURE,
+                 .selected_texture = DEBUG_BUTTON_SELECTED_TEXTURE,
+                 .on_click_func = button_click_simple(debug_menu_hitboxes_button_clicked),
+                 .x_offset = x_offset,
+                 .y_offset = y_offset,
+                 .width = 120,
+                 .height = 16});
+  RENDER_TEXT({.text = TextFormat("x: %d, y: %d"), .color = WHITE});
 }

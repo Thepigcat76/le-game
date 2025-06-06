@@ -16,6 +16,8 @@ typedef struct {
 static SaveNames SAVE_NAMES = {.adjectives_amount = 0, .nouns_amount = 0};
 
 void save_names_on_reload() {
+  SAVE_NAMES.adjectives_amount = 0;
+  SAVE_NAMES.nouns_amount = 0;
   for (int i = 0; i < SAVE_NAMES.adjectives_amount; i++) {
     free(SAVE_NAMES.adjectives[i]);
   }

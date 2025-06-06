@@ -3,7 +3,8 @@
 #include "data.h"
 #include "item.h"
 #include "shared.h"
-#include <raylib.h>
+#include "textures.h"
+#include "raylib.h"
 
 typedef enum {
   TILE_EMPTY,
@@ -29,7 +30,7 @@ typedef struct {
   TileId id;
   bool has_texture;
   char *texture_path;
-  Texture2D texture;
+  AdvTexture texture;
   bool is_solid;
   TileLayer layer;
   Color tile_color;
@@ -61,7 +62,7 @@ typedef struct {
   Data custom_data;
   TileTextureData texture_data;
   Rectangle cur_sprite_box;
-  Texture2D variant_texture;
+  AdvTexture variant_texture;
   int animation_frame;
 } TileInstance;
 
@@ -95,13 +96,13 @@ void tile_calc_sprite_box(TileInstance *tile);
 
 // X and Y params are only nessecary in tile sheets, otherwise you can just pass
 // in 0
-Texture2D *tile_variants_for_tile(const TileType *type, int x, int y);
+AdvTexture *tile_variants_for_tile(const TileType *type, int x, int y);
 
 int tile_variants_index_for_name(const char *texture_name, int x, int y);
 
 int tile_variants_amount_for_tile(const TileType *type, int x, int y);
 
-Texture2D *tile_variants_by_index(int i, int x, int y);
+AdvTexture *tile_variants_by_index(int i, int x, int y);
 
 int tile_variants_amount_by_index(int index, int x, int y);
 

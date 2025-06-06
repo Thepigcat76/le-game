@@ -1,5 +1,6 @@
 #include "../include/item.h"
 #include <raylib.h>
+#include <stdio.h>
 
 #define INIT_ITEM(src_file_name)                                                                                       \
   extern void src_file_name##_item_init();                                                                             \
@@ -34,5 +35,28 @@ char *item_type_to_string(const ItemType *type) {
     return "stone";
   default:
     return "NYI Item";
+  }
+}
+
+void item_tooltip(const ItemInstance *item, char *buf, size_t buf_capacity) {
+  switch (item->type.id) {
+  case ITEM_EMPTY: {
+    buf[0] = '\0';
+    break;
+  }
+  case ITEM_TORCH: {
+    snprintf(buf, buf_capacity, "Le Torch\nLe Sus");
+    break;
+  }
+  case ITEM_STICK:
+  case ITEM_HAMMER:
+  case ITEM_BACKPACK:
+  case ITEM_MAP:
+  case ITEM_PICKAXE:
+  case ITEM_GRASS:
+  case ITEM_STONE:
+  case ITEM_DIRT:
+    buf[0] = '\0';
+    break;
   }
 }

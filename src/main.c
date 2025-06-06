@@ -2,7 +2,6 @@
 #include "../include/game.h"
 #include "../include/shared.h"
 #include "../include/ui.h"
-#include "../include/ui/ui_ecs.h"
 #include "raylib.h"
 #include <math.h>
 #include <stdbool.h>
@@ -92,8 +91,6 @@ int main(void) {
   game_set_menu(game, MENU_START);
 
   bool debug_menu = false;
-
-  ui_build();
 
   while (!WindowShouldClose()) {
     ui_renderer->cur_x = 0;
@@ -192,11 +189,13 @@ int main(void) {
                            (Vector2){0, 0}, WHITE);
           }
           EndShaderMode();
-
-          game_render_overlay(game);
         }
 
         game_render_menu(game);
+
+        if (!game_cur_menu_hides_game(game)) {
+          game_render_overlay(game);
+        }
 
         if (game->player.held_item.type.id != ITEM_EMPTY) {
           HideCursor();
@@ -206,8 +205,6 @@ int main(void) {
           ShowCursor();
         }
       }
-
-      ui_render();
     }
     EndDrawing();
 
@@ -223,6 +220,8 @@ int main(void) {
   // animation_unload(&water_animation);
 
   UnloadShader(shader);
+
+  shaders_unload(&GAME.shader_manager);
 
   game_save_cur_save(game);
 

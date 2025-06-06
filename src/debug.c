@@ -85,6 +85,10 @@ void debug_render() {
     Rectangle player_hitbox = player_collision_box(&GAME.player);
     rec_draw_outline(player_hitbox, BLUE);
     rec_draw_outline(rectf(GAME.player.tile_pos.x * TILE_SIZE, GAME.player.tile_pos.y * TILE_SIZE, 16, 16), RED);
+
+    for (int i = 0; i < GAME.world.beings_amount; i++) {
+      rec_draw_outline(GAME.world.beings[i].context.box, WHITE);
+    }
   }
 }
 

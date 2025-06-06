@@ -177,8 +177,6 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
   Vec2f player_move = vec2f(0, 0);
   Vec2f player_pos_copy = player_pos(player);
 
-  TraceLog(LOG_INFO, "Player Pos: x: %d, y: %d", (int) player_pos_copy.x, (int) player_pos_copy.y);
-
   if (w) {
     player->direction = DIRECTION_UP;
 

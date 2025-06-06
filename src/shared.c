@@ -118,6 +118,15 @@ char *read_file_to_string(const char *filename) {
   return buffer;
 }
 
+int string_contains(const char *string, char c) {
+  int len = strlen( string);
+  int found = 0;
+  for (int i = 0; i < len; i++) {
+    if (string[i] == c) found++;
+  }
+  return found;
+}
+
 Vec2i vec2i(int x, int y) { return (Vec2i){.x = x, .y = y}; }
 
 Vec2f vec2f(float x, float y) { return (Vec2f){.x = x, .y = y}; }

@@ -109,6 +109,9 @@ char *read_file_to_string(const char *filename);
 
 bool string_starts_with(const char *str, const char *prefix);
 
+// RETURNS HOW OFTEN THE CHARACTER IS CONTAINED
+int string_contains(const char *string, char c);
+
 bool is_dir(const char *path);
 
 void rec_draw_outline(Rectf rec, Color color);

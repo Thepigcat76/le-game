@@ -81,14 +81,14 @@ Rectf tile_collision_box_at(const TileInstance *tile, int x, int y) {
 void tile_render_scaled(TileInstance *tile, int x, int y, float scale) {
   if (tile->type.has_texture) {
     if (tile->type.variant_index != -1) {
-      DrawTextureRecEx(tile->variant_texture, tile->cur_sprite_box, vec2f(x, y), 0, scale, WHITE);
+      DrawTextureRecEx(adv_texture_to_texture(tile->variant_texture), tile->cur_sprite_box, vec2f(x, y), 0, scale, WHITE);
     } else {
       Rectangle sprite_rect = tile->cur_sprite_box;
       if (tile->type.has_animation && tile->type.id == TILE_WATER) {
         int offset_y = 64 * TILE_ANIMATION_FRAMES[tile->type.id];
         sprite_rect.y += offset_y;
       }
-      DrawTextureRecEx(tile->type.texture, sprite_rect, vec2f(x, y), 0, scale, WHITE);
+      DrawTextureRecEx(adv_texture_to_texture(tile->type.texture), sprite_rect, vec2f(x, y), 0, scale, WHITE);
     }
   }
 }
@@ -96,7 +96,7 @@ void tile_render_scaled(TileInstance *tile, int x, int y, float scale) {
 void tile_render(TileInstance *tile, int x, int y) {
   if (tile->type.has_texture) {
     if (tile->type.variant_index != -1) {
-      DrawTextureRec(tile->variant_texture, tile->cur_sprite_box, vec2f(x, y), WHITE);
+      DrawTextureRec(adv_texture_to_texture(tile->variant_texture), tile->cur_sprite_box, vec2f(x, y), WHITE);
     } else {
       Rectangle sprite_rect = tile->cur_sprite_box;
       if (tile->type.has_animation && tile->type.id == TILE_WATER) {
@@ -104,7 +104,7 @@ void tile_render(TileInstance *tile, int x, int y) {
         sprite_rect.y += offset_y;
       }
       int offset_y = tile->type.tile_height - TILE_SIZE;
-      DrawTextureRec(tile->type.texture, sprite_rect, vec2f(x, y - offset_y), WHITE);
+      DrawTextureRec(adv_texture_to_texture(tile->type.texture), sprite_rect, vec2f(x, y - offset_y), WHITE);
 #ifdef SURTUR_DEBUG
 #include "../include/game.h"
       if (GAME.debug_options.hitboxes_shown && tile->type.layer == TILE_LAYER_TOP) {

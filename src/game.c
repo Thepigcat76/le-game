@@ -35,6 +35,7 @@ void game_reload(Game *game) {
   RELOAD(game, tile);
   RELOAD(game, config);
   RELOAD(game, save_names);
+  RELOAD(game, shaders);
 }
 
 Game GAME;
@@ -42,6 +43,7 @@ Music MUSIC;
 
 static Sound PLACE_SOUND;
 static Texture2D BREAK_PROGRESS_TEXTURE;
+static Texture2D TOOLTIP_TEXTURE;
 
 static void game_create_save_config(Game *game, int save_index, const char *save_name, float seed) {
   cJSON *json = cJSON_CreateObject();
@@ -95,6 +97,7 @@ void game_init(Game *game) {
   }
 
   BREAK_PROGRESS_TEXTURE = LoadTexture("res/assets/breaking_overlay.png");
+  TOOLTIP_TEXTURE = LoadTexture("res/assets/gui/tool_tip.png");
 
 #ifdef SURTUR_DEBUG
   debug_init();
@@ -252,6 +255,26 @@ static void handle_tile_interaction(Game *game) {
   }
 }
 
+static void handle_mouse_interaction(Game *game) {
+  bool being_clicked = false;
+  if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
+    for (int i = 0; i < game->world.beings_amount; i++) {
+      BeingInstance being = game->world.beings[i];
+      if (being.id == BEING_NPC &&
+          CheckCollisionPointRec(GetScreenToWorld2D(GetMousePosition(), game->player.cam), being.context.box)) {
+        game_set_menu(game, MENU_DIALOG);
+        TraceLog(LOG_DEBUG, "Clicked being");
+        being_clicked = true;
+        break;
+      }
+    }
+  }
+
+  if (!being_clicked) {
+    handle_tile_interaction(game);
+  }
+}
+
 static void handle_item_pickup(Game *game) {
   for (int i = 0; i < game->world.beings_amount; i++) {
     if (game->world.beings[i].id == BEING_ITEM &&
@@ -281,7 +304,7 @@ void game_tick(Game *game) {
     being_tick(&game->world.beings[i]);
   }
 
-  handle_tile_interaction(game);
+  handle_mouse_interaction(game);
 
   handle_item_pickup(game);
 
@@ -364,6 +387,36 @@ void game_render_overlay(Game *game) {
                      SELECTED_TILE_RENDER_POS.y - 60, 4);
   debug_render_overlay();
 #endif
+
+  if (game_slot_selected()) {
+    Vec2f mouse_pos = GetMousePosition();
+    if (mouse_pos.x + TOOLTIP_TEXTURE.width * 5 > GetScreenWidth()) {
+      mouse_pos.x -= TOOLTIP_TEXTURE.width * 5;
+    }
+    BeginShaderMode(game->shader_manager.shaders[SHADER_TOOLTIP_OUTLINE]);
+    {
+      SetShaderValue(game->shader_manager.shaders[SHADER_TOOLTIP_OUTLINE],
+                     GetShaderLocation(game->shader_manager.shaders[SHADER_TOOLTIP_OUTLINE], "resolution"),
+                     (float[2]){TOOLTIP_TEXTURE.width, TOOLTIP_TEXTURE.height}, SHADER_UNIFORM_VEC2);
+      DrawTextureEx(TOOLTIP_TEXTURE, mouse_pos, 0, 5, WHITE);
+    }
+    EndShaderMode();
+
+    int y_offset = 15;
+    char *name = item_type_to_string(&game->player.held_item.type);
+    DrawText(name, mouse_pos.x + ((float)TOOLTIP_TEXTURE.width * 5 - MeasureText(name, CONFIG.default_font_size)) / 2,
+             mouse_pos.y + y_offset, CONFIG.default_font_size, WHITE);
+    char tooltip[256];
+    item_tooltip(&game->player.held_item, tooltip, 256);
+    int count;
+    const char **tooltip_lines = TextSplit(tooltip, '\n', &count);
+    for (int i = 0; i < count; i++) {
+      DrawText(tooltip_lines[i],
+               mouse_pos.x +
+                   ((float)TOOLTIP_TEXTURE.width * 5 - MeasureText(tooltip_lines[i], CONFIG.default_font_size)) / 2,
+               mouse_pos.y + y_offset + (CONFIG.default_font_size * (i + 1)), CONFIG.default_font_size, WHITE);
+    }
+  }
 }
 
 // UI/MENUS
@@ -382,6 +435,7 @@ bool game_cur_menu_hides_game(Game *game) {
 
 static void game_init_menu(Game *game) {
   INIT_MENU(save_menu);
+  INIT_MENU(dialog_menu);
   // INIT_MENU(start_menu);
   // INIT_MENU(debug_menu);
 }
@@ -415,6 +469,10 @@ void game_render_menu(Game *game) {
   }
   case MENU_MAP: {
     RENDER_MENU(ui_renderer, map_menu);
+    break;
+  }
+  case MENU_DIALOG: {
+    RENDER_MENU(ui_renderer, dialog_menu);
     break;
   }
   case MENU_NONE: {
@@ -456,23 +514,23 @@ void game_set_menu(Game *game, MenuId menu_id) {
 
 // GAME LOAD/SAVE
 
-#define SAVE_DATA(save_file_name, byte_buf_size, byte_buf_name, block)                                                 \
+#define SAVE_DATA(save_file_name, byte_buf_size, byte_buf_name, ...)                                                   \
   {                                                                                                                    \
     uint8_t *byte_buf_name##_bytes = (uint8_t *)malloc(byte_buf_size);                                                 \
     ByteBuf byte_buf_name = {                                                                                          \
         .bytes = byte_buf_name##_bytes, .writer_index = 0, .reader_index = 0, .capacity = byte_buf_size};              \
-    block byte_buf_to_file(&byte_buf_name, TextFormat("save/save%d/" save_file_name ".bin", game->cur_save));          \
+    __VA_ARGS__ byte_buf_to_file(&byte_buf_name, TextFormat("save/save%d/" save_file_name ".bin", game->cur_save));    \
     TraceLog(LOG_INFO, "Saved " save_file_name " data, writer index: %d", byte_buf_name.writer_index);                 \
     free(byte_buf_name##_bytes);                                                                                       \
   }
 
-#define LOAD_DATA(save_file_name, byte_buf_size, byte_buf_name, block)                                                 \
+#define LOAD_DATA(save_file_name, byte_buf_size, byte_buf_name, ...)                                                   \
   {                                                                                                                    \
     uint8_t *byte_buf_name##_bytes = (uint8_t *)malloc(byte_buf_size);                                                 \
     ByteBuf byte_buf_name = {                                                                                          \
         .bytes = byte_buf_name##_bytes, .writer_index = 0, .reader_index = 0, .capacity = byte_buf_size};              \
     byte_buf_from_file(&byte_buf_name, TextFormat("save/save%d/" save_file_name ".bin", game->cur_save));              \
-    block TraceLog(LOG_INFO, "Loaded " save_file_name " data, reader index: %d", byte_buf_name.reader_index);          \
+    __VA_ARGS__ TraceLog(LOG_INFO, "Loaded " save_file_name " data, reader index: %d", byte_buf_name.reader_index);    \
     free(byte_buf_name##_bytes);                                                                                       \
   }
 

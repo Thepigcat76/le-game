@@ -1,7 +1,8 @@
 #pragma once
 
 #include "shared.h"
-#include <raylib.h>
+#include "raylib.h"
+#include <stdlib.h>
 
 typedef enum {
   ITEM_EMPTY,
@@ -41,6 +42,8 @@ void item_types_init();
 void item_render(const ItemInstance *item, int x, int y);
 
 char *item_type_to_string(const ItemType *type);
+
+void item_tooltip(const ItemInstance *item, char *buf, size_t buf_capacity);
 
 int item_break_speed(const ItemType *type);
 

@@ -1,7 +1,7 @@
+#include "../include/game.h"
 #include "../include/shared.h"
 #include "../include/tile.h"
 #include "../vendor/cJSON.h"
-#include "../include/game.h"
 #include <dirent.h>
 #include <raylib.h>
 #include <stdio.h>
@@ -178,7 +178,7 @@ int tile_default_sprite_resolution() { return CONNECTED_INFO.res; }
 // -- TEXTURE VARIANTS --
 
 typedef struct {
-  Texture2D *variants;
+  AdvTexture *variants;
   int variants_amount;
 } SingleTileVariant;
 
@@ -236,7 +236,7 @@ static void init_variant_info(char *meta_file_name, char *texture_file_name) {
           int path_max_len = sizeof(ASSETS_DIR) + strlen(element->valuestring) + 1;
           char path[path_max_len];
           snprintf(path, path_max_len, "%s%s", ASSETS_DIR, element->valuestring);
-          variant.var.single_tile_variant.variants[i] = LoadTexture(path);
+          variant.var.single_tile_variant.variants[i] = adv_texture_load(path);
         }
       }
       variant.var.single_tile_variant.variants_amount = len;
@@ -273,6 +273,9 @@ void tile_variants_free() {
     switch (VARIANT_INFO.variants[i].type) {
     case TILE_VARIANT_SINGLE:
       free(VARIANT_INFO.variants[i].var.single_tile_variant.variants);
+      for (int j = 0; j < VARIANT_INFO.variants[i].var.single_tile_variant.variants_amount; j++) {
+        adv_texture_unload(VARIANT_INFO.variants[i].var.single_tile_variant.variants[j]);
+      }
       break;
     case TILE_VARIANT_CONNECTED:
       break;
@@ -343,7 +346,7 @@ static void on_tile_variants_reload() {
   TraceLog(LOG_DEBUG, "Variants: %d", VARIANT_INFO.tiles_amount);
 }
 
-Texture2D *tile_variants_for_tile(const TileType *type, int x, int y) {
+AdvTexture *tile_variants_for_tile(const TileType *type, int x, int y) {
   return VARIANT_INFO.variants[type->variant_index].var.single_tile_variant.variants;
 }
 
@@ -357,7 +360,7 @@ int tile_variants_index_for_name(const char *texture_path, int x, int y) {
   return -1;
 }
 
-Texture2D *tile_variants_by_index(int index, int x, int y) {
+AdvTexture *tile_variants_by_index(int index, int x, int y) {
   return VARIANT_INFO.variants[index].var.single_tile_variant.variants;
 }
 
