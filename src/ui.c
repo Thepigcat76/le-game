@@ -129,7 +129,6 @@ void ui_button_render(UiRenderer *renderer, ButtonUiComponent component) {
   if (hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
     switch (component.on_click_func.func_type) {
     case BUTTON_CLICK_FUNC_NO_ARGS: {
-      TraceLog(LOG_DEBUG, "CLick no args");
       component.on_click_func.func_var.on_click_no_args();
       break;
     }
@@ -152,8 +151,6 @@ void ui_text_render(UiRenderer *renderer, TextUiComponent component) {
   int height = renderer->cur_style.font_scale;
   renderer->cur_x = (renderer->context.screen_width - width) / 2;
   if (!renderer->simulate) {
-    TraceLog(LOG_DEBUG, "Drawing text: %s at x: %d, y: %d, color: %d, %d, %d, %d", component.text, renderer->cur_x,
-             renderer->cur_y, component.color.a, component.color.r, component.color.g, component.color.b);
     DrawText(component.text, renderer->cur_x + component.x_offset, renderer->cur_y + component.y_offset,
              renderer->cur_style.font_scale, color);
   }
@@ -211,7 +208,6 @@ void ui_text_input_render(UiRenderer *renderer, TextInputUiComponent component) 
     KeyboardKey keycode_ch = GetCharPressed();
     if (keycode_ch != KEY_NULL) {
       char c = (char)keycode_ch;
-      TraceLog(LOG_INFO, "Text: %s", component.text_input->buf);
       if (component.text_input->len < component.text_input->max_len) {
         component.text_input->buf[component.text_input->len++] = c;
       }

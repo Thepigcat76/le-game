@@ -16,13 +16,17 @@ float frame_timer = 0;
 
 #define MAX_ANIMATIONS 2
 
-static void update_animation(const TileType *type, float deltaTime) {
-  frame_timer += deltaTime * 1000.0f; // to ms
-  float delay = 400;
-  if (frame_timer >= delay) {
-    frame_timer = 0.0f;
-    // TODO: Make the 2 dynamic
-    TILE_ANIMATION_FRAMES[type->id] = (TILE_ANIMATION_FRAMES[type->id] + 1) % MAX_ANIMATIONS;
+static void update_animations(void) {
+  for (int i = 0; i < ANIMATED_TEXTURES_LEN; i++) {
+    AnimatedTexture *texture = &ANIMATED_TEXTURES[i];
+    texture->frame_timer += GetFrameTime() * 1000.0f;
+    float delay = texture->texture.var.texture_animated.frame_time;
+    if (texture->frame_timer >= delay) {
+      int frames = texture->texture.var.texture_animated.frames;
+      TraceLog(LOG_DEBUG, "Updating animaion: cur frame: %d, frames: %d", texture->cur_frame, frames);
+      texture->cur_frame = (texture->cur_frame + 1) % frames;
+      texture->frame_timer = 0;
+    }
   }
 }
 
@@ -208,13 +212,7 @@ int main(void) {
     }
     EndDrawing();
 
-    for (int i = 0; i < TILE_TYPE_AMOUNT; i++) {
-      update_animation(&TILES[i], GetFrameTime());
-    }
-
-    TileInstance *tile_under_player = world_ground_tile_at(&game->world, game->player.tile_pos);
-    if (tile_under_player->type.id != TILE_EMPTY) {
-    }
+    update_animations();
   }
 
   // animation_unload(&water_animation);

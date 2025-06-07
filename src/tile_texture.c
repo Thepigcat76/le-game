@@ -228,7 +228,7 @@ static void init_variant_info(char *meta_file_name, char *texture_file_name) {
     cJSON *variants = cJSON_GetObjectItemCaseSensitive(json, "");
     if (cJSON_IsArray(variants)) {
       int len = cJSON_GetArraySize(variants);
-      variant.var.single_tile_variant.variants = malloc(len * sizeof(Texture2D));
+      variant.var.single_tile_variant.variants = malloc(len * sizeof(AdvTexture));
       variant.type = TILE_VARIANT_SINGLE;
       for (int i = 0; i < len; i++) {
         cJSON *element = cJSON_GetArrayItem(variants, i);
@@ -236,7 +236,7 @@ static void init_variant_info(char *meta_file_name, char *texture_file_name) {
           int path_max_len = sizeof(ASSETS_DIR) + strlen(element->valuestring) + 1;
           char path[path_max_len];
           snprintf(path, path_max_len, "%s%s", ASSETS_DIR, element->valuestring);
-          variant.var.single_tile_variant.variants[i] = adv_texture_load(path);
+         variant.var.single_tile_variant.variants[i] = adv_texture_load(path);
         }
       }
       variant.var.single_tile_variant.variants_amount = len;
