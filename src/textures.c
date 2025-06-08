@@ -11,24 +11,32 @@ AdvTexture adv_texture_load(const char *path) {
   int count;
   const char **text_parts = TextSplit(path, '.', &count);
   Texture2D texture = LoadTexture(path);
-  const char *anim_file_name = TextFormat("%s.anim", text_parts[0]);
+  const char *anim_file_name = TextFormat("%s_meta.json", text_parts[0]);
+  int frame_height = texture.width;
+  int frame_time = 1;
+  bool has_anim = false;
   if (FileExists(anim_file_name)) {
-    int frame_height = texture.width;
-    int frame_time = 1;
     {
       char *file_content = read_file_to_string(anim_file_name);
       cJSON *json = cJSON_Parse(file_content);
-      cJSON *frame_time_json = cJSON_GetObjectItemCaseSensitive(json, "frame-time");
-      cJSON *frame_height_json = cJSON_GetObjectItemCaseSensitive(json, "frame-height");
-      if (cJSON_IsNumber(frame_time_json)) {
-        frame_time = frame_time_json->valueint;
-      }
-      if (cJSON_IsNumber(frame_height_json)) {
-        frame_height = frame_height_json->valueint;
+      cJSON *animation_json = cJSON_GetObjectItemCaseSensitive(json, "animation");
+      if (cJSON_HasObjectItem(json, "animation")) {
+        has_anim = true;
+        cJSON *frame_time_json = cJSON_GetObjectItemCaseSensitive(animation_json, "frame-time");
+        cJSON *frame_height_json = cJSON_GetObjectItemCaseSensitive(animation_json, "frame-height");
+        if (cJSON_IsNumber(frame_time_json)) {
+          frame_time = frame_time_json->valueint;
+        }
+        if (cJSON_IsNumber(frame_height_json)) {
+          frame_height = frame_height_json->valueint;
+        }
       }
       cJSON_Delete(json);
       free(file_content);
     }
+  }
+
+  if (has_anim) {
     AdvTexture adv_texture = (AdvTexture){.type = TEXTURE_ANIMATED,
                                           .var = {.texture_animated = {.texture = texture,
                                                                        .animated_texture_id = ANIMATED_TEXTURES_LEN,

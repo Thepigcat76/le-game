@@ -214,19 +214,13 @@ static void debug_variant_info() {
   }
 }
 
-static void init_variant_info(char *meta_file_name, char *texture_file_name) {
+static void init_variant_info(cJSON *meta_json, char *texture_file_name) {
   TileVariant variant;
 
-  char *file = read_file_to_string(meta_file_name);
-  cJSON *json = cJSON_Parse(file);
-  if (json == NULL) {
-    printf("Error parsing JSON\n");
-    exit(1);
-  }
-
-  if (cJSON_HasObjectItem(json, "")) {
-    cJSON *variants = cJSON_GetObjectItemCaseSensitive(json, "");
+  if (cJSON_HasObjectItem(meta_json, "variants")) {
+    cJSON *variants = cJSON_GetObjectItemCaseSensitive(meta_json, "variants");
     if (cJSON_IsArray(variants)) {
+      TraceLog(LOG_DEBUG, "Loaded variants");
       int len = cJSON_GetArraySize(variants);
       variant.var.single_tile_variant.variants = malloc(len * sizeof(AdvTexture));
       variant.type = TILE_VARIANT_SINGLE;
@@ -236,12 +230,15 @@ static void init_variant_info(char *meta_file_name, char *texture_file_name) {
           int path_max_len = sizeof(ASSETS_DIR) + strlen(element->valuestring) + 1;
           char path[path_max_len];
           snprintf(path, path_max_len, "%s%s", ASSETS_DIR, element->valuestring);
-         variant.var.single_tile_variant.variants[i] = adv_texture_load(path);
+          variant.var.single_tile_variant.variants[i] = adv_texture_load(path);
         }
       }
       variant.var.single_tile_variant.variants_amount = len;
+    } else {
+      variant.var.single_tile_variant.variants_amount = 0;
     }
   } else {
+    return;
   }
 
   int variant_index = -1;
@@ -262,9 +259,6 @@ static void init_variant_info(char *meta_file_name, char *texture_file_name) {
   } else {
     VARIANT_INFO.variants[variant_index] = variant;
   }
-
-  cJSON_Delete(json);
-  free(file);
 }
 
 void tile_variants_free() {
@@ -272,10 +266,10 @@ void tile_variants_free() {
     free(VARIANT_INFO.tile_texture_names[i]);
     switch (VARIANT_INFO.variants[i].type) {
     case TILE_VARIANT_SINGLE:
-      free(VARIANT_INFO.variants[i].var.single_tile_variant.variants);
       for (int j = 0; j < VARIANT_INFO.variants[i].var.single_tile_variant.variants_amount; j++) {
         adv_texture_unload(VARIANT_INFO.variants[i].var.single_tile_variant.variants[j]);
       }
+      free(VARIANT_INFO.variants[i].var.single_tile_variant.variants);
       break;
     case TILE_VARIANT_CONNECTED:
       break;
@@ -287,7 +281,6 @@ void tile_variants_free() {
 static void init_tile_variants() {
   struct dirent *entry;
   DIR *dir = opendir(ASSETS_DIR);
-
   if (dir == NULL) {
     perror("opendir");
     exit(1);
@@ -299,36 +292,30 @@ static void init_tile_variants() {
     }
 
     const char *file_ext = GetFileExtension(entry->d_name);
-    if (file_ext != NULL && strcmp(file_ext, ".json") == 0) {
-      char file_path[PATH_MAX];
-      snprintf(file_path, PATH_MAX, "%s%s", ASSETS_DIR, entry->d_name);
+    if (file_ext == NULL || strcmp(file_ext, ".png") != 0) {
+      continue;
+    }
 
-      const char *suffix = "_meta.json";
-      size_t file_name_len = strlen(file_path);
-      size_t suffix_len = STR_LIT_LEN("_meta.json");
+    TraceLog(LOG_DEBUG, "File name: %s", entry->d_name);
 
-      if (file_name_len < suffix_len || strcmp(file_path + file_name_len - suffix_len, suffix) != 0) {
-        fprintf(stderr, "Invalid meta filename: %s\n", file_path);
-        continue;
+    int count;
+    const char **string_parts = TextSplit(entry->d_name, '.', &count);
+    char meta_file_name[256];
+    snprintf(meta_file_name, 256, "%s_meta.json", string_parts[0]);
+    char meta_file_path[256];
+    snprintf(meta_file_path, 256, "%s%s", ASSETS_DIR, meta_file_name);
+    if (FileExists(meta_file_path)) {
+      TraceLog(LOG_DEBUG, "Meta file name: %s", meta_file_path);
+      char *meta_file_content = read_file_to_string(meta_file_path);
+      cJSON *meta_json = cJSON_Parse(meta_file_content);
+      {
+        char texture_path[512];
+        snprintf(texture_path, 512, "%s%s", ASSETS_DIR, entry->d_name);
+        TraceLog(LOG_DEBUG, "Variant texture path: %s", texture_path);
+        init_variant_info(meta_json, texture_path);
       }
-
-      size_t base_len = file_name_len - suffix_len;
-      const char *png_ext = ".png";
-      size_t total_len = base_len + STR_LIT_LEN(".png") + 1;
-
-      char *texture_file_name = malloc(total_len);
-      if (!texture_file_name) {
-        perror("malloc");
-        exit(1);
-      }
-
-      memcpy(texture_file_name, file_path, base_len);
-      memcpy(texture_file_name + base_len, png_ext, STR_LIT_LEN(".png"));
-      texture_file_name[total_len - 1] = '\0';
-
-      init_variant_info(file_path, texture_file_name);
-
-      free(texture_file_name);
+      free(meta_file_content);
+      cJSON_Delete(meta_json);
     }
   }
 

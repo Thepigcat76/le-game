@@ -79,7 +79,8 @@ bool string_starts_with(const char *str, const char *prefix) { return strncmp(st
 char *read_file_to_string(const char *filename) {
   FILE *file = fopen(filename, "rb");
   if (file == NULL) {
-    perror("Error opening file");
+    fprintf(stderr, "Error opening file %s - ", filename);
+    perror("");
     return NULL;
   }
 

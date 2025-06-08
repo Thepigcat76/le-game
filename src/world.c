@@ -247,8 +247,8 @@ void world_render_layer(World *world, TileLayer layer) {
     if (layer == TILE_LAYER_GROUND) {
       for (int y = chunk_y; y < chunk_y + CHUNK_SIZE; y++) {
         for (int x = chunk_x; x < chunk_x + CHUNK_SIZE; x++) {
-          DrawTexture(adv_texture_to_texture(&tile_variants_by_index(chunk->variant_index, 0,
-                                             0)[chunk->background_texture_variants[y - chunk_y][x - chunk_x]]),
+          DrawTexture(adv_texture_to_texture(&tile_variants_by_index(
+                          chunk->variant_index, 0, 0)[chunk->background_texture_variants[y - chunk_y][x - chunk_x]]),
                       x * TILE_SIZE, y * TILE_SIZE, WHITE);
         }
       }
@@ -287,6 +287,8 @@ void world_render_layer_top_split(World *world, void *_player, bool draw_before_
 
         if (should_draw) {
           tile_render(tile, world_x * TILE_SIZE, world_y * TILE_SIZE);
+
+          rec_draw_outline(TILE_BOX, ORANGE);
         }
       }
     }

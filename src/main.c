@@ -23,7 +23,6 @@ static void update_animations(void) {
     float delay = texture->texture.var.texture_animated.frame_time;
     if (texture->frame_timer >= delay) {
       int frames = texture->texture.var.texture_animated.frames;
-      TraceLog(LOG_DEBUG, "Updating animaion: cur frame: %d, frames: %d", texture->cur_frame, frames);
       texture->cur_frame = (texture->cur_frame + 1) % frames;
       texture->frame_timer = 0;
     }

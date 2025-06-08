@@ -28,6 +28,8 @@ typedef struct  {
   ItemInstance held_item;
 } Player;
 
+extern Rectf TILE_BOX;
+
 Player player_new();
 
 Rectf player_collision_box(const Player *player);

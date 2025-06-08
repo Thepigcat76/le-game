@@ -10,6 +10,8 @@
 
 Texture2D particle_texture0;
 
+static Rectf TILE_BOX = {};
+
 Player player_new() {
   particle_texture0 = LoadTexture("res/assets/walk_particles.png");
   return (Player){.cam = camera_new(SCREEN_WIDTH, SCREEN_HEIGHT),
@@ -72,6 +74,8 @@ void player_render(Player *player) {
                              .width = 16 * scale,
                              .height = (player->in_water ? 24 : 32) * scale},
                  (Vector2){.x = 8 * scale, .y = 16 * scale}, 0, WHITE);
+
+  rec_draw_outline(TILE_BOX, ORANGE);
 
   if (player->walking) {
     update_animation(player, GetFrameTime());
