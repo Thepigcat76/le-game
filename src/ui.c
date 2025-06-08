@@ -149,7 +149,15 @@ void ui_text_render(UiRenderer *renderer, TextUiComponent component) {
   }
   int width = MeasureText(component.text, renderer->cur_style.font_scale);
   int height = renderer->cur_style.font_scale;
-  renderer->cur_x = (renderer->context.screen_width - width) / 2;
+  switch (renderer->cur_style.alignment) {
+  case UI_HORIZONTAL: {
+    break;
+  }
+  case UI_VERTICAL: {
+    renderer->cur_x = (renderer->context.screen_width - width) / 2;
+    break;
+  }
+  }
   if (!renderer->simulate) {
     DrawText(component.text, renderer->cur_x + component.x_offset, renderer->cur_y + component.y_offset,
              renderer->cur_style.font_scale, color);

@@ -280,15 +280,13 @@ void world_render_layer_top_split(World *world, void *_player, bool draw_before_
         int world_x = chunk_x + x;
 
         TileInstance *tile = &chunk->tiles[y][x][TILE_LAYER_TOP];
-        float tile_screen_y = (world_y + 1) * TILE_SIZE;
+        float tile_screen_y = (world_y + 0) * TILE_SIZE;
 
         bool should_draw = (tile_screen_y <= player_feet_y && draw_before_player) ||
             (tile_screen_y > player_feet_y && !draw_before_player);
 
         if (should_draw) {
           tile_render(tile, world_x * TILE_SIZE, world_y * TILE_SIZE);
-
-          rec_draw_outline(TILE_BOX, ORANGE);
         }
       }
     }

@@ -1,5 +1,6 @@
 #include "../../include/tile.h"
 #include <raylib.h>
+#include <stdbool.h>
 
 void workstation_tile_init() {
   TileType type = {

@@ -10,8 +10,6 @@
 
 Texture2D particle_texture0;
 
-static Rectf TILE_BOX = {};
-
 Player player_new() {
   particle_texture0 = LoadTexture("res/assets/walk_particles.png");
   return (Player){.cam = camera_new(SCREEN_WIDTH, SCREEN_HEIGHT),
@@ -27,7 +25,7 @@ Player player_new() {
                   .animation_frame = 0,
                   .frame_timer = 0,
                   .held_item = {.type = ITEMS[ITEM_GRASS]},
-                  .box = {.x = 0, .y = 20, .width = 16, .height = 12},
+                  .box = {.x = 0, .y = 20, .width = 16, .height = 8},
                   .chunk_pos = vec2i(0, 0),
                   .tile_pos = vec2i(0, 0),
                   .break_progress = -1,
@@ -74,8 +72,6 @@ void player_render(Player *player) {
                              .width = 16 * scale,
                              .height = (player->in_water ? 24 : 32) * scale},
                  (Vector2){.x = 8 * scale, .y = 16 * scale}, 0, WHITE);
-
-  rec_draw_outline(TILE_BOX, ORANGE);
 
   if (player->walking) {
     update_animation(player, GetFrameTime());
@@ -168,6 +164,47 @@ Rectangle rec_offset_direction(Rectangle rec, Direction direction, int32_t dista
   }
 }
 
+static void check_collisions(const Player *player, Vec2f *player_pos, Vec2f player_move, TilePos player_tile_pos,
+                             bool move_x) {
+  Rectf player_hitbox = player_collision_box(player);
+  if (move_x) {
+    player_hitbox.x += player_move.x;
+  } else {
+    player_hitbox.y += player_move.y;
+  }
+  for (int y = -1; y <= 1; y++) {
+    for (int x = -1; x <= 1; x++) {
+      TilePos tile_pos = vec2i(player_tile_pos.x + x, player_tile_pos.y + y);
+      TileInstance *tile = world_tile_at(WORLD_PTR, tile_pos, TILE_LAYER_TOP);
+      if (tile->type.id != TILE_EMPTY) {
+        Rectf tile_box = tile_collision_box_at(tile, tile_pos.x * TILE_SIZE, tile_pos.y * TILE_SIZE);
+
+        if (CheckCollisionRecs(player_hitbox, tile_box)) {
+          if (move_x) {
+            if (player_move.x < 0) {
+              player_pos->x = tile_box.x + tile_box.width;
+            }
+
+            if (player_move.x > 0) {
+              player_pos->x = (tile_pos.x * TILE_SIZE) - player_hitbox.width;
+            }
+          } else {
+            if (player_move.y < 0) {
+              player_pos->y = (tile_pos.y * TILE_SIZE) - 8;
+            }
+
+            if (player_move.y > 0) {
+              player_pos->y = (tile_pos.y * TILE_SIZE) - 24;
+            }
+          }
+
+          break;
+        }
+      }
+    }
+  }
+}
+
 void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
   Camera2D *cam = &player->cam;
 
@@ -176,7 +213,6 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
   bool walking = false;
 
   TilePos player_tile_pos = player->tile_pos;
-  Rectangle player_hitbox = player_collision_box(player);
 
   Vec2f player_move = vec2f(0, 0);
   Vec2f player_pos_copy = player_pos(player);
@@ -214,32 +250,9 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
       player_pos_copy.y = player_pos(player).y + player_move.y;
   }
 
-  if (walking) {
-    for (int y = -1; y < 1; y++) {
-      for (int x = -1; x < 1; x++) {
-        TilePos cur_pos = vec2i(player_tile_pos.x + x, player_tile_pos.y + y);
-        TileInstance *tile = world_tile_at(WORLD_PTR, cur_pos, TILE_LAYER_TOP);
-        if (tile->type.id != TILE_EMPTY && !(x == 0 && y == 0)) {
-          Rectf tile_box= tile_collision_box_at(tile, cur_pos.x * TILE_SIZE, cur_pos.y * TILE_SIZE);
-          if (CheckCollisionRecs(player_hitbox, tile_box)) {
-            TraceLog(LOG_DEBUG, "Colliding");
-            if (player_move.x > 0) {
-              player_pos_copy.x = tile_box.x - player_hitbox.width;
-            }
-            if (player_move.x < 0) {
-              player_pos_copy.x = tile_box.x + tile_box.width;
-            }
-            if (player_move.y > 0) {
-              player_pos_copy.y = tile_box.y - player_hitbox.height;
-            }
-            if (player_move.y < 0) {
-              player_pos_copy.y = tile_box.y + tile_box.height;
-            }
-            break;
-          }
-        }
-      }
-    }
+  if (GAME.debug_options.collisions_enabled) {
+    check_collisions(player, &player_pos_copy, player_move, player_tile_pos, true);
+    check_collisions(player, &player_pos_copy, player_move, player_tile_pos, false);
   }
 
   player->walking = walking;
@@ -250,7 +263,7 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
 }
 
 Rectf player_collision_box(const Player *player) {
-  return rectf(player->box.x, player->box.y + 20, player->box.width, player->box.height);
+  return rectf(player->box.x, player->box.y + 24, player->box.width, player->box.height);
 }
 
 void player_load(Player *player, DataMap *map) {
