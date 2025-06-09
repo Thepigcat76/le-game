@@ -18,6 +18,8 @@ typedef struct  {
   TileInstance last_broken_tile;
   // 0 - 64 ( / 16 for anim frames)
   int break_progress;
+  // Tile player is currently breaking
+  TileInstance break_tile;
   TilePos break_tile_pos;
 
   // PLAYER DATA

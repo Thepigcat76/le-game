@@ -110,12 +110,16 @@ static void being_go_to(BeingInstance *being, Vec2f pos) {
   }
 }
 
-static void being_activity_walk_around(BeingInstance *being, BeingActivityWalkAround *activity) {
+static void being_activity_go_to_pos(BeingInstance *being, BeingActivityGoToPosition *activity) {
   being_go_to(being, activity->target_position);
 }
 
-static void being_activity_go_to_pos(BeingInstance *being, BeingActivityGoToPosition *activity) {
-  being_go_to(being, activity->target_position);
+static void being_activity_find_next_pos(BeingInstance *being, BeingActivityWalkAround *activity) {
+
+}
+
+static void being_activity_walk_around(BeingInstance *being, BeingActivityWalkAround *activity) {
+  being_go_to(being, activity->cur_target_pos);
 }
 
 void being_activity_tick(BeingInstance *being, BeingActivity *activity) {
@@ -200,6 +204,17 @@ void being_brain_reset(BeingInstance *being) {
   BeingBrain *brain = &being->brain;
   brain->activities_amount = 0;
   brain->memories_amount = 0;
+}
+
+void being_activity_init(BeingInstance *being, BeingActivity *activity) {
+  switch (activity->type) {
+  case BEING_ACTIVITY_WALK_AROUND: {
+    activity->var.activity_walk_around.prev_target_pos = vec2f(being->context.box.x, being->context.box.y);
+    break;
+  }
+  default:
+    break;
+  }
 }
 
 void being_add_activity(BeingInstance *being, BeingActivity activity) {

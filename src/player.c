@@ -186,15 +186,15 @@ static void check_collisions(const Player *player, Vec2f *player_pos, Vec2f play
             }
 
             if (player_move.x > 0) {
-              player_pos->x = (tile_pos.x * TILE_SIZE) - player_hitbox.width;
+              player_pos->x = tile_box.x - player_hitbox.width;
             }
           } else {
             if (player_move.y < 0) {
-              player_pos->y = (tile_pos.y * TILE_SIZE) - 8;
+              player_pos->y = tile_box.y + tile_box.height - (32 - player_hitbox.height);
             }
 
             if (player_move.y > 0) {
-              player_pos->y = (tile_pos.y * TILE_SIZE) - 24;
+              player_pos->y = tile_box.y - 32;
             }
           }
 

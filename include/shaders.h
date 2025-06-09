@@ -3,17 +3,12 @@
 #include "raylib.h"
 #include <stdlib.h>
 
-#define SHADERS_AMOUNT 2
-
-typedef enum {
-  SHADER_FRAGMENT,
-  SHADER_VERTEX,
-  SHADER_BOTH,
-} ShaderType;
+#define SHADERS_AMOUNT 3
 
 typedef enum {
   SHADER_LIGHTING,
   SHADER_TOOLTIP_OUTLINE,
+  SHADER_TILE_OUTLINE,
 } ShaderId;
 
 typedef struct {

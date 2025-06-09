@@ -1,8 +1,10 @@
+#include "../include/camera.h"
 #include "../include/config.h"
 #include "../include/game.h"
 #include "../include/shared.h"
 #include "../include/ui.h"
 #include "raylib.h"
+#include "rlgl.h"
 #include <math.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -58,7 +60,10 @@ int main(void) {
                                   .game_features_capacity = MAX_GAME_FEATURES_AMOUNT},
                 .sound_manager = {.cur_sound = 0, .sound_timer = 0},
                 .particle_manager = {},
-                .shader_manager = {}};
+                .shader_manager = {},
+                .tile_category_lookup = {}};
+
+  tile_categories_init();
 
   Game *game = &GAME;
 
@@ -109,6 +114,8 @@ int main(void) {
       prevHeight = height;
 
       world_texture = LoadRenderTexture(width, height);
+
+      camera_focus(&game->player.cam);
     }
 
     if (!game->paused) {

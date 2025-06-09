@@ -3,7 +3,8 @@
 #include "../shared.h"
 
 typedef struct {
-    Vec2f target_position;
+    Vec2f prev_target_pos;
+    Vec2f cur_target_pos;
 } BeingActivityWalkAround;
 
 typedef struct {

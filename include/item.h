@@ -2,6 +2,7 @@
 
 #include "shared.h"
 #include "raylib.h"
+#include "tile_category.h"
 #include <stdlib.h>
 
 typedef enum {
@@ -21,6 +22,8 @@ typedef enum {
 typedef struct {
   int attack_damage;
   int break_speed;
+  TileCategory break_categories[TILE_CATEGORIES_AMOUNT];
+  size_t break_categories_amount;
 } ToolProperties;
 
 typedef struct {

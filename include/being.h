@@ -93,6 +93,8 @@ void being_activity_tick(BeingInstance *being, BeingActivity *activity);
 
 void being_brain_reset(BeingInstance *being);
 
+void being_activity_init(BeingInstance *being, BeingActivity *activity);
+
 void being_add_activity(BeingInstance *being, BeingActivity activity);
 
 void being_add_memory(BeingInstance *being, BeingMemory memory);

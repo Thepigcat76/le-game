@@ -14,6 +14,7 @@ void workstation_tile_init() {
       .tile_width = 16,
       .tile_height = 32,
       .tile_item = NULL,
+      .break_time = 64,
 
       .is_ticking = false,
       .stores_custom_data = false,
@@ -35,6 +36,7 @@ void oven_tile_init() {
       .tile_width = 16,
       .tile_height = 48,
       .tile_item = NULL,
+      .break_time = 64,
 
       .is_ticking = false,
       .stores_custom_data = false,
@@ -56,6 +58,7 @@ void tree_tile_init() {
       .tile_width = 48,
       .tile_height = 80,
       .tile_item = NULL,
+      .break_time = 256,
 
       .is_ticking = false,
       .stores_custom_data = false,

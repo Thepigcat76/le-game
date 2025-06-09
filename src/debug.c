@@ -37,11 +37,11 @@ static void debug_render_game_object_overlay() {
   case DEBUG_DISPLAY_ALL_TILES: {
     GAME.paused = true;
     for (int i = 0; i < TILE_TYPE_AMOUNT; i++) {
-      double x = ((float)SCREEN_WIDTH / 2) - (ITEM_TYPE_AMOUNT * 16 * 3.5) / 2 + (i * 20 * 3.5);
+      double x = ((float)SCREEN_WIDTH / 2) - (ITEM_TYPE_AMOUNT * 16 * 3.5) / 2 + (i * 32 * 3.5);
       double y = ((float)SCREEN_HEIGHT / 2) - 8 * 3.5;
       TileInstance tile = tile_new(TILES[i]);
-      tile_render_scaled(&tile, SELECTED_TILE_RENDER_POS.x + 35, SELECTED_TILE_RENDER_POS.y - 60, 3.5);
-      Rectf tile_box = rectf(x + TILE_SIZE * 3, y - TILE_SIZE * 2, TILE_SIZE * 3.5, TILE_SIZE * 3.5);
+      tile_render_scaled(&tile, x - 160, y, 3.5);
+      Rectf tile_box = rectf(x - 185, y - TILE_SIZE * 2, TILE_SIZE * 3.5, TILE_SIZE * 3.5);
       rec_draw_outline(tile_box, WHITE);
       if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && CheckCollisionPointRec(GetMousePosition(), tile_box)) {
         GAME.debug_options.selected_tile_to_place_instance = tile_new(tile.type);

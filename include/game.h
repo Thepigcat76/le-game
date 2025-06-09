@@ -11,6 +11,7 @@
 #include "shaders.h"
 #include "shared.h"
 #include "sounds.h"
+#include "tile.h"
 #include "ui.h"
 #include "world.h"
 
@@ -37,6 +38,8 @@ typedef struct _game {
   SoundManager sound_manager;
   // SHADERS
   ShaderManager shader_manager;
+  // TILE CATEGORIES
+  TileCategoryLookup tile_category_lookup;
   // DEBUGGING
   DebugOptions debug_options;
 } Game;

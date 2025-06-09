@@ -2,9 +2,10 @@
 
 #include "data.h"
 #include "item.h"
+#include "tile_category.h"
+#include "raylib.h"
 #include "shared.h"
 #include "textures.h"
-#include "raylib.h"
 
 typedef enum {
   TILE_EMPTY,
@@ -36,6 +37,7 @@ typedef struct {
   Color tile_color;
   int tile_width;
   int tile_height;
+  int break_time;
   ItemType *tile_item;
 
   // ADVANCED TILE PROPERTIES
@@ -72,11 +74,17 @@ TileInstance tile_new(TileType type);
 
 Rectf tile_collision_box_at(const TileInstance *tile, int x, int y);
 
+Dimensionsf tile_collision_dimensions_at(const TileInstance *tile);
+
+Vec2f tile_collision_offset_at(const TileInstance *tile);
+
 void tile_render(TileInstance *tile, int x, int y);
 
 void tile_render_scaled(TileInstance *tile, int x, int y, float scale);
 
 void tile_right_click(TileInstance *tile);
+
+TileInstance tile_break_remainder(const TileInstance *tile, TilePos pos);
 
 void tile_tick(TileInstance *tile);
 
@@ -107,3 +115,20 @@ AdvTexture *tile_variants_by_index(int i, int x, int y);
 int tile_variants_amount_by_index(int index, int x, int y);
 
 void tile_variants_free();
+
+// TILE CATEGORIES
+
+typedef struct {
+  struct _category_lookup_tile {
+    TileId id;
+    bool present;
+  } tiles[TILE_TYPE_AMOUNT];
+  struct _category_lookup_category {
+    TileCategory categories[TILE_CATEGORIES_AMOUNT];
+    size_t categories_amount;
+  } tiles_categories[TILE_TYPE_AMOUNT];
+} TileCategoryLookup;
+
+void tile_categories_init(void);
+
+TileCategory *tile_categories(const TileType *tile);

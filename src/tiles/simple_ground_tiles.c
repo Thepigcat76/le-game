@@ -1,7 +1,7 @@
 #include "../../include/tile.h"
 #include <raylib.h>
 
-#define SIMPLE_GROUND_TILE(tile_id, texture_name, tile_color_0, item_type_ptr)                                         \
+#define SIMPLE_GROUND_TILE(tile_id, texture_name, tile_color_0, break_time_, item_type_ptr)                                         \
   (TileType){                                                                                                          \
       .id = tile_id,                                                                                                   \
       .texture_path = "res/assets/" texture_name ".png",                                                               \
@@ -13,13 +13,14 @@
       .tile_width = TILE_SIZE,                                                                                         \
       .tile_height = TILE_SIZE,                                                                                        \
       .tile_item = item_type_ptr,                                                                                      \
+      .break_time = break_time_,                                                                                           \
       .is_ticking = false,                                                                                             \
       .stores_custom_data = false,                                                                                     \
       .uses_tileset = false,                                                                                           \
       .has_animation = false,                                                                                          \
   };
 
-#define SIMPLE_TILED_GROUND_TILE(tile_id, texture_name, tile_color_0, item_type_ptr)                                   \
+#define SIMPLE_TILED_GROUND_TILE(tile_id, texture_name, tile_color_0, break_time_, item_type_ptr)                                   \
   (TileType){                                                                                                          \
       .id = tile_id,                                                                                                   \
       .texture_path = "res/assets/" texture_name ".png",                                                               \
@@ -31,6 +32,7 @@
       .tile_width = TILE_SIZE,                                                                                         \
       .tile_height = TILE_SIZE,                                                                                        \
       .tile_item = item_type_ptr,                                                                                      \
+      .break_time = break_time_,                                                                                           \
       .is_ticking = false,                                                                                             \
       .stores_custom_data = false,                                                                                     \
       .uses_tileset = true,                                                                                            \
@@ -59,21 +61,21 @@ void empty_tile_init() {
 }
 
 void dirt_tile_init() {
-  TileType type = SIMPLE_TILED_GROUND_TILE(TILE_DIRT, "lighter_dirt_tiles", BROWN, &ITEMS[ITEM_DIRT]);
+  TileType type = SIMPLE_TILED_GROUND_TILE(TILE_DIRT, "lighter_dirt_tiles", BROWN, 64, &ITEMS[ITEM_DIRT]);
   TILES[type.id] = type;
 }
 
 void grass_tile_init() {
-  TileType type = SIMPLE_TILED_GROUND_TILE(TILE_GRASS, "grass_tiles", DARKGREEN, &ITEMS[ITEM_GRASS]);
+  TileType type = SIMPLE_TILED_GROUND_TILE(TILE_GRASS, "grass_tiles", DARKGREEN, 64, &ITEMS[ITEM_GRASS]);
   TILES[type.id] = type;
 }
 
 void stone_tile_init() {
-  TileType type = SIMPLE_TILED_GROUND_TILE(TILE_STONE, "stone", GRAY, &ITEMS[ITEM_STONE]);
+  TileType type = SIMPLE_GROUND_TILE(TILE_STONE, "stone", GRAY, 64, &ITEMS[ITEM_STONE]);
   TILES[type.id] = type;
 }
 
 void water_tile_init() {
-  TileType type = SIMPLE_TILED_GROUND_TILE(TILE_WATER, "water", BLUE, NULL);
+  TileType type = SIMPLE_TILED_GROUND_TILE(TILE_WATER, "water", BLUE, -1, NULL);
   TILES[type.id] = type;
 }

@@ -187,7 +187,23 @@ static void handle_tile_interaction(Game *game) {
 
   if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !slot_selected && interaction_in_range) {
     TileInstance *selected_tile = world_highest_tile_at(&game->world, vec2i(x_index, y_index));
-    if (selected_tile->type.id == TILE_EMPTY) {
+    bool correct_tool = !game->player.held_item.type.is_tool;
+    if (game->player.held_item.type.is_tool) {
+      TileCategory *tool_categories = game->player.held_item.type.tool_properties.break_categories;
+      TileCategory *selected_tile_categories = tile_categories(&selected_tile->type);
+      for (int i = 0; i < game->player.held_item.type.tool_properties.break_categories_amount; i++) {
+        for (int j = 0; j < game->tile_category_lookup.tiles_categories[selected_tile->type.id].categories_amount;
+             j++) {
+          if (tool_categories != NULL && selected_tile_categories != NULL &&
+              tool_categories[i] == selected_tile_categories[j]) {
+            correct_tool = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (selected_tile->type.id == TILE_EMPTY || selected_tile->type.break_time < 0 || !correct_tool) {
       game->player.break_progress = -1;
       return;
     }
@@ -208,15 +224,30 @@ static void handle_tile_interaction(Game *game) {
 
         game->player.break_progress += game->player.held_item.type.tool_properties.break_speed + 1;
         game->player.break_tile_pos = vec2i(x_index, y_index);
-        if (game->player.break_progress >= 64) {
+        game->player.break_tile = tile;
+        if (game->player.break_progress >= tile.type.break_time) {
           if (game->player.held_item.type.id == ITEM_HAMMER) {
             for (int y = -1; y <= 1; y++) {
               for (int x = -1; x <= 1; x++) {
-                world_remove_tile(&game->world, vec2i(x_index + x, y_index + y));
+                TilePos tile_pos = vec2i(x_index + x, y_index + y);
+                TileInstance *tile_ptr = world_highest_tile_at(&game->world, tile_pos);
+                TileInstance tile = TILE_INSTANCE_EMPTY;
+                if (tile_ptr != NULL) {
+                  tile = *tile_ptr;
+                }
+                world_remove_tile(&game->world, tile_pos);
+                world_set_tile_on_layer(&game->world, tile_pos, tile, tile.type.layer);
               }
             }
           } else {
-            world_remove_tile(&game->world, vec2i(x_index, y_index));
+            TileInstance *tile_ptr = world_highest_tile_at(&game->world, vec2i(x_index, y_index));
+            TileInstance tile = TILE_INSTANCE_EMPTY;
+            if (tile_ptr != NULL) {
+              tile = *tile_ptr;
+            }
+            TilePos tile_pos = vec2i(x_index, y_index);
+            world_remove_tile(&game->world, tile_pos);
+            world_set_tile_on_layer(&game->world, tile_pos, tile_break_remainder(&tile, tile_pos), tile.type.layer);
           }
           game->player.break_progress = -1;
           game->player.last_broken_tile = tile;
@@ -278,7 +309,7 @@ static void handle_mouse_interaction(Game *game) {
 static void handle_item_pickup(Game *game) {
   for (int i = 0; i < game->world.beings_amount; i++) {
     if (game->world.beings[i].id == BEING_ITEM &&
-        CheckCollisionRecs(game->world.beings[i].context.box, game->player.box)) {
+        CheckCollisionRecs(game->world.beings[i].context.box, player_collision_box(&game->player))) {
       if (GetTime() - game->world.beings[i].context.creation_time > CONFIG.item_pickup_delay) {
         world_remove_being(&game->world, &game->world.beings[i]);
         break;
@@ -330,9 +361,9 @@ void game_tick(Game *game) {
 
 #define BREAK_PROGRESS_FRAMES 6
 
-static void game_render_break_progress(Game *game, TilePos break_pos, int break_progress) {
+static void game_render_break_progress(Game *game, TilePos break_pos, int break_time, int break_progress) {
   if (break_progress != -1) {
-    int index = floor_div(break_progress, 64 / BREAK_PROGRESS_FRAMES);
+    int index = floor_div(break_progress, break_time / BREAK_PROGRESS_FRAMES);
     DrawTextureRec(BREAK_PROGRESS_TEXTURE, rectf(0, index * TILE_SIZE, TILE_SIZE, TILE_SIZE),
                    vec2f(break_pos.x * TILE_SIZE, break_pos.y * TILE_SIZE), WHITE);
     TraceLog(LOG_DEBUG, "Texture index: %d", index);
@@ -357,7 +388,8 @@ void game_render(Game *game) {
 
   world_render_layer_top_split(&game->world, &game->player, false);
 
-  game_render_break_progress(game, game->player.break_tile_pos, game->player.break_progress);
+  game_render_break_progress(game, game->player.break_tile_pos, game->player.break_tile.type.break_time,
+                             game->player.break_progress);
 
   int x_index = floor_div(mouse_world_pos.x, TILE_SIZE);
   int y_index = floor_div(mouse_world_pos.y, TILE_SIZE);

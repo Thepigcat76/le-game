@@ -3,8 +3,9 @@
 #include <raylib.h>
 #include <stdbool.h>
 
-static const char *VERTEX_SHADER_NAMES[] = {NULL, NULL};
-static const char *FRAGMENT_SHADER_NAMES[] = {"res/shaders/lighting.fs", "res/shaders/tooltip_outline.fs"};
+static const char *VERTEX_SHADER_NAMES[] = {NULL, NULL, "res/shaders/tile_outline.vs"};
+static const char *FRAGMENT_SHADER_NAMES[] = {"res/shaders/lighting.fs", "res/shaders/tooltip_outline.fs",
+                                              "res/shaders/tile_outline.fs"};
 
 static void shader_load(ShaderManager *manager, ShaderId id) {
   manager->shaders[id] = LoadShader(VERTEX_SHADER_NAMES[id], FRAGMENT_SHADER_NAMES[id]);
@@ -19,6 +20,10 @@ static void shader_load(ShaderManager *manager, ShaderId id) {
     break;
   }
   case SHADER_TOOLTIP_OUTLINE: {
+    manager->lookups[id].var.tooltip_outline = (ShaderVarLookupTooltipOutline){};
+    break;
+  }
+  case SHADER_TILE_OUTLINE: {
     manager->lookups[id].var.tooltip_outline = (ShaderVarLookupTooltipOutline){};
     break;
   }
