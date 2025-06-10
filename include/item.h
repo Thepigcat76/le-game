@@ -2,6 +2,7 @@
 
 #include "shared.h"
 #include "raylib.h"
+#include "item_props.h"
 #include "tile_category.h"
 #include <stdlib.h>
 
@@ -21,17 +22,9 @@ typedef enum {
 } ItemId;
 
 typedef struct {
-  int attack_damage;
-  int break_speed;
-  TileIdCategories break_categories;
-} ToolProperties;
-
-typedef struct {
   ItemId id;
   Texture2D texture;
-  bool light_source;
-  ToolProperties tool_properties;
-  bool is_tool;
+  ItemProperties item_props;
 } ItemType;
 
 extern ItemType ITEMS[MAX_ITEM_TYPES];

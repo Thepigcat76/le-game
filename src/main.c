@@ -161,7 +161,7 @@ int main(void) {
 
       Vector3 light_color = {1.0f, 1.0f, 0.8f}; // warm white
       float light_radius =
-          game->player.held_item.type.light_source ? 0.08f * cam->zoom * (1.0f + 0.11f * sin(GetTime())) : 0;
+          game->player.held_item.type.item_props.light_source ? 0.08f * cam->zoom * (1.0f + 0.11f * sin(GetTime())) : 0;
 
       SetShaderValue(shader, light_pos_loc, &light_pos, SHADER_UNIFORM_VEC2);
       SetShaderValue(shader, light_color_loc, &light_color, SHADER_UNIFORM_VEC3);

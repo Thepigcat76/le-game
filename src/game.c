@@ -187,9 +187,9 @@ static void handle_tile_interaction(Game *game) {
 
   if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !slot_selected && interaction_in_range) {
     TileInstance *selected_tile = world_highest_tile_at(&game->world, vec2i(x_index, y_index));
-    bool correct_tool = !game->player.held_item.type.is_tool;
-    if (game->player.held_item.type.is_tool) {
-      TileIdCategories tool_categories = game->player.held_item.type.tool_properties.break_categories;
+    bool correct_tool = false;
+    if (game->player.held_item.type.item_props.tool_props.break_categories.categories_amount > 0) {
+      TileIdCategories tool_categories = game->player.held_item.type.item_props.tool_props.break_categories;
       TileIdCategories selected_tile_categories = tile_categories(&selected_tile->type);
       for (int i = 0; i < tool_categories.categories_amount; i++) {
         for (int j = 0; j < selected_tile_categories.categories_amount; j++) {
@@ -221,7 +221,7 @@ static void handle_tile_interaction(Game *game) {
           return;
         }
 
-        game->player.break_progress += game->player.held_item.type.tool_properties.break_speed + 1;
+        game->player.break_progress += game->player.held_item.type.item_props.tool_props.break_speed + 1;
         game->player.break_tile_pos = vec2i(x_index, y_index);
         game->player.break_tile = tile;
         if (game->player.break_progress >= tile.type.break_time) {

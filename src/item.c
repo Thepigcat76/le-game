@@ -11,11 +11,7 @@ size_t ITEMS_AMOUNT = 0;
 
 void item_types_init() {
   INIT_ITEM(empty);
-  INIT_ITEM(torch);
-  INIT_ITEM(stick);
-  INIT_ITEM(hammer);
-  INIT_ITEM(backpack);
-  INIT_ITEM(map);
+  INIT_ITEM(simple_items);
   INIT_ITEM(simple_inv_items);
   INIT_ITEM(tool_items);
 }
