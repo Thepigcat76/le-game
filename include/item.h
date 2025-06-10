@@ -23,8 +23,7 @@ typedef enum {
 typedef struct {
   int attack_damage;
   int break_speed;
-  TileCategory break_categories[TILE_CATEGORIES_AMOUNT];
-  size_t break_categories_amount;
+  TileIdCategories break_categories;
 } ToolProperties;
 
 typedef struct {

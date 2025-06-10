@@ -3,19 +3,12 @@
 #include <stdbool.h>
 
 #define SIMPLE_INV_ITEM(item_id, texture_name)                                                                         \
-  (ItemType) { .id = item_id, .texture = LoadTexture("res/assets/" texture_name ".png"), .light_source = false }
+  ITEMS[item_id] =                                                                                                     \
+      (ItemType){.id = item_id, .texture = LoadTexture("res/assets/" texture_name ".png"), .light_source = false};     \
+  ITEMS_AMOUNT++;
 
-void grass_item_init() {
-  ItemType type = SIMPLE_INV_ITEM(ITEM_GRASS, "grass_inv");
-  ITEMS[type.id] = type;
-}
-
-void stone_item_init() {
-  ItemType type = SIMPLE_INV_ITEM(ITEM_STONE, "stone_inv");
-  ITEMS[type.id] = type;
-}
-
-void dirt_item_init() {
-  ItemType type = SIMPLE_INV_ITEM(ITEM_DIRT, "dirt_inv");
-  ITEMS[type.id] = type;
+void simple_inv_items_item_init() {
+  SIMPLE_INV_ITEM(ITEM_GRASS, "grass_inv");
+  SIMPLE_INV_ITEM(ITEM_STONE, "stone_inv");
+  SIMPLE_INV_ITEM(ITEM_DIRT, "dirt_inv");
 }

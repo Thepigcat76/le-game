@@ -20,10 +20,10 @@ static void debug_render_game_object_overlay() {
   switch (GAME.debug_options.game_object_display) {
   case DEBUG_DISPLAY_ALL_ITEMS: {
     GAME.paused = true;
-    for (int i = 0; i < ITEM_TYPE_AMOUNT; i++) {
+    for (int i = 0; i < ITEMS_AMOUNT; i++) {
       ItemInstance item = (ItemInstance){.type = ITEMS[i]};
       float scale = 3.5;
-      float x = ((float)SCREEN_WIDTH / 2) - (ITEM_TYPE_AMOUNT * 16 * scale) / 2 + (i * 20 * scale);
+      float x = ((float)SCREEN_WIDTH / 2) - (ITEMS_AMOUNT * 16 * scale) / 2 + (i * 20 * scale);
       float y = ((float)SCREEN_HEIGHT / 2) - 8 * scale;
       item_render(&item, x, y);
       Rectf item_box = rectf(x, y, item.type.texture.width * scale, item.type.texture.height * scale);
@@ -36,8 +36,8 @@ static void debug_render_game_object_overlay() {
   }
   case DEBUG_DISPLAY_ALL_TILES: {
     GAME.paused = true;
-    for (int i = 0; i < TILE_TYPE_AMOUNT; i++) {
-      double x = ((float)SCREEN_WIDTH / 2) - (ITEM_TYPE_AMOUNT * 16 * 3.5) / 2 + (i * 32 * 3.5);
+    for (int i = 0; i < TILES_AMOUNT; i++) {
+      double x = ((float)SCREEN_WIDTH / 2) - (ITEMS_AMOUNT * 16 * 3.5) / 2 + (i * 32 * 3.5);
       double y = ((float)SCREEN_HEIGHT / 2) - 8 * 3.5;
       TileInstance tile = tile_new(TILES[i]);
       tile_render_scaled(&tile, x - 160, y, 3.5);
@@ -75,6 +75,9 @@ static void debug_render_game_object_overlay() {
 }
 
 void debug_render_overlay() {
+  Vec2i selected_tile_render_pos = SELECTED_TILE_RENDER_POS(GetScreenWidth(), GetScreenHeight());
+  tile_render_scaled(&GAME.debug_options.selected_tile_to_place_instance, selected_tile_render_pos.x + 35,
+                     selected_tile_render_pos.y - 60, 4);
   if (GAME.cur_menu == MENU_DEBUG) {
     debug_render_game_object_overlay();
   }
@@ -97,7 +100,7 @@ void debug_tick() {
 
   if (keycode >= KEY_ZERO && keycode <= KEY_NINE) {
     int tile_index = keycode - KEY_ZERO;
-    if (tile_index < TILE_TYPE_AMOUNT) {
+    if (tile_index < TILES_AMOUNT) {
       GAME.debug_options.selected_tile_to_place_instance = tile_new(TILES[tile_index]);
     }
   }

@@ -189,13 +189,12 @@ static void handle_tile_interaction(Game *game) {
     TileInstance *selected_tile = world_highest_tile_at(&game->world, vec2i(x_index, y_index));
     bool correct_tool = !game->player.held_item.type.is_tool;
     if (game->player.held_item.type.is_tool) {
-      TileCategory *tool_categories = game->player.held_item.type.tool_properties.break_categories;
-      TileCategory *selected_tile_categories = tile_categories(&selected_tile->type);
-      for (int i = 0; i < game->player.held_item.type.tool_properties.break_categories_amount; i++) {
-        for (int j = 0; j < game->tile_category_lookup.tiles_categories[selected_tile->type.id].categories_amount;
-             j++) {
-          if (tool_categories != NULL && selected_tile_categories != NULL &&
-              tool_categories[i] == selected_tile_categories[j]) {
+      TileIdCategories tool_categories = game->player.held_item.type.tool_properties.break_categories;
+      TileIdCategories selected_tile_categories = tile_categories(&selected_tile->type);
+      for (int i = 0; i < tool_categories.categories_amount; i++) {
+        for (int j = 0; j < selected_tile_categories.categories_amount; j++) {
+          if (tool_categories.categories_amount > 0 && selected_tile_categories.categories_amount > 0 &&
+              tool_categories.categories[i] == selected_tile_categories.categories[j]) {
             correct_tool = true;
             break;
           }
@@ -236,7 +235,7 @@ static void handle_tile_interaction(Game *game) {
                   tile = *tile_ptr;
                 }
                 world_remove_tile(&game->world, tile_pos);
-                world_set_tile_on_layer(&game->world, tile_pos, tile, tile.type.layer);
+                world_set_tile_on_layer(&game->world, tile_pos, tile_break_remainder(&tile, tile_pos), tile.type.layer);
               }
             }
           } else {
@@ -410,13 +409,11 @@ void game_render(Game *game) {
 }
 
 void game_render_overlay(Game *game) {
-  Vec2i pos = vec2i(SCREEN_WIDTH - (3.5 * 16) - 30, (SCREEN_HEIGHT / 2.0f) - (3.5 * 8));
+  Vec2i pos = vec2i(GetScreenWidth() - (3.5 * 16) - 30, (GetScreenHeight() / 2.0f) - (3.5 * 8));
   DrawTextureEx(MAIN_HAND_SLOT_TEXTURE, (Vector2){pos.x, pos.y}, 0, 4.5, WHITE);
   item_render(&game->player.held_item, pos.x + 2 * 3.5, pos.y + 2 * 3.5);
 
 #ifdef SURTUR_DEBUG
-  tile_render_scaled(&game->debug_options.selected_tile_to_place_instance, SELECTED_TILE_RENDER_POS.x + 35,
-                     SELECTED_TILE_RENDER_POS.y - 60, 4);
   debug_render_overlay();
 #endif
 

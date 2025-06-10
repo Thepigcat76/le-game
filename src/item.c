@@ -4,8 +4,7 @@
 
 #define INIT_ITEM(src_file_name)                                                                                       \
   extern void src_file_name##_item_init();                                                                             \
-  src_file_name##_item_init();                                                                                         \
-  ITEMS_AMOUNT++;
+  src_file_name##_item_init();
 
 ItemType ITEMS[MAX_ITEM_TYPES];
 size_t ITEMS_AMOUNT = 0;
@@ -17,9 +16,7 @@ void item_types_init() {
   INIT_ITEM(hammer);
   INIT_ITEM(backpack);
   INIT_ITEM(map);
-  INIT_ITEM(grass);
-  INIT_ITEM(stone);
-  INIT_ITEM(dirt);
+  INIT_ITEM(simple_inv_items);
   INIT_ITEM(tool_items);
 }
 

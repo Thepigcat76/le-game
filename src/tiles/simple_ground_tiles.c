@@ -58,24 +58,29 @@ void empty_tile_init() {
       .has_animation = false,
   };
   TILES[type.id] = type;
+  TILES_AMOUNT++;
 }
 
 void dirt_tile_init() {
   TileType type = SIMPLE_TILED_GROUND_TILE(TILE_DIRT, "lighter_dirt_tiles", BROWN, 64, &ITEMS[ITEM_DIRT]);
   TILES[type.id] = type;
+  TILES_AMOUNT++;
 }
 
 void grass_tile_init() {
   TileType type = SIMPLE_TILED_GROUND_TILE(TILE_GRASS, "grass_tiles", DARKGREEN, 64, &ITEMS[ITEM_GRASS]);
   TILES[type.id] = type;
+  TILES_AMOUNT++;
 }
 
 void stone_tile_init() {
   TileType type = SIMPLE_GROUND_TILE(TILE_STONE, "stone", GRAY, 64, &ITEMS[ITEM_STONE]);
   TILES[type.id] = type;
+  TILES_AMOUNT++;
 }
 
 void water_tile_init() {
   TileType type = SIMPLE_TILED_GROUND_TILE(TILE_WATER, "water", BLUE, -1, NULL);
   TILES[type.id] = type;
+  TILES_AMOUNT++;
 }

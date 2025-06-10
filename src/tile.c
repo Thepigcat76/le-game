@@ -13,20 +13,23 @@
 
 #define TILE_REGISTER_CATEGORY(tile_id, ...)                                                                           \
   {                                                                                                                    \
-    GAME.tile_category_lookup.tiles[tile_id] = (struct _category_lookup_tile){.id = tile_id, .present = true};         \
-    GAME.tile_category_lookup.tiles_categories[tile_id] = (struct _category_lookup_category)__VA_ARGS__;               \
+    GAME.tile_category_lookup.tiles[GAME.tile_category_lookup.tiles_amount] = tile_id;                                 \
+    GAME.tile_category_lookup.tile_categories[GAME.tile_category_lookup.tiles_amount] = (TileIdCategories)__VA_ARGS__;                             \
+    GAME.tile_category_lookup.tiles_amount++;                                                                          \
   }
 
 static void debug_category_lookup(TileCategoryLookup lookup) {
-  for (int i = 0; i < TILE_TYPE_AMOUNT; i++) {
-    if (lookup.tiles[i].present) {
-      TraceLog(LOG_DEBUG, "Tile: %s - Categories:", tile_type_to_string(&TILES[lookup.tiles[i].id]));
-      for (int j = 0; j < lookup.tiles_categories[i].categories_amount; j++) {
-        TraceLog(LOG_DEBUG, "  Category: %s", tile_category_to_string(lookup.tiles_categories[i].categories[j]));
-      }
+  for (int i = 0; i < lookup.tiles_amount; i++) {
+    TraceLog(LOG_DEBUG, "Tile: %s - Categories:", tile_type_to_string(&TILES[lookup.tiles[i]]));
+    for (int j = 0; j < lookup.tile_categories[i].categories_amount; j++) {
+      TraceLog(LOG_DEBUG, "  Category: %s", tile_category_to_string(lookup.tile_categories[i].categories[j]));
     }
   }
 }
+
+TileType TILES[MAX_TILE_TYPES];
+size_t TILES_AMOUNT = 0;
+TileInstance TILE_INSTANCE_EMPTY;
 
 void tile_types_init() {
   INIT_TILE(empty)
@@ -187,10 +190,14 @@ void tile_render(TileInstance *tile, int x, int y) {
   }
 }
 
-TileCategory *tile_categories(const TileType *type) {
-  if (GAME.tile_category_lookup.tiles[type->id].present)
-    return GAME.tile_category_lookup.tiles_categories[type->id].categories;
-  return NULL;
+TileIdCategories tile_categories(const TileType *type) {
+  for (int i = 0; i < GAME.tile_category_lookup.tiles_amount; i++) {
+    TileId tile_id = GAME.tile_category_lookup.tiles[i];
+    if (type->id == tile_id) {
+      return GAME.tile_category_lookup.tile_categories[i];
+    }
+  }
+  return (TileIdCategories){};
 }
 
 void tile_right_click(TileInstance *tile) {}

@@ -2,10 +2,10 @@
 
 #include "data.h"
 #include "item.h"
-#include "tile_category.h"
 #include "raylib.h"
 #include "shared.h"
 #include "textures.h"
+#include "tile_category.h"
 
 typedef enum {
   TILE_EMPTY,
@@ -48,7 +48,8 @@ typedef struct {
   bool has_animation;
 } TileType;
 
-extern TileType TILES[TILE_TYPE_AMOUNT];
+extern TileType TILES[MAX_TILE_TYPES];
+extern size_t TILES_AMOUNT;
 
 void tile_type_init(TileType *type);
 
@@ -119,16 +120,11 @@ void tile_variants_free();
 // TILE CATEGORIES
 
 typedef struct {
-  struct _category_lookup_tile {
-    TileId id;
-    bool present;
-  } tiles[TILE_TYPE_AMOUNT];
-  struct _category_lookup_category {
-    TileCategory categories[TILE_CATEGORIES_AMOUNT];
-    size_t categories_amount;
-  } tiles_categories[TILE_TYPE_AMOUNT];
+  TileId tiles[MAX_TILE_TYPES];
+  TileIdCategories tile_categories[MAX_TILE_TYPES];
+  size_t tiles_amount;
 } TileCategoryLookup;
 
 void tile_categories_init(void);
 
-TileCategory *tile_categories(const TileType *tile);
+TileIdCategories tile_categories(const TileType *tile);

@@ -22,6 +22,7 @@ void workstation_tile_init() {
       .has_animation = false,
   };
   TILES[type.id] = type;
+  TILES_AMOUNT++;
 }
 
 void oven_tile_init() {
@@ -44,6 +45,7 @@ void oven_tile_init() {
       .has_animation = false,
   };
   TILES[type.id] = type;
+  TILES_AMOUNT++;
 }
 
 void tree_tile_init() {
@@ -66,4 +68,5 @@ void tree_tile_init() {
       .has_animation = false,
   };
   TILES[type.id] = type;
+  TILES_AMOUNT++;
 }
