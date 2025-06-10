@@ -4,9 +4,11 @@
 
 #define INIT_ITEM(src_file_name)                                                                                       \
   extern void src_file_name##_item_init();                                                                             \
-  src_file_name##_item_init();
+  src_file_name##_item_init();                                                                                         \
+  ITEMS_AMOUNT++;
 
-ItemType ITEMS[ITEM_TYPE_AMOUNT];
+ItemType ITEMS[MAX_ITEM_TYPES];
+size_t ITEMS_AMOUNT = 0;
 
 void item_types_init() {
   INIT_ITEM(empty);

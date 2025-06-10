@@ -12,6 +12,7 @@ typedef enum {
   ITEM_HAMMER,
   ITEM_BACKPACK,
   ITEM_MAP,
+  ITEM_AXE,
   ITEM_PICKAXE,
   // TILE ITEMS
   ITEM_GRASS,
@@ -34,7 +35,8 @@ typedef struct {
   bool is_tool;
 } ItemType;
 
-extern ItemType ITEMS[ITEM_TYPE_AMOUNT];
+extern ItemType ITEMS[MAX_ITEM_TYPES];
+extern size_t ITEMS_AMOUNT;
 
 typedef struct {
   ItemType type;
