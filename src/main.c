@@ -1,5 +1,4 @@
 #include "../include/alloc.h"
-#include "../include/array.h"
 #include "../include/camera.h"
 #include "../include/config.h"
 #include "../include/game.h"

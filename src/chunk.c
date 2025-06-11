@@ -6,7 +6,6 @@
 #include <raylib.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 static void chunk_assign_dirt_variants(Chunk *chunk) {
   chunk->variant_index = tile_variants_index_for_name("res/assets/dirt.png", 0, 0);
@@ -103,13 +102,13 @@ void chunk_save(const Chunk *chunk, DataMap *data) {
   data_map_insert(data, "chunk_x", data_int(chunk->chunk_pos.x));
   data_map_insert(data, "chunk_y", data_int(chunk->chunk_pos.y));
   for (int l = 0; l < TILE_LAYERS_AMOUNT; l++) {
-    DataList tiles = {.items = malloc(256 * sizeof(Data)), .len = 256};
+    DataList tiles = data_list_new(256);
     for (int y = 0; y < CHUNK_SIZE; y++) {
       for (int x = 0; x < CHUNK_SIZE; x++) {
 
         const TileInstance *tile = &chunk->tiles[y][x][l];
         // Insert with a duplicated/copy string if needed
-        tiles.items[y * CHUNK_SIZE + x] = data_byte(tile->type.id);
+        data_list_add(&tiles, data_byte(tile->type.id));
 
         // if (tile->type.stores_custom_data) {
         //   char custom_data[length + 13 + 1];

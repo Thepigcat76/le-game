@@ -16,6 +16,7 @@ typedef enum {
   TILE_WORKSTATION,
   TILE_OVEN,
   TILE_TREE,
+  TILE_TREE_STUMP,
 } TileId;
 
 typedef struct {

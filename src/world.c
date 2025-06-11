@@ -336,7 +336,6 @@ void save_world(const World *world, DataMap *data) {
     DataMap map = data_map_new(8);
     const Chunk *chunk = &world->chunks[i];
     chunk_save(chunk, &map);
-    char key[2] = {i, '\0'};
     data_list_add(&chunks_list, data_map(map));
   }
   data_map_insert(data, "chunks", data_list(chunks_list));

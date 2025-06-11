@@ -14,7 +14,7 @@
 #define TILE_REGISTER_CATEGORY(tile_id, ...)                                                                           \
   {                                                                                                                    \
     GAME.tile_category_lookup.tiles[GAME.tile_category_lookup.tiles_amount] = tile_id;                                 \
-    GAME.tile_category_lookup.tile_categories[GAME.tile_category_lookup.tiles_amount] = (TileIdCategories)__VA_ARGS__;                             \
+    GAME.tile_category_lookup.tile_categories[GAME.tile_category_lookup.tiles_amount] = (TileIdCategories)__VA_ARGS__; \
     GAME.tile_category_lookup.tiles_amount++;                                                                          \
   }
 
@@ -37,9 +37,7 @@ void tile_types_init() {
   INIT_TILE(grass)
   INIT_TILE(stone)
   INIT_TILE(water)
-  INIT_TILE(workstation)
-  INIT_TILE(oven)
-  INIT_TILE(tree)
+  INIT_TILE(simple_tiles)
 
   TILE_INSTANCE_EMPTY = tile_new(TILES[TILE_EMPTY]);
 }
@@ -71,6 +69,8 @@ char *tile_type_to_string(const TileType *type) {
     return "oven";
   case TILE_TREE:
     return "tree";
+  case TILE_TREE_STUMP:
+    return "tree_stump";
   }
 }
 
@@ -110,6 +110,7 @@ Dimensionsf tile_collision_dimensions_at(const TileInstance *tile) {
   if (tile->type.layer == TILE_LAYER_TOP) {
     switch (tile->type.id) {
     case TILE_TREE:
+    case TILE_TREE_STUMP:
       return dimf(tile->box.width, tile->box.height);
     default:
       return dimf(tile->box.width, tile->box.height - 8);
@@ -122,6 +123,7 @@ Vec2f tile_collision_offset_at(const TileInstance *tile) {
   if (tile->type.layer == TILE_LAYER_TOP) {
     switch (tile->type.id) {
     case TILE_TREE:
+    case TILE_TREE_STUMP:
       return vec2f(0, -4);
     default:
       return vec2f(0, 8);
@@ -132,7 +134,7 @@ Vec2f tile_collision_offset_at(const TileInstance *tile) {
 
 TileInstance tile_break_remainder(const TileInstance *tile, TilePos pos) {
   if (tile->type.id == TILE_TREE) {
-    return tile_new(TILES[TILE_WORKSTATION]);
+    return tile_new(TILES[TILE_TREE_STUMP]);
   }
   return TILE_INSTANCE_EMPTY;
 }

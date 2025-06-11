@@ -6,6 +6,8 @@
 
 #define array_new(type, allocator) (type *)_internal_array_new(ARRAY_INITIAL_CAPACITY, sizeof(type), allocator)
 
+#define array_new_capacity(type, capacity, allocator) (type *)_internal_array_new(capacity, sizeof(type), allocator)
+
 #define array_len(arr) _internal_array_len(arr)
 
 #define array_free(arr) _internal_array_free(arr)
