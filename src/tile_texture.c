@@ -153,7 +153,7 @@ static Rectangle select_tile(bool *same_tile) {
 }
 
 void tile_calc_sprite_box(TileInstance *tile) {
-  if (tile->type.uses_tileset) {
+  if (tile->type.texture_props.uses_tileset) {
     TileId self_id = tile->type.id;
     TileId *texture_data = tile->texture_data.surrounding_tiles;
     bool same_tile[8];
@@ -362,7 +362,7 @@ int tile_variants_amount_by_index(int index, int x, int y) {
 void tile_type_init(TileType *type) {
   int amount = VARIANT_INFO.tiles_amount;
   for (int i = 0; i < amount; i++) {
-    if (strcmp(VARIANT_INFO.tile_texture_names[i], type->texture_path) == 0) {
+    if (strcmp(VARIANT_INFO.tile_texture_names[i], type->texture.path) == 0) {
       type->variant_index = i;
       return;
     }

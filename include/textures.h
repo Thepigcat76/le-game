@@ -21,6 +21,7 @@ typedef struct {
   } var;
   int width;
   int height;
+  const char *path;
 } AdvTexture;
 
 typedef struct {

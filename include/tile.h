@@ -6,6 +6,7 @@
 #include "shared.h"
 #include "textures.h"
 #include "tile_category.h"
+#include "tile_props.h"
 
 typedef enum {
   TILE_EMPTY,
@@ -30,23 +31,18 @@ typedef enum {
 
 typedef struct {
   TileId id;
-  bool has_texture;
-  char *texture_path;
-  AdvTexture texture;
-  bool is_solid;
   TileLayer layer;
-  Color tile_color;
-  int tile_width;
-  int tile_height;
-  int break_time;
+  AdvTexture texture;
+  bool has_texture;
+  Dimensionsf tile_dimensions;
   ItemType *tile_item;
+  TileProperties tile_props;
 
   // ADVANCED TILE PROPERTIES
   bool is_ticking;
   bool stores_custom_data;
-  bool uses_tileset;
+  TileTextureProperties texture_props;
   int variant_index;
-  bool has_animation;
 } TileType;
 
 extern TileType TILES[MAX_TILE_TYPES];

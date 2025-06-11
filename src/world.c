@@ -152,7 +152,7 @@ bool world_place_tile(World *world, TilePos tile_pos, TileInstance tile) {
 bool world_remove_tile(World *world, TilePos tile_pos) {
   TileInstance empty_instance = TILE_INSTANCE_EMPTY;
   TileInstance *tile = world_highest_tile_at(world, tile_pos);
-  Color color = tile->type.tile_color;
+  Color color = tile->type.tile_props.tile_color;
   ItemType *item_type = tile->type.tile_item;
   if (world_set_tile_on_layer(world, tile_pos, empty_instance, tile->type.layer)) {
     if (item_type != NULL) {

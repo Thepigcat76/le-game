@@ -33,10 +33,7 @@ TileInstance TILE_INSTANCE_EMPTY;
 
 void tile_types_init() {
   INIT_TILE(empty)
-  INIT_TILE(dirt)
-  INIT_TILE(grass)
-  INIT_TILE(stone)
-  INIT_TILE(water)
+  INIT_TILE(simple_ground_tiles)
   INIT_TILE(simple_tiles)
 
   TILE_INSTANCE_EMPTY = tile_new(TILES[TILE_EMPTY]);
@@ -83,7 +80,7 @@ TileInstance tile_new(TileType type) {
       .type = type,
       .box = {.width = TILE_SIZE, .height = TILE_SIZE},
       .custom_data = {},
-      .cur_sprite_box = type.uses_tileset ? rectf(default_pos.x, default_pos.y, default_sprite_res, default_sprite_res)
+      .cur_sprite_box = type.texture_props.uses_tileset ? rectf(default_pos.x, default_pos.y, default_sprite_res, default_sprite_res)
                                           : rectf(0, 0, type.texture.width, type.texture.height),
       .animation_frame = 0,
   };
@@ -150,8 +147,8 @@ void tile_render_scaled(TileInstance *tile, int x, int y, float scale) {
       int frame_height = adv_texture_frame_height(&tile->type.texture);
       Rectangle sprite_rect = tile->cur_sprite_box;
       sprite_rect.y += frame_height * cur_frame;
-      int offset_x = (tile->type.tile_width - TILE_SIZE) / 2;
-      int offset_y = tile->type.tile_height - TILE_SIZE;
+      int offset_x = (tile->type.tile_dimensions.width - TILE_SIZE) / 2;
+      int offset_y = tile->type.tile_dimensions.height - TILE_SIZE;
       if (tile->type.texture.type == TEXTURE_ANIMATED) {
         // TraceLog(LOG_DEBUG, "height: %d, cur_frame: %d", frame_height, cur_frame);
       }
@@ -176,8 +173,8 @@ void tile_render(TileInstance *tile, int x, int y) {
       int frame_height = adv_texture_frame_height(&tile->type.texture);
       Rectangle sprite_rect = tile->cur_sprite_box;
       sprite_rect.y += frame_height * cur_frame;
-      int offset_x = (tile->type.tile_width - TILE_SIZE) / 2;
-      int offset_y = tile->type.tile_height - TILE_SIZE;
+      int offset_x = (tile->type.tile_dimensions.width - TILE_SIZE) / 2;
+      int offset_y = tile->type.tile_dimensions.height - TILE_SIZE;
       if (tile->type.texture.type == TEXTURE_ANIMATED) {
         // TraceLog(LOG_DEBUG, "height: %d, cur_frame: %d", frame_height, cur_frame);
       }

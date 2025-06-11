@@ -42,6 +42,7 @@ AdvTexture adv_texture_load(const char *path) {
                                                                        .animated_texture_id = ANIMATED_TEXTURES_LEN,
                                                                        .frame_time = frame_time,
                                                                        .frames = texture.height / frame_height}},
+                                          .path = path,
                                           .width = texture.width,
                                           .height = frame_height};
     ANIMATED_TEXTURES[ANIMATED_TEXTURES_LEN] = (AnimatedTexture){
@@ -50,8 +51,11 @@ AdvTexture adv_texture_load(const char *path) {
     TraceLog(LOG_INFO, "Loaded animated texture: %s", path);
     return adv_texture;
   } else {
-    return (AdvTexture){
-        .type = TEXTURE_STATIC, .var = {.texture_static = texture}, .width = texture.width, .height = texture.height};
+    return (AdvTexture){.type = TEXTURE_STATIC,
+                        .var = {.texture_static = texture},
+                        .path = path,
+                        .width = texture.width,
+                        .height = texture.height};
   }
 }
 

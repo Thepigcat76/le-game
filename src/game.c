@@ -203,7 +203,7 @@ static void handle_tile_interaction(Game *game) {
       }
     }
 
-    if (selected_tile->type.id == TILE_EMPTY || selected_tile->type.break_time < 0 || !correct_tool) {
+    if (selected_tile->type.id == TILE_EMPTY || selected_tile->type.tile_props.break_time < 0 || !correct_tool) {
       game->player.break_progress = -1;
       return;
     }
@@ -225,7 +225,7 @@ static void handle_tile_interaction(Game *game) {
         game->player.break_progress += game->player.held_item.type.item_props.tool_props.break_speed + 1;
         game->player.break_tile_pos = vec2i(x_index, y_index);
         game->player.break_tile = tile;
-        if (game->player.break_progress >= tile.type.break_time) {
+        if (game->player.break_progress >= tile.type.tile_props.break_time) {
           if (game->player.held_item.type.id == ITEM_HAMMER) {
             for (int y = -1; y <= 1; y++) {
               for (int x = -1; x <= 1; x++) {
@@ -388,7 +388,7 @@ void game_render(Game *game) {
 
   world_render_layer_top_split(&game->world, &game->player, false);
 
-  game_render_break_progress(game, game->player.break_tile_pos, game->player.break_tile.type.break_time,
+  game_render_break_progress(game, game->player.break_tile_pos, game->player.break_tile.type.tile_props.break_time,
                              game->player.break_progress);
 
   int x_index = floor_div(mouse_world_pos.x, TILE_SIZE);
