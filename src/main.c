@@ -1,3 +1,5 @@
+#include "../include/alloc.h"
+#include "../include/array.h"
 #include "../include/camera.h"
 #include "../include/config.h"
 #include "../include/game.h"
@@ -32,9 +34,15 @@ static void update_animations(void) {
 }
 
 int main(void) {
+  // Setup allocators
+  alloc_init();
+
+  // Create window
   game_begin();
 
+  // Setup random, load textures
   shared_init();
+  // init registries
   item_types_init();
   tile_types_init();
 

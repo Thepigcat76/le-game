@@ -96,13 +96,15 @@ void being_brain_tick(BeingInstance *being, BeingBrain *brain) {
   }
 }
 
+#define BEING_SPEED 0.5
+
 static void being_go_to(BeingInstance *being, Vec2f pos) {
   Rectangle *being_box = &being->context.box;
   float sig_x = signum(pos.x - being_box->x);
   float sig_y = signum(pos.y - being_box->y);
 
-  being_box->x += 0.75 * sig_x;
-  being_box->y += 0.75 * sig_y;
+  being_box->x += BEING_SPEED * sig_x;
+  being_box->y += BEING_SPEED * sig_y;
   TraceLog(LOG_DEBUG, "new box pos: %f", being_box->x, being_box->y);
 
   if (being->id == BEING_NPC) {
@@ -114,22 +116,47 @@ static void being_activity_go_to_pos(BeingInstance *being, BeingActivityGoToPosi
   being_go_to(being, activity->target_position);
 }
 
-static void being_activity_find_next_pos(BeingInstance *being, BeingActivityWalkAround *activity) {
+static void being_activity_wa_find_next_pos(BeingInstance *being, BeingActivityWalkAround *activity) {
+  Vec2i next_pos_range_min = vec2i(-5, -5);
+  Vec2i next_pos_range_max = vec2i(5, 5);
 
+  int x = GetRandomValue(next_pos_range_min.x, next_pos_range_max.x);
+  int y = GetRandomValue(next_pos_range_min.y, next_pos_range_max.y);
+
+  activity->prev_target_pos = activity->cur_target_pos;
+  activity->cur_target_pos = vec2f(being->context.box.x + x * TILE_SIZE, being->context.box.y + y * TILE_SIZE);
 }
 
 static void being_activity_walk_around(BeingInstance *being, BeingActivityWalkAround *activity) {
   being_go_to(being, activity->cur_target_pos);
+  if (fabs(being->context.box.x - activity->cur_target_pos.x) < 1 &&
+      fabs(being->context.box.y - activity->cur_target_pos.y) < 1) {
+    being_activity_wa_find_next_pos(being, activity);
+  }
 }
+
+static void being_activity_idle(BeingInstance *being, BeingActivityIdle *activity) {
+  if (activity->timer < activity->idle_time) {
+    activity->timer++;
+  } else {
+    activity->ended = true;
+  }
+}
+
+#define ACTIVITY_TICK(activity_name) being_activity_##activity_name(being, &activity->var.activity_##activity_name)
 
 void being_activity_tick(BeingInstance *being, BeingActivity *activity) {
   switch (activity->type) {
   case BEING_ACTIVITY_WALK_AROUND: {
-    being_activity_walk_around(being, &activity->var.activity_walk_around);
+    ACTIVITY_TICK(walk_around);
     break;
   }
   case BEING_ACTIVITY_GO_TO_POSITION: {
-    being_activity_go_to_pos(being, &activity->var.activity_go_to_position);
+    ACTIVITY_TICK(go_to_pos);
+    break;
+  }
+  case BEING_ACTIVITY_IDLE: {
+    ACTIVITY_TICK(idle);
     break;
   }
   }

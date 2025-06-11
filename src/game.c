@@ -1,6 +1,7 @@
 #include "../include/game.h"
 #include "../include/config.h"
 #include "../include/data_reader.h"
+#include "../include/alloc.h"
 #include "../vendor/cJSON.h"
 #include "raylib.h"
 #include <dirent.h>
@@ -616,6 +617,7 @@ void game_unload(Game *game) {
 
   free(game->world.chunks);
   free(game->feature_store.game_features);
+  free(GLOBAL_BUMP.buffer);
 
   UnloadSound(PLACE_SOUND);
   UnloadMusicStream(MUSIC);
