@@ -2,8 +2,8 @@
 
 #include "shared.h"
 #include "raylib.h"
-#include "item_props.h"
-#include "tile_category.h"
+#include "item/item_props.h"
+#include "tile/tile_category.h"
 #include <stdlib.h>
 
 typedef enum {

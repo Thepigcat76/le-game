@@ -1,6 +1,6 @@
 #pragma once
 
-#include "tile.h"
+#include "../tile.h"
 #include "tile_props.h"
 
 struct _tile_props {

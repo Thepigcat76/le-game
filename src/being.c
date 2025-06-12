@@ -1,6 +1,6 @@
 #include "../include/being.h"
 #include "../include/data.h"
-#include "../include/data_ex.h"
+#include "../include/data/data_ex.h"
 #include <math.h>
 #include <raylib.h>
 #include <stdlib.h>

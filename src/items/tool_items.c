@@ -1,4 +1,4 @@
-#include "../../include/item_init_helper.h"
+#include "../../include/item/item_init_helper.h"
 #include <raylib.h>
 
 void tool_items_item_init() {

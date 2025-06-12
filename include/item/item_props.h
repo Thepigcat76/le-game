@@ -1,6 +1,6 @@
 #pragma once
 
-#include "tile_category.h"
+#include "../tile/tile_category.h"
 
 typedef struct {
   int attack_damage;

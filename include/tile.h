@@ -5,8 +5,8 @@
 #include "raylib.h"
 #include "shared.h"
 #include "textures.h"
-#include "tile_category.h"
-#include "tile_props.h"
+#include "tile/tile_category.h"
+#include "tile/tile_props.h"
 
 typedef enum {
   TILE_EMPTY,

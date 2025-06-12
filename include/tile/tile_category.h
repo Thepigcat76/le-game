@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../include/shared.h"
+#include "../shared.h"
 #include <stdlib.h>
 
 typedef enum {

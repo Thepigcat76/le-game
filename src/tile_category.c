@@ -1,4 +1,4 @@
-#include "../include/tile_category.h"
+#include "../include/tile/tile_category.h"
 
 char *tile_category_to_string(TileCategory category) {
   switch (category) {

@@ -4,6 +4,7 @@
 #include "../include/game.h"
 #include "../include/shared.h"
 #include "../include/ui.h"
+#include "../include/item/item_container.h"
 #include "raylib.h"
 #include "rlgl.h"
 #include <math.h>
@@ -41,6 +42,8 @@ int main(void) {
 
   // Setup random, load textures
   shared_init();
+  // Setup bump allocator for item containers
+  _internal_item_container_init();
   // init registries
   item_types_init();
   tile_types_init();

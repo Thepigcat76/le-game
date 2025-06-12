@@ -1,13 +1,13 @@
 #pragma once
 
-#include "item.h"
+#include "../item.h"
+#include "../tile/tile_category.h"
 #include "raylib.h"
-#include "tile_category.h"
 
 #define ITEM_TYPE_INIT(item_id, texture_path, ...)                                                                     \
   {                                                                                                                    \
     ITEMS[item_id] = (ItemType){.id = item_id,                                                                         \
-                                .texture = LoadTexture("res/assets/" texture_path ".png"),                              \
+                                .texture = LoadTexture("res/assets/" texture_path ".png"),                             \
                                 .item_props = (ItemProperties)__VA_ARGS__};                                            \
     ITEMS_AMOUNT++;                                                                                                    \
   }

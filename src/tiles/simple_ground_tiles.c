@@ -1,5 +1,5 @@
 #include "../../include/tile.h"
-#include "../../include/tile_init_helper.h"
+#include "../../include/tile/tile_init_helper.h"
 #include <raylib.h>
 
 void empty_tile_init() {

@@ -1,4 +1,4 @@
-#include "../../include/item_init_helper.h"
+#include "../../include/item/item_init_helper.h"
 
 void simple_inv_items_item_init() {
   ITEM_TYPE_INIT(ITEM_GRASS, "grass_inv", ITEM_PROPS_DEFAULT);
