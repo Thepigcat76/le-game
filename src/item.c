@@ -1,4 +1,5 @@
 #include "../include/item.h"
+#include "../include/data.h"
 #include <raylib.h>
 #include <stdio.h>
 
@@ -9,11 +10,15 @@
 ItemType ITEMS[MAX_ITEM_TYPES];
 size_t ITEMS_AMOUNT = 0;
 
+ItemInstance ITEM_INSTANCE_EMPTY;
+
 void item_types_init() {
   INIT_ITEM(empty);
   INIT_ITEM(simple_items);
   INIT_ITEM(simple_inv_items);
   INIT_ITEM(tool_items);
+
+  ITEM_INSTANCE_EMPTY = (ItemInstance){.type = ITEMS[ITEM_EMPTY]};
 }
 
 void item_render(const ItemInstance *item, int x, int y) {
@@ -43,4 +48,11 @@ void item_tooltip(const ItemInstance *item, char *buf, size_t buf_capacity) {
     buf[0] = '\0';
     break;
   }
+}
+
+void item_save(const ItemInstance *item, DataMap *data) { data_map_insert(data, "item", data_int(item->type.id)); }
+
+void item_load(ItemInstance *item, const DataMap *data) {
+  ItemId item_id = data_map_get(data, "item").var.data_int;
+  item->type = ITEMS[item_id];
 }

@@ -135,11 +135,16 @@ int main(void) {
     if (IsKeyReleased(KEYBINDS.open_close_save_menu_key)) {
       if (game->cur_menu == MENU_SAVE) {
         game->cur_menu = MENU_NONE;
+        game_set_menu(game, MENU_NONE);
         game->paused = false;
       } else if (game->cur_menu == MENU_NONE) {
-        game->cur_menu = MENU_SAVE;
+        game_set_menu(game, MENU_SAVE);
         game->paused = true;
       }
+    }
+
+    if (IsKeyReleased(KEYBINDS.close_cur_menu) && game->cur_menu != MENU_NONE && game->cur_menu != MENU_SAVE) {
+      game_set_menu(game, MENU_NONE);
     }
 
 #ifdef SURTUR_DEBUG

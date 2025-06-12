@@ -181,11 +181,7 @@ static void handle_tile_interaction(Game *game) {
       abs((int)game->player.box.x - x_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE &&
       abs((int)game->player.box.y - y_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE;
 
-  Rectangle slot_rect = {.x = SCREEN_WIDTH - (3.5 * 16) - 30,
-                         .y = (SCREEN_HEIGHT / 2.0f) - (3.5 * 8),
-                         .width = 20 * 3.5,
-                         .height = 20 * 3.5};
-  bool slot_selected = CheckCollisionPointRec(GetMousePosition(), slot_rect);
+  bool slot_selected = game_slot_selected();
 
   if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !slot_selected && interaction_in_range) {
     TileInstance *selected_tile = world_highest_tile_at(&game->world, vec2i(x_index, y_index));
@@ -271,9 +267,13 @@ static void handle_tile_interaction(Game *game) {
   }
 
   if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && !slot_selected && interaction_in_range) {
-    TileInstance *selected_tile = world_ground_tile_at(&game->world, vec2i(x_index, y_index));
+    TileInstance *selected_tile = world_highest_tile_at(&game->world, vec2i(x_index, y_index));
     if (CheckCollisionPointRec(mouse_world_pos,
                                rectf_from_dimf(x_index * TILE_SIZE, y_index * TILE_SIZE, selected_tile->box))) {
+      if (selected_tile->type.id == TILE_CHEST) {
+        game_set_menu(game, MENU_DIALOG);
+        return;
+      }
       TileInstance new_tile = tile_new(game->debug_options.selected_tile_to_place_instance.type);
       bool placed = world_place_tile(&game->world, vec2i(x_index, y_index), new_tile);
       if (placed && game->sound_manager.sound_timer >= SOUND_COOLDOWN) {
@@ -453,8 +453,8 @@ void game_render_overlay(Game *game) {
 // UI/MENUS
 
 static bool game_slot_selected() {
-  Rectangle slot_rect = {.x = SCREEN_WIDTH - (3.5 * 16) - 30,
-                         .y = (SCREEN_HEIGHT / 2.0f) - (3.5 * 8),
+  Rectangle slot_rect = {.x = GetScreenWidth() - (3.5 * 16) - 30,
+                         .y = (GetScreenHeight() / 2.0f) - (3.5 * 8),
                          .width = 20 * 3.5,
                          .height = 20 * 3.5};
   return CheckCollisionPointRec(GetMousePosition(), slot_rect);

@@ -68,6 +68,8 @@ char *tile_type_to_string(const TileType *type) {
     return "tree";
   case TILE_TREE_STUMP:
     return "tree_stump";
+  case TILE_CHEST:
+    return "chest";
   }
 }
 

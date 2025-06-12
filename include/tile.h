@@ -18,6 +18,7 @@ typedef enum {
   TILE_OVEN,
   TILE_TREE,
   TILE_TREE_STUMP,
+  TILE_CHEST,
 } TileId;
 
 typedef struct {
