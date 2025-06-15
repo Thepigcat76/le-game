@@ -20,6 +20,7 @@ static void save_menu_save_game_button_clicked() {
   GAME.world = world_new_no_chunks();
   GAME.world.chunks = chunks;
   GAME.feature_store.game_features_amount = 0;
+  bump_reset(&ITEM_CONTAINER_BUMP);
 }
 
 static Texture2D DECLARE_BUTTON_TEXTURE(BACK_TO_GAME_BUTTON_TEXTURE);

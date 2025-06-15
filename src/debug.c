@@ -97,10 +97,10 @@ void debug_render() {
   if (GAME.cur_menu == MENU_DEBUG) {
     int id = WORLD_BEING_ID;
     BeingBrain brain = GAME.world.beings[id].brain;
-    if (brain.activities_amount > 0) {
-      BeingActivityWalkAround wa_activity = brain.activities[0].var.activity_walk_around;
-      DrawCircleV(wa_activity.cur_target_pos, 8, WHITE);
-    }
+    //if (brain.activities_amount > 0) {
+    //  BeingActivityWalkAround wa_activity = brain.activities[0].var.activity_walk_around;
+    //  DrawCircleV(wa_activity.cur_target_pos, 8, WHITE);
+    //}
   }
 }
 
@@ -117,9 +117,7 @@ void debug_tick() {
   if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON) && GAME.cur_menu == MENU_DEBUG) {
     BeingInstance *being = &GAME.world.beings[WORLD_BEING_ID];
     being_brain_reset(being);
-    being_add_activity(being,
-                       (BeingActivity){.type = BEING_ACTIVITY_WALK_AROUND,
-                                       .var = {.activity_walk_around = {.cur_target_pos = DEBUG_GO_TO_POSITION}}});
+    being_activities_add_walk_around(being, DEBUG_GO_TO_POSITION);
     TraceLog(LOG_DEBUG, "Added activity");
   }
 

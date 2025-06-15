@@ -14,6 +14,7 @@
 #include "tile.h"
 #include "ui.h"
 #include "world.h"
+#include <raylib.h>
 
 typedef struct {
   char *save_name;
@@ -42,6 +43,8 @@ typedef struct _game {
   TileCategoryLookup tile_category_lookup;
   // DEBUGGING
   DebugOptions debug_options;
+  // World Rendering
+  RenderTexture2D world_texture;
 } Game;
 
 extern Game GAME;

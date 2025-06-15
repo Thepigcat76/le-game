@@ -1,4 +1,5 @@
 #include "../include/tile.h"
+#include "../include/array.h"
 #include "../include/game.h"
 #include "../include/shared.h"
 #include <dirent.h>
@@ -6,6 +7,10 @@
 #include <raylib.h>
 
 // TILE TYPE
+
+static Bump ADV_TILE_BUMP;
+BUMP_ALLOCATOR(ADV_TILE_BUMP_ALLOCATOR, &ADV_TILE_BUMP);
+static AdvTileInstance *ADV_TILES;
 
 #define INIT_TILE(src_file_name)                                                                                       \
   extern void src_file_name##_tile_init();                                                                             \
@@ -37,6 +42,9 @@ void tile_types_init() {
   INIT_TILE(simple_tiles)
 
   TILE_INSTANCE_EMPTY = tile_new(TILES[TILE_EMPTY]);
+
+  bump_init(&ADV_TILE_BUMP, malloc(256 * sizeof(AdvTileInstance)), 256);
+  ADV_TILES = array_new_capacity(AdvTileInstance, 256, &HEAP_ALLOCATOR);
 }
 
 void tile_categories_init(void) {
@@ -75,15 +83,29 @@ char *tile_type_to_string(const TileType *type) {
 
 // TILE INSTANCE
 
+static AdvTileInstance *adv_tile_new(TileType type) {
+  switch (type.id) {
+  case TILE_CHEST: {
+    int index = array_len(ADV_TILES);
+    AdvTileInstance adv_tile_instance = ((AdvTileInstance){.type = ADV_TILE_CHEST, .var = {}});
+    array_add(ADV_TILES, adv_tile_instance);
+    return &ADV_TILES[index];
+  }
+  default:
+    return NULL;
+  }
+}
+
 TileInstance tile_new(TileType type) {
   Vec2i default_pos = tile_default_sprite_pos();
   int default_sprite_res = tile_default_sprite_resolution();
   TileInstance instance = {
       .type = type,
       .box = {.width = TILE_SIZE, .height = TILE_SIZE},
-      .custom_data = {},
-      .cur_sprite_box = type.texture_props.uses_tileset ? rectf(default_pos.x, default_pos.y, default_sprite_res, default_sprite_res)
-                                          : rectf(0, 0, type.texture.width, type.texture.height),
+      .adv_tile_instance = adv_tile_new(type),
+      .cur_sprite_box = type.texture_props.uses_tileset
+          ? rectf(default_pos.x, default_pos.y, default_sprite_res, default_sprite_res)
+          : rectf(0, 0, type.texture.width, type.texture.height),
       .animation_frame = 0,
   };
 

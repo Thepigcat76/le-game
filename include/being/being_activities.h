@@ -1,31 +1,40 @@
 #pragma once
 
 #include "../shared.h"
+#include <stdint.h>
 
-typedef struct {
-    Vec2f prev_target_pos;
-    Vec2f cur_target_pos;
-} BeingActivityWalkAround;
+#define COMPONENT_MAX_AMOUNT 256
 
-typedef struct {
-    Vec2f target_position;
-} BeingActivityGoToPosition;
+#define _COMPONENT_FIELD(type, name) type name[COMPONENT_MAX_AMOUNT]
 
-typedef struct {
+#define COMPONENT_CREATE(type, ...) (type){.val = __VA_ARGS__, .present = true}
+
+#define COMPONENT(name, fields)                                                                                        \
+  typedef struct {                                                                                                     \
+    struct fields val;                                                                                                 \
+    bool present;                                                                                                      \
+  } name
+
+COMPONENT(BeingActivityIdle, {
   int idle_time;
   int timer;
   bool ended;
-} BeingActivityIdle;
+});
+
+COMPONENT(BeingActivityWalkAround, {
+    Vec2f prev_target_pos;
+    Vec2f cur_target_pos;
+});
+
+COMPONENT(BeingActivityGoToPosition, {
+    Vec2f target_position;
+});
 
 typedef struct {
-  enum {
-    BEING_ACTIVITY_WALK_AROUND,
-    BEING_ACTIVITY_GO_TO_POSITION,
-    BEING_ACTIVITY_IDLE,
-  } type;
-  union {
-    BeingActivityWalkAround activity_walk_around;
-    BeingActivityGoToPosition activity_go_to_pos;
-    BeingActivityIdle activity_idle;
-  } var;
-} BeingActivity;
+  uint32_t next_id;
+  _COMPONENT_FIELD(BeingActivityIdle, activities_idle);
+  _COMPONENT_FIELD(BeingActivityWalkAround, activities_walk_around);
+  _COMPONENT_FIELD(BeingActivityGoToPosition, activities_go_to_pos);
+} BeingActivitiesEcs;
+
+extern BeingActivitiesEcs BEING_ACTIVITIES_ECS;

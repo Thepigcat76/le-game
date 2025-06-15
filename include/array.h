@@ -28,8 +28,8 @@ void _internal_array_free(void *arr);
 
 void _internal_array_add(void **arr_ptr, void *item, size_t item_size);
 
-#define array_add(arr, value)                                                                                          \
+#define array_add(arr, ...)                                                                                          \
   do {                                                                                                                 \
-    __typeof__(*(arr)) _tmp = (value);                                                                                 \
+    __typeof__(*(arr)) _tmp = (__VA_ARGS__);                                                                                 \
     _internal_array_add((void **)&(arr), &_tmp, sizeof(_tmp));                                                          \
   } while (0)

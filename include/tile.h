@@ -7,6 +7,7 @@
 #include "textures.h"
 #include "tile/tile_category.h"
 #include "tile/tile_props.h"
+#include "tile/adv_tile.h"
 
 typedef enum {
   TILE_EMPTY,
@@ -39,9 +40,7 @@ typedef struct {
   ItemType *tile_item;
   TileProperties tile_props;
 
-  // ADVANCED TILE PROPERTIES
-  bool is_ticking;
-  bool stores_custom_data;
+  // TEXTURES
   TileTextureProperties texture_props;
   int variant_index;
 } TileType;
@@ -59,8 +58,9 @@ typedef struct {
   TileType type;
   Dimensionsf box;
 
-  // ADVANCED
-  Data custom_data;
+  AdvTileInstance *adv_tile_instance;
+
+  // TEXTURES
   TileTextureData texture_data;
   Rectangle cur_sprite_box;
   AdvTexture variant_texture;

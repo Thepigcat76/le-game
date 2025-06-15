@@ -14,8 +14,6 @@ void empty_tile_init() {
                      .tile_color = TILE_PROPS_DEFAULT.tile_color,
                      .disable_collisions = TILE_PROPS_DEFAULT.disable_collisions},
 
-      .is_ticking = false,
-      .stores_custom_data = false,
       .texture_props = {.uses_tileset = false, .has_variants = false},
   };
   TILES[type.id] = type;

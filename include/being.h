@@ -52,10 +52,7 @@ typedef struct {
 } BeingInstanceEx;
 
 typedef struct {
-  BeingMemory memories[MAX_BEING_MEMORIES_AMOUNT];
-  size_t memories_amount;
-  BeingActivity activities[MAX_BEING_ACTIVITIES_AMOUNT];
-  size_t activities_amount;
+  uint32_t brain_id;
 } BeingBrain;
 
 typedef struct _being_instance {
@@ -87,15 +84,15 @@ void being_tick(BeingInstance *being);
 
 void being_brain_tick(BeingInstance *being, BeingBrain *brain);
 
-void being_activity_tick(BeingInstance *being, BeingActivity *activity);
-
 // BEING BRAIN STUFFS
 
 void being_brain_reset(BeingInstance *being);
 
-void being_activity_init(BeingInstance *being, BeingActivity *activity);
+void being_activities_add_idle(BeingInstance *being, int idle_time);
 
-void being_add_activity(BeingInstance *being, BeingActivity activity);
+void being_activities_add_walk_around(BeingInstance *being, Vec2f target_pos);
+
+void being_activities_add_go_to_pos(BeingInstance *being, Vec2f target_pos);
 
 void being_add_memory(BeingInstance *being, BeingMemory memory);
 
