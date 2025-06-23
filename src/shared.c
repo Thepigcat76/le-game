@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <math.h>
 
 Texture2D TEXT_INPUT_TEXTURE;
 
@@ -159,6 +160,13 @@ int floor_div(int a, int b) { return (a >= 0) ? (a / b) : ((a - b + 1) / b); }
 int floor_mod(int a, int b) {
   int r = a % b;
   return (r < 0) ? r + b : r;
+}
+
+float lerpf(float a, float b, float t) { return (float)(a + (b - a) * t); }
+
+bool vec2f_eq(Vec2f a, Vec2f b) {
+  const float EPSILON = 0.01f;
+  return fabsf(a.x - b.x) < EPSILON && fabsf(a.y - b.y) < EPSILON;
 }
 
 Direction direction_from_delta(int x, int y) {

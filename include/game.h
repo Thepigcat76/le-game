@@ -13,6 +13,7 @@
 #include "sounds.h"
 #include "tile.h"
 #include "ui.h"
+#include "keys.h"
 #include "world.h"
 #include <raylib.h>
 
@@ -45,6 +46,9 @@ typedef struct _game {
   DebugOptions debug_options;
   // World Rendering
   RenderTexture2D world_texture;
+  // KEYS PRESSED
+  PressedKeys pressed_keys;
+  float tick_delta;
 } Game;
 
 extern Game GAME;
@@ -80,7 +84,7 @@ void game_tick(Game *game);
 
 // GAME RENDER
 
-void game_render(Game *game);
+void game_render(Game *game, float alpha);
 
 void game_render_overlay(Game *game);
 

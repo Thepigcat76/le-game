@@ -325,10 +325,10 @@ void game_tick(Game *game) {
 
   player_handle_zoom(&game->player, zoom_in, zoom_out);
 
-  bool w = IsKeyDown(KEYBINDS.move_backward_key);
-  bool a = IsKeyDown(KEYBINDS.move_left_key);
-  bool s = IsKeyDown(KEYBINDS.move_foreward_key);
-  bool d = IsKeyDown(KEYBINDS.move_right_key);
+  bool w = game->pressed_keys.move_backward_key;
+  bool a = game->pressed_keys.move_left_key;
+  bool s = game->pressed_keys.move_foreward_key;
+  bool d = game->pressed_keys.move_right_key;
 
   player_handle_movement(&game->player, w, a, s, d);
 
@@ -371,7 +371,7 @@ static void game_render_break_progress(Game *game, TilePos break_pos, int break_
   }
 }
 
-void game_render(Game *game) {
+void game_render(Game *game, float alpha) {
   Vec2f mouse_pos = GetMousePosition();
   Vec2f mouse_world_pos = GetScreenToWorld2D(mouse_pos, game->player.cam);
 
@@ -385,7 +385,7 @@ void game_render(Game *game) {
 
   game_render_particles(game, true);
 
-  player_render(&game->player);
+  player_render(&game->player, alpha);
 
   world_render_layer_top_split(&game->world, &game->player, false);
 

@@ -10,7 +10,11 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <time.h>
+
+#define TICK_RATE 20                     // ticks per second
+#define TICK_INTERVAL (1.0f / TICK_RATE) // seconds per tick
+
+#define MAX_TICKS_PER_FRAME 20
 
 void debug_rect(Rectangle *rect) {
   TraceLog(LOG_DEBUG, "Rect{x=%f, y=%f, w=%f, h=%f}", rect->x, rect->y, rect->width, rect->height);
@@ -25,7 +29,7 @@ static Texture2D CURSOR_TEXTURE;
 static void update_animations(void) {
   for (int i = 0; i < ANIMATED_TEXTURES_LEN; i++) {
     AnimatedTexture *texture = &ANIMATED_TEXTURES[i];
-    texture->frame_timer += GetFrameTime() * 1000.0f;
+    texture->frame_timer += TICK_INTERVAL * 1000.0f;
     float delay = texture->texture.var.texture_animated.frame_time;
     if (texture->frame_timer >= delay) {
       int frames = texture->texture.var.texture_animated.frames;
@@ -84,9 +88,10 @@ static void tick(Game *game) {
   }
 
   update_animations();
+  game->pressed_keys = (PressedKeys){};
 }
 
-static void render(Game *game) {
+static void render(Game *game, float alpha) {
   BeginDrawing();
   {
     ClearBackground(DARKGRAY);
@@ -116,7 +121,7 @@ static void render(Game *game) {
         ClearBackground(DARKGRAY);
 
         if (!game_cur_menu_hides_game(&GAME)) {
-          game_render(&GAME);
+          game_render(&GAME, alpha);
 
           // TODO: MOVE TO GAME RENDER FUNCTION
 
@@ -163,10 +168,14 @@ static void render(Game *game) {
   EndDrawing();
 }
 
-#define TICK_RATE 20                    // ticks per second
-#define TICK_INTERVAL (1.0f / TICK_RATE) // seconds per tick
+#define KEY_DOWN(key_name) GAME.pressed_keys.key_name = IsKeyDown(KEYBINDS.key_name)
 
-#define MAX_TICKS_PER_FRAME 20
+static void poll_keybinds(Game *game) {
+  KEY_DOWN(move_foreward_key);
+  KEY_DOWN(move_backward_key);
+  KEY_DOWN(move_left_key);
+  KEY_DOWN(move_right_key);
+}
 
 int main(void) {
   // Setup allocators
@@ -207,6 +216,7 @@ int main(void) {
                 .particle_manager = {},
                 .shader_manager = {},
                 .tile_category_lookup = {},
+                .pressed_keys = {},
                 .world_texture = LoadRenderTexture(GetScreenWidth(), GetScreenHeight())};
 
   tile_categories_init();
@@ -240,20 +250,21 @@ int main(void) {
     // TODO: Seperate input polling from tick method
     ticksPerFrame = 0;
 
+    poll_keybinds(game);
+
     float currentTime = GetTime();
     float deltaTime = currentTime - lastFrameTime;
     lastFrameTime = currentTime;
 
     tickAccumulator += deltaTime;
     while (tickAccumulator >= TICK_INTERVAL && ticksPerFrame < MAX_TICKS_PER_FRAME) {
+      game->tick_delta = tickAccumulator / TICK_INTERVAL;
       tick(game);
       tickAccumulator -= TICK_INTERVAL;
-      TraceLog(LOG_DEBUG, "Tick");
-      ticksPerFrame = 0;
+      ticksPerFrame ++;
     }
 
-    render(game);
-    TraceLog(LOG_DEBUG, "RENDER CALL");
+    render(game, tickAccumulator / TICK_INTERVAL);
   }
 
   shaders_unload(&GAME.shader_manager);

@@ -62,16 +62,29 @@ static void update_animation(Player *player, float deltaTime) {
   }
 }
 
-void player_render(Player *player) {
+void player_render(Player *player, float alpha) {
+  Vec2f prev = player->prev_box_pos;
+  Vec2f cur = player->cur_box_pos;
+
+  float draw_x = (vec2f_eq(prev, cur)) ? cur.x : lerpf(prev.x, cur.x, alpha);
+  float draw_y = (vec2f_eq(prev, cur)) ? cur.y : lerpf(prev.y, cur.y, alpha);
+  player->box.x = draw_x;
+  player->box.y = draw_y;
+
+  Vec2f cam_prev = player->prev_cam_pos;
+  Vec2f cam_cur = player->cur_cam_pos;
+
+  float cam_x = (vec2f_eq(cam_prev, cam_cur)) ? player->cam.target.x : lerpf(cam_prev.x, cam_cur.x, alpha);
+  float cam_y = (vec2f_eq(cam_prev, cam_cur)) ? player->cam.target.y : lerpf(cam_prev.y, cam_cur.y, alpha);
+  TraceLog(LOG_DEBUG, "Cam not changed: %d", vec2f_eq(cam_prev, cam_cur));
+  player->cam.target.x = cam_x;
+  player->cam.target.y = cam_y;
   double scale = 1;
   Texture2D player_texture = player_get_texture(player);
-  DrawTexturePro(player_texture,
-                 (Rectangle){0, player->walking ? 32 * player->animation_frame : 32, 16, player->in_water ? 24 : 32},
-                 (Rectangle){.x = player->box.x + 8 * scale,
-                             .y = player->box.y + 16 * scale,
-                             .width = 16 * scale,
-                             .height = (player->in_water ? 24 : 32) * scale},
-                 (Vector2){.x = 8 * scale, .y = 16 * scale}, 0, WHITE);
+  DrawTexturePro(
+      player_texture, rectf(0, player->walking ? 32 * player->animation_frame : 32, 16, player->in_water ? 24 : 32),
+      rectf(player->box.x + 8 * scale, player->box.y + 16 * scale, 16 * scale, (player->in_water ? 24 : 32) * scale),
+      vec2f(8 * scale, 16 * scale), 0, WHITE);
 
   if (player->walking) {
     update_animation(player, GetFrameTime());
@@ -87,10 +100,10 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool
   }
 
   ChunkPos old_chunk_pos = player->chunk_pos;
-  player->box.x = x;
-  player->box.y = y;
-  player->cam.target.x = x;
-  player->cam.target.y = y;
+  player->prev_box_pos = player->cur_box_pos;
+  player->cur_box_pos = vec2f(x, y);
+  player->prev_cam_pos = player->cur_cam_pos;
+  player->cur_cam_pos = vec2f(x, y);
   player->tile_pos.x = floor_div(x + 8, TILE_SIZE);
   player->tile_pos.y = floor_div(y + 8, TILE_SIZE) + 1;
   player->chunk_pos.x = floor_div(x, CHUNK_SIZE * TILE_SIZE);
@@ -208,7 +221,6 @@ static void check_collisions(const Player *player, Vec2f *player_pos, Vec2f play
 
 void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
   Camera2D *cam = &player->cam;
-
   float distance = 2 * CONFIG.player_speed;
 
   bool walking = false;
@@ -259,7 +271,8 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
   player->walking = walking;
 
   if (walking) {
-    player_set_pos(player, player_pos_copy.x, player_pos_copy.y);
+    player_set_pos(player, lerpf(player_pos(player).x, player_pos_copy.x, GAME.tick_delta),
+                   lerpf(player_pos(player).y, player_pos_copy.y, GAME.tick_delta));
   }
 }
 

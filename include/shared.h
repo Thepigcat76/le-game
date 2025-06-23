@@ -130,6 +130,8 @@ Vec2f vec2f(float x, float y);
 
 bool vec2_eq(const Vec2i *vec1, const Vec2i *vec2);
 
+bool vec2f_eq(Vec2f vec1, Vec2f vec2);
+
 Dimensionsf dimf(float width, float height);
 
 Rectf rectf_from_dimf(float x, float y, Dimensionsf dimf);
@@ -145,6 +147,8 @@ void DrawTextureRecEx(Texture2D texture, Rectf source, Vector2 pos, float rotati
 int floor_div(int a, int b);
 
 int floor_mod(int a, int b);
+
+float lerpf(float a, float b, float t);
 
 int signum(int s);
 
