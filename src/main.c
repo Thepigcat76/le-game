@@ -175,6 +175,8 @@ static void poll_keybinds(Game *game) {
   KEY_DOWN(move_backward_key);
   KEY_DOWN(move_left_key);
   KEY_DOWN(move_right_key);
+  KEY_DOWN(zoom_in_key);
+  KEY_DOWN(zoom_out_key);
 }
 
 int main(void) {

@@ -4,6 +4,7 @@
 #include "item.h"
 #include "shared.h"
 #include "tile.h"
+#include <stdint.h>
 #include <raylib.h>
 
 typedef struct {
@@ -12,6 +13,8 @@ typedef struct {
   Vec2f prev_cam_pos;
   Vec2f cur_box_pos;
   Vec2f prev_box_pos;
+  uint32_t cur_zoom;
+  uint32_t prev_zoom;
   Texture2D animated_textures[DIRECTIONS_AMOUNT];
   Texture2D textures[DIRECTIONS_AMOUNT];
   Direction direction;
@@ -44,7 +47,7 @@ void player_render(Player *player, float alpha);
 
 void player_set_pos(Player *player, float x, float y);
 
-void player_handle_zoom(Player *player, bool zoom_in, bool zoom_out);
+void player_handle_zoom(Player *player, bool zoom_in, bool zoom_out, float alpha);
 
 void player_handle_movement(Player *player, bool w, bool a, bool s, bool d);
 

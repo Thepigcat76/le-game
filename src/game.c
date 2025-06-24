@@ -320,11 +320,6 @@ static void handle_item_pickup(Game *game) {
 }
 
 void game_tick(Game *game) {
-  bool zoom_in = IsKeyDown(KEY_UP);
-  bool zoom_out = IsKeyDown(KEY_DOWN);
-
-  player_handle_zoom(&game->player, zoom_in, zoom_out);
-
   bool w = game->pressed_keys.move_backward_key;
   bool a = game->pressed_keys.move_left_key;
   bool s = game->pressed_keys.move_foreward_key;
@@ -388,6 +383,11 @@ void game_render(Game *game, float alpha) {
   game_render_particles(game, true);
 
   player_render(&game->player, alpha);
+  
+  bool zoom_in = IsKeyDown(KEY_UP);
+  bool zoom_out = IsKeyDown(KEY_DOWN);
+
+  player_handle_zoom(&game->player, zoom_in, zoom_out, alpha);
 
   world_render_layer_top_split(&game->world, &game->player, false);
 

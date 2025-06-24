@@ -77,8 +77,6 @@ void player_render(Player *player, float alpha) {
   player->box.x = draw_x;
   player->box.y = draw_y;
 
-  TraceLog(LOG_DEBUG, "Player move x: %f, y: %f", draw_x, draw_y);
-
   float cam_x = lerpf(player->prev_cam_pos.x, player->cur_cam_pos.x, alpha);
   float cam_y = lerpf(player->prev_cam_pos.y, player->cur_cam_pos.y, alpha);
 
@@ -154,16 +152,20 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool
 
 void player_set_pos(Player *player, float x, float y) { player_set_pos_ex(player, x, y, true, true, true); }
 
-void player_handle_zoom(Player *player, bool zoom_in, bool zoom_out) {
-  Camera2D *cam = &player->cam;
+void player_handle_zoom(Player *player, bool zoom_in, bool zoom_out, float alpha) {
+    Camera2D *cam = &player->cam;
 
-  if (zoom_in) {
-    cam->zoom = fmin(cam->zoom + GetFrameTime() * 2.0, 4);
-  }
+    const float zoom_speed = 0.045f;     // zoom units per second
+    const float zoom_min = 1.0f;
+    const float zoom_max = 4.0f;
 
-  if (zoom_out) {
-    cam->zoom = fmax(cam->zoom - GetFrameTime() * 2.0, 1);
-  }
+    if (zoom_in) {
+        cam->zoom = fminf(cam->zoom + alpha * zoom_speed, zoom_max);
+    }
+
+    if (zoom_out) {
+        cam->zoom = fmaxf(cam->zoom - alpha * zoom_speed, zoom_min);
+    }
 }
 
 Rectangle rec_offset(Rectangle rectangle, int32_t x_offset, int32_t y_offset, int32_t width_offset,
