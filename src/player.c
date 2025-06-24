@@ -62,29 +62,38 @@ static void update_animation(Player *player, float deltaTime) {
   }
 }
 
-void player_render(Player *player, float alpha) {
-  Vec2f prev = player->prev_box_pos;
-  Vec2f cur = player->cur_box_pos;
+void player_tick(Player *player) {
+  player->prev_box_pos.x = player->cur_box_pos.x;
+  player->prev_box_pos.y = player->cur_box_pos.y;
 
-  float draw_x = (vec2f_eq(prev, cur)) ? cur.x : lerpf(prev.x, cur.x, alpha);
-  float draw_y = (vec2f_eq(prev, cur)) ? cur.y : lerpf(prev.y, cur.y, alpha);
+  player->prev_cam_pos.x = player->cur_cam_pos.x;
+  player->prev_cam_pos.y = player->cur_cam_pos.y;
+}
+
+void player_render(Player *player, float alpha) {
+  float draw_x = lerpf(player->prev_box_pos.x, player->cur_box_pos.x, alpha);
+  float draw_y = lerpf(player->prev_box_pos.y, player->cur_box_pos.y, alpha);
+
   player->box.x = draw_x;
   player->box.y = draw_y;
 
-  Vec2f cam_prev = player->prev_cam_pos;
-  Vec2f cam_cur = player->cur_cam_pos;
+  TraceLog(LOG_DEBUG, "Player move x: %f, y: %f", draw_x, draw_y);
 
-  float cam_x = (vec2f_eq(cam_prev, cam_cur)) ? player->cam.target.x : lerpf(cam_prev.x, cam_cur.x, alpha);
-  float cam_y = (vec2f_eq(cam_prev, cam_cur)) ? player->cam.target.y : lerpf(cam_prev.y, cam_cur.y, alpha);
-  TraceLog(LOG_DEBUG, "Cam not changed: %d", vec2f_eq(cam_prev, cam_cur));
+  float cam_x = lerpf(player->prev_cam_pos.x, player->cur_cam_pos.x, alpha);
+  float cam_y = lerpf(player->prev_cam_pos.y, player->cur_cam_pos.y, alpha);
+
   player->cam.target.x = cam_x;
   player->cam.target.y = cam_y;
+
   double scale = 1;
   Texture2D player_texture = player_get_texture(player);
-  DrawTexturePro(
-      player_texture, rectf(0, player->walking ? 32 * player->animation_frame : 32, 16, player->in_water ? 24 : 32),
-      rectf(player->box.x + 8 * scale, player->box.y + 16 * scale, 16 * scale, (player->in_water ? 24 : 32) * scale),
-      vec2f(8 * scale, 16 * scale), 0, WHITE);
+  DrawTexturePro(player_texture,
+                 (Rectangle){0, player->walking ? 32 * player->animation_frame : 32, 16, player->in_water ? 24 : 32},
+                 (Rectangle){.x = player->box.x + 8 * scale,
+                             .y = player->box.y + 16 * scale,
+                             .width = 16 * scale,
+                             .height = (player->in_water ? 24 : 32) * scale},
+                 (Vector2){.x = 8 * scale, .y = 16 * scale}, 0, WHITE);
 
   if (player->walking) {
     update_animation(player, GetFrameTime());
@@ -100,10 +109,12 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool
   }
 
   ChunkPos old_chunk_pos = player->chunk_pos;
-  player->prev_box_pos = player->cur_box_pos;
-  player->cur_box_pos = vec2f(x, y);
-  player->prev_cam_pos = player->cur_cam_pos;
-  player->cur_cam_pos = vec2f(x, y);
+  // Set cam pos
+  player->cur_cam_pos.x = x;
+  player->cur_cam_pos.y = y;
+  // Set player pos
+  player->cur_box_pos.x = x;
+  player->cur_box_pos.y = y;
   player->tile_pos.x = floor_div(x + 8, TILE_SIZE);
   player->tile_pos.y = floor_div(y + 8, TILE_SIZE) + 1;
   player->chunk_pos.x = floor_div(x, CHUNK_SIZE * TILE_SIZE);

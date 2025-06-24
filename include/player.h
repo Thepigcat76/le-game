@@ -8,6 +8,10 @@
 
 typedef struct {
   Camera2D cam;
+  Vec2f cur_cam_pos;
+  Vec2f prev_cam_pos;
+  Vec2f cur_box_pos;
+  Vec2f prev_box_pos;
   Texture2D animated_textures[DIRECTIONS_AMOUNT];
   Texture2D textures[DIRECTIONS_AMOUNT];
   Direction direction;
@@ -23,20 +27,18 @@ typedef struct {
   TilePos break_tile_pos;
 
   // PLAYER DATA
-  Rectangle box;
+  Rectf box;
   int essence;
   TilePos tile_pos;
   ChunkPos chunk_pos;
   ItemInstance held_item;
-  Vec2f prev_box_pos;
-  Vec2f cur_box_pos;
-  Vec2f prev_cam_pos;
-  Vec2f cur_cam_pos;
 } Player;
 
 Player player_new();
 
 Rectf player_collision_box(const Player *player);
+
+void player_tick(Player *player);
 
 void player_render(Player *player, float alpha);
 

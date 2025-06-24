@@ -330,6 +330,8 @@ void game_tick(Game *game) {
   bool s = game->pressed_keys.move_foreward_key;
   bool d = game->pressed_keys.move_right_key;
 
+  player_tick(&game->player);
+
   player_handle_movement(&game->player, w, a, s, d);
 
   for (int i = 0; i < game->world.beings_amount; i++) {
