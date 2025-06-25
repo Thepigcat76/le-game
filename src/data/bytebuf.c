@@ -80,12 +80,6 @@ void byte_buf_from_bin(ByteBuf *buf, const char *str_buf) {
 }
 
 void byte_buf_from_file(ByteBuf *buf, const char *name) {
-  FILE *f = fopen(name, "rb");
-  if (!f) {
-    printf("Failed to open file for reading\n");
-    exit(1);
-  }
-
   char *file_content = read_file_to_string(name);
 
   byte_buf_from_bin(buf, file_content);

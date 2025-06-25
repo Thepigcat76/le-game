@@ -30,65 +30,54 @@ typedef struct {
 // Setup (Order of declaratiion should also be)
 
 // Needs to be called after setting the style
+#define UI_SETUP(...) ui_setup(&GAME.ui_renderer, (UiStyle)__VA_ARGS__)
+
+#define UI_BACKGROUND(...) ui_set_background(&GAME.ui_renderer, (BackgroundUiComponent)__VA_ARGS__)
+
 void ui_setup(UiRenderer *renderer, UiStyle style);
 
-void ui_set_background(UiRenderer *renderer, Texture2D texture);
+void ui_set_background(UiRenderer *renderer, BackgroundUiComponent component);
 
 float ui_scale(UiRenderer *renderer);
 
 // COMPONENTS
 
+#define RENDER_BUTTON(...) ui_button_render(&GAME.ui_renderer, (ButtonUiComponent)__VA_ARGS__)
+
+#define RENDER_TEXT(...) ui_text_render(&GAME.ui_renderer, (TextUiComponent)__VA_ARGS__)
+
+#define RENDER_TEXT_INPUT(...) ui_text_input_render(&GAME.ui_renderer, (TextInputUiComponent)__VA_ARGS__)
+
+#define RENDER_TEXTURE(...) ui_texture_render(&GAME.ui_renderer, (TextureUiComponent)__VA_ARGS__)
+
+#define RENDER_SPACING(...) ui_spacing_render(&GAME.ui_renderer, (SpacingUiComponent)__VA_ARGS__)
+
+#define UI_GROUP_CREATE(...) ui_group_create(&GAME.ui_renderer, (GroupUiComponent)__VA_ARGS__)
+
+#define UI_GROUP_DESTROY() ui_group_destroy(&GAME.ui_renderer)
+
 // BUTTONS
 
-void ui_button_render_ex(UiRenderer *renderer, ButtonUiComponent component);
-
-void ui_button_render_dimensions_offset(UiRenderer *renderer, const char *text, Texture2D texture,
-                                        Texture2D selected_texture, ButtonClickFunction on_click_func, Vec2i offset,
-                                        Vec2i dimensions);
-
-void ui_button_render_offset(UiRenderer *renderer, const char *text, Texture2D texture, Texture2D selected_texture,
-                             ButtonClickFunction on_click_func, Vec2i offset);
-
-void ui_button_render(UiRenderer *renderer, const char *text, Texture2D texture, Texture2D selected_texture,
-                      ButtonClickFunction on_click_func);
+void ui_button_render(UiRenderer *renderer, ButtonUiComponent component);
 
 // TEXT
 
-void ui_text_render_ex(UiRenderer *renderer, TextUiComponent component);
-
-void ui_text_render_offset(UiRenderer *renderer, const char *text, Vec2i offset);
-
-void ui_text_render(UiRenderer *renderer, const char *text);
+void ui_text_render(UiRenderer *renderer, TextUiComponent component);
 
 // TEXT INPUT
 
-void ui_text_input_render_ex(UiRenderer *renderer, TextInputUiComponent component);
-
-void ui_text_input_render(UiRenderer *renderer, Texture2D texture, TextInputBuffer *text_input_buf, bool *selected);
-
-void ui_text_input_render_dimensions(UiRenderer *renderer, Texture2D texture, TextInputBuffer *text_input_buf,
-                                     bool *selected, Vec2i dimensions);
+void ui_text_input_render(UiRenderer *renderer, TextInputUiComponent component);
 
 // SPACING
 
-void ui_spacing_render_ex(UiRenderer *renderer, SpacingUiComponent component);
-
-void ui_spacing_render(UiRenderer *renderer, int spacing_height);
+void ui_spacing_render(UiRenderer *renderer, SpacingUiComponent component);
 
 // TEXTURE
 
-void ui_texture_render(UiRenderer *renderer, Texture2D texture);
+void ui_texture_render(UiRenderer *renderer, TextureUiComponent component);
 
 // GROUP
 
-void ui_group_create_ex(UiRenderer *renderer, GroupUiComponent component);
-
-void ui_group_create_offset_dimensions(UiRenderer *renderer, UiStyle ui_style, bool has_scrollbar, int offset_x, int offset_y, int width, int height, int *scroll_y_offset);
-
-void ui_group_create_dimensions(UiRenderer *renderer, UiStyle ui_style, bool has_scrollbar, int width, int height, int *scroll_y_offset);
-
-void ui_group_create_offset(UiRenderer *renderer, UiStyle ui_style, bool has_scrollbar, int offset_x, int offset_y);
-
-void ui_group_create(UiRenderer *renderer, UiStyle ui_style, bool has_scrollbar);
+void ui_group_create(UiRenderer *renderer, GroupUiComponent component);
 
 void ui_group_destroy(UiRenderer *renderer);

@@ -33,26 +33,39 @@ void new_save_menu_open(UiRenderer *renderer, const Game *game) {
 
 void new_save_menu_render(UiRenderer *renderer, const Game *game) {
   float scale = 0.85;
-  ui_setup(renderer,
-           (UiStyle){
-               .positions = {UI_CENTER, UI_CENTER},
-               .alignment = UI_VERTICAL,
-               .padding = 12,
-               .scale = scale,
-               .font_scale = CONFIG.default_font_size * scale,
-           });
+  UI_SETUP({
+      .positions = {UI_CENTER, UI_CENTER},
+      .alignment = UI_VERTICAL,
+      .padding = 12,
+      .scale = scale,
+      .font_scale = CONFIG.default_font_size * scale,
+  });
 
   int x_offset = 0;
   int y_offset = -2;
 
-  ui_text_render(renderer, "Create new save");
-  ui_spacing_render(renderer, 40);
-  ui_text_render(renderer, "Save Name:");
-  ui_text_input_render(renderer, TEXT_INPUT_TEXTURE, &save_name_text_input_buffer, &save_name_input_selected);
-  ui_text_render(renderer, "Seed:");
-  ui_text_input_render(renderer, TEXT_INPUT_TEXTURE, &seed_text_input_buffer, &seed_input_selected);
-  ui_button_render_offset(renderer, "Create World", BUTTON_TEXTURE, BUTTON_SELECTED_TEXTURE,
-                          button_click_simple(new_save_create_world), vec2i(x_offset, y_offset));
-  ui_button_render_offset(renderer, "Back", BUTTON_TEXTURE, BUTTON_SELECTED_TEXTURE,
-                          button_click_simple(new_save_back_to_start_menu), vec2i(x_offset, y_offset));
+  RENDER_TEXT({.text = "Create new save"});
+  RENDER_SPACING({.height = 40});
+  RENDER_TEXT({.text = "Save Name:"});
+  RENDER_TEXT_INPUT({.texture = TEXT_INPUT_TEXTURE,
+                     .text_input = &save_name_text_input_buffer,
+                     .selected = &save_name_input_selected,
+                     .width = 200});
+  RENDER_TEXT({.text = "Seed:"});
+  RENDER_TEXT_INPUT({.texture = TEXT_INPUT_TEXTURE,
+                     .text_input = &seed_text_input_buffer,
+                     .selected = &seed_input_selected,
+                     .width = 200});
+  RENDER_BUTTON({.message = "Create World",
+                 .texture = BUTTON_TEXTURE,
+                 .selected_texture = BUTTON_SELECTED_TEXTURE,
+                 .on_click_func = button_click_simple(new_save_create_world),
+                 .x_offset = x_offset,
+                 .y_offset = y_offset});
+  RENDER_BUTTON({.message = "Back",
+                 .texture = BUTTON_TEXTURE,
+                 .selected_texture = BUTTON_SELECTED_TEXTURE,
+                 .on_click_func = button_click_simple(new_save_back_to_start_menu),
+                 .x_offset = x_offset,
+                 .y_offset = y_offset});
 }

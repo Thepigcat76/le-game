@@ -1,5 +1,8 @@
 #include "../include/game.h"
+#include "../include/alloc.h"
 #include "../include/config.h"
+#include "../include/data/data_reader.h"
+#include "../include/item/item_container.h"
 #include "../vendor/cJSON.h"
 #include "raylib.h"
 #include <dirent.h>
@@ -34,6 +37,7 @@ void game_reload(Game *game) {
   RELOAD(game, tile);
   RELOAD(game, config);
   RELOAD(game, save_names);
+  RELOAD(game, shaders);
 }
 
 Game GAME;
@@ -41,6 +45,7 @@ Music MUSIC;
 
 static Sound PLACE_SOUND;
 static Texture2D BREAK_PROGRESS_TEXTURE;
+static Texture2D TOOLTIP_TEXTURE;
 
 static void game_create_save_config(Game *game, int save_index, const char *save_name, float seed) {
   cJSON *json = cJSON_CreateObject();
@@ -94,6 +99,7 @@ void game_init(Game *game) {
   }
 
   BREAK_PROGRESS_TEXTURE = LoadTexture("res/assets/breaking_overlay.png");
+  TOOLTIP_TEXTURE = LoadTexture("res/assets/gui/tool_tip.png");
 
 #ifdef SURTUR_DEBUG
   debug_init();
@@ -175,15 +181,26 @@ static void handle_tile_interaction(Game *game) {
       abs((int)game->player.box.x - x_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE &&
       abs((int)game->player.box.y - y_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE;
 
-  Rectangle slot_rect = {.x = SCREEN_WIDTH - (3.5 * 16) - 30,
-                         .y = (SCREEN_HEIGHT / 2.0f) - (3.5 * 8),
-                         .width = 20 * 3.5,
-                         .height = 20 * 3.5};
-  bool slot_selected = CheckCollisionPointRec(GetMousePosition(), slot_rect);
+  bool slot_selected = game_slot_selected();
 
   if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !slot_selected && interaction_in_range) {
     TileInstance *selected_tile = world_highest_tile_at(&game->world, vec2i(x_index, y_index));
-    if (selected_tile->type.id == TILE_EMPTY) {
+    bool correct_tool = false;
+    if (game->player.held_item.type.item_props.tool_props.break_categories.categories_amount > 0) {
+      TileIdCategories tool_categories = game->player.held_item.type.item_props.tool_props.break_categories;
+      TileIdCategories selected_tile_categories = tile_categories(&selected_tile->type);
+      for (int i = 0; i < tool_categories.categories_amount; i++) {
+        for (int j = 0; j < selected_tile_categories.categories_amount; j++) {
+          if (tool_categories.categories_amount > 0 && selected_tile_categories.categories_amount > 0 &&
+              tool_categories.categories[i] == selected_tile_categories.categories[j]) {
+            correct_tool = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (selected_tile->type.id == TILE_EMPTY || selected_tile->type.tile_props.break_time < 0 || !correct_tool) {
       game->player.break_progress = -1;
       return;
     }
@@ -202,17 +219,32 @@ static void handle_tile_interaction(Game *game) {
           return;
         }
 
-        game->player.break_progress += game->player.held_item.type.tool_properties.break_speed + 1;
+        game->player.break_progress += game->player.held_item.type.item_props.tool_props.break_speed + 1;
         game->player.break_tile_pos = vec2i(x_index, y_index);
-        if (game->player.break_progress >= 64) {
+        game->player.break_tile = tile;
+        if (game->player.break_progress >= tile.type.tile_props.break_time) {
           if (game->player.held_item.type.id == ITEM_HAMMER) {
             for (int y = -1; y <= 1; y++) {
               for (int x = -1; x <= 1; x++) {
-                world_remove_tile(&game->world, vec2i(x_index + x, y_index + y));
+                TilePos tile_pos = vec2i(x_index + x, y_index + y);
+                TileInstance *tile_ptr = world_highest_tile_at(&game->world, tile_pos);
+                TileInstance tile = TILE_INSTANCE_EMPTY;
+                if (tile_ptr != NULL) {
+                  tile = *tile_ptr;
+                }
+                world_remove_tile(&game->world, tile_pos);
+                world_set_tile_on_layer(&game->world, tile_pos, tile_break_remainder(&tile, tile_pos), tile.type.layer);
               }
             }
           } else {
-            world_remove_tile(&game->world, vec2i(x_index, y_index));
+            TileInstance *tile_ptr = world_highest_tile_at(&game->world, vec2i(x_index, y_index));
+            TileInstance tile = TILE_INSTANCE_EMPTY;
+            if (tile_ptr != NULL) {
+              tile = *tile_ptr;
+            }
+            TilePos tile_pos = vec2i(x_index, y_index);
+            world_remove_tile(&game->world, tile_pos);
+            world_set_tile_on_layer(&game->world, tile_pos, tile_break_remainder(&tile, tile_pos), tile.type.layer);
           }
           game->player.break_progress = -1;
           game->player.last_broken_tile = tile;
@@ -235,9 +267,13 @@ static void handle_tile_interaction(Game *game) {
   }
 
   if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && !slot_selected && interaction_in_range) {
-    TileInstance *selected_tile = world_ground_tile_at(&game->world, vec2i(x_index, y_index));
+    TileInstance *selected_tile = world_highest_tile_at(&game->world, vec2i(x_index, y_index));
     if (CheckCollisionPointRec(mouse_world_pos,
                                rectf_from_dimf(x_index * TILE_SIZE, y_index * TILE_SIZE, selected_tile->box))) {
+      if (selected_tile->type.id == TILE_CHEST) {
+        game_set_menu(game, MENU_DIALOG);
+        return;
+      }
       TileInstance new_tile = tile_new(game->debug_options.selected_tile_to_place_instance.type);
       bool placed = world_place_tile(&game->world, vec2i(x_index, y_index), new_tile);
       if (placed && game->sound_manager.sound_timer >= SOUND_COOLDOWN) {
@@ -251,10 +287,30 @@ static void handle_tile_interaction(Game *game) {
   }
 }
 
+static void handle_mouse_interaction(Game *game) {
+  bool being_clicked = false;
+  if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
+    for (int i = 0; i < game->world.beings_amount; i++) {
+      BeingInstance being = game->world.beings[i];
+      if (being.id == BEING_NPC &&
+          CheckCollisionPointRec(GetScreenToWorld2D(GetMousePosition(), game->player.cam), being.context.box)) {
+        game_set_menu(game, MENU_DIALOG);
+        TraceLog(LOG_DEBUG, "Clicked being");
+        being_clicked = true;
+        break;
+      }
+    }
+  }
+
+  if (!being_clicked) {
+    handle_tile_interaction(game);
+  }
+}
+
 static void handle_item_pickup(Game *game) {
   for (int i = 0; i < game->world.beings_amount; i++) {
     if (game->world.beings[i].id == BEING_ITEM &&
-        CheckCollisionRecs(game->world.beings[i].context.box, game->player.box)) {
+        CheckCollisionRecs(game->world.beings[i].context.box, player_collision_box(&game->player))) {
       if (GetTime() - game->world.beings[i].context.creation_time > CONFIG.item_pickup_delay) {
         world_remove_being(&game->world, &game->world.beings[i]);
         break;
@@ -264,15 +320,12 @@ static void handle_item_pickup(Game *game) {
 }
 
 void game_tick(Game *game) {
-  bool zoom_in = IsKeyDown(KEY_UP);
-  bool zoom_out = IsKeyDown(KEY_DOWN);
+  bool w = game->pressed_keys.move_backward_key;
+  bool a = game->pressed_keys.move_left_key;
+  bool s = game->pressed_keys.move_foreward_key;
+  bool d = game->pressed_keys.move_right_key;
 
-  player_handle_zoom(&game->player, zoom_in, zoom_out);
-
-  bool w = IsKeyDown(KEYBINDS.move_backward_key);
-  bool a = IsKeyDown(KEYBINDS.move_left_key);
-  bool s = IsKeyDown(KEYBINDS.move_foreward_key);
-  bool d = IsKeyDown(KEYBINDS.move_right_key);
+  player_tick(&game->player);
 
   player_handle_movement(&game->player, w, a, s, d);
 
@@ -280,7 +333,7 @@ void game_tick(Game *game) {
     being_tick(&game->world.beings[i]);
   }
 
-  handle_tile_interaction(game);
+  handle_mouse_interaction(game);
 
   handle_item_pickup(game);
 
@@ -304,16 +357,18 @@ void game_tick(Game *game) {
 
 // RENDERING
 
-static void game_render_break_progress(Game *game, TilePos break_pos, int break_progress) {
+#define BREAK_PROGRESS_FRAMES 6
+
+static void game_render_break_progress(Game *game, TilePos break_pos, int break_time, int break_progress) {
   if (break_progress != -1) {
-    int index = floor_div(break_progress, 16);
+    int index = floor_div(break_progress, break_time / BREAK_PROGRESS_FRAMES);
     DrawTextureRec(BREAK_PROGRESS_TEXTURE, rectf(0, index * TILE_SIZE, TILE_SIZE, TILE_SIZE),
                    vec2f(break_pos.x * TILE_SIZE, break_pos.y * TILE_SIZE), WHITE);
     TraceLog(LOG_DEBUG, "Texture index: %d", index);
   }
 }
 
-void game_render(Game *game) {
+void game_render(Game *game, float alpha) {
   Vec2f mouse_pos = GetMousePosition();
   Vec2f mouse_world_pos = GetScreenToWorld2D(mouse_pos, game->player.cam);
 
@@ -327,11 +382,17 @@ void game_render(Game *game) {
 
   game_render_particles(game, true);
 
-  player_render(&game->player);
+  player_render(&game->player, alpha);
+  
+  bool zoom_in = IsKeyDown(KEY_UP);
+  bool zoom_out = IsKeyDown(KEY_DOWN);
+
+  player_handle_zoom(&game->player, zoom_in, zoom_out, alpha);
 
   world_render_layer_top_split(&game->world, &game->player, false);
 
-  game_render_break_progress(game, game->player.break_tile_pos, game->player.break_progress);
+  game_render_break_progress(game, game->player.break_tile_pos, game->player.break_tile.type.tile_props.break_time,
+                             game->player.break_progress);
 
   int x_index = floor_div(mouse_world_pos.x, TILE_SIZE);
   int y_index = floor_div(mouse_world_pos.y, TILE_SIZE);
@@ -352,22 +413,50 @@ void game_render(Game *game) {
 }
 
 void game_render_overlay(Game *game) {
-  Vec2i pos = vec2i(SCREEN_WIDTH - (3.5 * 16) - 30, (SCREEN_HEIGHT / 2.0f) - (3.5 * 8));
+  Vec2i pos = vec2i(GetScreenWidth() - (3.5 * 16) - 30, (GetScreenHeight() / 2.0f) - (3.5 * 8));
   DrawTextureEx(MAIN_HAND_SLOT_TEXTURE, (Vector2){pos.x, pos.y}, 0, 4.5, WHITE);
   item_render(&game->player.held_item, pos.x + 2 * 3.5, pos.y + 2 * 3.5);
 
 #ifdef SURTUR_DEBUG
-  tile_render_scaled(&game->debug_options.selected_tile_to_place_instance, SELECTED_TILE_RENDER_POS.x + 35,
-                     SELECTED_TILE_RENDER_POS.y - 60, 4);
   debug_render_overlay();
 #endif
+
+  if (game_slot_selected()) {
+    Vec2f mouse_pos = GetMousePosition();
+    if (mouse_pos.x + TOOLTIP_TEXTURE.width * 5 > GetScreenWidth()) {
+      mouse_pos.x -= TOOLTIP_TEXTURE.width * 5;
+    }
+    BeginShaderMode(game->shader_manager.shaders[SHADER_TOOLTIP_OUTLINE]);
+    {
+      SetShaderValue(game->shader_manager.shaders[SHADER_TOOLTIP_OUTLINE],
+                     GetShaderLocation(game->shader_manager.shaders[SHADER_TOOLTIP_OUTLINE], "resolution"),
+                     (float[2]){TOOLTIP_TEXTURE.width, TOOLTIP_TEXTURE.height}, SHADER_UNIFORM_VEC2);
+      DrawTextureEx(TOOLTIP_TEXTURE, mouse_pos, 0, 5, WHITE);
+    }
+    EndShaderMode();
+
+    int y_offset = 15;
+    char *name = item_type_to_string(&game->player.held_item.type);
+    DrawText(name, mouse_pos.x + ((float)TOOLTIP_TEXTURE.width * 5 - MeasureText(name, CONFIG.default_font_size)) / 2,
+             mouse_pos.y + y_offset, CONFIG.default_font_size, WHITE);
+    char tooltip[256];
+    item_tooltip(&game->player.held_item, tooltip, 256);
+    int count;
+    const char **tooltip_lines = TextSplit(tooltip, '\n', &count);
+    for (int i = 0; i < count; i++) {
+      DrawText(tooltip_lines[i],
+               mouse_pos.x +
+                   ((float)TOOLTIP_TEXTURE.width * 5 - MeasureText(tooltip_lines[i], CONFIG.default_font_size)) / 2,
+               mouse_pos.y + y_offset + (CONFIG.default_font_size * (i + 1)), CONFIG.default_font_size, WHITE);
+    }
+  }
 }
 
 // UI/MENUS
 
 static bool game_slot_selected() {
-  Rectangle slot_rect = {.x = SCREEN_WIDTH - (3.5 * 16) - 30,
-                         .y = (SCREEN_HEIGHT / 2.0f) - (3.5 * 8),
+  Rectangle slot_rect = {.x = GetScreenWidth() - (3.5 * 16) - 30,
+                         .y = (GetScreenHeight() / 2.0f) - (3.5 * 8),
                          .width = 20 * 3.5,
                          .height = 20 * 3.5};
   return CheckCollisionPointRec(GetMousePosition(), slot_rect);
@@ -379,6 +468,7 @@ bool game_cur_menu_hides_game(Game *game) {
 
 static void game_init_menu(Game *game) {
   INIT_MENU(save_menu);
+  INIT_MENU(dialog_menu);
   // INIT_MENU(start_menu);
   // INIT_MENU(debug_menu);
 }
@@ -412,6 +502,10 @@ void game_render_menu(Game *game) {
   }
   case MENU_MAP: {
     RENDER_MENU(ui_renderer, map_menu);
+    break;
+  }
+  case MENU_DIALOG: {
+    RENDER_MENU(ui_renderer, dialog_menu);
     break;
   }
   case MENU_NONE: {
@@ -453,23 +547,23 @@ void game_set_menu(Game *game, MenuId menu_id) {
 
 // GAME LOAD/SAVE
 
-#define SAVE_DATA(save_file_name, byte_buf_size, byte_buf_name, block)                                                 \
+#define SAVE_DATA(save_file_name, byte_buf_size, byte_buf_name, ...)                                                   \
   {                                                                                                                    \
     uint8_t *byte_buf_name##_bytes = (uint8_t *)malloc(byte_buf_size);                                                 \
     ByteBuf byte_buf_name = {                                                                                          \
         .bytes = byte_buf_name##_bytes, .writer_index = 0, .reader_index = 0, .capacity = byte_buf_size};              \
-    block byte_buf_to_file(&byte_buf_name, TextFormat("save/save%d/" save_file_name ".bin", game->cur_save));          \
+    __VA_ARGS__ byte_buf_to_file(&byte_buf_name, TextFormat("save/save%d/" save_file_name ".bin", game->cur_save));    \
     TraceLog(LOG_INFO, "Saved " save_file_name " data, writer index: %d", byte_buf_name.writer_index);                 \
     free(byte_buf_name##_bytes);                                                                                       \
   }
 
-#define LOAD_DATA(save_file_name, byte_buf_size, byte_buf_name, block)                                                 \
+#define LOAD_DATA(save_file_name, byte_buf_size, byte_buf_name, ...)                                                   \
   {                                                                                                                    \
     uint8_t *byte_buf_name##_bytes = (uint8_t *)malloc(byte_buf_size);                                                 \
     ByteBuf byte_buf_name = {                                                                                          \
         .bytes = byte_buf_name##_bytes, .writer_index = 0, .reader_index = 0, .capacity = byte_buf_size};              \
     byte_buf_from_file(&byte_buf_name, TextFormat("save/save%d/" save_file_name ".bin", game->cur_save));              \
-    block TraceLog(LOG_INFO, "Loaded " save_file_name " data, reader index: %d", byte_buf_name.reader_index);          \
+    __VA_ARGS__ TraceLog(LOG_INFO, "Loaded " save_file_name " data, reader index: %d", byte_buf_name.reader_index);    \
     free(byte_buf_name##_bytes);                                                                                       \
   }
 
@@ -479,18 +573,21 @@ void game_load(Game *game) { game_load_cur_save(game); }
 
 void game_load_cur_save(Game *game) {
   LOAD_DATA("player", sizeof(Player), byte_buf, {
-    Data data_map_0 = byte_buf_read_data(&byte_buf);
-    DataMap *player_map = &data_map_0.var.data_map;
+    Data data_map = byte_buf_read_data(&byte_buf);
+    DataMap *player_map = &data_map.var.data_map;
     player_load(&game->player, player_map);
-    data_free(&data_map_0);
+    data_free(&data_map);
   });
 
   LOAD_DATA("world", sizeof(Chunk) * WORLD_LOADED_CHUNKS + 100 + sizeof(BeingInstance) * 200, byte_buf, {
-    Data data_map_1 = byte_buf_read_data(&byte_buf);
-    DataMap *world_map = &data_map_1.var.data_map;
+    Data data_map = byte_buf_read_data(&byte_buf);
+    char *str = data_reader_read_data(&data_map);
+    printf("%s\n", str);
+    free(str);
+    DataMap *world_map = &data_map.var.data_map;
     load_world(&game->world, world_map);
 
-    data_free(&data_map_1);
+    data_free(&data_map);
   });
 }
 
@@ -523,6 +620,8 @@ void game_unload(Game *game) {
 
   free(game->world.chunks);
   free(game->feature_store.game_features);
+  free(GLOBAL_BUMP.buffer);
+  free(ITEM_CONTAINER_BUMP.buffer);
 
   UnloadSound(PLACE_SOUND);
   UnloadMusicStream(MUSIC);

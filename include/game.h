@@ -11,8 +11,11 @@
 #include "shaders.h"
 #include "shared.h"
 #include "sounds.h"
+#include "tile.h"
 #include "ui.h"
+#include "keys.h"
 #include "world.h"
+#include <raylib.h>
 
 typedef struct {
   char *save_name;
@@ -37,8 +40,15 @@ typedef struct _game {
   SoundManager sound_manager;
   // SHADERS
   ShaderManager shader_manager;
+  // TILE CATEGORIES
+  TileCategoryLookup tile_category_lookup;
   // DEBUGGING
   DebugOptions debug_options;
+  // World Rendering
+  RenderTexture2D world_texture;
+  // KEYS PRESSED
+  PressedKeys pressed_keys;
+  float tick_delta;
 } Game;
 
 extern Game GAME;
@@ -74,7 +84,7 @@ void game_tick(Game *game);
 
 // GAME RENDER
 
-void game_render(Game *game);
+void game_render(Game *game, float alpha);
 
 void game_render_overlay(Game *game);
 

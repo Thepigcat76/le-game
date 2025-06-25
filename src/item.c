@@ -1,23 +1,24 @@
 #include "../include/item.h"
+#include "../include/data.h"
 #include <raylib.h>
+#include <stdio.h>
 
 #define INIT_ITEM(src_file_name)                                                                                       \
   extern void src_file_name##_item_init();                                                                             \
   src_file_name##_item_init();
 
-ItemType ITEMS[ITEM_TYPE_AMOUNT];
+ItemType ITEMS[MAX_ITEM_TYPES];
+size_t ITEMS_AMOUNT = 0;
+
+ItemInstance ITEM_INSTANCE_EMPTY;
 
 void item_types_init() {
   INIT_ITEM(empty);
-  INIT_ITEM(torch);
-  INIT_ITEM(stick);
-  INIT_ITEM(hammer);
-  INIT_ITEM(backpack);
-  INIT_ITEM(map);
-  INIT_ITEM(grass);
-  INIT_ITEM(stone);
-  INIT_ITEM(dirt);
+  INIT_ITEM(simple_items);
+  INIT_ITEM(simple_inv_items);
   INIT_ITEM(tool_items);
+
+  ITEM_INSTANCE_EMPTY = (ItemInstance){.type = ITEMS[ITEM_EMPTY]};
 }
 
 void item_render(const ItemInstance *item, int x, int y) {
@@ -35,4 +36,23 @@ char *item_type_to_string(const ItemType *type) {
   default:
     return "NYI Item";
   }
+}
+
+void item_tooltip(const ItemInstance *item, char *buf, size_t buf_capacity) {
+  switch (item->type.id) {
+  case ITEM_TORCH: {
+    snprintf(buf, buf_capacity, "Le Torch\nLe Sus");
+    break;
+  }
+  default:
+    buf[0] = '\0';
+    break;
+  }
+}
+
+void item_save(const ItemInstance *item, DataMap *data) { data_map_insert(data, "item", data_int(item->type.id)); }
+
+void item_load(ItemInstance *item, const DataMap *data) {
+  ItemId item_id = data_map_get(data, "item").var.data_int;
+  item->type = ITEMS[item_id];
 }

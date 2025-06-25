@@ -38,9 +38,19 @@ typedef struct {
 } SpacingUiComponent;
 
 typedef struct {
-  const char *text;
+  Texture2D texture;
+} TextureUiComponent;
+
+typedef struct {
+  Texture2D texture;
   int width;
   int height;
+  int x_offset;
+  int y_offset;
+} BackgroundUiComponent;
+
+typedef struct {
+  const char *text;
   int x_offset;
   int y_offset;
   Color color;

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <math.h>
 
 Texture2D TEXT_INPUT_TEXTURE;
 
@@ -20,8 +21,6 @@ Texture2D OFF_HAND_SLOT_TEXTURE;
 
 Texture2D SAVE_SLOT_TEXTURE;
 Texture2D SAVE_SLOT_SELECTED_TEXTURE;
-
-int TILE_ANIMATION_FRAMES[TILE_TYPE_AMOUNT];
 
 Texture2D NPC_TEXTURES[DIRECTIONS_AMOUNT];
 Texture2D NPC_ANIMATED_TEXTURES[DIRECTIONS_AMOUNT];
@@ -79,7 +78,8 @@ bool string_starts_with(const char *str, const char *prefix) { return strncmp(st
 char *read_file_to_string(const char *filename) {
   FILE *file = fopen(filename, "rb");
   if (file == NULL) {
-    perror("Error opening file");
+    fprintf(stderr, "Error opening file %s - ", filename);
+    perror("");
     return NULL;
   }
 
@@ -118,6 +118,15 @@ char *read_file_to_string(const char *filename) {
   return buffer;
 }
 
+int string_contains(const char *string, char c) {
+  int len = strlen( string);
+  int found = 0;
+  for (int i = 0; i < len; i++) {
+    if (string[i] == c) found++;
+  }
+  return found;
+}
+
 Vec2i vec2i(int x, int y) { return (Vec2i){.x = x, .y = y}; }
 
 Vec2f vec2f(float x, float y) { return (Vec2f){.x = x, .y = y}; }
@@ -151,6 +160,13 @@ int floor_div(int a, int b) { return (a >= 0) ? (a / b) : ((a - b + 1) / b); }
 int floor_mod(int a, int b) {
   int r = a % b;
   return (r < 0) ? r + b : r;
+}
+
+float lerpf(float a, float b, float t) { return (float)(a + (b - a) * t); }
+
+bool vec2f_eq(Vec2f a, Vec2f b) {
+  const float EPSILON = 0.01f;
+  return fabsf(a.x - b.x) < EPSILON && fabsf(a.y - b.y) < EPSILON;
 }
 
 Direction direction_from_delta(int x, int y) {

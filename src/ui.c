@@ -3,19 +3,30 @@
 #include "raylib.h"
 #include <stdbool.h>
 
-void ui_set_background(UiRenderer *renderer, Texture2D texture) {
-  int w = texture.width * 4.5;
-  DrawTextureEx(texture, (Vector2){((float)renderer->context.screen_width / 2) - ((float)w / 2), renderer->cur_y}, 0,
-                4.5, WHITE);
-}
+void ui_set_background(UiRenderer *renderer, BackgroundUiComponent component) {
 
-static void ui_set_style(UiRenderer *renderer, UiStyle style) { renderer->cur_style = style; }
+  int x = (renderer->context.screen_width - component.texture.width * 4.5) / 2;
+  int y = (renderer->context.screen_height - component.texture.height * 4.5) / 2;
+  if (renderer->cur_style.positions[0] == UI_LEFT || renderer->cur_style.positions[1] == UI_LEFT) {
+    x = 0;
+  }
+
+  if (renderer->cur_style.positions[0] == UI_TOP || renderer->cur_style.positions[1] == UI_TOP) {
+    y = 0;
+  }
+
+  if (renderer->cur_style.positions[0] == UI_BOTTOM || renderer->cur_style.positions[1] == UI_BOTTOM) {
+    y = renderer->context.screen_height - component.texture.height * 4.5;
+  }
+  int w = component.texture.width * 4.5;
+  DrawTextureEx(component.texture, (Vector2){x + component.x_offset, y + component.y_offset}, 0, 4.5, WHITE);
+}
 
 void ui_setup(UiRenderer *renderer, UiStyle ui_style) {
   renderer->groups_amount = 0;
 
   renderer->initial_style = ui_style;
-  ui_set_style(renderer, ui_style);
+  renderer->cur_style = ui_style;
 
   if (renderer->ui_height != -1) {
     renderer->cur_x = renderer->context.screen_width / 2;
@@ -54,7 +65,15 @@ float ui_scale(UiRenderer *renderer) { return ((float)CONFIG.default_font_size /
 
 // BUTTONS
 
-void ui_button_render_ex(UiRenderer *renderer, ButtonUiComponent component) {
+void ui_button_render(UiRenderer *renderer, ButtonUiComponent component) {
+  if (component.width == 0) {
+    component.width = component.texture.width;
+  }
+
+  if (component.height == 0) {
+    component.height = component.texture.height;
+  }
+
   float scale = renderer->cur_style.scale * ui_scale(renderer);
   UiStyle style = renderer->cur_style;
   switch (renderer->cur_style.alignment) {
@@ -110,7 +129,6 @@ void ui_button_render_ex(UiRenderer *renderer, ButtonUiComponent component) {
   if (hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
     switch (component.on_click_func.func_type) {
     case BUTTON_CLICK_FUNC_NO_ARGS: {
-      TraceLog(LOG_DEBUG, "CLick no args");
       component.on_click_func.func_var.on_click_no_args();
       break;
     }
@@ -122,88 +140,44 @@ void ui_button_render_ex(UiRenderer *renderer, ButtonUiComponent component) {
   }
 }
 
-void ui_button_render(UiRenderer *renderer, const char *text, Texture2D texture, Texture2D selected_texture,
-                      ButtonClickFunction on_click_func) {
-  ui_button_render_ex(renderer,
-                      (ButtonUiComponent){.message = text,
-                                          .on_click_func = on_click_func,
-                                          .texture = texture,
-                                          .selected_texture = selected_texture,
-                                          .width = texture.width,
-                                          .height = texture.height,
-                                          .x_offset = 0,
-                                          .y_offset = 0,
-                                          .text_x_offset = 0,
-                                          .text_y_offset = -4});
-}
-
-void ui_button_render_dimensions_offset(UiRenderer *renderer, const char *text, Texture2D texture,
-                                        Texture2D selected_texture, ButtonClickFunction on_click_func, Vec2i offset,
-                                        Vec2i dimensions) {
-  ui_button_render_ex(renderer,
-                      (ButtonUiComponent){.message = text,
-                                          .on_click_func = on_click_func,
-                                          .texture = texture,
-                                          .selected_texture = selected_texture,
-                                          .width = dimensions.x,
-                                          .height = dimensions.y,
-                                          .x_offset = 0,
-                                          .y_offset = 0,
-                                          .text_x_offset = offset.x,
-                                          .text_y_offset = offset.y - 4});
-}
-
-void ui_button_render_offset(UiRenderer *renderer, const char *text, Texture2D texture, Texture2D selected_texture,
-                             ButtonClickFunction on_click_func, Vec2i offset) {
-  ui_button_render_ex(renderer,
-                      (ButtonUiComponent){.message = text,
-                                          .on_click_func = on_click_func,
-                                          .texture = texture,
-                                          .selected_texture = selected_texture,
-                                          .width = texture.width,
-                                          .height = texture.height,
-                                          .x_offset = 0,
-                                          .y_offset = 0,
-                                          .text_x_offset = offset.x,
-                                          .text_y_offset = offset.y - 4});
-}
-
 // TEXT
 
-void ui_text_render_ex(UiRenderer *renderer, TextUiComponent component) {
-  renderer->cur_x = (renderer->context.screen_width - component.width) / 2;
+void ui_text_render(UiRenderer *renderer, TextUiComponent component) {
+  Color color = component.color;
+  if (component.color.r == 0 && component.color.g == 0 && component.color.b == 0 && component.color.a == 0) {
+    color = WHITE;
+  }
+  int width = MeasureText(component.text, renderer->cur_style.font_scale);
+  int height = renderer->cur_style.font_scale;
+  switch (renderer->cur_style.alignment) {
+  case UI_HORIZONTAL: {
+    break;
+  }
+  case UI_VERTICAL: {
+    renderer->cur_x = (renderer->context.screen_width - width) / 2;
+    break;
+  }
+  }
   if (!renderer->simulate) {
     DrawText(component.text, renderer->cur_x + component.x_offset, renderer->cur_y + component.y_offset,
-             renderer->cur_style.font_scale, component.color);
+             renderer->cur_style.font_scale, color);
   }
   // TODO: Move cur coordinate by dimension depdening on style
   // renderer->cur_x += component->dimensions.x + component->offset.x;
-  renderer->cur_y += component.height + renderer->cur_style.padding;
-}
-
-void ui_text_render_offset(UiRenderer *renderer, const char *text, Vec2i offset) {
-  ui_text_render_ex(renderer,
-                    (TextUiComponent){.text = text,
-                                      .color = WHITE,
-                                      .height = CONFIG.default_font_size,
-                                      .width = MeasureText(text, CONFIG.default_font_size),
-                                      .x_offset = offset.x,
-                                      .y_offset = offset.y});
-}
-
-void ui_text_render(UiRenderer *renderer, const char *text) {
-  ui_text_render_ex(renderer,
-                    (TextUiComponent){.text = text,
-                                      .color = WHITE,
-                                      .height = CONFIG.default_font_size,
-                                      .width = MeasureText(text, CONFIG.default_font_size),
-                                      .x_offset = 0,
-                                      .y_offset = 0});
+  renderer->cur_y += height + renderer->cur_style.padding;
 }
 
 // TEXT INPUT
 
-void ui_text_input_render_ex(UiRenderer *renderer, TextInputUiComponent component) {
+void ui_text_input_render(UiRenderer *renderer, TextInputUiComponent component) {
+  if (component.width == 0) {
+    component.width = component.texture.width;
+  }
+
+  if (component.height == 0) {
+    component.height = component.texture.height;
+  }
+
   bool selected = *component.selected;
   float scale = renderer->cur_style.scale * ui_scale(renderer);
   UiStyle style = renderer->cur_style;
@@ -242,7 +216,6 @@ void ui_text_input_render_ex(UiRenderer *renderer, TextInputUiComponent componen
     KeyboardKey keycode_ch = GetCharPressed();
     if (keycode_ch != KEY_NULL) {
       char c = (char)keycode_ch;
-      TraceLog(LOG_INFO, "Text: %s", component.text_input->buf);
       if (component.text_input->len < component.text_input->max_len) {
         component.text_input->buf[component.text_input->len++] = c;
       }
@@ -275,42 +248,18 @@ void ui_text_input_render_ex(UiRenderer *renderer, TextInputUiComponent componen
   }
 }
 
-void ui_text_input_render_dimensions(UiRenderer *renderer, Texture2D texture, TextInputBuffer *text_input_buf,
-                                     bool *selected, Vec2i dimensions) {
-  ui_text_input_render_ex(renderer,
-                          (TextInputUiComponent){.texture = texture,
-                                                 .text_input = text_input_buf,
-                                                 .color = WHITE,
-                                                 .width = dimensions.x,
-                                                 .height = dimensions.y,
-                                                 .selected = selected,
-                                                 .text_x_offset = 0,
-                                                 .text_y_offset = 4,
-                                                 .x_offset = 0,
-                                                 .y_offset = 0});
-}
-
-void ui_text_input_render(UiRenderer *renderer, Texture2D texture, TextInputBuffer *text_input_buf, bool *selected) {
-  ui_text_input_render_dimensions(renderer, texture, text_input_buf, selected, vec2i(texture.width, texture.height));
-}
-
 // SPACING
 
-void ui_spacing_render_ex(UiRenderer *renderer, SpacingUiComponent component) {
+void ui_spacing_render(UiRenderer *renderer, SpacingUiComponent component) {
   renderer->cur_y += component.height + component.y_offset + renderer->cur_style.padding;
-}
-
-void ui_spacing_render(UiRenderer *renderer, int spacing_height) {
-  ui_spacing_render_ex(renderer,
-                       (SpacingUiComponent){.height = spacing_height, .width = 100, .x_offset = 0, .y_offset = 0});
 }
 
 // GROUP
 
-void ui_group_create_ex(UiRenderer *renderer, GroupUiComponent component) {
+void ui_group_create(UiRenderer *renderer, GroupUiComponent component) {
   renderer->groups[renderer->groups_amount++] =
       (UiGroup){.component = component, .prev_x = renderer->cur_x, renderer->cur_y};
-  ui_set_style(renderer, renderer->cur_style);
+  renderer->cur_style = component.group_style;
 
   bool scissors = (component.width != -1 && component.height != -1);
 
@@ -329,31 +278,6 @@ void ui_group_create_ex(UiRenderer *renderer, GroupUiComponent component) {
 
     renderer->cur_y += *scroll;
   }
-}
-
-void ui_group_create_offset_dimensions(UiRenderer *renderer, UiStyle ui_style, bool has_scrollbar, int offset_x,
-                                       int offset_y, int width, int height, int *scroll_y_offset) {
-  ui_group_create_ex(renderer,
-                     (GroupUiComponent){.group_style = ui_style,
-                                        .has_scrollbar = has_scrollbar,
-                                        .width = width,
-                                        .height = height,
-                                        .x_offset = offset_x,
-                                        .y_offset = offset_y,
-                                        .scroll_y_offset = scroll_y_offset});
-}
-
-void ui_group_create_dimensions(UiRenderer *renderer, UiStyle ui_style, bool has_scrollbar, int width, int height,
-                                int *scroll_y_offset) {
-  ui_group_create_offset_dimensions(renderer, ui_style, has_scrollbar, 0, 0, width, height, scroll_y_offset);
-}
-
-void ui_group_create_offset(UiRenderer *renderer, UiStyle ui_style, bool has_scrollbar, int offset_x, int offset_y) {
-  ui_group_create_offset_dimensions(renderer, ui_style, has_scrollbar, offset_x, offset_y, -1, -1, NULL);
-}
-
-void ui_group_create(UiRenderer *renderer, UiStyle ui_style, bool has_scrollbar) {
-  ui_group_create_offset(renderer, ui_style, has_scrollbar, 0, 0);
 }
 
 void ui_group_destroy(UiRenderer *renderer) {
@@ -375,5 +299,5 @@ void ui_group_destroy(UiRenderer *renderer) {
   UiStyle prev_ui_style = renderer->groups_amount > 0
       ? renderer->groups[renderer->groups_amount - 1].component.group_style
       : renderer->initial_style;
-  ui_set_style(renderer, prev_ui_style);
+  renderer->cur_style = prev_ui_style;
 }

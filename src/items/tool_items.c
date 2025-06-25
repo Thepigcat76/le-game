@@ -1,14 +1,17 @@
-#include "../../include/item.h"
+#include "../../include/item/item_init_helper.h"
 #include <raylib.h>
 
-static ItemType tool_item(ItemId item_id, char *texture_name, ToolProperties props) {
-  return (ItemType){.id = item_id,
-                    .texture = LoadTexture(TextFormat("res/assets/%s.png", texture_name)),
-                    .tool_properties = props,
-                    .is_tool = true};
-}
-
 void tool_items_item_init() {
-    ItemType type = tool_item(ITEM_PICKAXE, "pickaxe", (ToolProperties){.attack_damage = 0, .break_speed = 2});
-    ITEMS[type.id] = type;
+  ITEM_TYPE_INIT(ITEM_HAMMER, "hammer",
+                 TOOL_ITEM_PROPS({.attack_damage = 0,
+                                  .break_speed = 0,
+                                  .break_categories = TOOL_PROPS_BREAK_CATEGORIES(TILE_CATEGORY_STONE)}));
+  ITEM_TYPE_INIT(ITEM_PICKAXE, "pickaxe",
+                 TOOL_ITEM_PROPS({.attack_damage = 0,
+                                  .break_speed = 0,
+                                  .break_categories = TOOL_PROPS_BREAK_CATEGORIES(TILE_CATEGORY_STONE)}));
+  ITEM_TYPE_INIT(
+      ITEM_AXE, "axe",
+      TOOL_ITEM_PROPS(
+          {.attack_damage = 0, .break_speed = 0, .break_categories = TOOL_PROPS_BREAK_CATEGORIES(TILE_CATEGORY_WOOD)}));
 }

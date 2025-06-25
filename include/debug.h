@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include "../include/tile.h"
 
-#define SELECTED_TILE_RENDER_POS vec2i(SCREEN_WIDTH - (3.5 * 16) - 30, (SCREEN_HEIGHT / 2.0f) - (3.5 * 8))
+#define SELECTED_TILE_RENDER_POS(screen_w, screen_h) vec2i(screen_w - (3.5 * 16) - 30, (screen_h / 2.0f) - (3.5 * 8))
 
 extern Vec2f DEBUG_GO_TO_POSITION;
 extern int WORLD_BEING_ID;

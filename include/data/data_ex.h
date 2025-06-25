@@ -1,7 +1,7 @@
 #pragma once
 
-#include "data.h"
-#include "shared.h"
+#include "../data.h"
+#include "../shared.h"
 
 Vec2i data_map_get_vec2i(const DataMap *data, const char *key);
 

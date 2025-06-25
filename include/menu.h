@@ -9,4 +9,5 @@ typedef enum {
   MENU_NEW_SAVE,
   MENU_LOAD_SAVE,
   MENU_MAP,
+  MENU_DIALOG
 } MenuId;

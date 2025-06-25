@@ -33,9 +33,11 @@
 
 #define TILE_LAYERS_AMOUNT 2
 
-#define TILE_TYPE_AMOUNT 8
+#define MAX_CATEGORIES_AMOUNT 256
 
-#define ITEM_TYPE_AMOUNT 10
+#define MAX_TILE_TYPES 256
+
+#define MAX_ITEM_TYPES 256
 
 #define BEINGS_AMOUNT 2
 
@@ -55,6 +57,10 @@
 
 #define DEFAULT_ITEM_BEING_ITEM ITEM_GRASS
 
+#define GLOBAL_BUMP_CAPACITY 256
+
+#define ARRAY_INITIAL_CAPACITY 16
+
 extern Texture2D DEBUG_BUTTON_TEXTURE;
 extern Texture2D DEBUG_BUTTON_SELECTED_TEXTURE;
 extern Texture2D TEXT_INPUT_TEXTURE;
@@ -69,8 +75,6 @@ extern Texture2D OFF_HAND_SLOT_TEXTURE;
 
 extern Texture2D SAVE_SLOT_TEXTURE;
 extern Texture2D SAVE_SLOT_SELECTED_TEXTURE;
-
-extern int TILE_ANIMATION_FRAMES[TILE_TYPE_AMOUNT];
 
 extern Texture2D NPC_TEXTURES[DIRECTIONS_AMOUNT];
 extern Texture2D NPC_ANIMATED_TEXTURES[DIRECTIONS_AMOUNT];
@@ -109,6 +113,9 @@ char *read_file_to_string(const char *filename);
 
 bool string_starts_with(const char *str, const char *prefix);
 
+// RETURNS HOW OFTEN THE CHARACTER IS CONTAINED
+int string_contains(const char *string, char c);
+
 bool is_dir(const char *path);
 
 void rec_draw_outline(Rectf rec, Color color);
@@ -122,6 +129,8 @@ Vec2i vec2i_sub(Vec2i vec0, Vec2i vec1);
 Vec2f vec2f(float x, float y);
 
 bool vec2_eq(const Vec2i *vec1, const Vec2i *vec2);
+
+bool vec2f_eq(Vec2f vec1, Vec2f vec2);
 
 Dimensionsf dimf(float width, float height);
 
@@ -138,6 +147,8 @@ void DrawTextureRecEx(Texture2D texture, Rectf source, Vector2 pos, float rotati
 int floor_div(int a, int b);
 
 int floor_mod(int a, int b);
+
+float lerpf(float a, float b, float t);
 
 int signum(int s);
 

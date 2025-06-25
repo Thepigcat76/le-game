@@ -1,10 +1,8 @@
 #include "../include/being.h"
 #include "../include/data.h"
-#include "../include/data_ex.h"
+#include "../include/data/data_ex.h"
 #include <math.h>
 #include <raylib.h>
-#include <stdlib.h>
-#include <string.h>
 
 static Vec2f being_width_height(BeingId id);
 
@@ -19,7 +17,7 @@ BeingInstance being_new(BeingId id, BeingInstanceEx extra, int x, int y) {
       .context = {.box = {.x = x, .y = y, .width = being_width_height(id).x, .height = being_width_height(id).y},
                   .removed = false,
                   .creation_time = GetTime()},
-      .brain = {0},
+      .brain = {.brain_id = BEING_ACTIVITIES_ECS.next_id++},
       .has_brain = being_has_brain(id)};
 }
 
@@ -83,52 +81,79 @@ static bool being_has_brain(BeingId id) {
 }
 
 void being_tick(BeingInstance *being) {
-  // TraceLog(LOG_INFO, "tick being");
   if (being->has_brain) {
     being_brain_tick(being, &being->brain);
   }
 }
 
-void being_brain_tick(BeingInstance *being, BeingBrain *brain) {
-  for (size_t i = 0; i < brain->activities_amount; i++) {
-    TraceLog(LOG_INFO, "tick brain");
-    being_activity_tick(being, &brain->activities[i]);
-  }
-}
+#define BEING_SPEED 0.5
 
 static void being_go_to(BeingInstance *being, Vec2f pos) {
   Rectangle *being_box = &being->context.box;
   float sig_x = signum(pos.x - being_box->x);
   float sig_y = signum(pos.y - being_box->y);
 
-  being_box->x += 0.75 * sig_x;
-  being_box->y += 0.75 * sig_y;
-  TraceLog(LOG_DEBUG, "new box pos: %f", being_box->x, being_box->y);
+  being_box->x += BEING_SPEED * sig_x;
+  being_box->y += BEING_SPEED * sig_y;
 
   if (being->id == BEING_NPC) {
     being->extra.var.npc_instance.direction = direction_from_delta(sig_x, sig_y);
   }
 }
 
-static void being_activity_walk_around(BeingInstance *being, BeingActivityWalkAround *activity) {
-  being_go_to(being, activity->target_position);
-}
-
 static void being_activity_go_to_pos(BeingInstance *being, BeingActivityGoToPosition *activity) {
-  being_go_to(being, activity->target_position);
+  if (!activity->present)
+    return;
+
+  being_go_to(being, activity->val.target_position);
 }
 
-void being_activity_tick(BeingInstance *being, BeingActivity *activity) {
-  switch (activity->type) {
-  case BEING_ACTIVITY_WALK_AROUND: {
-    being_activity_walk_around(being, &activity->var.activity_walk_around);
-    break;
+static void being_activity_wa_find_next_pos(BeingInstance *being, BeingActivityWalkAround *activity) {
+  Vec2i next_pos_range_min = vec2i(-5, -5);
+  Vec2i next_pos_range_max = vec2i(5, 5);
+
+  int x = GetRandomValue(next_pos_range_min.x, next_pos_range_max.x);
+  int y = GetRandomValue(next_pos_range_min.y, next_pos_range_max.y);
+
+  activity->val.prev_target_pos = activity->val.cur_target_pos;
+  activity->val.cur_target_pos = vec2f(being->context.box.x + x * TILE_SIZE, being->context.box.y + y * TILE_SIZE);
+}
+
+#define BEING_GET_ACTIVITY(being_ptr, activity_name)                                                                   \
+  BEING_ACTIVITIES_ECS.activities_##activity_name[being->brain.brain_id]
+
+static void being_activity_walk_around(BeingInstance *being, BeingActivityWalkAround *activity) {
+  if (!activity->present)
+    return;
+  BeingActivityIdle idle_activity = BEING_GET_ACTIVITY(being, idle);
+  if (!idle_activity.present || idle_activity.val.ended) {
+    being_go_to(being, activity->val.cur_target_pos);
+    if (fabs(being->context.box.x - activity->val.cur_target_pos.x) < 1 &&
+        fabs(being->context.box.y - activity->val.cur_target_pos.y) < 1) {
+      being_activities_add_idle(being, 200);
+      being_activity_wa_find_next_pos(being, activity);
+    }
   }
-  case BEING_ACTIVITY_GO_TO_POSITION: {
-    being_activity_go_to_pos(being, &activity->var.activity_go_to_position);
-    break;
+}
+
+static void being_activity_idle(BeingInstance *being, BeingActivityIdle *activity) {
+  if (!activity->present)
+    return;
+
+  if (activity->val.timer < activity->val.idle_time) {
+    activity->val.timer++;
+  } else {
+    activity->val.ended = true;
   }
-  }
+}
+
+#define ACTIVITY_TICK(activity_name)                                                                                   \
+  being_activity_##activity_name(being, &BEING_ACTIVITIES_ECS.activities_##activity_name[brain->brain_id])
+
+void being_brain_tick(BeingInstance *being, BeingBrain *brain) {
+  ACTIVITY_TICK(walk_around);
+  ACTIVITY_TICK(idle);
+  ACTIVITY_TICK(go_to_pos);
 }
 
 static Texture2D being_npc_get_texture(BeingInstanceExNpc *being_ex) {
@@ -196,18 +221,7 @@ void being_render(BeingInstance *being) {
   }
 }
 
-void being_brain_reset(BeingInstance *being) {
-  BeingBrain *brain = &being->brain;
-  brain->activities_amount = 0;
-  brain->memories_amount = 0;
-}
-
-void being_add_activity(BeingInstance *being, BeingActivity activity) {
-  if (being->has_brain) {
-    BeingBrain *brain = &being->brain;
-    brain->activities[brain->activities_amount++] = activity;
-  }
-}
+void being_brain_reset(BeingInstance *being) {}
 
 void being_add_memory(BeingInstance *being, BeingMemory memory) {}
 

@@ -13,7 +13,7 @@ void backpack_menu_render(UiRenderer *renderer, const Game *game) {
                .font_scale = CONFIG.default_font_size,
            });
 
-  ui_set_background(renderer, BACKPACK_BACK_GROUND);
+  UI_BACKGROUND({.texture = BACKPACK_BACK_GROUND});
 
-  ui_text_render_offset(renderer, "Backpack", vec2i(0, -60));
+  RENDER_TEXT({.text = "Backpack", .x_offset = 0, .y_offset = -60, .color = WHITE});
 }

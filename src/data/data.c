@@ -1,4 +1,5 @@
 #include "../../include/data.h"
+#include "../../include/array.h"
 #include <raylib.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -8,8 +9,8 @@
 
 DataMap data_map_new(size_t capacity) {
   return (DataMap){
-      .keys = capacity != 0 ? malloc(capacity * sizeof(char *)) : NULL,
-      .values = capacity != 0 ? malloc(capacity * sizeof(Data)) : NULL,
+      .keys = capacity != 0 ? array_new_capacity(char *, capacity, &HEAP_ALLOCATOR) : NULL,
+      .values = capacity != 0 ? array_new_capacity(Data, capacity, &HEAP_ALLOCATOR) : NULL,
       .capacity = capacity,
       .len = 0,
   };
@@ -42,13 +43,13 @@ Data data_map_get_or_default(const DataMap *data_map, const char *key, Data defa
 }
 
 void data_map_insert(DataMap *data_map, const char *key, Data val) {
-  data_map->keys[data_map->len] = malloc(strlen(key) + 1); // allocate enough space
+  array_add(data_map->keys, malloc(strlen(key) + 1));
   if (!data_map->keys[data_map->len]) {
     fprintf(stderr, "Failed to allocate memory for key\n");
     exit(1);
   }
   strcpy(data_map->keys[data_map->len], key);
-  data_map->values[data_map->len] = val;
+  array_add(data_map->values, val);
   data_map->len++;
 }
 
@@ -62,12 +63,15 @@ void data_map_keys_debug(const DataMap *data_map) {
 }
 
 DataList data_list_new(size_t capacity) {
-  return (DataList){.items = capacity == 0 ? NULL : malloc(capacity * sizeof(Data)), .len = 0};
+  return (DataList){.items = capacity != 0 ? array_new_capacity(Data, capacity, &HEAP_ALLOCATOR) : NULL, .len = 0};
 }
 
 Data data_list_get(const DataList *data_list, size_t i) { return data_list->items[i]; }
 
-void data_list_add(DataList *data_list, Data data) { data_list->items[data_list->len++] = data; }
+void data_list_add(DataList *data_list, Data data) {
+  array_add(data_list->items, data);
+  data_list->len++;
+}
 
 void byte_buf_write_data_map(ByteBuf *buf, const DataMap *map) {
   byte_buf_write_int(buf, map->len);
@@ -95,7 +99,7 @@ void byte_buf_write_data_list(ByteBuf *buf, const DataList *list) {
 
 void byte_buf_read_data_list(ByteBuf *buf, DataList *list, int len) {
   for (int i = 0; i < len; i++) {
-    list->items[i] = byte_buf_read_data(buf);
+    data_list_add(list, byte_buf_read_data(buf));
   }
 }
 
@@ -156,7 +160,7 @@ Data byte_buf_read_data(ByteBuf *buf) {
   }
   case DATA_TYPE_LIST: {
     size_t len = byte_buf_read_int(buf);
-    DataList list = {.items = malloc(len * sizeof(Data)), .len = len};
+    DataList list = data_list_new(len);
     byte_buf_read_data_list(buf, &list, len);
     return (Data){.type = type, .var = {.data_list = list}};
   }
@@ -193,8 +197,8 @@ void data_free(Data *data) {
       free(map->keys[i]);
       data_free(&map->values[i]);
     }
-    free(map->keys);
-    free(map->values);
+    array_free(map->keys);
+    array_free(map->values);
     break;
   }
   case DATA_TYPE_STRING: {
@@ -206,7 +210,7 @@ void data_free(Data *data) {
     for (int i = 0; i < data_list->len; i++) {
       data_free(&data_list->items[i]);
     }
-    free(data_list->items);
+   //array_free(data_list->items);
     break;
   }
   default:

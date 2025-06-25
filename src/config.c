@@ -90,7 +90,7 @@ static void keybinds_on_reload() {
     KEYBIND(KEYBINDS.open_close_save_menu_key, "open-close-save-menu");
     KEYBIND(KEYBINDS.open_close_backpack_menu_key, "open-close-backpack-menu");
     KEYBIND(KEYBINDS.open_close_debug_menu_key, "open-close-debug-menu");
-    KEYBIND(KEYBINDS.open_close_save_menu_key, "close-cur-menu");
+    KEYBIND(KEYBINDS.close_cur_menu, "close-cur-menu");
     KEYBIND(KEYBINDS.toggle_hitbox_key, "toggle-hitbox");
     KEYBIND(KEYBINDS.reload_key, "reload");
     KEYBIND(KEYBINDS.zoom_in_key, "zoom-in");

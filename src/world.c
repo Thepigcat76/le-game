@@ -152,7 +152,7 @@ bool world_place_tile(World *world, TilePos tile_pos, TileInstance tile) {
 bool world_remove_tile(World *world, TilePos tile_pos) {
   TileInstance empty_instance = TILE_INSTANCE_EMPTY;
   TileInstance *tile = world_highest_tile_at(world, tile_pos);
-  Color color = tile->type.tile_color;
+  Color color = tile->type.tile_props.tile_color;
   ItemType *item_type = tile->type.tile_item;
   if (world_set_tile_on_layer(world, tile_pos, empty_instance, tile->type.layer)) {
     if (item_type != NULL) {
@@ -247,8 +247,8 @@ void world_render_layer(World *world, TileLayer layer) {
     if (layer == TILE_LAYER_GROUND) {
       for (int y = chunk_y; y < chunk_y + CHUNK_SIZE; y++) {
         for (int x = chunk_x; x < chunk_x + CHUNK_SIZE; x++) {
-          DrawTexture(tile_variants_by_index(chunk->variant_index, 0,
-                                             0)[chunk->background_texture_variants[y - chunk_y][x - chunk_x]],
+          DrawTexture(adv_texture_to_texture(&tile_variants_by_index(
+                          chunk->variant_index, 0, 0)[chunk->background_texture_variants[y - chunk_y][x - chunk_x]]),
                       x * TILE_SIZE, y * TILE_SIZE, WHITE);
         }
       }
@@ -280,7 +280,7 @@ void world_render_layer_top_split(World *world, void *_player, bool draw_before_
         int world_x = chunk_x + x;
 
         TileInstance *tile = &chunk->tiles[y][x][TILE_LAYER_TOP];
-        float tile_screen_y = (world_y + 1) * TILE_SIZE;
+        float tile_screen_y = (world_y + 0) * TILE_SIZE;
 
         bool should_draw = (tile_screen_y <= player_feet_y && draw_before_player) ||
             (tile_screen_y > player_feet_y && !draw_before_player);
@@ -305,14 +305,12 @@ static void world_load_beings(World *world, const DataMap *data) {
 }
 
 void load_world(World *world, const DataMap *data) {
-  uint8_t chunks = data_map_get(data, "len").var.data_byte;
+  DataList chunks_list = data_map_get(data, "chunks").var.data_list;
+  size_t chunks = chunks_list.len;
   for (int i = 0; i < chunks; i++) {
-    TraceLog(LOG_DEBUG, "Loading chunk: %d", i);
-    char key[2] = {i, '\0'};
-    Data data_map = data_map_get(data, key);
-    DataMap map = data_map.var.data_map;
+    DataMap data_map = data_list_get(&chunks_list, i).var.data_map;
     Chunk chunk;
-    chunk_load(&chunk, &map);
+    chunk_load(&chunk, &data_map);
     world_add_chunk(world, chunk.chunk_pos, chunk);
   }
   TraceLog(LOG_DEBUG, "Total loaded chunks: %u", chunks);
@@ -333,14 +331,14 @@ static void world_save_beings(const World *world, DataMap *data) {
 }
 
 void save_world(const World *world, DataMap *data) {
-  data_map_insert(data, "len", data_byte((uint8_t)world->chunks_amount));
+  DataList chunks_list = data_list_new(WORLD_LOADED_CHUNKS);
   for (int i = 0; i < world->chunks_amount; i++) {
-    DataMap map = data_map_new(300);
+    DataMap map = data_map_new(8);
     const Chunk *chunk = &world->chunks[i];
     chunk_save(chunk, &map);
-    char key[2] = {i, '\0'};
-    data_map_insert(data, key, data_map(map));
+    data_list_add(&chunks_list, data_map(map));
   }
+  data_map_insert(data, "chunks", data_list(chunks_list));
   TraceLog(LOG_DEBUG, "Total saved chunks: %u", world->chunks_amount);
   world_save_beings(world, data);
   TraceLog(LOG_DEBUG, "Total saved beings: %d", world->beings_amount);
