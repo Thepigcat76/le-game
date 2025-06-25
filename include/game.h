@@ -17,10 +17,35 @@
 #include "world.h"
 #include <raylib.h>
 
+#define TICK_RATE 20                     // ticks per second
+#define TICK_INTERVAL (1.0f / TICK_RATE) // seconds per tick
+
+#define MAX_TICKS_PER_FRAME 20
+
+#define TEXTURE_MANAGER_MAX_TEXTURES 64
+
 typedef struct {
   char *save_name;
   float seed;
 } GameConfig;
+
+typedef struct {
+  int width;
+  int height;
+  int prev_width;
+  int prev_height;
+} Window;
+
+typedef enum {
+  TEXTURE_CURSOR,
+  TEXTURE_TOOLTIP,
+  TEXTURE_BREAK,
+  TEXTURE_SLOT,
+} TextureManagerTexture;
+
+typedef struct {
+  Texture2D textures[TEXTURE_MANAGER_MAX_TEXTURES];
+} TextureManager;
 
 typedef struct _game {
   MenuId cur_menu;
@@ -36,10 +61,13 @@ typedef struct _game {
   // RENDERING
   ParticleManager particle_manager;
   UiRenderer ui_renderer;
+  Window window;
   // SOUNDS
   SoundManager sound_manager;
   // SHADERS
   ShaderManager shader_manager;
+  // MISC TEXTURES
+  TextureManager texture_manager;
   // TILE CATEGORIES
   TileCategoryLookup tile_category_lookup;
   // DEBUGGING
@@ -49,15 +77,11 @@ typedef struct _game {
   // KEYS PRESSED
   PressedKeys pressed_keys;
   float tick_delta;
+  bool slot_selected;
 } Game;
 
 extern Game GAME;
 extern Music MUSIC;
-
-// PRE/POST GAME INITIALIZATION
-void game_begin(void);
-
-void game_end(void);
 
 // GAME CREATION
 
@@ -75,8 +99,6 @@ char **game_save_name_random(Game *game);
 void game_feature_create(Game *game);
 
 void game_reload(Game *game);
-
-void game_init(Game *game);
 
 void game_cur_save_init(Game *game);
 
@@ -96,9 +118,22 @@ void game_save_cur_save(Game *game);
 
 void game_load(Game *game);
 
-void game_unload(Game *game);
+// MANAGMENT
+
+// PRE/POST GAME INITIALIZATION
+void game_begin(void);
+
+void game_end(void);
+
+// GAME INIT/DEINIT
+
+void game_init(Game *game);
+
+void game_deinit(Game *game);
 
 // MENUS
+
+void game_init_menu(Game *game);
 
 bool game_cur_menu_hides_game(Game *game);
 

@@ -1,35 +1,18 @@
 #include "../include/game.h"
 #include "../include/alloc.h"
+#include "../include/camera.h"
 #include "../include/config.h"
-#include "../include/data/data_reader.h"
 #include "../include/item/item_container.h"
-#include "../vendor/cJSON.h"
 #include "raylib.h"
 #include <dirent.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/stat.h>
 #include <time.h>
 
 #define RELOAD(game_ptr, src_file_prefix)                                                                              \
   extern void src_file_prefix##_on_reload(Game *game);                                                                 \
   src_file_prefix##_on_reload(game_ptr);
-
-#define RENDER_MENU(ui_renderer, menu_name)                                                                            \
-  extern void menu_name##_render(UiRenderer *renderer, const Game *game);                                              \
-  menu_name##_render(ui_renderer, game);
-
-#define INIT_MENU(menu_name)                                                                                           \
-  extern void menu_name##_init();                                                                                      \
-  menu_name##_init();
-
-#define OPEN_MENU(ui_renderer, menu_name)                                                                              \
-  extern void menu_name##_open(UiRenderer *renderer, const Game *game);                                                \
-  menu_name##_open(ui_renderer, game);
-
-static void game_init_menu(Game *game);
 
 static bool game_slot_selected();
 
@@ -46,39 +29,7 @@ Music MUSIC;
 static Sound PLACE_SOUND;
 static Texture2D BREAK_PROGRESS_TEXTURE;
 static Texture2D TOOLTIP_TEXTURE;
-
-static void game_create_save_config(Game *game, int save_index, const char *save_name, float seed) {
-  cJSON *json = cJSON_CreateObject();
-  cJSON_AddStringToObject(json, "name", save_name);
-  {
-    cJSON *world_json = cJSON_AddObjectToObject(json, "world");
-    cJSON_AddNumberToObject(world_json, "seed", seed);
-  }
-  // TO FILE
-  char *json_str = cJSON_Print(json);
-  FILE *fp = fopen(TextFormat("save/save%d/game.json", save_index), "w");
-  if (fp) {
-    fputs(json_str, fp);
-    fclose(fp);
-    printf("Successfully created game.json\n");
-  } else {
-    perror("Failed to open file");
-  }
-  free(json_str);
-  cJSON_Delete(json);
-}
-
-void game_create_save(Game *game, const char *save_name, const char *seed_lit) {
-  if (!DirectoryExists("save")) {
-    create_dir("save");
-  }
-
-  game->cur_save = game->detected_saves;
-  create_dir(TextFormat("save/save%d", game->cur_save));
-  float seed = string_to_world_seed(seed_lit);
-  game_create_save_config(game, game->cur_save, save_name, seed);
-  game_create_world(&GAME, seed);
-}
+static Texture2D CURSOR_TEXTURE;
 
 void game_create_world(Game *game, float seed) {
   player_set_pos_ex(&game->player, TILE_SIZE * ((float)CHUNK_SIZE / 2), TILE_SIZE * ((float)CHUNK_SIZE / 2), false,
@@ -87,85 +38,12 @@ void game_create_world(Game *game, float seed) {
   world_gen(&game->world);
 }
 
-void game_init(Game *game) {
-  game_init_menu(game);
-
-  PLACE_SOUND = LoadSound("res/sounds/place_sound.wav");
-
-  for (int i = 0; i < SOUND_BUFFER_LIMIT; i++) {
-    game->sound_manager.sound_buffer[i] = LoadSoundAlias(PLACE_SOUND);
-    SetSoundPitch(game->sound_manager.sound_buffer[i], 0.5);
-    SetSoundVolume(game->sound_manager.sound_buffer[i], 0.25);
-  }
-
-  BREAK_PROGRESS_TEXTURE = LoadTexture("res/assets/breaking_overlay.png");
-  TOOLTIP_TEXTURE = LoadTexture("res/assets/gui/tool_tip.png");
-
-#ifdef SURTUR_DEBUG
-  debug_init();
-#endif
-}
-
-void game_cur_save_init(Game *game) { game->world.seed = game->save_configs[game->cur_save].seed; }
+// Uses null at the end to terminate
+static const char *TEXTURE_MANAGER_TEXTURE_PATHS[TEXTURE_MANAGER_MAX_TEXTURES] = {"cursor", "gui/tool_tip", "breaking_overlay", "slot", NULL};
 
 void game_feature_add(Game *game, GameFeature game_feature) {
   if (game->feature_store.game_features_amount < game->feature_store.game_features_capacity) {
     game->feature_store.game_features[game->feature_store.game_features_amount++] = game_feature;
-  }
-}
-
-void game_detect_saves(Game *game) {
-  if (!DirectoryExists("save")) {
-    create_dir("save");
-  }
-
-  if (game->detected_saves > 0) {
-    free(game->save_configs);
-  }
-
-  game->detected_saves = 0;
-  DIR *dir = opendir(SAVE_DIR);
-
-  if (dir == NULL) {
-    perror("Failed to open save directory to load saves");
-    exit(1);
-  }
-
-  struct dirent *entry;
-
-  while ((entry = readdir(dir)) != NULL) {
-    if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
-      continue;
-    }
-
-    const char *full_dir_name = TextFormat("%s%s", SAVE_DIR, entry->d_name);
-
-    TraceLog(LOG_DEBUG, "Dir entry: %s", full_dir_name);
-    if (is_dir(full_dir_name) && string_starts_with(entry->d_name, "save")) {
-      game->detected_saves++;
-    }
-  }
-
-  closedir(dir);
-
-  game->save_configs = malloc(game->detected_saves * sizeof(GameConfig));
-  for (int i = 0; i < game->detected_saves; i++) {
-    GameConfig config;
-    char *file_content = read_file_to_string(TextFormat("save/save%d/game.json", i));
-    cJSON *json = cJSON_Parse(file_content);
-    free(file_content);
-    cJSON *json_save_name = cJSON_GetObjectItemCaseSensitive(json, "name");
-    cJSON *json_world = cJSON_GetObjectItemCaseSensitive(json, "world");
-    cJSON *json_seed = cJSON_GetObjectItemCaseSensitive(json_world, "seed");
-    if (cJSON_IsNumber(json_seed)) {
-      config.seed = json_seed->valuedouble;
-    }
-    if (cJSON_IsString(json_save_name)) {
-      config.save_name = malloc(strlen(json_save_name->valuestring) + 1);
-      strcpy(config.save_name, json_save_name->valuestring);
-    }
-    cJSON_Delete(json);
-    game->save_configs[i] = config;
   }
 }
 
@@ -319,7 +197,7 @@ static void handle_item_pickup(Game *game) {
   }
 }
 
-void game_tick(Game *game) {
+void game_world_tick(Game *game) {
   bool w = game->pressed_keys.move_backward_key;
   bool a = game->pressed_keys.move_left_key;
   bool s = game->pressed_keys.move_foreward_key;
@@ -355,104 +233,66 @@ void game_tick(Game *game) {
 #endif
 }
 
-// RENDERING
-
-#define BREAK_PROGRESS_FRAMES 6
-
-static void game_render_break_progress(Game *game, TilePos break_pos, int break_time, int break_progress) {
-  if (break_progress != -1) {
-    int index = floor_div(break_progress, break_time / BREAK_PROGRESS_FRAMES);
-    DrawTextureRec(BREAK_PROGRESS_TEXTURE, rectf(0, index * TILE_SIZE, TILE_SIZE, TILE_SIZE),
-                   vec2f(break_pos.x * TILE_SIZE, break_pos.y * TILE_SIZE), WHITE);
-    TraceLog(LOG_DEBUG, "Texture index: %d", index);
+static void game_update_animations(void) {
+  for (int i = 0; i < ANIMATED_TEXTURES_LEN; i++) {
+    AnimatedTexture *texture = &ANIMATED_TEXTURES[i];
+    texture->frame_timer += TICK_INTERVAL * 1000.0f;
+    float delay = texture->texture.var.texture_animated.frame_time;
+    if (texture->frame_timer >= delay) {
+      int frames = texture->texture.var.texture_animated.frames;
+      texture->cur_frame = (texture->cur_frame + 1) % frames;
+      texture->frame_timer = 0;
+    }
   }
 }
 
-void game_render(Game *game, float alpha) {
-  Vec2f mouse_pos = GetMousePosition();
-  Vec2f mouse_world_pos = GetScreenToWorld2D(mouse_pos, game->player.cam);
+void game_tick(Game *game) {
+  game->slot_selected = game_slot_selected();
 
-  world_render_layer(&game->world, TILE_LAYER_GROUND);
+  UpdateMusicStream(MUSIC);
 
-  world_render_layer_top_split(&game->world, &game->player, true);
+  game->window.width = GetScreenWidth();
+  game->window.height = GetScreenHeight();
 
-  for (int i = 0; i < game->world.beings_amount; i++) {
-    being_render(&game->world.beings[i]);
+  if (game->window.width != game->window.prev_width || game->window.height != game->window.prev_height) {
+    game->window.prev_width = game->window.width;
+    game->window.prev_height = game->window.height;
+
+    GAME.world_texture = LoadRenderTexture(game->window.width, game->window.height);
+
+    camera_focus(&game->player.cam);
   }
 
-  game_render_particles(game, true);
+  if (!game->paused) {
+    game_world_tick(game);
+  }
 
-  player_render(&game->player, alpha);
-  
-  bool zoom_in = IsKeyDown(KEY_UP);
-  bool zoom_out = IsKeyDown(KEY_DOWN);
+  if (IsKeyReleased(KEYBINDS.open_close_save_menu_key)) {
+    if (game->cur_menu == MENU_SAVE) {
+      game->cur_menu = MENU_NONE;
+      game_set_menu(game, MENU_NONE);
+      game->paused = false;
+    } else if (game->cur_menu == MENU_NONE) {
+      game_set_menu(game, MENU_SAVE);
+      game->paused = true;
+    }
+  }
 
-  player_handle_zoom(&game->player, zoom_in, zoom_out, alpha);
-
-  world_render_layer_top_split(&game->world, &game->player, false);
-
-  game_render_break_progress(game, game->player.break_tile_pos, game->player.break_tile.type.tile_props.break_time,
-                             game->player.break_progress);
-
-  int x_index = floor_div(mouse_world_pos.x, TILE_SIZE);
-  int y_index = floor_div(mouse_world_pos.y, TILE_SIZE);
-  Rectangle rec =
-      (Rectangle){.x = x_index * (TILE_SIZE), .y = y_index * (TILE_SIZE), .width = (TILE_SIZE), .height = (TILE_SIZE)};
-  bool slot_selected = game_slot_selected();
-  bool interaction_in_range =
-      abs((int)game->player.box.x - x_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE &&
-      abs((int)game->player.box.y - y_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE;
-
-  if (!slot_selected && interaction_in_range) {
-    rec_draw_outline(rec, BLUE);
+  if (IsKeyReleased(KEYBINDS.close_cur_menu) && game->cur_menu != MENU_NONE && game->cur_menu != MENU_SAVE) {
+    game_set_menu(game, MENU_NONE);
   }
 
 #ifdef SURTUR_DEBUG
-  debug_render();
-#endif
-}
-
-void game_render_overlay(Game *game) {
-  Vec2i pos = vec2i(GetScreenWidth() - (3.5 * 16) - 30, (GetScreenHeight() / 2.0f) - (3.5 * 8));
-  DrawTextureEx(MAIN_HAND_SLOT_TEXTURE, (Vector2){pos.x, pos.y}, 0, 4.5, WHITE);
-  item_render(&game->player.held_item, pos.x + 2 * 3.5, pos.y + 2 * 3.5);
-
-#ifdef SURTUR_DEBUG
-  debug_render_overlay();
+  debug_tick();
 #endif
 
-  if (game_slot_selected()) {
-    Vec2f mouse_pos = GetMousePosition();
-    if (mouse_pos.x + TOOLTIP_TEXTURE.width * 5 > GetScreenWidth()) {
-      mouse_pos.x -= TOOLTIP_TEXTURE.width * 5;
-    }
-    BeginShaderMode(game->shader_manager.shaders[SHADER_TOOLTIP_OUTLINE]);
-    {
-      SetShaderValue(game->shader_manager.shaders[SHADER_TOOLTIP_OUTLINE],
-                     GetShaderLocation(game->shader_manager.shaders[SHADER_TOOLTIP_OUTLINE], "resolution"),
-                     (float[2]){TOOLTIP_TEXTURE.width, TOOLTIP_TEXTURE.height}, SHADER_UNIFORM_VEC2);
-      DrawTextureEx(TOOLTIP_TEXTURE, mouse_pos, 0, 5, WHITE);
-    }
-    EndShaderMode();
-
-    int y_offset = 15;
-    char *name = item_type_to_string(&game->player.held_item.type);
-    DrawText(name, mouse_pos.x + ((float)TOOLTIP_TEXTURE.width * 5 - MeasureText(name, CONFIG.default_font_size)) / 2,
-             mouse_pos.y + y_offset, CONFIG.default_font_size, WHITE);
-    char tooltip[256];
-    item_tooltip(&game->player.held_item, tooltip, 256);
-    int count;
-    const char **tooltip_lines = TextSplit(tooltip, '\n', &count);
-    for (int i = 0; i < count; i++) {
-      DrawText(tooltip_lines[i],
-               mouse_pos.x +
-                   ((float)TOOLTIP_TEXTURE.width * 5 - MeasureText(tooltip_lines[i], CONFIG.default_font_size)) / 2,
-               mouse_pos.y + y_offset + (CONFIG.default_font_size * (i + 1)), CONFIG.default_font_size, WHITE);
-    }
+  if (IsKeyPressed(KEYBINDS.reload_key)) {
+    game_reload(&GAME);
   }
-}
 
-// UI/MENUS
+  game_update_animations();
+  game->pressed_keys = (PressedKeys){};
+}
 
 static bool game_slot_selected() {
   Rectangle slot_rect = {.x = GetScreenWidth() - (3.5 * 16) - 30,
@@ -462,285 +302,4 @@ static bool game_slot_selected() {
   return CheckCollisionPointRec(GetMousePosition(), slot_rect);
 }
 
-bool game_cur_menu_hides_game(Game *game) {
-  return game->cur_menu == MENU_START || game->cur_menu == MENU_NEW_SAVE || game->cur_menu == MENU_LOAD_SAVE;
-}
-
-static void game_init_menu(Game *game) {
-  INIT_MENU(save_menu);
-  INIT_MENU(dialog_menu);
-  // INIT_MENU(start_menu);
-  // INIT_MENU(debug_menu);
-}
-
-void game_render_menu(Game *game) {
-  UiRenderer *ui_renderer = &game->ui_renderer;
-  switch (game->cur_menu) {
-  case MENU_SAVE: {
-    RENDER_MENU(ui_renderer, save_menu);
-    break;
-  }
-  case MENU_START: {
-    RENDER_MENU(ui_renderer, start_menu);
-    break;
-  }
-  case MENU_BACKPACK: {
-    RENDER_MENU(ui_renderer, backpack_menu);
-    break;
-  }
-  case MENU_DEBUG: {
-    RENDER_MENU(ui_renderer, debug_menu);
-    break;
-  }
-  case MENU_NEW_SAVE: {
-    RENDER_MENU(ui_renderer, new_save_menu);
-    break;
-  }
-  case MENU_LOAD_SAVE: {
-    RENDER_MENU(ui_renderer, load_save_menu);
-    break;
-  }
-  case MENU_MAP: {
-    RENDER_MENU(ui_renderer, map_menu);
-    break;
-  }
-  case MENU_DIALOG: {
-    RENDER_MENU(ui_renderer, dialog_menu);
-    break;
-  }
-  case MENU_NONE: {
-    break;
-  }
-  }
-}
-
-static void ui_renderer_calc_height(UiRenderer *ui_renderer) {
-  if (ui_renderer->ui_height == -1) {
-    ui_renderer->cur_y = 0;
-    ui_renderer->simulate = true;
-    game_render_menu(&GAME);
-    ui_renderer->ui_height = ui_renderer->cur_y;
-
-    ui_renderer->simulate = false;
-    ui_renderer->cur_x = 0;
-    ui_renderer->cur_y = 0;
-  }
-}
-
-static void game_open_menu(Game *game, MenuId menu_id) {
-  switch (menu_id) {
-  case MENU_NEW_SAVE: {
-    OPEN_MENU(&GAME.ui_renderer, new_save_menu);
-    break;
-  }
-  default: {
-    break;
-  }
-  }
-}
-
-void game_set_menu(Game *game, MenuId menu_id) {
-  game->cur_menu = menu_id;
-  ui_renderer_calc_height(&game->ui_renderer);
-  game_open_menu(game, menu_id);
-}
-
-// GAME LOAD/SAVE
-
-#define SAVE_DATA(save_file_name, byte_buf_size, byte_buf_name, ...)                                                   \
-  {                                                                                                                    \
-    uint8_t *byte_buf_name##_bytes = (uint8_t *)malloc(byte_buf_size);                                                 \
-    ByteBuf byte_buf_name = {                                                                                          \
-        .bytes = byte_buf_name##_bytes, .writer_index = 0, .reader_index = 0, .capacity = byte_buf_size};              \
-    __VA_ARGS__ byte_buf_to_file(&byte_buf_name, TextFormat("save/save%d/" save_file_name ".bin", game->cur_save));    \
-    TraceLog(LOG_INFO, "Saved " save_file_name " data, writer index: %d", byte_buf_name.writer_index);                 \
-    free(byte_buf_name##_bytes);                                                                                       \
-  }
-
-#define LOAD_DATA(save_file_name, byte_buf_size, byte_buf_name, ...)                                                   \
-  {                                                                                                                    \
-    uint8_t *byte_buf_name##_bytes = (uint8_t *)malloc(byte_buf_size);                                                 \
-    ByteBuf byte_buf_name = {                                                                                          \
-        .bytes = byte_buf_name##_bytes, .writer_index = 0, .reader_index = 0, .capacity = byte_buf_size};              \
-    byte_buf_from_file(&byte_buf_name, TextFormat("save/save%d/" save_file_name ".bin", game->cur_save));              \
-    __VA_ARGS__ TraceLog(LOG_INFO, "Loaded " save_file_name " data, reader index: %d", byte_buf_name.reader_index);    \
-    free(byte_buf_name##_bytes);                                                                                       \
-  }
-
-// LOAD
-
-void game_load(Game *game) { game_load_cur_save(game); }
-
-void game_load_cur_save(Game *game) {
-  LOAD_DATA("player", sizeof(Player), byte_buf, {
-    Data data_map = byte_buf_read_data(&byte_buf);
-    DataMap *player_map = &data_map.var.data_map;
-    player_load(&game->player, player_map);
-    data_free(&data_map);
-  });
-
-  LOAD_DATA("world", sizeof(Chunk) * WORLD_LOADED_CHUNKS + 100 + sizeof(BeingInstance) * 200, byte_buf, {
-    Data data_map = byte_buf_read_data(&byte_buf);
-    char *str = data_reader_read_data(&data_map);
-    printf("%s\n", str);
-    free(str);
-    DataMap *world_map = &data_map.var.data_map;
-    load_world(&game->world, world_map);
-
-    data_free(&data_map);
-  });
-}
-
-// UNLOAD
-
-void game_save_cur_save(Game *game) {
-  SAVE_DATA("player", sizeof(Player), byte_buf, {
-    DataMap player_map = data_map_new(200);
-    player_save(&game->player, &player_map);
-
-    Data player_data = data_map(player_map);
-    byte_buf_write_data(&byte_buf, &player_data);
-
-    data_free(&player_data);
-  });
-
-  SAVE_DATA("world", sizeof(Chunk) * WORLD_LOADED_CHUNKS + 100 + sizeof(BeingInstance) * 200, byte_buf, {
-    DataMap world_map = data_map_new(2000);
-    save_world(&game->world, &world_map);
-
-    Data world_data = data_map(world_map);
-    byte_buf_write_data(&byte_buf, &world_data);
-
-    data_free(&world_data);
-  });
-}
-
-void game_unload(Game *game) {
-  tile_variants_free();
-
-  free(game->world.chunks);
-  free(game->feature_store.game_features);
-  free(GLOBAL_BUMP.buffer);
-  free(ITEM_CONTAINER_BUMP.buffer);
-
-  UnloadSound(PLACE_SOUND);
-  UnloadMusicStream(MUSIC);
-  for (int i = 0; i < SOUND_BUFFER_LIMIT; i++) {
-    UnloadSoundAlias(game->sound_manager.sound_buffer[i]);
-  }
-}
-
-void game_begin(void) {
-#ifdef SURTUR_DEBUG
-  SetTraceLogLevel(LOG_DEBUG);
-#endif
-  SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-  InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Ballz");
-  InitAudioDevice();
-  SetExitKey(0);
-  srand(time(NULL));
-
-  SetTargetFPS(60);
-}
-
-void game_end(void) {
-  CloseAudioDevice();
-  CloseWindow();
-}
-
 // -- PARTICLES --
-
-ParticleInstance *game_emit_particle_ex(Game *game, ParticleInstance particle_instance) {
-  ParticleInstance *particles = GAME.particle_manager.particles;
-
-  for (int i = 0; i < MAX_PARTICLES_AMOUNT; i++) {
-    if (!GAME.particle_manager.particles[i].active) {
-      float angle = (float)(rand() % 360) * DEG2RAD;
-      float speed = 20 + (rand() % 100);
-      game->particle_manager.particles[i] = particle_instance;
-      return &game->particle_manager.particles[i];
-    }
-  }
-  return NULL;
-}
-
-ParticleInstance *game_emit_particle(Game *game, int x, int y, ParticleId particle_id,
-                                     ParticleInstanceEx particle_extra) {
-  Vector2 pos = {x, y};
-  Color particle_color = WHITE;
-  if (particle_extra.type == PARTICLE_INSTANCE_TILE_BREAK) {
-    particle_color = particle_extra.var.tile_break.tint;
-  } else if (particle_extra.type == PARTICLE_INSTANCE_WALKING) {
-    particle_color = particle_extra.var.walking.tint;
-  }
-  ParticleInstance particle_instance = {.position = pos,
-                                        .velocity = vec2f(0, 0),
-                                        .lifetime = (1.5f + (float)(rand() % 100) / 1000.0f) / 3,
-                                        .age = 0,
-                                        .color = particle_color,
-                                        .active = true,
-                                        .id = particle_id,
-                                        .extra = particle_extra};
-  return game_emit_particle_ex(game, particle_instance);
-}
-
-static void particles_update(Game *game) {
-  ParticleInstance *particles = GAME.particle_manager.particles;
-
-  float dt = GetFrameTime();
-  for (int i = 0; i < MAX_PARTICLES_AMOUNT; i++) {
-    if (particles[i].active) {
-      particles[i].position.x += particles[i].velocity.x * dt;
-      particles[i].position.y += particles[i].velocity.y * dt;
-
-      // particles[i].velocity.y += 100.0f * dt;
-
-      particles[i].age += dt;
-      float alpha = 1.0f - (particles[i].age / particles[i].lifetime);
-      // particles[i].color.a = (unsigned char)(255 * alpha);
-
-      if (particles[i].age >= particles[i].lifetime) {
-        particles[i].active = false;
-      }
-    }
-  }
-}
-
-void game_render_particle(Game *game, ParticleInstance particle, bool behind_player) {
-  if (particle.active) {
-    switch (particle.extra.type) {
-    case PARTICLE_INSTANCE_DEFAULT: {
-      if (!behind_player) {
-        DrawTexture(particle.extra.var.default_texture, particle.position.x, particle.position.y, WHITE);
-      }
-      break;
-    }
-    case PARTICLE_INSTANCE_TILE_BREAK: {
-      if (!behind_player) {
-        DrawTextureV(particle.extra.var.tile_break.texture, (Vector2){particle.position.x, particle.position.y},
-                     particle.color);
-      }
-      break;
-    }
-    case PARTICLE_INSTANCE_WALKING: {
-      if (game->player.direction == DIRECTION_DOWN && behind_player) {
-        DrawTextureV(particle.extra.var.walking.texture, (Vector2){particle.position.x, particle.position.y},
-                     particle.color);
-      } else if (game->player.direction != DIRECTION_DOWN && !behind_player) {
-        DrawTextureV(particle.extra.var.walking.texture, (Vector2){particle.position.x, particle.position.y},
-                     particle.color);
-      }
-      break;
-    }
-    }
-  }
-}
-
-void game_render_particles(Game *game, bool behind_player) {
-  particles_update(game);
-
-  ParticleInstance *particles = GAME.particle_manager.particles;
-  for (int i = 0; i < MAX_PARTICLES_AMOUNT; i++) {
-    game_render_particle(game, particles[i], behind_player);
-  }
-}
