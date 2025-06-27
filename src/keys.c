@@ -4,7 +4,6 @@
 #include "../include/net/client.h"
 #include <raylib.h>
 #include <string.h>
-#include <stdio.h>
 
 Keybinds KEYBINDS;
 

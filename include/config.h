@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdio.h>
+
 #define CONFIG_READ(file_name, json_object_name, block)                                                                \
   char *file = read_file_to_string("config/" file_name ".json");                                                       \
   cJSON *json_object_name = cJSON_Parse(file);                                                                         \

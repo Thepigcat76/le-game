@@ -1,5 +1,7 @@
 #include "../include/debug.h"
 #include "../include/config.h"
+#include "../include/keys.h"
+#include "../include/net/client.h"
 #include "../include/game.h"
 #include "raylib.h"
 #include "rlgl.h"
@@ -125,7 +127,7 @@ void debug_tick() {
     if (GAME.debug_options.game_object_display != DEBUG_DISPLAY_NONE) {
       GAME.debug_options.game_object_display = DEBUG_DISPLAY_NONE;
     } else {
-      game_set_menu(&GAME, MENU_NONE);
+      game_set_menu(&CLIENT_GAME, MENU_NONE);
     }
   }
 }

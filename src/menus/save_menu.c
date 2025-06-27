@@ -1,7 +1,4 @@
-#include "../../include/config.h"
-#include "../../include/game.h"
-#include "../../include/ui.h"
-#include "../../include/ui/ui_helper.h"
+#include "menu_includes.h"
 #include <raylib.h>
 
 static void save_menu_back_to_game_button_clicked() {
@@ -14,7 +11,7 @@ static void save_menu_general_settings_button_clicked() { TraceLog(LOG_DEBUG, "B
 static void save_menu_gameplay_settings_button_clicked() { TraceLog(LOG_DEBUG, "Button clicked"); }
 
 static void save_menu_save_game_button_clicked() {
-  game_set_menu(&GAME, MENU_START);
+  game_set_menu(&CLIENT_GAME, MENU_START);
 
   game_unload_save(&GAME);
 }
@@ -31,7 +28,7 @@ void save_menu_init() {
   INIT_TEXTURE(LEAVE_GAME_BUTTON_TEXTURE, "back_to_game_button");
 }
 
-void save_menu_render(UiRenderer *renderer, const Game *game) {
+void save_menu_render(UiRenderer *renderer, const ClientGame *game) {
   UI_SETUP({
       .positions = {UI_CENTER, UI_CENTER},
       .alignment = UI_VERTICAL,

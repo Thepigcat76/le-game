@@ -30,9 +30,9 @@ typedef struct {
 // Setup (Order of declaratiion should also be)
 
 // Needs to be called after setting the style
-#define UI_SETUP(...) ui_setup(&GAME.ui_renderer, (UiStyle)__VA_ARGS__)
+#define UI_SETUP(...) ui_setup(&CLIENT_GAME.ui_renderer, (UiStyle)__VA_ARGS__)
 
-#define UI_BACKGROUND(...) ui_set_background(&GAME.ui_renderer, (BackgroundUiComponent)__VA_ARGS__)
+#define UI_BACKGROUND(...) ui_set_background(&CLIENT_GAME.ui_renderer, (BackgroundUiComponent)__VA_ARGS__)
 
 void ui_setup(UiRenderer *renderer, UiStyle style);
 
@@ -42,19 +42,19 @@ float ui_scale(UiRenderer *renderer);
 
 // COMPONENTS
 
-#define RENDER_BUTTON(...) ui_button_render(&GAME.ui_renderer, (ButtonUiComponent)__VA_ARGS__)
+#define RENDER_BUTTON(...) ui_button_render(&CLIENT_GAME.ui_renderer, (ButtonUiComponent)__VA_ARGS__)
 
-#define RENDER_TEXT(...) ui_text_render(&GAME.ui_renderer, (TextUiComponent)__VA_ARGS__)
+#define RENDER_TEXT(...) ui_text_render(&CLIENT_GAME.ui_renderer, (TextUiComponent)__VA_ARGS__)
 
-#define RENDER_TEXT_INPUT(...) ui_text_input_render(&GAME.ui_renderer, (TextInputUiComponent)__VA_ARGS__)
+#define RENDER_TEXT_INPUT(...) ui_text_input_render(&CLIENT_GAME.ui_renderer, (TextInputUiComponent)__VA_ARGS__)
 
-#define RENDER_TEXTURE(...) ui_texture_render(&GAME.ui_renderer, (TextureUiComponent)__VA_ARGS__)
+#define RENDER_TEXTURE(...) ui_texture_render(&CLIENT_GAME.ui_renderer, (TextureUiComponent)__VA_ARGS__)
 
-#define RENDER_SPACING(...) ui_spacing_render(&GAME.ui_renderer, (SpacingUiComponent)__VA_ARGS__)
+#define RENDER_SPACING(...) ui_spacing_render(&CLIENT_GAME.ui_renderer, (SpacingUiComponent)__VA_ARGS__)
 
-#define UI_GROUP_CREATE(...) ui_group_create(&GAME.ui_renderer, (GroupUiComponent)__VA_ARGS__)
+#define UI_GROUP_CREATE(...) ui_group_create(&CLIENT_GAME.ui_renderer, (GroupUiComponent)__VA_ARGS__)
 
-#define UI_GROUP_DESTROY() ui_group_destroy(&GAME.ui_renderer)
+#define UI_GROUP_DESTROY() ui_group_destroy(&CLIENT_GAME.ui_renderer)
 
 // BUTTONS
 

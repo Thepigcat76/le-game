@@ -15,7 +15,7 @@ static void host_menu_back() { game_set_menu(&CLIENT_GAME, MENU_MULTIPLAYER); }
 
 void host_menu_open(UiRenderer *renderer, const ClientGame *game) { ip_addr(IP_ADDR.buf); }
 
-void host_menu_render(UiRenderer *renderer, const Game *game) {
+void host_menu_render(UiRenderer *renderer, const ClientGame *game) {
   UI_SETUP({
       .positions = {UI_CENTER, UI_CENTER},
       .alignment = UI_VERTICAL,

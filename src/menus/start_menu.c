@@ -1,7 +1,4 @@
-#include "../../include/config.h"
-#include "../../include/game.h"
-#include "../../include/net/client.h"
-#include "../../include/ui.h"
+#include "menu_includes.h"
 #include <raylib.h>
 
 static void start_menu_new_save() {
@@ -28,7 +25,7 @@ static void start_menu_leave_game() {
   exit(0);
 }
 
-void start_menu_render(UiRenderer *renderer, const Game *game) {
+void start_menu_render(UiRenderer *renderer, const ClientGame *game) {
   UI_SETUP({
       .positions = {UI_CENTER, UI_CENTER},
       .alignment = UI_VERTICAL,

@@ -1,9 +1,7 @@
-#include "../../include/config.h"
-#include "../../include/game.h"
-#include "../../include/ui.h"
+#include "menu_includes.h"
 #include <raylib.h>
 
-void map_menu_render(UiRenderer *renderer, const Game *game) {
+void map_menu_render(UiRenderer *renderer, const ClientGame *game) {
   UI_SETUP({
       .positions = {UI_CENTER, UI_CENTER},
       .alignment = UI_VERTICAL,

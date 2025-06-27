@@ -49,7 +49,7 @@ static void client_start(void) {
   // Init client and setup client game
   client_init();
 
-  // Setup raylib 
+  // Setup raylib
   game_init_raylib();
 
   // Load Textures, init random
@@ -64,6 +64,12 @@ static void client_start(void) {
   tile_categories_init();
 
   game_client_reload(&CLIENT_GAME);
+
+  while (!WindowShouldClose()) {
+
+  }
+
+  game_deinit_raylib();
 }
 
 static void game_run() {
@@ -86,9 +92,6 @@ static void game_run() {
   game_reload(game);
 
   game_init(game);
-
-  prev_width = GetScreenWidth();
-  prev_height = GetScreenHeight();
 
   float tickAccumulator = 0.0f;
   float lastFrameTime = GetTime();

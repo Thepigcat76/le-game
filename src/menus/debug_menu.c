@@ -1,7 +1,4 @@
-#include "../../include/config.h"
-#include "../../include/game.h"
-#include "../../include/ui.h"
-#include <raylib.h>
+#include "menu_includes.h"
 
 static char text_buf[256];
 static TextInputBuffer text_input_buffer = {.buf = text_buf, .len = 0, .max_len = 256};
@@ -33,7 +30,7 @@ static void debug_menu_hitboxes_button_clicked() {
   GAME.debug_options.hitboxes_shown = !GAME.debug_options.hitboxes_shown;
 }
 
-void debug_menu_render(UiRenderer *renderer, const Game *game) {
+void debug_menu_render(UiRenderer *renderer, const ClientGame *game) {
   UI_SETUP({
                .positions = {UI_LEFT, UI_TOP},
                .alignment = UI_HORIZONTAL,

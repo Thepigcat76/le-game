@@ -4,6 +4,7 @@
 #include "../menu.h"
 #include "../particle.h"
 #include "../player.h"
+#include "../save.h"
 #include "../shaders.h"
 #include "../sounds.h"
 #include "../textures.h"
@@ -30,10 +31,14 @@ typedef struct {
   bool slot_selected;
   PressedKeys pressed_keys;
   bool singleplayer;
-  // World, Player - points either to the
-  // world and player stored in the save
-  // or world and player in a special server
-  // save
+  // Saves
+  // These are saves that are actually stored on disk
+  SaveDescriptor *local_saves;
+  // A save - this can either be a local save or
+  Save cur_save;
+  // World, Player - points to the
+  // world and player usually stored
+  // in ClientGame.cur_save
   World *world;
   Player *player;
 } ClientGame;
@@ -41,6 +46,12 @@ typedef struct {
 extern ClientGame CLIENT_GAME;
 
 void client_init(void);
+
+void game_init_raylib(void);
+
+void game_deinit_raylib(void);
+
+// RELOADING
 
 void game_client_reload(ClientGame *game);
 
@@ -53,3 +64,9 @@ bool game_cur_menu_hides_game(ClientGame *game);
 void game_render_menu(ClientGame *game);
 
 void game_set_menu(ClientGame *game, MenuId menu_id);
+
+// GAME RENDER
+
+void game_render(ClientGame *game, float alpha);
+
+void game_render_overlay(ClientGame *game);

@@ -1,9 +1,6 @@
-#include "../../include/config.h"
-#include "../../include/game.h"
-#include "../../include/ui.h"
-#include <raylib.h>
+#include "menu_includes.h"
 
-void backpack_menu_render(UiRenderer *renderer, const Game *game) {
+void backpack_menu_render(UiRenderer *renderer, const ClientGame *game) {
   ui_setup(renderer,
            (UiStyle){
                .positions = {UI_CENTER, UI_CENTER},

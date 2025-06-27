@@ -25,3 +25,5 @@ typedef struct {
   int zoom_in_key;
   int zoom_out_key;
 } Keybinds;
+
+extern Keybinds KEYBINDS;

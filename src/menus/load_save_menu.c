@@ -1,7 +1,5 @@
 #include "../../include/array.h"
-#include "../../include/config.h"
-#include "../../include/game.h"
-#include "../../include/ui.h"
+#include "menu_includes.h"
 #include <raylib.h>
 
 static int scroll_y_offset = 0;
@@ -10,13 +8,13 @@ static void load_save_menu_load_save(void *args) {
   SaveDescriptor save_desc = *(SaveDescriptor *)args;
   game_load_save(&GAME, save_desc);
   world_initialize(GAME.world);
-  game_set_menu(&GAME, MENU_NONE);
+  game_set_menu(&CLIENT_GAME, MENU_NONE);
   GAME.paused = false;
 }
 
-static void load_save_menu_back() { game_set_menu(&GAME, MENU_START); }
+static void load_save_menu_back() { game_set_menu(&CLIENT_GAME, MENU_START); }
 
-void load_save_menu_render(UiRenderer *renderer, const Game *game) {
+void load_save_menu_render(UiRenderer *renderer, const ClientGame *game) {
   ui_setup(renderer,
            (UiStyle){
                .positions = {UI_CENTER, UI_CENTER},
@@ -31,7 +29,7 @@ void load_save_menu_render(UiRenderer *renderer, const Game *game) {
 
   RENDER_TEXT({.text = "Load save"});
   RENDER_SPACING({.height = 100});
-  RENDER_TEXT({.text = TextFormat("Loaded Saves: %d", array_len(game->saves))});
+  RENDER_TEXT({.text = TextFormat("Loaded Saves: %d", array_len(game->local_saves))});
   // Create the group for displaying the saves
   UI_GROUP_CREATE({.group_style = renderer->cur_style,
                    .has_scrollbar = true,
@@ -39,12 +37,12 @@ void load_save_menu_render(UiRenderer *renderer, const Game *game) {
                    .height = 300,
                    .scroll_y_offset = &scroll_y_offset});
   {
-    size_t saves = array_len(game->saves);
+    size_t saves = array_len(game->local_saves);
     for (int i = 0; i < saves; i++) {
-      RENDER_BUTTON({.message = TextFormat("%s", game->saves[i].config.save_name),
+      RENDER_BUTTON({.message = TextFormat("%s", game->local_saves[i].config.save_name),
                      .texture = SAVE_SLOT_TEXTURE,
                      .selected_texture = SAVE_SLOT_SELECTED_TEXTURE,
-                     .on_click_func = button_click_args(load_save_menu_load_save, &game->saves[i]),
+                     .on_click_func = button_click_args(load_save_menu_load_save, &game->local_saves[i]),
                      .x_offset = x_offset,
                      .y_offset = y_offset});
     }

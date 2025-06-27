@@ -1,17 +1,15 @@
-#include "../../include/config.h"
-#include "../../include/game.h"
-#include "../../include/ui.h"
+#include "menu_includes.h"
 #include <raylib.h>
 
 static void multiplayer_menu_join() {}
 
 static void multiplayer_menu_host() {
-    game_set_menu(&GAME, MENU_HOST_SERVER);
+    game_set_menu(&CLIENT_GAME, MENU_HOST_SERVER);
 }
 
-static void multiplayer_menu_back() { game_set_menu(&GAME, MENU_START); }
+static void multiplayer_menu_back() { game_set_menu(&CLIENT_GAME, MENU_START); }
 
-void multiplayer_menu_render(UiRenderer *renderer, const Game *game) {
+void multiplayer_menu_render(UiRenderer *renderer, const ClientGame *game) {
   UI_SETUP({
       .positions = {UI_CENTER, UI_CENTER},
       .alignment = UI_VERTICAL,

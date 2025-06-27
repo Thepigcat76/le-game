@@ -1,8 +1,5 @@
-#include "../../include/config.h"
-#include "../../include/game.h"
-#include "../../include/net/client.h"
+#include "menu_includes.h"
 #include "../../include/save_names.h"
-#include "../../include/ui.h"
 #include <string.h>
 
 static bool save_name_input_selected = true;
@@ -32,7 +29,7 @@ void new_save_menu_open(UiRenderer *renderer, const ClientGame *game) {
   free(random_save_name);
 }
 
-void new_save_menu_render(UiRenderer *renderer, const Game *game) {
+void new_save_menu_render(UiRenderer *renderer, const ClientGame *game) {
   float scale = 0.85;
   UI_SETUP({
       .positions = {UI_CENTER, UI_CENTER},

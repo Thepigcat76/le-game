@@ -14,6 +14,8 @@
 #include "tile.h"
 #include "window.h"
 #include "ui.h"
+#include "net/client.h"
+#include "net/server.h"
 
 #define TICK_RATE 20                     // ticks per second
 #define TICK_INTERVAL (1.0f / TICK_RATE) // seconds per tick
@@ -30,14 +32,6 @@ typedef struct _game {
   // pointers to the fields in the current save
   Player *player;
   World *world;
-  // RENDERING
-  ParticleManager particle_manager;
-  UiRenderer ui_renderer;
-  Window window;
-  // ASSET MANAGEMENT
-  SoundManager sound_manager;
-  ShaderManager shader_manager;
-  TextureManager texture_manager;
   // TILE CATEGORIES
   TileCategoryLookup tile_category_lookup;
   // DEBUGGING
@@ -45,6 +39,11 @@ typedef struct _game {
   // KEYS PRESSED
   PressedKeys pressed_keys;
   bool slot_selected;
+  // Client/Server - depending on
+  // the side we are on either one
+  // of these is not NULL
+  ClientGame *client_game;
+  ServerGame *server_game;
 } Game;
 
 extern Game GAME;
@@ -82,25 +81,12 @@ void game_reload(Game *game);
 
 void game_tick(Game *game);
 
-// GAME RENDER
-
-void game_render(Game *game, float alpha);
-
-void game_render_overlay(Game *game);
-
 // GAME LOAD/SAVE
 
 // Loads the described save and stores it in GAME.cur_save
 void game_load_save_data(Game *game, SaveDescriptor desc);
 
 void game_save_save_data(Game *game, Save *save);
-
-// MANAGMENT
-
-// PRE/POST GAME INITIALIZATION
-void game_init_raylib(void);
-
-void game_deinit_raylib(void);
 
 // GAME INIT/DEINIT
 
