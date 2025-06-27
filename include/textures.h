@@ -5,6 +5,19 @@
 
 #define ANIMATED_TEXTURES_AMOUNT 4
 
+#define TEXTURE_MANAGER_MAX_TEXTURES 64
+
+typedef enum {
+  TEXTURE_CURSOR,
+  TEXTURE_TOOLTIP,
+  TEXTURE_BREAK,
+  TEXTURE_SLOT,
+} TextureManagerTexture;
+
+typedef struct {
+  Texture2D textures[TEXTURE_MANAGER_MAX_TEXTURES];
+} TextureManager;
+
 typedef struct {
   enum {
     TEXTURE_STATIC,

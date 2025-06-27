@@ -71,7 +71,7 @@ void game_load_saves(Game *game) {
 }
 
 static void game_load_cur_save(Game *game, SaveDescriptor desc) {
-  game->cur_save = game_load_save_data(game, desc);
+  game_load_save_data(game, desc);
 
   // TODO: world_prepare_rendering(game->world);
 }
@@ -115,6 +115,16 @@ static void game_create_save_config_file(Game *game, SaveConfig config) {
   cJSON_Delete(json);
 }
 
+void game_create_save_world(Game *game) {
+  float seed = game->cur_save.descriptor.config.seed;
+  player_set_pos_ex(&game->cur_save.player, TILE_SIZE * ((float)CHUNK_SIZE / 2), TILE_SIZE * ((float)CHUNK_SIZE / 2), false,
+                    false, false);
+  game->cur_save.world.seed = seed;
+  world_gen(&game->cur_save.world);
+
+  world_initialize(&game->cur_save.world);
+}
+
 void game_create_save(Game *game, const char *save_name, const char *seed_lit) {
   if (!DirectoryExists("save")) {
     create_dir("save");
@@ -133,7 +143,8 @@ void game_create_save(Game *game, const char *save_name, const char *seed_lit) {
 
   create_dir(TextFormat("save/save%d", id));
   game_create_save_config_file(game, desc.config);
-  game_create_world(&GAME, seed);
 
   array_add(game->saves, desc);
+
+  game->cur_save = (Save) {.descriptor = desc, .world = world_new(), .player = player_new()};
 }

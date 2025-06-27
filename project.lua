@@ -28,5 +28,13 @@ WinLibraries = {
     "opengl32",
     "gdi32",
     "winmm",
-    "wincjson"
+    "wincjson",
+    "pthread",
+    "ws2_32"
+}
+
+_Params = {
+    "-static-libgcc",
+    "-static-libstdc++",
+    "-static"
 }

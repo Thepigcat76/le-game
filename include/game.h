@@ -12,6 +12,7 @@
 #include "shared.h"
 #include "sounds.h"
 #include "tile.h"
+#include "window.h"
 #include "ui.h"
 #include <raylib.h>
 
@@ -19,26 +20,6 @@
 #define TICK_INTERVAL (1.0f / TICK_RATE) // seconds per tick
 
 #define MAX_TICKS_PER_FRAME 20
-
-#define TEXTURE_MANAGER_MAX_TEXTURES 64
-
-typedef struct {
-  int width;
-  int height;
-  int prev_width;
-  int prev_height;
-} Window;
-
-typedef enum {
-  TEXTURE_CURSOR,
-  TEXTURE_TOOLTIP,
-  TEXTURE_BREAK,
-  TEXTURE_SLOT,
-} TextureManagerTexture;
-
-typedef struct {
-  Texture2D textures[TEXTURE_MANAGER_MAX_TEXTURES];
-} TextureManager;
 
 typedef struct _game {
   MenuId cur_menu;
@@ -66,7 +47,6 @@ typedef struct _game {
   RenderTexture2D world_texture;
   // KEYS PRESSED
   PressedKeys pressed_keys;
-  float tick_delta;
   bool slot_selected;
 } Game;
 
@@ -76,6 +56,7 @@ extern Music MUSIC;
 // GAME CREATION
 
 // Creates a new directory for this save and the config file
+// Creates a new save and stores it in GAME.cur_save
 void game_create_save(Game *game, const char *save_name, const char *seed_lit);
 
 // Load Save Descriptors to GAME.saves
@@ -88,12 +69,12 @@ void game_load_save(Game *game, SaveDescriptor desc);
 // Performs memory cleanup for some things like the item container bump
 void game_unload_save(Game *game);
 
-// Returns a pointer to an array of two strings (first one being the adjective, second one the noun)
-
 void game_feature_add(Game *game, GameFeature game_feature);
 
-void game_create_world(Game *game, float seed);
+// Creates a world as described in GAME.cur_save
+void game_create_save_world(Game *game);
 
+// Returns a pointer to an array of two strings (first one being the adjective, second one the noun)
 char **game_save_name_random(Game *game);
 
 void game_feature_create(Game *game);
@@ -110,7 +91,8 @@ void game_render_overlay(Game *game);
 
 // GAME LOAD/SAVE
 
-Save game_load_save_data(Game *game, SaveDescriptor desc);
+// Loads the described save and stores it in GAME.cur_save
+void game_load_save_data(Game *game, SaveDescriptor desc);
 
 void game_save_save_data(Game *game, Save *save);
 

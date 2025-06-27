@@ -24,13 +24,6 @@ void game_reload(Game *game) {
 Game GAME;
 Music MUSIC;
 
-void game_create_world(Game *game, float seed) {
-  player_set_pos_ex(game->player, TILE_SIZE * ((float)CHUNK_SIZE / 2), TILE_SIZE * ((float)CHUNK_SIZE / 2), false,
-                    false, false);
-  game->world->seed = seed;
-  world_gen(game->world);
-}
-
 void game_feature_add(Game *game, GameFeature game_feature) {
   if (game->cur_save.feature_store.game_features_amount < game->cur_save.feature_store.game_features_capacity) {
     game->cur_save.feature_store.game_features[game->cur_save.feature_store.game_features_amount++] = game_feature;
@@ -291,5 +284,3 @@ static bool game_slot_selected() {
                          .height = 20 * 3.5};
   return CheckCollisionPointRec(GetMousePosition(), slot_rect);
 }
-
-// -- PARTICLES --

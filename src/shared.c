@@ -1,8 +1,10 @@
 #include "../include/shared.h"
+#ifndef SURTUR_BUILD_WIN
 #include <arpa/inet.h>
 #include <ifaddrs.h>
-#include <math.h>
 #include <netinet/in.h>
+#endif
+#include <math.h>
 #include <raylib.h>
 #include <stdio.h>
 #include <string.h>
@@ -197,8 +199,8 @@ float string_to_world_seed(const char *str) {
   }
   return (hash % 100000) / 100000.0f;
 }
-
 int ip_addr(char *ip_addr_buf) {
+#ifndef SURTUR_BUILD_WIN
   struct ifaddrs *ifaddr, *ifa;
 
   if (getifaddrs(&ifaddr) == -1) {
@@ -218,5 +220,6 @@ int ip_addr(char *ip_addr_buf) {
   }
 
   freeifaddrs(ifaddr);
+#endif
   return 0;
 }

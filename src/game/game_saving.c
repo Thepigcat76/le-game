@@ -10,7 +10,8 @@
     ByteBuf byte_buf_name = {                                                                                          \
         .bytes = byte_buf_name##_bytes, .writer_index = 0, .reader_index = 0, .capacity = byte_buf_size};              \
     __VA_ARGS__ byte_buf_to_file(&byte_buf_name, TextFormat("save/save%d/" save_file_name ".bin", save_desc.id));      \
-    TraceLog(LOG_INFO, "Saved " save_file_name " data, writer index: %d", byte_buf_name.writer_index);                 \
+    TraceLog(LOG_INFO, "Saved " save_file_name " at %s data, writer index: %d",                                        \
+             TextFormat("save/save%d/" save_file_name ".bin", save_desc.id), byte_buf_name.writer_index);              \
     free(byte_buf_name##_bytes);                                                                                       \
   }
 
@@ -26,7 +27,7 @@
 
 // LOAD
 
-Save game_load_save_data(Game *game, SaveDescriptor desc) {
+void game_load_save_data(Game *game, SaveDescriptor desc) {
   Save save = {.descriptor = desc, .player = player_new(), .world = world_new()};
   LOAD_DATA(desc, "player", sizeof(Player), byte_buf, {
     Data data_map = byte_buf_read_data(&byte_buf);
@@ -46,7 +47,7 @@ Save game_load_save_data(Game *game, SaveDescriptor desc) {
     data_free(&data_map);
   });
 
-  return save;
+  GAME.cur_save = save;
 }
 
 // UNLOAD
