@@ -16,13 +16,18 @@ void game_init_menu(Game *game) {
 }
 
 bool game_cur_menu_hides_game(Game *game) {
-  return game->cur_menu == MENU_START || game->cur_menu == MENU_NEW_SAVE || game->cur_menu == MENU_LOAD_SAVE;
+  return game->cur_menu == MENU_START || game->cur_menu == MENU_NEW_SAVE || game->cur_menu == MENU_LOAD_SAVE ||
+      game->cur_menu == MENU_MULTIPLAYER || game->cur_menu == MENU_HOST_SERVER;
 }
 
 static void game_open_menu(Game *game, MenuId menu_id) {
   switch (menu_id) {
   case MENU_NEW_SAVE: {
     OPEN_MENU(&GAME.ui_renderer, new_save_menu);
+    break;
+  }
+  case MENU_HOST_SERVER: {
+    OPEN_MENU(&GAME.ui_renderer, host_menu);
     break;
   }
   default: {

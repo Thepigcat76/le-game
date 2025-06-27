@@ -10,7 +10,7 @@
 
 static Bump ADV_TILE_BUMP;
 BUMP_ALLOCATOR(ADV_TILE_BUMP_ALLOCATOR, &ADV_TILE_BUMP);
-static AdvTileInstance *ADV_TILES;
+AdvTileInstance *ADV_TILES;
 
 #define INIT_TILE(src_file_name)                                                                                       \
   extern void src_file_name##_tile_init();                                                                             \

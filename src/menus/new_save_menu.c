@@ -18,7 +18,7 @@ static void new_save_create_world() {
   GAME.paused = false;
 
   game_create_save(&GAME, save_name_text_input_buffer.buf, seed_text_input_buffer.buf);
-  world_initialize(&GAME.world);
+  world_initialize(GAME.world);
 }
 
 static void new_save_back_to_start_menu() { game_set_menu(&GAME, MENU_START); }

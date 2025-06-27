@@ -16,6 +16,7 @@ typedef struct {
   Allocator *allocator;
   size_t capacity;
   size_t len;
+  size_t item_size;
 } _InternalArrayHeader;
 
 void *_internal_array_new(size_t capacity, size_t item_size, Allocator *allocator);
@@ -28,8 +29,16 @@ void _internal_array_free(void *arr);
 
 void _internal_array_add(void **arr_ptr, void *item, size_t item_size);
 
-#define array_add(arr, ...)                                                                                          \
+void _internal_array_remove(void *arr_ptr, size_t index);
+
+void _internal_array_clear(void *arr_ptr);
+
+#define array_add(arr, ...)                                                                                            \
   do {                                                                                                                 \
-    __typeof__(*(arr)) _tmp = (__VA_ARGS__);                                                                                 \
-    _internal_array_add((void **)&(arr), &_tmp, sizeof(_tmp));                                                          \
+    __typeof__(*(arr)) _tmp = (__VA_ARGS__);                                                                           \
+    _internal_array_add((void **)&(arr), &_tmp, sizeof(_tmp));                                                         \
   } while (0)
+
+#define array_remove(array, index) _internal_array_remove(array, index)
+
+#define array_clear(array) _internal_array_clear(array)

@@ -1,10 +1,12 @@
 #include "../include/shared.h"
+#include <arpa/inet.h>
+#include <ifaddrs.h>
+#include <math.h>
+#include <netinet/in.h>
 #include <raylib.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <math.h>
 
 Texture2D TEXT_INPUT_TEXTURE;
 
@@ -119,10 +121,11 @@ char *read_file_to_string(const char *filename) {
 }
 
 int string_contains(const char *string, char c) {
-  int len = strlen( string);
+  int len = strlen(string);
   int found = 0;
   for (int i = 0; i < len; i++) {
-    if (string[i] == c) found++;
+    if (string[i] == c)
+      found++;
   }
   return found;
 }
@@ -193,4 +196,27 @@ float string_to_world_seed(const char *str) {
     hash = hash * 101 + (unsigned char)(*str++);
   }
   return (hash % 100000) / 100000.0f;
+}
+
+int ip_addr(char *ip_addr_buf) {
+  struct ifaddrs *ifaddr, *ifa;
+
+  if (getifaddrs(&ifaddr) == -1) {
+    perror("getifaddrs");
+    return -1;
+  }
+
+  for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+    if (ifa->ifa_addr == NULL)
+      continue;
+
+    // Check for IPv4 family
+    if (ifa->ifa_addr->sa_family == AF_INET) {
+      void *addr_ptr = &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
+      inet_ntop(AF_INET, addr_ptr, ip_addr_buf, INET_ADDRSTRLEN);
+    }
+  }
+
+  freeifaddrs(ifaddr);
+  return 0;
 }

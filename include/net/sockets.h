@@ -4,7 +4,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#define DEBUG_PORT 12345
 #define MAX_CLIENTS 32
+
+typedef int32_t addr_t;
 
 typedef struct {
   void *buffer;
@@ -15,9 +18,9 @@ typedef struct pollfd PollClient;
 
 typedef void (*ConnectionHandleFunc)(int32_t client_addr);
 
-int32_t sockets_open_server(char *ip_address, uint32_t port);
+int32_t sockets_open_server(const char *ip_address, uint32_t port);
 
-int32_t sockets_connect_to_server(char *ip_address, uint32_t port);
+int32_t sockets_connect_to_server(const char *ip_address, uint32_t port);
 
 // Returns the amount of bytes or -1 if sending fails
 int64_t sockets_send(int32_t socket_addr, SocketDataBuffer buf, int32_t flags);

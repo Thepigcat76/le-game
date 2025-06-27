@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdlib.h>
 #include <raylib.h>
 
 #define SCREEN_WIDTH 800
@@ -60,6 +61,8 @@
 #define GLOBAL_BUMP_CAPACITY 256
 
 #define ARRAY_INITIAL_CAPACITY 16
+
+#define MAX_PLAYERS 256
 
 extern Texture2D DEBUG_BUTTON_TEXTURE;
 extern Texture2D DEBUG_BUTTON_SELECTED_TEXTURE;
@@ -155,3 +158,7 @@ int signum(int s);
 Direction direction_from_delta(int x, int y);
 
 float string_to_world_seed(const char *str);
+
+// ip_addr_buf needs to be at least 16 characters long + null terminator
+// Return -1 if we encounter error
+int ip_addr(char *ip_addr_buf);

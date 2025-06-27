@@ -15,29 +15,29 @@ static void game_render_break_progress(Game *game, TilePos break_pos, int break_
 
 void game_world_render(Game *game, float alpha) {
   Vec2f mouse_pos = GetMousePosition();
-  Vec2f mouse_world_pos = GetScreenToWorld2D(mouse_pos, game->player.cam);
+  Vec2f mouse_world_pos = GetScreenToWorld2D(mouse_pos, game->player->cam);
 
-  world_render_layer(&game->world, TILE_LAYER_GROUND);
+  world_render_layer(game->world, TILE_LAYER_GROUND);
 
-  world_render_layer_top_split(&game->world, &game->player, true);
+  world_render_layer_top_split(game->world, &game->player, true);
 
-  for (int i = 0; i < game->world.beings_amount; i++) {
-    being_render(&game->world.beings[i]);
+  for (int i = 0; i < game->world->beings_amount; i++) {
+    being_render(&game->world->beings[i]);
   }
 
   game_render_particles(game, true);
 
-  player_render(&game->player, alpha);
+  player_render(game->player, alpha);
 
   bool zoom_in = IsKeyDown(KEY_UP);
   bool zoom_out = IsKeyDown(KEY_DOWN);
 
-  player_handle_zoom(&game->player, zoom_in, zoom_out, alpha);
+  player_handle_zoom(game->player, zoom_in, zoom_out, alpha);
 
-  world_render_layer_top_split(&game->world, &game->player, false);
+  world_render_layer_top_split(game->world, &game->player, false);
 
-  game_render_break_progress(game, game->player.break_tile_pos, game->player.break_tile.type.tile_props.break_time,
-                             game->player.break_progress);
+  game_render_break_progress(game, game->player->break_tile_pos, game->player->break_tile.type.tile_props.break_time,
+                             game->player->break_progress);
 
   int x_index = floor_div(mouse_world_pos.x, TILE_SIZE);
   int y_index = floor_div(mouse_world_pos.y, TILE_SIZE);
@@ -45,8 +45,8 @@ void game_world_render(Game *game, float alpha) {
       (Rectangle){.x = x_index * (TILE_SIZE), .y = y_index * (TILE_SIZE), .width = (TILE_SIZE), .height = (TILE_SIZE)};
   bool slot_selected = game->slot_selected;
   bool interaction_in_range =
-      abs((int)game->player.box.x - x_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE &&
-      abs((int)game->player.box.y - y_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE;
+      abs((int)game->player->box.x - x_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE &&
+      abs((int)game->player->box.y - y_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE;
 
   if (!slot_selected && interaction_in_range) {
     rec_draw_outline(rec, BLUE);
@@ -65,7 +65,7 @@ void game_render(Game *game, float alpha) {
   {
     ClearBackground(DARKGRAY);
 
-    Camera2D *cam = &GAME.player.cam;
+    Camera2D *cam = &GAME.player->cam;
     // CAMERA BEGIN
     Vector2 mousePos = GetMousePosition();
 
@@ -74,7 +74,7 @@ void game_render(Game *game, float alpha) {
 
     Vector3 light_color = {1.0f, 1.0f, 0.8f}; // warm white
     float light_radius =
-        GAME.player.held_item.type.item_props.light_source ? 0.08f * cam->zoom * (1.0f + 0.11f * sin(GetTime())) : 0;
+        GAME.player->held_item.type.item_props.light_source ? 0.08f * cam->zoom * (1.0f + 0.11f * sin(GetTime())) : 0;
 
     ShaderVarLookupLighting lighting_lookup = GAME.shader_manager.lookups[SHADER_LIGHTING].var.lighting;
     Shader lighting_shader = GAME.shader_manager.shaders[SHADER_LIGHTING];
@@ -125,7 +125,7 @@ void game_render(Game *game, float alpha) {
       game_render_overlay(&GAME);
     }
 
-    if (GAME.player.held_item.type.id != ITEM_EMPTY) {
+    if (GAME.player->held_item.type.id != ITEM_EMPTY) {
       HideCursor();
       float scale = 3;
       DrawTextureEx(game->texture_manager.textures[TEXTURE_CURSOR], (Vector2){.x = mousePos.x, .y = mousePos.y}, 0, scale, WHITE);

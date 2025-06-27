@@ -1,8 +1,6 @@
 #include "../include/game.h"
-#include "../include/alloc.h"
 #include "../include/camera.h"
 #include "../include/config.h"
-#include "../include/item/item_container.h"
 #include "raylib.h"
 #include <dirent.h>
 #include <stdint.h>
@@ -26,24 +24,16 @@ void game_reload(Game *game) {
 Game GAME;
 Music MUSIC;
 
-static Sound PLACE_SOUND;
-static Texture2D BREAK_PROGRESS_TEXTURE;
-static Texture2D TOOLTIP_TEXTURE;
-static Texture2D CURSOR_TEXTURE;
-
 void game_create_world(Game *game, float seed) {
-  player_set_pos_ex(&game->player, TILE_SIZE * ((float)CHUNK_SIZE / 2), TILE_SIZE * ((float)CHUNK_SIZE / 2), false,
+  player_set_pos_ex(game->player, TILE_SIZE * ((float)CHUNK_SIZE / 2), TILE_SIZE * ((float)CHUNK_SIZE / 2), false,
                     false, false);
-  game->world.seed = seed;
-  world_gen(&game->world);
+  game->world->seed = seed;
+  world_gen(game->world);
 }
 
-// Uses null at the end to terminate
-static const char *TEXTURE_MANAGER_TEXTURE_PATHS[TEXTURE_MANAGER_MAX_TEXTURES] = {"cursor", "gui/tool_tip", "breaking_overlay", "slot", NULL};
-
 void game_feature_add(Game *game, GameFeature game_feature) {
-  if (game->feature_store.game_features_amount < game->feature_store.game_features_capacity) {
-    game->feature_store.game_features[game->feature_store.game_features_amount++] = game_feature;
+  if (game->cur_save.feature_store.game_features_amount < game->cur_save.feature_store.game_features_capacity) {
+    game->cur_save.feature_store.game_features[game->cur_save.feature_store.game_features_amount++] = game_feature;
   }
 }
 
@@ -51,21 +41,21 @@ void game_feature_add(Game *game, GameFeature game_feature) {
 
 static void handle_tile_interaction(Game *game) {
   Vec2f mouse_pos = GetMousePosition();
-  Vec2f mouse_world_pos = GetScreenToWorld2D(mouse_pos, game->player.cam);
+  Vec2f mouse_world_pos = GetScreenToWorld2D(mouse_pos, game->player->cam);
   int x_index = floor_div(mouse_world_pos.x, TILE_SIZE);
   int y_index = floor_div(mouse_world_pos.y, TILE_SIZE);
 
   bool interaction_in_range =
-      abs((int)game->player.box.x - x_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE &&
-      abs((int)game->player.box.y - y_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE;
+      abs((int)game->player->box.x - x_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE &&
+      abs((int)game->player->box.y - y_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE;
 
   bool slot_selected = game_slot_selected();
 
   if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !slot_selected && interaction_in_range) {
-    TileInstance *selected_tile = world_highest_tile_at(&game->world, vec2i(x_index, y_index));
+    TileInstance *selected_tile = world_highest_tile_at(game->world, vec2i(x_index, y_index));
     bool correct_tool = false;
-    if (game->player.held_item.type.item_props.tool_props.break_categories.categories_amount > 0) {
-      TileIdCategories tool_categories = game->player.held_item.type.item_props.tool_props.break_categories;
+    if (game->player->held_item.type.item_props.tool_props.break_categories.categories_amount > 0) {
+      TileIdCategories tool_categories = game->player->held_item.type.item_props.tool_props.break_categories;
       TileIdCategories selected_tile_categories = tile_categories(&selected_tile->type);
       for (int i = 0; i < tool_categories.categories_amount; i++) {
         for (int j = 0; j < selected_tile_categories.categories_amount; j++) {
@@ -79,62 +69,62 @@ static void handle_tile_interaction(Game *game) {
     }
 
     if (selected_tile->type.id == TILE_EMPTY || selected_tile->type.tile_props.break_time < 0 || !correct_tool) {
-      game->player.break_progress = -1;
+      game->player->break_progress = -1;
       return;
     }
 
-    if (game->player.last_broken_tile.type.layer == selected_tile->type.layer ||
-        game->player.last_broken_tile.type.id == TILE_EMPTY) {
+    if (game->player->last_broken_tile.type.layer == selected_tile->type.layer ||
+        game->player->last_broken_tile.type.id == TILE_EMPTY) {
 
       TileInstance tile = *selected_tile;
       TraceLog(LOG_DEBUG, "Break x: %d, y: %d, break progress: %d, tile: %s", x_index * TILE_SIZE, y_index * TILE_SIZE,
-               game->player.break_progress, tile_type_to_string(&tile.type));
+               game->player->break_progress, tile_type_to_string(&tile.type));
       if (CheckCollisionPointRec(mouse_world_pos,
                                  rectf_from_dimf(x_index * TILE_SIZE, y_index * TILE_SIZE, selected_tile->box))) {
-        if (game->player.break_tile_pos.x != x_index || game->player.break_tile_pos.y != y_index) {
-          game->player.break_tile_pos = vec2i(x_index, y_index);
-          game->player.break_progress = -1;
+        if (game->player->break_tile_pos.x != x_index || game->player->break_tile_pos.y != y_index) {
+          game->player->break_tile_pos = vec2i(x_index, y_index);
+          game->player->break_progress = -1;
           return;
         }
 
-        game->player.break_progress += game->player.held_item.type.item_props.tool_props.break_speed + 1;
-        game->player.break_tile_pos = vec2i(x_index, y_index);
-        game->player.break_tile = tile;
-        if (game->player.break_progress >= tile.type.tile_props.break_time) {
-          if (game->player.held_item.type.id == ITEM_HAMMER) {
+        game->player->break_progress += game->player->held_item.type.item_props.tool_props.break_speed + 1;
+        game->player->break_tile_pos = vec2i(x_index, y_index);
+        game->player->break_tile = tile;
+        if (game->player->break_progress >= tile.type.tile_props.break_time) {
+          if (game->player->held_item.type.id == ITEM_HAMMER) {
             for (int y = -1; y <= 1; y++) {
               for (int x = -1; x <= 1; x++) {
                 TilePos tile_pos = vec2i(x_index + x, y_index + y);
-                TileInstance *tile_ptr = world_highest_tile_at(&game->world, tile_pos);
+                TileInstance *tile_ptr = world_highest_tile_at(game->world, tile_pos);
                 TileInstance tile = TILE_INSTANCE_EMPTY;
                 if (tile_ptr != NULL) {
                   tile = *tile_ptr;
                 }
-                world_remove_tile(&game->world, tile_pos);
-                world_set_tile_on_layer(&game->world, tile_pos, tile_break_remainder(&tile, tile_pos), tile.type.layer);
+                world_remove_tile(game->world, tile_pos);
+                world_set_tile_on_layer(game->world, tile_pos, tile_break_remainder(&tile, tile_pos), tile.type.layer);
               }
             }
           } else {
-            TileInstance *tile_ptr = world_highest_tile_at(&game->world, vec2i(x_index, y_index));
+            TileInstance *tile_ptr = world_highest_tile_at(game->world, vec2i(x_index, y_index));
             TileInstance tile = TILE_INSTANCE_EMPTY;
             if (tile_ptr != NULL) {
               tile = *tile_ptr;
             }
             TilePos tile_pos = vec2i(x_index, y_index);
-            world_remove_tile(&game->world, tile_pos);
-            world_set_tile_on_layer(&game->world, tile_pos, tile_break_remainder(&tile, tile_pos), tile.type.layer);
+            world_remove_tile(game->world, tile_pos);
+            world_set_tile_on_layer(game->world, tile_pos, tile_break_remainder(&tile, tile_pos), tile.type.layer);
           }
-          game->player.break_progress = -1;
-          game->player.last_broken_tile = tile;
+          game->player->break_progress = -1;
+          game->player->last_broken_tile = tile;
         }
       }
     }
   } else {
-    game->player.break_progress = -1;
+    game->player->break_progress = -1;
   }
 
   if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
-    game->player.last_broken_tile = TILE_INSTANCE_EMPTY;
+    game->player->last_broken_tile = TILE_INSTANCE_EMPTY;
   }
 
   if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON)) {
@@ -145,7 +135,7 @@ static void handle_tile_interaction(Game *game) {
   }
 
   if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && !slot_selected && interaction_in_range) {
-    TileInstance *selected_tile = world_highest_tile_at(&game->world, vec2i(x_index, y_index));
+    TileInstance *selected_tile = world_highest_tile_at(game->world, vec2i(x_index, y_index));
     if (CheckCollisionPointRec(mouse_world_pos,
                                rectf_from_dimf(x_index * TILE_SIZE, y_index * TILE_SIZE, selected_tile->box))) {
       if (selected_tile->type.id == TILE_CHEST) {
@@ -153,9 +143,9 @@ static void handle_tile_interaction(Game *game) {
         return;
       }
       TileInstance new_tile = tile_new(game->debug_options.selected_tile_to_place_instance.type);
-      bool placed = world_place_tile(&game->world, vec2i(x_index, y_index), new_tile);
+      bool placed = world_place_tile(game->world, vec2i(x_index, y_index), new_tile);
       if (placed && game->sound_manager.sound_timer >= SOUND_COOLDOWN) {
-        PlaySound(game->sound_manager.sound_buffer[game->sound_manager.cur_sound++]);
+        PlaySound(game->sound_manager.sound_buffers[SOUND_PLACE].sound_buf[game->sound_manager.cur_sound++]);
         if (game->sound_manager.cur_sound >= SOUND_BUFFER_LIMIT) {
           game->sound_manager.cur_sound = 0;
         }
@@ -168,10 +158,10 @@ static void handle_tile_interaction(Game *game) {
 static void handle_mouse_interaction(Game *game) {
   bool being_clicked = false;
   if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
-    for (int i = 0; i < game->world.beings_amount; i++) {
-      BeingInstance being = game->world.beings[i];
+    for (int i = 0; i < game->world->beings_amount; i++) {
+      BeingInstance being = game->world->beings[i];
       if (being.id == BEING_NPC &&
-          CheckCollisionPointRec(GetScreenToWorld2D(GetMousePosition(), game->player.cam), being.context.box)) {
+          CheckCollisionPointRec(GetScreenToWorld2D(GetMousePosition(), game->player->cam), being.context.box)) {
         game_set_menu(game, MENU_DIALOG);
         TraceLog(LOG_DEBUG, "Clicked being");
         being_clicked = true;
@@ -186,11 +176,11 @@ static void handle_mouse_interaction(Game *game) {
 }
 
 static void handle_item_pickup(Game *game) {
-  for (int i = 0; i < game->world.beings_amount; i++) {
-    if (game->world.beings[i].id == BEING_ITEM &&
-        CheckCollisionRecs(game->world.beings[i].context.box, player_collision_box(&game->player))) {
-      if (GetTime() - game->world.beings[i].context.creation_time > CONFIG.item_pickup_delay) {
-        world_remove_being(&game->world, &game->world.beings[i]);
+  for (int i = 0; i < game->world->beings_amount; i++) {
+    if (game->world->beings[i].id == BEING_ITEM &&
+        CheckCollisionRecs(game->world->beings[i].context.box, player_collision_box(game->player))) {
+      if (GetTime() - game->world->beings[i].context.creation_time > CONFIG.item_pickup_delay) {
+        world_remove_being(game->world, &game->world->beings[i]);
         break;
       }
     }
@@ -203,12 +193,12 @@ void game_world_tick(Game *game) {
   bool s = game->pressed_keys.move_foreward_key;
   bool d = game->pressed_keys.move_right_key;
 
-  player_tick(&game->player);
+  player_tick(game->player);
 
-  player_handle_movement(&game->player, w, a, s, d);
+  player_handle_movement(game->player, w, a, s, d);
 
-  for (int i = 0; i < game->world.beings_amount; i++) {
-    being_tick(&game->world.beings[i]);
+  for (int i = 0; i < game->world->beings_amount; i++) {
+    being_tick(&game->world->beings[i]);
   }
 
   handle_mouse_interaction(game);
@@ -219,8 +209,8 @@ void game_world_tick(Game *game) {
 
 #ifdef SURTUR_DEBUG
   if (IsKeyPressed(KEY_F1)) {
-    world_add_being(&game->world, being_npc_new(game->player.box.x, game->player.box.y));
-    WORLD_BEING_ID = game->world.beings_amount - 1;
+    world_add_being(game->world, being_npc_new(game->player->box.x, game->player->box.y));
+    WORLD_BEING_ID = game->world->beings_amount - 1;
   }
 
   if (IsKeyPressed(KEYBINDS.open_close_debug_menu_key)) {
@@ -260,7 +250,7 @@ void game_tick(Game *game) {
 
     GAME.world_texture = LoadRenderTexture(game->window.width, game->window.height);
 
-    camera_focus(&game->player.cam);
+    camera_focus(&game->player->cam);
   }
 
   if (!game->paused) {

@@ -9,6 +9,8 @@
 #include "tile/tile_props.h"
 #include "tile/adv_tile.h"
 
+extern AdvTileInstance *ADV_TILES;
+
 typedef enum {
   TILE_EMPTY,
   TILE_DIRT,

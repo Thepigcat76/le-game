@@ -15,7 +15,7 @@
 #endif
 #include <stdio.h>
 
-int32_t sockets_open_server(char *ip_address, uint32_t port) {
+int32_t sockets_open_server(const char *ip_address, uint32_t port) {
   int opt = 1;
 #ifdef SURTUR_BUILD_WIN
   SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -31,10 +31,17 @@ int32_t sockets_open_server(char *ip_address, uint32_t port) {
     return -1;
   }
 
+#ifdef SURTUR_BUILD_WIN
+  if (sock == SOCKET_ERROR) {
+    fprintf(stderr, "Socket failed: %d\n", WSAGetLastError());
+    return -1;
+  }
+#else
   if (sock < 0) {
     perror("socket failed");
     return -1;
   }
+#endif
 
   if (bind(sock, (struct sockaddr *)&server_socket, sizeof(server_socket)) < 0) {
     perror("bind failed");
@@ -51,7 +58,7 @@ int32_t sockets_open_server(char *ip_address, uint32_t port) {
   return sock;
 }
 
-int32_t sockets_connect_to_server(char *ip_address, uint32_t port) {
+int32_t sockets_connect_to_server(const char *ip_address, uint32_t port) {
 #ifdef SURTUR_BUILD_WIN
   SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
 #else

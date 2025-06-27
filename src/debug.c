@@ -29,7 +29,7 @@ static void debug_render_game_object_overlay() {
       Rectf item_box = rectf(x, y, item.type.texture.width * scale, item.type.texture.height * scale);
       rec_draw_outline(item_box, WHITE);
       if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && CheckCollisionPointRec(GetMousePosition(), item_box)) {
-        GAME.player.held_item = item;
+        GAME.player->held_item = item;
       }
     }
     break;
@@ -85,18 +85,18 @@ void debug_render_overlay() {
 
 void debug_render() {
   if (GAME.debug_options.hitboxes_shown) {
-    Rectangle player_hitbox = player_collision_box(&GAME.player);
+    Rectangle player_hitbox = player_collision_box(GAME.player);
     rec_draw_outline(player_hitbox, BLUE);
-    rec_draw_outline(rectf(GAME.player.tile_pos.x * TILE_SIZE, GAME.player.tile_pos.y * TILE_SIZE, 16, 16), RED);
+    rec_draw_outline(rectf(GAME.player->tile_pos.x * TILE_SIZE, GAME.player->tile_pos.y * TILE_SIZE, 16, 16), RED);
 
-    for (int i = 0; i < GAME.world.beings_amount; i++) {
-      rec_draw_outline(GAME.world.beings[i].context.box, WHITE);
+    for (int i = 0; i < GAME.world->beings_amount; i++) {
+      rec_draw_outline(GAME.world->beings[i].context.box, WHITE);
     }
   }
 
   if (GAME.cur_menu == MENU_DEBUG) {
     int id = WORLD_BEING_ID;
-    BeingBrain brain = GAME.world.beings[id].brain;
+    BeingBrain brain = GAME.world->beings[id].brain;
     //if (brain.activities_amount > 0) {
     //  BeingActivityWalkAround wa_activity = brain.activities[0].var.activity_walk_around;
     //  DrawCircleV(wa_activity.cur_target_pos, 8, WHITE);
@@ -115,7 +115,7 @@ void debug_tick() {
   }
 
   if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON) && GAME.cur_menu == MENU_DEBUG) {
-    BeingInstance *being = &GAME.world.beings[WORLD_BEING_ID];
+    BeingInstance *being = &GAME.world->beings[WORLD_BEING_ID];
     being_brain_reset(being);
     being_activities_add_walk_around(being, DEBUG_GO_TO_POSITION);
     TraceLog(LOG_DEBUG, "Added activity");

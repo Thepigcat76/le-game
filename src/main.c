@@ -1,13 +1,14 @@
 #include "../include/alloc.h"
+#include "../include/array.h"
 #include "../include/config.h"
 #include "../include/game.h"
 #include "../include/item/item_container.h"
+#include "../include/net/server.h"
 #include "../include/shared.h"
 #include "../include/ui.h"
 #include "raylib.h"
 #include "rlgl.h"
 #include <stdbool.h>
-#include <stdlib.h>
 
 void debug_rect(Rectangle *rect) {
   TraceLog(LOG_DEBUG, "Rect{x=%f, y=%f, w=%f, h=%f}", rect->x, rect->y, rect->width, rect->height);
@@ -20,13 +21,9 @@ float frame_timer = 0;
 int prev_width;
 int prev_height;
 
-static void tick(Game *game) {
-  game_tick(game);
-}
+static void tick(Game *game) { game_tick(game); }
 
-static void render(Game *game, float alpha) {
-  game_render(game, alpha);
-}
+static void render(Game *game, float alpha) { game_render(game, alpha); }
 
 #define KEY_DOWN(key_name) GAME.pressed_keys.key_name = IsKeyDown(KEYBINDS.key_name)
 
@@ -39,7 +36,7 @@ static void poll_keybinds(Game *game) {
   KEY_DOWN(zoom_out_key);
 }
 
-int main(void) {
+static void game_run() {
   // Setup allocators
   alloc_init();
 
@@ -54,10 +51,8 @@ int main(void) {
   item_types_init();
   tile_types_init();
 
-  GAME = (Game){.player = player_new(),
-                .world = world_new(),
-                .cur_menu = MENU_START,
-                .paused = false,
+  GAME = (Game){.cur_menu = MENU_START,
+                .saves = array_new(SaveDescriptor, &HEAP_ALLOCATOR),
                 .ui_renderer = (UiRenderer){.cur_x = 0,
                                             .cur_y = 0,
                                             .simulate = false,
@@ -66,20 +61,18 @@ int main(void) {
                                             .initial_style = {0},
                                             .context = {.screen_width = SCREEN_WIDTH, .screen_height = SCREEN_HEIGHT}},
                 .cur_save = -1,
-                .detected_saves = 0,
                 .debug_options = {.game_object_display = DEBUG_DISPLAY_NONE,
                                   .collisions_enabled = true,
                                   .hitboxes_shown = false,
                                   .selected_tile_to_place_instance = tile_new(TILES[TILE_DIRT])},
-                .feature_store = {.game_features = malloc(sizeof(GameFeature) * MAX_GAME_FEATURES_AMOUNT),
+                /*.feature_store = {.game_features = malloc(sizeof(GameFeature) * MAX_GAME_FEATURES_AMOUNT),
                                   .game_features_amount = 0,
-                                  .game_features_capacity = MAX_GAME_FEATURES_AMOUNT},
+                                  .game_features_capacity = MAX_GAME_FEATURES_AMOUNT},*/
                 .sound_manager = {.cur_sound = 0, .sound_timer = 0},
-                .particle_manager = {},
-                .shader_manager = {},
-                .tile_category_lookup = {},
-                .pressed_keys = {},
                 .world_texture = LoadRenderTexture(GetScreenWidth(), GetScreenHeight())};
+
+  GAME.player = &GAME.cur_save.player;
+  GAME.world = &GAME.cur_save.world;
 
   tile_categories_init();
 
@@ -88,8 +81,6 @@ int main(void) {
   game_reload(game);
 
   game_init(game);
-
-  world_prepare_rendering(&game->world);
 
   prev_width = GetScreenWidth();
   prev_height = GetScreenHeight();
@@ -121,11 +112,22 @@ int main(void) {
     render(game, tickAccumulator / TICK_INTERVAL);
   }
 
-  shaders_unload(&GAME.shader_manager);
-
-  game_save_cur_save(game);
-
   game_deinit(game);
 
   game_end();
+}
+
+int main(int argc, char **argv) {
+  bool server = argc > 1 && argv[1];
+
+  if (server) {
+    if (argc > 4) {
+      char *ip_addr = argv[2];
+      char *port = argv[3];
+
+      server_start(ip_addr, atoi(port));
+    }
+  } else {
+    game_run();
+  }
 }

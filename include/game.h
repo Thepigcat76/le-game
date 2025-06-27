@@ -3,18 +3,16 @@
 #include "being.h"
 #include "data.h"
 #include "debug.h"
-#include "game_feature.h"
 #include "item.h"
+#include "keys.h"
 #include "menu.h"
 #include "particle.h"
-#include "player.h"
+#include "save.h"
 #include "shaders.h"
 #include "shared.h"
 #include "sounds.h"
 #include "tile.h"
 #include "ui.h"
-#include "keys.h"
-#include "world.h"
 #include <raylib.h>
 
 #define TICK_RATE 20                     // ticks per second
@@ -23,11 +21,6 @@
 #define MAX_TICKS_PER_FRAME 20
 
 #define TEXTURE_MANAGER_MAX_TEXTURES 64
-
-typedef struct {
-  char *save_name;
-  float seed;
-} GameConfig;
 
 typedef struct {
   int width;
@@ -50,23 +43,20 @@ typedef struct {
 typedef struct _game {
   MenuId cur_menu;
   bool paused;
-  int cur_save;
+  // SAVES
+  SaveDescriptor *saves;
   // SAVE SPECIFIC
-  Player player;
-  World world;
-  GameFeatureStore feature_store;
-  // LOADING
-  int detected_saves;
-  GameConfig *save_configs;
+  Save cur_save;
+  // pointers to the fields in the current save
+  Player *player;
+  World *world;
   // RENDERING
   ParticleManager particle_manager;
   UiRenderer ui_renderer;
   Window window;
-  // SOUNDS
+  // ASSET MANAGEMENT
   SoundManager sound_manager;
-  // SHADERS
   ShaderManager shader_manager;
-  // MISC TEXTURES
   TextureManager texture_manager;
   // TILE CATEGORIES
   TileCategoryLookup tile_category_lookup;
@@ -85,22 +75,30 @@ extern Music MUSIC;
 
 // GAME CREATION
 
+// Creates a new directory for this save and the config file
+void game_create_save(Game *game, const char *save_name, const char *seed_lit);
+
+// Load Save Descriptors to GAME.saves
+void game_load_saves(Game *game);
+
+// Load the specificed save to GAME.cur_save
+void game_load_save(Game *game, SaveDescriptor desc);
+
+// Unloads GAME.cur_save by saving all game data to disk
+// Performs memory cleanup for some things like the item container bump
+void game_unload_save(Game *game);
+
+// Returns a pointer to an array of two strings (first one being the adjective, second one the noun)
+
 void game_feature_add(Game *game, GameFeature game_feature);
 
 void game_create_world(Game *game, float seed);
 
-void game_create_save(Game *game, const char *save_name, const char *seed_lit);
-
-void game_detect_saves(Game *game);
-
-// Returns a pointer to an array of two strings (first one being the adjective, second one the noun)
 char **game_save_name_random(Game *game);
 
 void game_feature_create(Game *game);
 
 void game_reload(Game *game);
-
-void game_cur_save_init(Game *game);
 
 void game_tick(Game *game);
 
@@ -112,11 +110,9 @@ void game_render_overlay(Game *game);
 
 // GAME LOAD/SAVE
 
-void game_load_cur_save(Game *game);
+Save game_load_save_data(Game *game, SaveDescriptor desc);
 
-void game_save_cur_save(Game *game);
-
-void game_load(Game *game);
+void game_save_save_data(Game *game, Save *save);
 
 // MANAGMENT
 

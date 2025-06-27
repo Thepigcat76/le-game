@@ -10,6 +10,7 @@ void *_internal_array_new(size_t capacity, size_t item_size, Allocator *allocato
     h->capacity = capacity;
     h->len = 0;
     h->allocator = allocator;
+    h->item_size = item_size;
     ptr = h + 1;
   }
 
@@ -38,16 +39,46 @@ static size_t _internal_array_prepare_add(void *arr, size_t item_size) {
 }
 
 inline void _internal_array_add(void **arr_ptr, void *item, size_t item_size) {
-    void *arr = *arr_ptr;
-    size_t len = _internal_array_prepare_add(arr, item_size);
+  void *arr = *arr_ptr;
+  size_t len = _internal_array_prepare_add(arr, item_size);
 
-    _InternalArrayHeader *h = ((_InternalArrayHeader *)arr) - 1;
-    memcpy((char *)arr + len * item_size, item, item_size);
-    _internal_array_set_len(arr, len + 1);
+  _InternalArrayHeader *h = ((_InternalArrayHeader *)arr) - 1;
+  memcpy((char *)arr + len * item_size, item, item_size);
+  _internal_array_set_len(arr, len + 1);
 
-    // In case realloc happened
-    *arr_ptr = arr;
+  // In case realloc happened
+  *arr_ptr = arr;
 }
+
+void _internal_array_remove(void *arr_ptr, size_t index) {
+  if (!arr_ptr)
+    return;
+
+  _InternalArrayHeader *h = ((_InternalArrayHeader *)arr_ptr) - 1;
+
+  if (index >= h->len) {
+#ifdef SURTUR_DEBUG
+#include <stdio.h>
+    printf("Index %zu out of bounds for array of length %zu\n", index, h->len);
+#endif
+    return;
+  }
+
+  char *arr = (char *)arr_ptr;
+  size_t item_size = h->item_size;
+
+  char *dest = arr + index * item_size;
+  char *src = arr + (index + 1) * item_size;
+  size_t move_count = h->len - index - 1;
+
+  if (move_count > 0) {
+    memmove(dest, src, move_count * item_size);
+  }
+
+  h->len--;
+}
+
+void _internal_array_clear(void *arr_ptr) { _internal_array_set_len(arr_ptr, 0); }
 
 void _internal_array_set_len(void *arr, size_t len) {
   _InternalArrayHeader *h = ((_InternalArrayHeader *)arr) - 1;
