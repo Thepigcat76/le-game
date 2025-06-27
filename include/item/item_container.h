@@ -10,7 +10,7 @@ typedef struct {
 
 extern Bump ITEM_CONTAINER_BUMP;
 
-void _internal_item_container_init();
+void _internal_item_container_init(void);
 
 ItemContainer item_container_new(size_t slots);
 

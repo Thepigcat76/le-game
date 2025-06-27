@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <time.h>
 
 Texture2D TEXT_INPUT_TEXTURE;
 
@@ -59,6 +60,8 @@ void shared_init() {
   NPC_ANIMATED_TEXTURES[DIRECTION_RIGHT] = LoadTexture("res/assets/beings/npc_right_walking.png");
 
   NPC_TEXTURE_OLD_MAN = LoadTexture("res/assets/old_man.png");
+
+  srand(time(NULL));
 }
 
 void create_dir(const char *dir_name) {

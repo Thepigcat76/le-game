@@ -1,28 +1,37 @@
 #include "../include/game.h"
 #include "../include/camera.h"
 #include "../include/config.h"
-#include "raylib.h"
 #include <dirent.h>
+#include "../include/array.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <time.h>
 
-#define RELOAD(game_ptr, src_file_prefix)                                                                              \
-  extern void src_file_prefix##_on_reload(Game *game);                                                                 \
-  src_file_prefix##_on_reload(game_ptr);
-
 static bool game_slot_selected();
 
-void game_reload(Game *game) {
-  RELOAD(game, tile);
-  RELOAD(game, config);
-  RELOAD(game, save_names);
-  RELOAD(game, shaders);
+void game_create(Game *game) {
+  GAME = (Game){.cur_menu = MENU_START,
+                .saves = array_new(SaveDescriptor, &HEAP_ALLOCATOR),
+                .ui_renderer = (UiRenderer){.cur_x = 0,
+                                            .cur_y = 0,
+                                            .simulate = false,
+                                            .ui_height = -1,
+                                            .cur_style = {0},
+                                            .initial_style = {0},
+                                            .context = {.screen_width = SCREEN_WIDTH, .screen_height = SCREEN_HEIGHT}},
+                .cur_save = -1,
+                .debug_options = {.game_object_display = DEBUG_DISPLAY_NONE,
+                                  .collisions_enabled = true,
+                                  .hitboxes_shown = false,
+                                  .selected_tile_to_place_instance = tile_new(TILES[TILE_DIRT])},
+                /*.feature_store = {.game_features = malloc(sizeof(GameFeature) * MAX_GAME_FEATURES_AMOUNT),
+                                  .game_features_amount = 0,
+                                  .game_features_capacity = MAX_GAME_FEATURES_AMOUNT},*/
+                .sound_manager = {.cur_sound = 0, .sound_timer = 0}};
 }
 
 Game GAME;
-Music MUSIC;
 
 void game_feature_add(Game *game, GameFeature game_feature) {
   if (game->cur_save.feature_store.game_features_amount < game->cur_save.feature_store.game_features_capacity) {
@@ -240,6 +249,9 @@ void game_tick(Game *game) {
   if (game->window.width != game->window.prev_width || game->window.height != game->window.prev_height) {
     game->window.prev_width = game->window.width;
     game->window.prev_height = game->window.height;
+
+    game->ui_renderer.context.screen_width = game->window.width;
+    game->ui_renderer.context.screen_height = game->window.height;
 
     GAME.world_texture = LoadRenderTexture(game->window.width, game->window.height);
 

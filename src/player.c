@@ -153,19 +153,19 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool
 void player_set_pos(Player *player, float x, float y) { player_set_pos_ex(player, x, y, true, true, true); }
 
 void player_handle_zoom(Player *player, bool zoom_in, bool zoom_out, float alpha) {
-    Camera2D *cam = &player->cam;
+  Camera2D *cam = &player->cam;
 
-    const float zoom_speed = 0.045f;     // zoom units per second
-    const float zoom_min = 1.0f;
-    const float zoom_max = 4.0f;
+  const float zoom_speed = 0.045f; // zoom units per second
+  const float zoom_min = 1.0f;
+  const float zoom_max = 4.0f;
 
-    if (zoom_in) {
-        cam->zoom = fminf(cam->zoom + alpha * zoom_speed, zoom_max);
-    }
+  if (zoom_in) {
+    cam->zoom = fminf(cam->zoom + alpha * zoom_speed, zoom_max);
+  }
 
-    if (zoom_out) {
-        cam->zoom = fmaxf(cam->zoom - alpha * zoom_speed, zoom_min);
-    }
+  if (zoom_out) {
+    cam->zoom = fmaxf(cam->zoom - alpha * zoom_speed, zoom_min);
+  }
 }
 
 Rectangle rec_offset(Rectangle rectangle, int32_t x_offset, int32_t y_offset, int32_t width_offset,
@@ -284,8 +284,7 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
   player->walking = walking;
 
   if (walking) {
-    player_set_pos(player, lerpf(player_pos(player).x, player_pos_copy.x, GAME.tick_delta),
-                   lerpf(player_pos(player).y, player_pos_copy.y, GAME.tick_delta));
+    player_set_pos(player, player_pos_copy.x, player_pos_copy.y);
   }
 }
 

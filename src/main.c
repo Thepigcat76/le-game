@@ -3,6 +3,7 @@
 #include "../include/config.h"
 #include "../include/game.h"
 #include "../include/item/item_container.h"
+#include "../include/net/client.h"
 #include "../include/net/server.h"
 #include "../include/shared.h"
 #include "../include/ui.h"
@@ -36,6 +37,35 @@ static void poll_keybinds(Game *game) {
   KEY_DOWN(zoom_out_key);
 }
 
+static void registry_init(void) {
+  item_types_init();
+  tile_types_init();
+}
+
+static void client_start(void) {
+  // Very primitive setup of allocators
+  alloc_init();
+
+  // Init client and setup client game
+  client_init();
+
+  // Setup raylib 
+  game_init_raylib();
+
+  // Load Textures, init random
+  shared_init();
+  // Setup bump allocator for item containers
+  _internal_item_container_init();
+
+  // init registries
+  registry_init();
+
+  // (Client only) init tile categories
+  tile_categories_init();
+
+  game_client_reload(&CLIENT_GAME);
+}
+
 static void game_run() {
   // Setup allocators
   alloc_init();
@@ -47,34 +77,9 @@ static void game_run() {
   shared_init();
   // Setup bump allocator for item containers
   _internal_item_container_init();
-  // init registries
-  item_types_init();
-  tile_types_init();
-
-  GAME = (Game){.cur_menu = MENU_START,
-                .saves = array_new(SaveDescriptor, &HEAP_ALLOCATOR),
-                .ui_renderer = (UiRenderer){.cur_x = 0,
-                                            .cur_y = 0,
-                                            .simulate = false,
-                                            .ui_height = -1,
-                                            .cur_style = {0},
-                                            .initial_style = {0},
-                                            .context = {.screen_width = SCREEN_WIDTH, .screen_height = SCREEN_HEIGHT}},
-                .cur_save = -1,
-                .debug_options = {.game_object_display = DEBUG_DISPLAY_NONE,
-                                  .collisions_enabled = true,
-                                  .hitboxes_shown = false,
-                                  .selected_tile_to_place_instance = tile_new(TILES[TILE_DIRT])},
-                /*.feature_store = {.game_features = malloc(sizeof(GameFeature) * MAX_GAME_FEATURES_AMOUNT),
-                                  .game_features_amount = 0,
-                                  .game_features_capacity = MAX_GAME_FEATURES_AMOUNT},*/
-                .sound_manager = {.cur_sound = 0, .sound_timer = 0},
-                .world_texture = LoadRenderTexture(GetScreenWidth(), GetScreenHeight())};
 
   GAME.player = &GAME.cur_save.player;
   GAME.world = &GAME.cur_save.world;
-
-  tile_categories_init();
 
   Game *game = &GAME;
 
@@ -103,7 +108,6 @@ static void game_run() {
 
     tickAccumulator += deltaTime;
     while (tickAccumulator >= TICK_INTERVAL && ticksPerFrame < MAX_TICKS_PER_FRAME) {
-      game->tick_delta = tickAccumulator / TICK_INTERVAL;
       tick(game);
       tickAccumulator -= TICK_INTERVAL;
       ticksPerFrame++;
@@ -128,6 +132,6 @@ int main(int argc, char **argv) {
       server_start(ip_addr, atoi(port));
     }
   } else {
-    game_run();
+    client_start();
   }
 }

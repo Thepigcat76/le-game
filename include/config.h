@@ -1,5 +1,16 @@
 #pragma once
 
+#define CONFIG_READ(file_name, json_object_name, block)                                                                \
+  char *file = read_file_to_string("config/" file_name ".json");                                                       \
+  cJSON *json_object_name = cJSON_Parse(file);                                                                         \
+  if (json_object_name == NULL) {                                                                                      \
+    printf("Error parsing JSON\n");                                                                                    \
+    exit(1);                                                                                                           \
+  }                                                                                                                    \
+  {block};                                                                                                             \
+  cJSON_Delete(json_object_name);                                                                                      \
+  free(file);
+
 typedef struct {
   float ambient_light;
   double player_speed;
@@ -8,21 +19,4 @@ typedef struct {
   float item_pickup_delay;
 } Config;
 
-typedef struct {
-  int move_foreward_key;
-  int move_backward_key;
-  int move_left_key;
-  int move_right_key;
-  int open_close_save_menu_key;
-  int open_close_backpack_menu_key;
-  int open_close_debug_menu_key;
-  int close_cur_menu;
-  int toggle_hitbox_key;
-  int reload_key;
-  int zoom_in_key;
-  int zoom_out_key;
-} Keybinds;
-
 extern Config CONFIG;
-
-extern Keybinds KEYBINDS;

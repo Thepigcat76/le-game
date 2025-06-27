@@ -14,7 +14,6 @@
 #include "tile.h"
 #include "window.h"
 #include "ui.h"
-#include <raylib.h>
 
 #define TICK_RATE 20                     // ticks per second
 #define TICK_INTERVAL (1.0f / TICK_RATE) // seconds per tick
@@ -43,15 +42,15 @@ typedef struct _game {
   TileCategoryLookup tile_category_lookup;
   // DEBUGGING
   DebugOptions debug_options;
-  // World Rendering
-  RenderTexture2D world_texture;
   // KEYS PRESSED
   PressedKeys pressed_keys;
   bool slot_selected;
 } Game;
 
 extern Game GAME;
-extern Music MUSIC;
+
+// Initializes the game
+void game_create(Game *game);
 
 // GAME CREATION
 
@@ -99,25 +98,15 @@ void game_save_save_data(Game *game, Save *save);
 // MANAGMENT
 
 // PRE/POST GAME INITIALIZATION
-void game_begin(void);
+void game_init_raylib(void);
 
-void game_end(void);
+void game_deinit_raylib(void);
 
 // GAME INIT/DEINIT
 
 void game_init(Game *game);
 
 void game_deinit(Game *game);
-
-// MENUS
-
-void game_init_menu(Game *game);
-
-bool game_cur_menu_hides_game(Game *game);
-
-void game_render_menu(Game *game);
-
-void game_set_menu(Game *game, MenuId menu_id);
 
 // PARTICLES
 

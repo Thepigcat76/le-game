@@ -1,5 +1,6 @@
 #include "../../include/config.h"
 #include "../../include/game.h"
+#include "../../include/net/client.h"
 #include "../../include/save_names.h"
 #include "../../include/ui.h"
 #include <string.h>
@@ -14,16 +15,16 @@ static char _text_buf_1[256];
 static TextInputBuffer seed_text_input_buffer = {.buf = _text_buf_1, .len = 0, .max_len = 256};
 
 static void new_save_create_world() {
-  game_set_menu(&GAME, MENU_NONE);
+  game_set_menu(&CLIENT_GAME, MENU_NONE);
   GAME.paused = false;
 
   game_create_save(&GAME, save_name_text_input_buffer.buf, seed_text_input_buffer.buf);
   game_create_save_world(&GAME);
 }
 
-static void new_save_back_to_start_menu() { game_set_menu(&GAME, MENU_START); }
+static void new_save_back_to_start_menu() { game_set_menu(&CLIENT_GAME, MENU_START); }
 
-void new_save_menu_open(UiRenderer *renderer, const Game *game) {
+void new_save_menu_open(UiRenderer *renderer, const ClientGame *game) {
   char *random_save_name = save_names_random_name();
   int len = strlen(random_save_name);
   strcpy(save_name_text_input_buffer.buf, random_save_name);

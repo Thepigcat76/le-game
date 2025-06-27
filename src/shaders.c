@@ -1,5 +1,6 @@
 #include "../include/shaders.h"
 #include "../include/game.h"
+#include "../include/net/client.h"
 #include <raylib.h>
 #include <stdbool.h>
 
@@ -46,7 +47,7 @@ void shaders_unload(ShaderManager *manager) {
 
 static bool initial_load = true;
 
-void shaders_on_reload(void) {
+void shaders_on_reload(ClientGame *game) {
   if (initial_load) {
     initial_load = false;
   } else {
