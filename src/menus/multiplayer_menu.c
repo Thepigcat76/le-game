@@ -4,10 +4,10 @@
 static void multiplayer_menu_join() {}
 
 static void multiplayer_menu_host() {
-    game_set_menu(&CLIENT_GAME, MENU_HOST_SERVER);
+    client_set_menu(&CLIENT_GAME, MENU_HOST_SERVER);
 }
 
-static void multiplayer_menu_back() { game_set_menu(&CLIENT_GAME, MENU_START); }
+static void multiplayer_menu_back() { client_set_menu(&CLIENT_GAME, MENU_START); }
 
 void multiplayer_menu_render(UiRenderer *renderer, const ClientGame *game) {
   UI_SETUP({

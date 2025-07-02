@@ -3,25 +3,25 @@
 
 static void start_menu_new_save() {
   game_load_saves(&GAME);
-  game_set_menu(&CLIENT_GAME, MENU_NEW_SAVE);
+  client_set_menu(&CLIENT_GAME, MENU_NEW_SAVE);
   //StopMusicStream(MUSIC);
 }
 
 static void start_menu_load_save() {
   game_load_saves(&GAME);
-  game_set_menu(&CLIENT_GAME, MENU_LOAD_SAVE);
+  client_set_menu(&CLIENT_GAME, MENU_LOAD_SAVE);
   //StopMusicStream(MUSIC);
 }
 
 static void start_menu_multiplayer() {
-  game_set_menu(&CLIENT_GAME, MENU_MULTIPLAYER);
+  client_set_menu(&CLIENT_GAME, MENU_MULTIPLAYER);
 }
 
 static void start_menu_settings() {}
 
 static void start_menu_leave_game() {
   game_deinit(&GAME);
-  game_deinit_raylib();
+  client_deinit_raylib();
   exit(0);
 }
 

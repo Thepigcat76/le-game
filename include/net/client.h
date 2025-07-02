@@ -35,10 +35,13 @@ typedef struct {
   // These are saves that are actually stored on disk
   SaveDescriptor *local_saves;
   // A save - this can either be a local save or
-  Save cur_save;
+  // a save on the server
+  Save *cur_save;
+  // Pointer to the common game struct
+  struct _game *game;
   // World, Player - points to the
   // world and player usually stored
-  // in ClientGame.cur_save
+  // in CLIENT_GAME.cur_save
   World *world;
   Player *player;
 } ClientGame;
@@ -47,26 +50,43 @@ extern ClientGame CLIENT_GAME;
 
 void client_init(void);
 
-void game_init_raylib(void);
+void client_deinit(ClientGame *game);
 
-void game_deinit_raylib(void);
+void client_init_raylib(void);
+
+void client_deinit_raylib(void);
+
+// TICKING
+
+void client_tick(ClientGame *game);
 
 // RELOADING
 
-void game_client_reload(ClientGame *game);
+void client_reload(ClientGame *game);
 
 // MENUS
 
-void game_init_menu(ClientGame *game);
+void client_init_menu(ClientGame *game);
 
-bool game_cur_menu_hides_game(ClientGame *game);
+bool client_cur_menu_hides_game(ClientGame *game);
 
-void game_render_menu(ClientGame *game);
+void client_render_menu(ClientGame *game);
 
-void game_set_menu(ClientGame *game, MenuId menu_id);
+void client_set_menu(ClientGame *game, MenuId menu_id);
 
 // GAME RENDER
 
-void game_render(ClientGame *game, float alpha);
+void client_render(ClientGame *game, float alpha);
 
-void game_render_overlay(ClientGame *game);
+void client_render_overlay(ClientGame *game);
+
+// PARTICLES
+
+void client_render_particle(ClientGame *game, ParticleInstance particle, bool behind_player);
+
+void client_render_particles(ClientGame *game, bool behind_player);
+
+ParticleInstance *client_emit_particle_ex(ClientGame *game, ParticleInstance particle_instance);
+
+ParticleInstance *client_emit_particle(ClientGame *game, int x, int y, ParticleId particle_id,
+                                     ParticleInstanceEx particle_extra);

@@ -2,8 +2,8 @@
 #include <raylib.h>
 
 static void save_menu_back_to_game_button_clicked() {
-  GAME.cur_menu = MENU_NONE;
-  GAME.paused = false;
+  GAME.client_game->cur_menu = MENU_NONE;
+  GAME.client_game->paused = false;
 }
 
 static void save_menu_general_settings_button_clicked() { TraceLog(LOG_DEBUG, "Button clicked"); }
@@ -11,7 +11,7 @@ static void save_menu_general_settings_button_clicked() { TraceLog(LOG_DEBUG, "B
 static void save_menu_gameplay_settings_button_clicked() { TraceLog(LOG_DEBUG, "Button clicked"); }
 
 static void save_menu_save_game_button_clicked() {
-  game_set_menu(&CLIENT_GAME, MENU_START);
+  client_set_menu(&CLIENT_GAME, MENU_START);
 
   game_unload_save(&GAME);
 }

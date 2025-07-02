@@ -64,6 +64,9 @@
 
 #define MAX_PLAYERS 256
 
+#define TICK_RATE 20                     // ticks per second
+#define TICK_INTERVAL (1.0f / TICK_RATE) // seconds per tick
+
 extern Texture2D DEBUG_BUTTON_TEXTURE;
 extern Texture2D DEBUG_BUTTON_SELECTED_TEXTURE;
 extern Texture2D TEXT_INPUT_TEXTURE;

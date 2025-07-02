@@ -36,10 +36,10 @@ void game_load_saves(Game *game) {
     create_dir("save");
   }
 
-  size_t saves_len = array_len(game->saves);
+  size_t saves_len = array_len(game->client_game->local_saves);
 
   if (saves_len > 0) {
-    array_clear(game->saves);
+    array_clear(game->client_game->local_saves);
   }
 
   DIR *dir = opendir(SAVE_DIR);
@@ -63,7 +63,7 @@ void game_load_saves(Game *game) {
       int id = atoi(TextSubtext(entry->d_name, 4, strlen(entry->d_name) - 4));
       SaveConfig config = game_load_save_config(full_dir_name);
       SaveDescriptor desc = {.id = id, .config = config};
-      array_add(game->saves, desc);
+      array_add(game->client_game->local_saves, desc);
     }
   }
 
@@ -72,15 +72,17 @@ void game_load_saves(Game *game) {
 
 static void game_load_cur_save(Game *game, SaveDescriptor desc) {
   game_load_save_data(game, desc);
+  game->world = &game->cur_save.world;
+  game->player = &game->cur_save.player;
 
   // TODO: world_prepare_rendering(game->world);
 }
 
 void game_load_save(Game *game, SaveDescriptor desc) {
-  size_t saves_len = array_len(game->saves);
+  size_t saves_len = array_len(game->client_game->local_saves);
   for (int i = 0; i < saves_len; i++) {
-    if (game->saves[i].id == desc.id) {
-      game_load_cur_save(game, desc);
+    if (game->client_game->local_saves[i].id == desc.id) {
+      game_load_cur_save(&GAME, desc);
       break;
     }
   }
@@ -90,6 +92,8 @@ void game_unload_save(Game *game) {
   game_save_save_data(game, &game->cur_save);
 
   bump_reset(&ITEM_CONTAINER_BUMP);
+  game->world = NULL;
+  game->player = NULL;
 }
 
 static void game_create_save_config_file(Game *game, SaveConfig config) {
@@ -102,7 +106,7 @@ static void game_create_save_config_file(Game *game, SaveConfig config) {
 
   // TO FILE
   char *json_str = cJSON_Print(json);
-  size_t index = array_len(game->saves);
+  size_t index = array_len(game->client_game->local_saves);
   FILE *fp = fopen(TextFormat("save/save%d/game.json", index), "w");
   if (fp) {
     fputs(json_str, fp);
@@ -117,23 +121,25 @@ static void game_create_save_config_file(Game *game, SaveConfig config) {
 
 void game_create_save_world(Game *game) {
   float seed = game->cur_save.descriptor.config.seed;
-  player_set_pos_ex(&game->cur_save.player, TILE_SIZE * ((float)CHUNK_SIZE / 2), TILE_SIZE * ((float)CHUNK_SIZE / 2), false,
-                    false, false);
+  player_set_pos_ex(&game->cur_save.player, TILE_SIZE * ((float)CHUNK_SIZE / 2), TILE_SIZE * ((float)CHUNK_SIZE / 2),
+                    false, false, false);
   game->cur_save.world.seed = seed;
   world_gen(&game->cur_save.world);
 
   world_initialize(&game->cur_save.world);
 }
 
-void game_create_save(Game *game, const char *save_name, const char *seed_lit) {
+void game_create_save(Game *game, SaveDescriptor save_desc) {
   if (!DirectoryExists("save")) {
     create_dir("save");
   }
 
-  char *save_name_copy = malloc(strlen(save_name) + 1);
-  strcpy(save_name_copy, save_name);
-  float seed = string_to_world_seed(seed_lit);
-  size_t id = array_len(game->saves);
+  char *save_name_copy = malloc(strlen(save_desc.config.save_name) + 1);
+  strcpy(save_name_copy, save_desc.config.save_name);
+  //float seed = string_to_world_seed(seed_lit);
+  //size_t id = array_len(game->local_saves);
+  float seed = save_desc.config.seed;
+  size_t id = save_desc.id;
 
   SaveDescriptor desc = {.id = id,
                          .config = {
@@ -144,7 +150,8 @@ void game_create_save(Game *game, const char *save_name, const char *seed_lit) {
   create_dir(TextFormat("save/save%d", id));
   game_create_save_config_file(game, desc.config);
 
-  array_add(game->saves, desc);
-
-  game->cur_save = (Save) {.descriptor = desc, .world = world_new(), .player = player_new()};
+  array_add(game->client_game->local_saves, desc);
+  game->cur_save = (Save){.descriptor = desc, .world = world_new(), .player = player_new()};
+  game->world = &game->cur_save.world;
+  game->player = &game->cur_save.player;
 }

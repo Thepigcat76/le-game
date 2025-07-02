@@ -1,5 +1,4 @@
 #include "../../include/config.h"
-#include "../../include/game.h"
 #include "../../include/net/server.h"
 #include "../../include/net/client.h"
 #include "../../include/ui.h"
@@ -11,7 +10,7 @@ static bool ip_addr_input_selected = false;
 
 static void host_menu_host() { server_start(IP_ADDR.buf, DEBUG_PORT); }
 
-static void host_menu_back() { game_set_menu(&CLIENT_GAME, MENU_MULTIPLAYER); }
+static void host_menu_back() { client_set_menu(&CLIENT_GAME, MENU_MULTIPLAYER); }
 
 void host_menu_open(UiRenderer *renderer, const ClientGame *game) { ip_addr(IP_ADDR.buf); }
 

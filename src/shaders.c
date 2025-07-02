@@ -1,5 +1,4 @@
 #include "../include/shaders.h"
-#include "../include/game.h"
 #include "../include/net/client.h"
 #include <raylib.h>
 #include <stdbool.h>
@@ -51,8 +50,8 @@ void shaders_on_reload(ClientGame *game) {
   if (initial_load) {
     initial_load = false;
   } else {
-    shaders_unload(&GAME.shader_manager);
+    shaders_unload(&game->shader_manager);
   }
 
-  shaders_load(&GAME.shader_manager);
+  shaders_load(&game->shader_manager);
 }

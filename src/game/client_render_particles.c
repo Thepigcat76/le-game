@@ -1,6 +1,6 @@
-#include "../../include/game.h"
+#include "../../include/net/client.h"
 
-void game_render_particle(Game *game, ParticleInstance particle, bool behind_player) {
+void client_render_particle(ClientGame *game, ParticleInstance particle, bool behind_player) {
   if (particle.active) {
     switch (particle.extra.type) {
     case PARTICLE_INSTANCE_DEFAULT: {
@@ -30,8 +30,8 @@ void game_render_particle(Game *game, ParticleInstance particle, bool behind_pla
   }
 }
 
-static void game_particles_update(Game *game) {
-  ParticleInstance *particles = GAME.particle_manager.particles;
+static void client_particles_update(ClientGame *game) {
+  ParticleInstance *particles = game->particle_manager.particles;
 
   float dt = GetFrameTime();
   for (int i = 0; i < MAX_PARTICLES_AMOUNT; i++) {
@@ -52,11 +52,11 @@ static void game_particles_update(Game *game) {
   }
 }
 
-void game_render_particles(Game *game, bool behind_player) {
-  game_particles_update(game);
+void client_render_particles(ClientGame *game, bool behind_player) {
+  client_particles_update(game);
 
-  ParticleInstance *particles = GAME.particle_manager.particles;
+  ParticleInstance *particles = game->particle_manager.particles;
   for (int i = 0; i < MAX_PARTICLES_AMOUNT; i++) {
-    game_render_particle(game, particles[i], behind_player);
+    client_render_particle(game, particles[i], behind_player);
   }
 }

@@ -1,5 +1,4 @@
 #include "../include/debug.h"
-#include "../include/config.h"
 #include "../include/keys.h"
 #include "../include/net/client.h"
 #include "../include/game.h"
@@ -21,7 +20,7 @@ void debug_init() {
 static void debug_render_game_object_overlay() {
   switch (GAME.debug_options.game_object_display) {
   case DEBUG_DISPLAY_ALL_ITEMS: {
-    GAME.paused = true;
+    GAME.client_game->paused = true;
     for (int i = 0; i < ITEMS_AMOUNT; i++) {
       ItemInstance item = (ItemInstance){.type = ITEMS[i]};
       float scale = 3.5;
@@ -37,7 +36,7 @@ static void debug_render_game_object_overlay() {
     break;
   }
   case DEBUG_DISPLAY_ALL_TILES: {
-    GAME.paused = true;
+    GAME.client_game->paused = true;
     for (int i = 0; i < TILES_AMOUNT; i++) {
       double x = ((float)SCREEN_WIDTH / 2) - (ITEMS_AMOUNT * 16 * 3.5) / 2 + (i * 32 * 3.5);
       double y = ((float)SCREEN_HEIGHT / 2) - 8 * 3.5;
@@ -52,7 +51,7 @@ static void debug_render_game_object_overlay() {
     break;
   }
   case DEBUG_DISPLAY_ALL_BEINGS: {
-    GAME.paused = true;
+    GAME.client_game->paused = true;
     float scale = 3;
     for (int i = 0; i < BEINGS_AMOUNT; i++) {
       int start_x = 0;
@@ -70,7 +69,7 @@ static void debug_render_game_object_overlay() {
     break;
   }
   case DEBUG_DISPLAY_NONE: {
-    GAME.paused = false;
+    GAME.client_game->paused = false;
     break;
   }
   }
@@ -80,7 +79,7 @@ void debug_render_overlay() {
   Vec2i selected_tile_render_pos = SELECTED_TILE_RENDER_POS(GetScreenWidth(), GetScreenHeight());
   tile_render_scaled(&GAME.debug_options.selected_tile_to_place_instance, selected_tile_render_pos.x + 35,
                      selected_tile_render_pos.y - 60, 4);
-  if (GAME.cur_menu == MENU_DEBUG) {
+  if (GAME.client_game->cur_menu == MENU_DEBUG) {
     debug_render_game_object_overlay();
   }
 }
@@ -96,7 +95,7 @@ void debug_render() {
     }
   }
 
-  if (GAME.cur_menu == MENU_DEBUG) {
+  if (GAME.client_game->cur_menu == MENU_DEBUG) {
     int id = WORLD_BEING_ID;
     BeingBrain brain = GAME.world->beings[id].brain;
     //if (brain.activities_amount > 0) {
@@ -116,18 +115,18 @@ void debug_tick() {
     }
   }
 
-  if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON) && GAME.cur_menu == MENU_DEBUG) {
+  if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON) && GAME.client_game->cur_menu == MENU_DEBUG) {
     BeingInstance *being = &GAME.world->beings[WORLD_BEING_ID];
     being_brain_reset(being);
     being_activities_add_walk_around(being, DEBUG_GO_TO_POSITION);
     TraceLog(LOG_DEBUG, "Added activity");
   }
 
-  if (IsKeyReleased(KEYBINDS.close_cur_menu) && GAME.cur_menu == MENU_DEBUG) {
+  if (IsKeyReleased(KEYBINDS.close_cur_menu) && GAME.client_game->cur_menu == MENU_DEBUG) {
     if (GAME.debug_options.game_object_display != DEBUG_DISPLAY_NONE) {
       GAME.debug_options.game_object_display = DEBUG_DISPLAY_NONE;
     } else {
-      game_set_menu(&CLIENT_GAME, MENU_NONE);
+      client_set_menu(&CLIENT_GAME, MENU_NONE);
     }
   }
 }

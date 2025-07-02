@@ -8,11 +8,11 @@ static void load_save_menu_load_save(void *args) {
   SaveDescriptor save_desc = *(SaveDescriptor *)args;
   game_load_save(&GAME, save_desc);
   world_initialize(GAME.world);
-  game_set_menu(&CLIENT_GAME, MENU_NONE);
-  GAME.paused = false;
+  client_set_menu(&CLIENT_GAME, MENU_NONE);
+  GAME.client_game->paused = false;
 }
 
-static void load_save_menu_back() { game_set_menu(&CLIENT_GAME, MENU_START); }
+static void load_save_menu_back() { client_set_menu(&CLIENT_GAME, MENU_START); }
 
 void load_save_menu_render(UiRenderer *renderer, const ClientGame *game) {
   ui_setup(renderer,

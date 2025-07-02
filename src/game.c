@@ -1,34 +1,21 @@
 #include "../include/game.h"
-#include "../include/camera.h"
 #include "../include/config.h"
 #include <dirent.h>
-#include "../include/array.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-#include <time.h>
 
-static bool game_slot_selected();
+#define COMMON_RELOAD(game_ptr, src_file_prefix)                                                                       \
+  extern void src_file_prefix##_on_reload(Game *game);                                                                 \
+  src_file_prefix##_on_reload(game_ptr)
 
 void game_create(Game *game) {
-  GAME = (Game){.cur_menu = MENU_START,
-                .saves = array_new(SaveDescriptor, &HEAP_ALLOCATOR),
-                .ui_renderer = (UiRenderer){.cur_x = 0,
-                                            .cur_y = 0,
-                                            .simulate = false,
-                                            .ui_height = -1,
-                                            .cur_style = {0},
-                                            .initial_style = {0},
-                                            .context = {.screen_width = SCREEN_WIDTH, .screen_height = SCREEN_HEIGHT}},
-                .cur_save = -1,
-                .debug_options = {.game_object_display = DEBUG_DISPLAY_NONE,
+  GAME = (Game){.debug_options = {.game_object_display = DEBUG_DISPLAY_NONE,
                                   .collisions_enabled = true,
                                   .hitboxes_shown = false,
                                   .selected_tile_to_place_instance = tile_new(TILES[TILE_DIRT])},
-                /*.feature_store = {.game_features = malloc(sizeof(GameFeature) * MAX_GAME_FEATURES_AMOUNT),
-                                  .game_features_amount = 0,
-                                  .game_features_capacity = MAX_GAME_FEATURES_AMOUNT},*/
-                .sound_manager = {.cur_sound = 0, .sound_timer = 0}};
+                .client_game = NULL,
+                .server_game = NULL};
 }
 
 Game GAME;
@@ -38,6 +25,8 @@ void game_feature_add(Game *game, GameFeature game_feature) {
     game->cur_save.feature_store.game_features[game->cur_save.feature_store.game_features_amount++] = game_feature;
   }
 }
+
+void game_reload(Game *game) { COMMON_RELOAD(game, config); }
 
 // TICKING
 
@@ -51,9 +40,7 @@ static void handle_tile_interaction(Game *game) {
       abs((int)game->player->box.x - x_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE &&
       abs((int)game->player->box.y - y_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE;
 
-  bool slot_selected = game_slot_selected();
-
-  if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !slot_selected && interaction_in_range) {
+  if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && true /*!slot_selected*/ && interaction_in_range) {
     TileInstance *selected_tile = world_highest_tile_at(game->world, vec2i(x_index, y_index));
     bool correct_tool = false;
     if (game->player->held_item.type.item_props.tool_props.break_categories.categories_amount > 0) {
@@ -130,29 +117,29 @@ static void handle_tile_interaction(Game *game) {
   }
 
   if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON)) {
-    if (game->cur_menu == MENU_DEBUG) {
+    if (game->client_game->cur_menu == MENU_DEBUG) {
       DEBUG_GO_TO_POSITION = vec2f(x_index * TILE_SIZE, y_index * TILE_SIZE);
       TraceLog(LOG_DEBUG, "Set target position");
     }
   }
 
-  if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && !slot_selected && interaction_in_range) {
+  if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && true /*!slot_selected*/ && interaction_in_range) {
     TileInstance *selected_tile = world_highest_tile_at(game->world, vec2i(x_index, y_index));
     if (CheckCollisionPointRec(mouse_world_pos,
                                rectf_from_dimf(x_index * TILE_SIZE, y_index * TILE_SIZE, selected_tile->box))) {
       if (selected_tile->type.id == TILE_CHEST) {
-        game_set_menu(game, MENU_DIALOG);
+        // game_set_menu(game, MENU_DIALOG);
         return;
       }
       TileInstance new_tile = tile_new(game->debug_options.selected_tile_to_place_instance.type);
       bool placed = world_place_tile(game->world, vec2i(x_index, y_index), new_tile);
-      if (placed && game->sound_manager.sound_timer >= SOUND_COOLDOWN) {
-        PlaySound(game->sound_manager.sound_buffers[SOUND_PLACE].sound_buf[game->sound_manager.cur_sound++]);
-        if (game->sound_manager.cur_sound >= SOUND_BUFFER_LIMIT) {
-          game->sound_manager.cur_sound = 0;
-        }
-        game->sound_manager.sound_timer = 0;
-      }
+      // if (placed && game->sound_manager.sound_timer >= SOUND_COOLDOWN) {
+      //   PlaySound(game->sound_manager.sound_buffers[SOUND_PLACE].sound_buf[game->sound_manager.cur_sound++]);
+      //   if (game->sound_manager.cur_sound >= SOUND_BUFFER_LIMIT) {
+      //     game->sound_manager.cur_sound = 0;
+      //   }
+      //   game->sound_manager.sound_timer = 0;
+      // }
     }
   }
 }
@@ -164,7 +151,7 @@ static void handle_mouse_interaction(Game *game) {
       BeingInstance being = game->world->beings[i];
       if (being.id == BEING_NPC &&
           CheckCollisionPointRec(GetScreenToWorld2D(GetMousePosition(), game->player->cam), being.context.box)) {
-        game_set_menu(game, MENU_DIALOG);
+        // game_set_menu(game, MENU_DIALOG);
         TraceLog(LOG_DEBUG, "Clicked being");
         being_clicked = true;
         break;
@@ -207,7 +194,7 @@ void game_world_tick(Game *game) {
 
   handle_item_pickup(game);
 
-  game->sound_manager.sound_timer += GetFrameTime();
+  // game->sound_manager.sound_timer += GetFrameTime();
 
 #ifdef SURTUR_DEBUG
   if (IsKeyPressed(KEY_F1)) {
@@ -216,65 +203,40 @@ void game_world_tick(Game *game) {
   }
 
   if (IsKeyPressed(KEYBINDS.open_close_debug_menu_key)) {
-    if (game->cur_menu == MENU_NONE) {
-      game_set_menu(game, MENU_DEBUG);
+    if (game->client_game->cur_menu == MENU_NONE) {
+      // game_set_menu(game, MENU_DEBUG);
     } else {
-      game_set_menu(game, MENU_NONE);
+      // game_set_menu(game, MENU_NONE);
     }
   }
 #endif
 }
 
-static void game_update_animations(void) {
-  for (int i = 0; i < ANIMATED_TEXTURES_LEN; i++) {
-    AnimatedTexture *texture = &ANIMATED_TEXTURES[i];
-    texture->frame_timer += TICK_INTERVAL * 1000.0f;
-    float delay = texture->texture.var.texture_animated.frame_time;
-    if (texture->frame_timer >= delay) {
-      int frames = texture->texture.var.texture_animated.frames;
-      texture->cur_frame = (texture->cur_frame + 1) % frames;
-      texture->frame_timer = 0;
-    }
-  }
-}
-
 void game_tick(Game *game) {
-  game->slot_selected = game_slot_selected();
-
-  UpdateMusicStream(MUSIC);
-
-  game->window.width = GetScreenWidth();
-  game->window.height = GetScreenHeight();
-
-  if (game->window.width != game->window.prev_width || game->window.height != game->window.prev_height) {
-    game->window.prev_width = game->window.width;
-    game->window.prev_height = game->window.height;
-
-    game->ui_renderer.context.screen_width = game->window.width;
-    game->ui_renderer.context.screen_height = game->window.height;
-
-    GAME.world_texture = LoadRenderTexture(game->window.width, game->window.height);
-
-    camera_focus(&game->player->cam);
+  if (game->client_game != NULL) {
+    client_tick(game->client_game);
+  } else {
+    // server_tick(game->server_game);
   }
 
-  if (!game->paused) {
+  if (!game->client_game->paused && game->world != NULL) {
     game_world_tick(game);
   }
 
   if (IsKeyReleased(KEYBINDS.open_close_save_menu_key)) {
-    if (game->cur_menu == MENU_SAVE) {
-      game->cur_menu = MENU_NONE;
-      game_set_menu(game, MENU_NONE);
-      game->paused = false;
-    } else if (game->cur_menu == MENU_NONE) {
-      game_set_menu(game, MENU_SAVE);
-      game->paused = true;
+    if (game->client_game->cur_menu == MENU_SAVE) {
+      game->client_game->cur_menu = MENU_NONE;
+      // game_set_menu(game, MENU_NONE);
+      game->client_game->paused = false;
+    } else if (game->client_game->cur_menu == MENU_NONE) {
+      // game_set_menu(game, MENU_SAVE);
+      game->client_game->paused = true;
     }
   }
 
-  if (IsKeyReleased(KEYBINDS.close_cur_menu) && game->cur_menu != MENU_NONE && game->cur_menu != MENU_SAVE) {
-    game_set_menu(game, MENU_NONE);
+  if (IsKeyReleased(KEYBINDS.close_cur_menu) && game->client_game->cur_menu != MENU_NONE &&
+      game->client_game->cur_menu != MENU_SAVE) {
+    // game_set_menu(game, MENU_NONE);
   }
 
 #ifdef SURTUR_DEBUG
@@ -282,17 +244,7 @@ void game_tick(Game *game) {
 #endif
 
   if (IsKeyPressed(KEYBINDS.reload_key)) {
-    game_reload(&GAME);
+    client_reload(game->client_game);
+    game_reload(game);
   }
-
-  game_update_animations();
-  game->pressed_keys = (PressedKeys){};
-}
-
-static bool game_slot_selected() {
-  Rectangle slot_rect = {.x = GetScreenWidth() - (3.5 * 16) - 30,
-                         .y = (GetScreenHeight() / 2.0f) - (3.5 * 8),
-                         .width = 20 * 3.5,
-                         .height = 20 * 3.5};
-  return CheckCollisionPointRec(GetMousePosition(), slot_rect);
 }

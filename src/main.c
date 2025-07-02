@@ -1,12 +1,9 @@
 #include "../include/alloc.h"
-#include "../include/array.h"
-#include "../include/config.h"
 #include "../include/game.h"
 #include "../include/item/item_container.h"
 #include "../include/net/client.h"
 #include "../include/net/server.h"
 #include "../include/shared.h"
-#include "../include/ui.h"
 #include "raylib.h"
 #include "rlgl.h"
 #include <stdbool.h>
@@ -22,13 +19,11 @@ float frame_timer = 0;
 int prev_width;
 int prev_height;
 
-static void tick(Game *game) { game_tick(game); }
+static void render(ClientGame *game, float alpha) { client_render(game, alpha); }
 
-static void render(Game *game, float alpha) { game_render(game, alpha); }
+#define KEY_DOWN(key_name) game->pressed_keys.key_name = IsKeyDown(KEYBINDS.key_name)
 
-#define KEY_DOWN(key_name) GAME.pressed_keys.key_name = IsKeyDown(KEYBINDS.key_name)
-
-static void poll_keybinds(Game *game) {
+static void client_poll_keybinds(ClientGame *game) {
   KEY_DOWN(move_foreward_key);
   KEY_DOWN(move_backward_key);
   KEY_DOWN(move_left_key);
@@ -46,16 +41,24 @@ static void client_start(void) {
   // Very primitive setup of allocators
   alloc_init();
 
-  // Init client and setup client game
-  client_init();
-
   // Setup raylib
-  game_init_raylib();
+  // NEEDS TO BE CALLED BEFORE client_init and shared_init, because both load textures
+  client_init_raylib();
 
   // Load Textures, init random
   shared_init();
+
+  // Init client and setup client game
+  client_init();
   // Setup bump allocator for item containers
   _internal_item_container_init();
+
+  // Create and setup common game
+  game_create(&GAME);
+  GAME.client_game = &CLIENT_GAME;
+  game_init(&GAME);
+  CLIENT_GAME.game = &GAME;
+  CLIENT_GAME.cur_save = &CLIENT_GAME.game->cur_save;
 
   // init registries
   registry_init();
@@ -63,66 +66,90 @@ static void client_start(void) {
   // (Client only) init tile categories
   tile_categories_init();
 
-  game_client_reload(&CLIENT_GAME);
+  // Reload client assets
+  client_reload(&CLIENT_GAME);
+  // Reload common resources
+  game_reload(&GAME);
+
+  float tick_accumulator = 0.0f;
+  float last_frame_time = GetTime();
+
+  int ticks_per_frame = 0;
+
+  client_set_menu(&CLIENT_GAME, MENU_START);
 
   while (!WindowShouldClose()) {
+    client_poll_keybinds(&CLIENT_GAME);
 
-  }
+    float cur_time = GetTime();
+    float delta_time = cur_time - last_frame_time;
+    last_frame_time = cur_time;
 
-  game_deinit_raylib();
-}
-
-static void game_run() {
-  // Setup allocators
-  alloc_init();
-
-  // Create window
-  game_begin();
-
-  // Setup random, load textures
-  shared_init();
-  // Setup bump allocator for item containers
-  _internal_item_container_init();
-
-  GAME.player = &GAME.cur_save.player;
-  GAME.world = &GAME.cur_save.world;
-
-  Game *game = &GAME;
-
-  game_reload(game);
-
-  game_init(game);
-
-  float tickAccumulator = 0.0f;
-  float lastFrameTime = GetTime();
-
-  int ticksPerFrame = 0;
-
-  game_set_menu(game, MENU_START);
-
-  while (!WindowShouldClose()) {
-    ticksPerFrame = 0;
-
-    poll_keybinds(game);
-
-    float currentTime = GetTime();
-    float deltaTime = currentTime - lastFrameTime;
-    lastFrameTime = currentTime;
-
-    tickAccumulator += deltaTime;
-    while (tickAccumulator >= TICK_INTERVAL && ticksPerFrame < MAX_TICKS_PER_FRAME) {
-      tick(game);
-      tickAccumulator -= TICK_INTERVAL;
-      ticksPerFrame++;
+    tick_accumulator += delta_time;
+    while (tick_accumulator >= TICK_INTERVAL && ticks_per_frame < MAX_TICKS_PER_FRAME) {
+      game_tick(&GAME);
+      tick_accumulator -= TICK_INTERVAL;
+      ticks_per_frame++;
     }
 
-    render(game, tickAccumulator / TICK_INTERVAL);
+    render(&CLIENT_GAME, tick_accumulator / TICK_INTERVAL);
+
   }
 
-  game_deinit(game);
-
-  game_end();
+  client_deinit_raylib();
 }
+
+//static void game_run() {
+//  // Setup allocators
+//  alloc_init();
+//
+//  // Create window
+//  game_begin();
+//
+//  // Setup random, load textures
+//  shared_init();
+//  // Setup bump allocator for item containers
+//  _internal_item_container_init();
+//
+//  GAME.player = &GAME.cur_save.player;
+//  GAME.world = &GAME.cur_save.world;
+//
+//  Game *game = &GAME;
+//
+//  game_reload(game);
+//
+//  game_init(game);
+//
+//  float tickAccumulator = 0.0f;
+//  float lastFrameTime = GetTime();
+//
+//  int ticksPerFrame = 0;
+//
+//  game_set_menu(game, MENU_START);
+//
+//  while (!WindowShouldClose()) {
+//    ticksPerFrame = 0;
+//
+//    poll_keybinds(game);
+//
+//    float currentTime = GetTime();
+//    float deltaTime = currentTime - lastFrameTime;
+//    lastFrameTime = currentTime;
+//
+//    tickAccumulator += deltaTime;
+//    while (tickAccumulator >= TICK_INTERVAL && ticksPerFrame < MAX_TICKS_PER_FRAME) {
+//      tick(game);
+//      tickAccumulator -= TICK_INTERVAL;
+//      ticksPerFrame++;
+//    }
+//
+//    render(game, tickAccumulator / TICK_INTERVAL);
+//  }
+//
+//  game_deinit(game);
+//
+//  game_end();
+//}
 
 int main(int argc, char **argv) {
   bool server = argc > 1 && argv[1];
