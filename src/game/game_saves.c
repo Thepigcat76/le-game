@@ -32,8 +32,8 @@ static SaveConfig game_load_save_config(const char *path) {
 }
 
 void game_load_saves(Game *game) {
-  if (!DirectoryExists("save")) {
-    create_dir("save");
+  if (!dir_exists(SAVE_DIR)) {
+    dir_create(SAVE_DIR);
   }
 
   size_t saves_len = array_len(game->client_game->local_saves);
@@ -42,32 +42,17 @@ void game_load_saves(Game *game) {
     array_clear(game->client_game->local_saves);
   }
 
-  DIR *dir = opendir(SAVE_DIR);
-
-  if (dir == NULL) {
-    perror("Failed to open save directory to load saves");
-    exit(1);
-  }
-
-  struct dirent *entry;
-
-  while ((entry = readdir(dir)) != NULL) {
-    if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
-      continue;
-    }
-
+  DIR_ITER(SAVE_DIR, entry, {
     const char *full_dir_name = TextFormat("%s%s", SAVE_DIR, entry->d_name);
 
     TraceLog(LOG_DEBUG, "Dir entry: %s", full_dir_name);
-    if (is_dir(full_dir_name) && string_starts_with(entry->d_name, "save")) {
+    if (dir_exists(full_dir_name) && string_starts_with(entry->d_name, "save")) {
       int id = atoi(TextSubtext(entry->d_name, 4, strlen(entry->d_name) - 4));
       SaveConfig config = game_load_save_config(full_dir_name);
       SaveDescriptor desc = {.id = id, .config = config};
       array_add(game->client_game->local_saves, desc);
     }
-  }
-
-  closedir(dir);
+  });
 }
 
 static void game_load_cur_save(Game *game, SaveDescriptor desc) {
@@ -131,7 +116,7 @@ void game_create_save_world(Game *game) {
 
 void game_create_save(Game *game, SaveDescriptor save_desc) {
   if (!DirectoryExists("save")) {
-    create_dir("save");
+    dir_create("save");
   }
 
   char *save_name_copy = malloc(strlen(save_desc.config.save_name) + 1);
@@ -147,7 +132,7 @@ void game_create_save(Game *game, SaveDescriptor save_desc) {
                              .seed = seed,
                          }};
 
-  create_dir(TextFormat("save/save%d", id));
+  dir_create(TextFormat("save/save%d", id));
   game_create_save_config_file(game, desc.config);
 
   array_add(game->client_game->local_saves, desc);

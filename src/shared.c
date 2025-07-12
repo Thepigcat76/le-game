@@ -4,12 +4,14 @@
 #include <ifaddrs.h>
 #include <netinet/in.h>
 #endif
+#include "dirent.h"
 #include <math.h>
 #include <raylib.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <execinfo.h>
 
 Texture2D TEXT_INPUT_TEXTURE;
 
@@ -64,7 +66,7 @@ void shared_init() {
   srand(time(NULL));
 }
 
-void create_dir(const char *dir_name) {
+void dir_create(const char *dir_name) {
 #ifdef _WIN32
 #include <direct.h> // For _mkdir on Windows
   _mkdir(dir_name);
@@ -75,9 +77,16 @@ void create_dir(const char *dir_name) {
 #endif
 }
 
-bool is_dir(const char *path) {
-  struct stat s;
-  return stat(path, &s) == 0 && S_ISDIR(s.st_mode);
+bool dir_exists(const char *path) {
+  bool result = false;
+  DIR *dir = opendir(path);
+
+  if (dir != NULL) {
+    result = true;
+    closedir(dir);
+  }
+
+  return result;
 }
 
 bool string_starts_with(const char *str, const char *prefix) { return strncmp(str, prefix, strlen(prefix)) == 0; }
@@ -225,4 +234,22 @@ int ip_addr(char *ip_addr_buf) {
   freeifaddrs(ifaddr);
 #endif
   return 0;
+}
+
+void stack_trace_print(void) {
+  void *buffer[100];
+  int nptrs = backtrace(buffer, 100);
+  char **symbols = backtrace_symbols(buffer, nptrs);
+
+  if (symbols == NULL) {
+    perror("backtrace_symbols");
+    exit(EXIT_FAILURE);
+  }
+
+  printf("Stack trace (%d frames):\n", nptrs);
+  for (int i = 0; i < nptrs; i++) {
+    printf("%s\n", symbols[i]);
+  }
+
+  free(symbols);
 }

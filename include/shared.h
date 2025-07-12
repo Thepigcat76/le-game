@@ -1,7 +1,10 @@
 #pragma once
 
-#include <stdlib.h>
+#include <dirent.h>
 #include <raylib.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define SCREEN_WIDTH 800
 #define SCREEN_HEIGHT 800
@@ -113,8 +116,6 @@ typedef Vec2i TilePos;
 
 void shared_init();
 
-void create_dir(const char *dir_name);
-
 char *read_file_to_string(const char *filename);
 
 bool string_starts_with(const char *str, const char *prefix);
@@ -122,7 +123,11 @@ bool string_starts_with(const char *str, const char *prefix);
 // RETURNS HOW OFTEN THE CHARACTER IS CONTAINED
 int string_contains(const char *string, char c);
 
-bool is_dir(const char *path);
+// FILE SYSTEM - DIRECTORIES
+
+bool dir_exists(const char *path);
+
+void dir_create(const char *dir_name);
 
 void rec_draw_outline(Rectf rec, Color color);
 
@@ -165,3 +170,38 @@ float string_to_world_seed(const char *str);
 // ip_addr_buf needs to be at least 16 characters long + null terminator
 // Return -1 if we encounter error
 int ip_addr(char *ip_addr_buf);
+
+void stack_trace_print(void);
+
+#define ANSI_RED "\033[1;31m"
+#define ANSI_RESET "\033[0m"
+
+#define PANIC(...)                                                                                                                                                                                     \
+  do {                                                                                                                                                                                                 \
+    puts(ANSI_RED "Program panicked" ANSI_RESET);                                                                                                                                                      \
+    __VA_OPT__(puts(__VA_ARGS__);)                                                                                                                                                                     \
+    exit(1);                                                                                                                                                                                           \
+  } while (0)
+
+#define PANIC_FMT(fmt, ...)                                                                                                                                                                            \
+  do {                                                                                                                                                                                                 \
+    /* We allocate a huge buffer cuz this is gonna crash the program anyways lol */                                                                                                                    \
+    char buf[4096];                                                                                                                                                                                    \
+    snprintf(buf, 4096, fmt __VA_OPT__(, ) __VA_ARGS__);                                                                                                                                               \
+  } while (0)
+
+#define DIR_ITER(dir_name, entry, ...)                                                                                                                                                                 \
+  do {                                                                                                                                                                                                 \
+    DIR *_dir_ptr = opendir(dir_name);                                                                                                                                                                 \
+    if (_dir_ptr == NULL) {                                                                                                                                                                            \
+      PANIC_FMT("Failed to open %s", dir_name);                                                                                                                                                        \
+    }                                                                                                                                                                                                  \
+    struct dirent *entry;                                                                                                                                                                              \
+    while ((entry = readdir(_dir_ptr)) != NULL) {                                                                                                                                                      \
+      if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {                                                                                                                       \
+        continue;                                                                                                                                                                                      \
+      }                                                                                                                                                                                                \
+      __VA_ARGS__                                                                                                                                                                                      \
+    }                                                                                                                                                                                                  \
+    closedir(_dir_ptr);                                                                                                                                                                                \
+  } while (0)
