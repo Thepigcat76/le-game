@@ -1,5 +1,6 @@
 #include "../../include/res_loader.h"
 #include "../../include/shared.h"
+#include "../../include/array.h"
 #include "../../include/tile.h"
 #include "../../vendor/cJSON.h"
 #include <raylib.h>
@@ -111,7 +112,7 @@ void tiles_load(void) {
     tile_load(entry->d_name, tile_json, &type);
     cJSON_Delete(tile_json);
     free(file);
-    TILES[0] = type;
-    TILES_AMOUNT = 1;
+    type.id = 0;
+    array_add(TILES, type);
   });
 }

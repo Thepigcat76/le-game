@@ -1,6 +1,7 @@
 #include "../include/game.h"
 #include "../include/shared.h"
 #include "../include/tile.h"
+#include "../include/array.h"
 #include "../include/net/client.h"
 #include "../vendor/cJSON.h"
 #include <dirent.h>
@@ -21,7 +22,7 @@ void tile_on_reload(ClientGame *game) {
 
   on_tile_variants_reload();
 
-  for (int i = 0; i < TILES_AMOUNT; i++) {
+  for (int i = 0; i < array_len(TILES); i++) {
     if (TILES[i].id != TILE_EMPTY) {
       tile_type_init(&TILES[i]);
     }

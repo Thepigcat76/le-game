@@ -1,8 +1,8 @@
 {
-    "id": "stone",
-    "name": "Stone",
+    "id": "fancy_stone",
+    "name": "Fancy Stone",
     "layer": "ground",
-    "texture": "res/assets/stone.png",
+    "texture": "res/assets/stone_0.png",
     "has-texture": true,
     "dimensions": [16, 16],
     "tile-item": "stone_inv",

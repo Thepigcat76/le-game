@@ -24,6 +24,8 @@ typedef enum {
   TILE_TREE,
   TILE_TREE_STUMP,
   TILE_CHEST,
+  TILE_DEEZ,
+  TILE_FANCY_STONE,
 } TileId;
 
 typedef struct {
@@ -53,8 +55,7 @@ typedef struct {
   int variant_index;
 } TileType;
 
-extern TileType TILES[MAX_TILE_TYPES];
-extern size_t TILES_AMOUNT;
+extern TileType *TILES;
 
 extern AdvTexture ERR_TEXTURE;
 

@@ -1,4 +1,5 @@
 #include "../include/alloc.h"
+#include "../include/array.h"
 #include "../include/game.h"
 #include "../include/item/item_container.h"
 #include "../include/net/client.h"
@@ -62,6 +63,18 @@ static void client_start(void) {
 
   // init registries
   registry_init();
+
+  GAME.debug_options.selected_tile_to_place_instance = tile_new(TILES[TILE_DIRT]);
+  
+  GAME.debug_options.selectable_tiles = array_new_capacity(TileInstance, 256, &HEAP_ALLOCATOR);
+
+  for (int i = 0; i < array_len(TILES); i++) {
+    TileInstance tile = tile_new(TILES[i]);
+    array_add(GAME.debug_options.selectable_tiles, tile);
+    char buf[512];
+    tile_type_debug_print(&TILES[i], buf);
+    puts(buf);
+  }
 
   // (Client only) init tile categories
   tile_categories_init();

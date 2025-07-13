@@ -16,8 +16,7 @@ void empty_tile_init() {
 
       .texture_props = {.uses_tileset = false, .has_variants = false},
   };
-  TILES[type.id] = type;
-  TILES_AMOUNT++;
+  array_add(TILES, type);
 }
 
 void simple_ground_tiles_tile_init() {

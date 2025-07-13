@@ -13,8 +13,7 @@
 void game_create(Game *game) {
   GAME = (Game){.debug_options = {.game_object_display = DEBUG_DISPLAY_NONE,
                                   .collisions_enabled = true,
-                                  .hitboxes_shown = false,
-                                  .selected_tile_to_place_instance = tile_new(TILES[TILE_DIRT])},
+                                  .hitboxes_shown = false},
                 .client_game = NULL,
                 .server_game = NULL};
 }

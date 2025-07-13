@@ -35,21 +35,25 @@ static void debug_category_lookup(TileCategoryLookup lookup) {
   }
 }
 
-TileType TILES[MAX_TILE_TYPES];
+TileType *TILES = NULL;
 size_t TILES_AMOUNT = 0;
 TileInstance TILE_INSTANCE_EMPTY;
 
 AdvTexture ERR_TEXTURE;
 
 void tile_types_init() {
+  if (TILES == NULL) {
+    TILES = array_new_capacity(TileType, 256, &HEAP_ALLOCATOR);
+  }
+
   INIT_TILE(empty)
   INIT_TILE(simple_ground_tiles)
   INIT_TILE(simple_tiles)
-  
-  // tiles_load();
-  // char buf[1024];
-  // tile_type_debug_print(&TILES[0], buf);
-  // puts(buf);
+
+  tiles_load();
+  char buf[1024];
+  tile_type_debug_print(&TILES[0], buf);
+  puts(buf);
 
   TILE_INSTANCE_EMPTY = tile_new(TILES[TILE_EMPTY]);
 
@@ -90,11 +94,16 @@ char *tile_type_to_string(const TileType *type) {
     return "tree_stump";
   case TILE_CHEST:
     return "chest";
+  // case TILE_FANCY_STONE:
+  case TILE_DEEZ:
+    return "fancystone";
   }
 }
 
 void tile_type_debug_print(const TileType *type, char *buf) {
-  sprintf(buf, "-- Tile Type Info --\n  id: %s\n  id-literal: %s\n  name: %s\n  layer: %d\n  has-texture: %s\n  dimensions: [%d-%d]\n  Tile Item: %s",
+  sprintf(buf,
+          "-- Tile Type Info --\n  id: %s\n  id-literal: %s\n  name: %s\n  layer: %d\n  has-texture: %s\n  dimensions: [%d-%d]\n  Tile "
+          "Item: %s",
           tile_type_to_string(type), type->id_literal, type->name, type->layer, type->has_texture ? "true" : "false",
           type->tile_dimensions.width, type->tile_dimensions.height, item_type_to_string(type->tile_item));
 }
@@ -144,6 +153,10 @@ TileInstance tile_new(TileType type) {
       instance.variant_texture = type.texture;
     }
   }
+    for (int j = 0; j < 8; j++) {
+      instance.texture_data.surrounding_tiles[j] = TILE_EMPTY;
+    }
+    tile_calc_sprite_box(&instance);
   return instance;
 }
 
