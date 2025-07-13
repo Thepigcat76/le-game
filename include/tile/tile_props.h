@@ -13,7 +13,9 @@ typedef struct {
   Color tile_color;
 } TileProperties;
 
-#define TILE_PROPS_DEFAULT ((TileProperties){.disable_collisions = false, .tile_color = WHITE, .break_time = 64})
+#define TILE_TEXTURE_PROPS_DEFAULT ((TileTextureProperties){.has_variants = false, .uses_tileset = false})
+
+#define TILE_PROPS_DEFAULT ((TileProperties){.disable_collisions = false, .tile_color = RAYWHITE, .break_time = 64})
 
 #define TILE_PROPS_DEFAULT_WITH_COLOR(color)                                                                           \
 {.disable_collisions = false, .tile_color = color, .break_time = 64}

@@ -37,6 +37,7 @@ typedef struct _game {
   // of these is not NULL
   ClientGame *client_game;
   ServerGame *server_game;
+  bool save_loaded;
 } Game;
 
 extern Game GAME;

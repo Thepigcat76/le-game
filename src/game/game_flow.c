@@ -28,13 +28,16 @@ void game_init(Game *game) {
 void game_deinit(Game *game) {
   tile_variants_free();
 
-  //UnloadMusicStream(MUSIC);
+  // UnloadMusicStream(MUSIC);
 
   array_free(ADV_TILES);
 
-  //free(SOUND_BUMP.buffer);
+  // free(SOUND_BUMP.buffer);
   free(GLOBAL_BUMP.buffer);
 
-  free(game->world->chunks);
+  if (game->save_loaded) {
+    free(game->world->chunks);
+  }
+  
   free(ITEM_CONTAINER_BUMP.buffer);
 }

@@ -9,6 +9,8 @@
 #include "tile/tile_props.h"
 #include "tile/adv_tile.h"
 
+#define DEFAULT_TILE_DIMENSIONS dimf(16, 16)
+
 extern AdvTileInstance *ADV_TILES;
 
 typedef enum {
@@ -33,8 +35,12 @@ typedef enum {
   TILE_LAYER_TOP,
 } TileLayer;
 
+TileLayer tile_layer_from_str(const char *layer_literal);
+
 typedef struct {
   TileId id;
+  char *id_literal;
+  char *name;
   TileLayer layer;
   AdvTexture texture;
   bool has_texture;
@@ -50,11 +56,15 @@ typedef struct {
 extern TileType TILES[MAX_TILE_TYPES];
 extern size_t TILES_AMOUNT;
 
+extern AdvTexture ERR_TEXTURE;
+
 void tile_type_init(TileType *type);
 
 void tile_types_init();
 
 char *tile_type_to_string(const TileType *type);
+
+void tile_type_debug_print(const TileType *type, char *buf);
 
 typedef struct {
   TileType type;
@@ -88,10 +98,6 @@ void tile_right_click(TileInstance *tile);
 TileInstance tile_break_remainder(const TileInstance *tile, TilePos pos);
 
 void tile_tick(TileInstance *tile);
-
-void tile_load(TileInstance *tile, const DataMap *data);
-
-void tile_save(const TileInstance *tile, DataMap *data);
 
 // CONNECTED TEXTURES
 

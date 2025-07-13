@@ -1,6 +1,7 @@
 #include "../../include/config.h"
 #include "../../include/game.h"
 #include <math.h>
+#include <raylib.h>
 
 #define BREAK_PROGRESS_FRAMES 6
 
@@ -29,8 +30,8 @@ void client_world_render(ClientGame *client, float alpha) {
 
   player_render(client->player, alpha);
 
-  bool zoom_in = IsKeyDown(KEY_UP);
-  bool zoom_out = IsKeyDown(KEY_DOWN);
+  bool zoom_in = IS_KEY_DOWN(zoom_in);
+  bool zoom_out = IS_KEY_DOWN(zoom_out);
 
   player_handle_zoom(client->player, zoom_in, zoom_out, alpha);
 

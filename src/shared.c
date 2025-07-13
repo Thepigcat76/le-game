@@ -144,27 +144,27 @@ int string_contains(const char *string, char c) {
   return found;
 }
 
-Vec2i vec2i(int x, int y) { return (Vec2i){.x = x, .y = y}; }
+inline Vec2i vec2i(int x, int y) { return (Vec2i){.x = x, .y = y}; }
 
-Vec2f vec2f(float x, float y) { return (Vec2f){.x = x, .y = y}; }
+inline Vec2f vec2f(float x, float y) { return (Vec2f){.x = x, .y = y}; }
 
 Vec2i vec2i_sub(Vec2i vec0, Vec2i vec1) { return vec2i(vec0.x - vec1.x, vec0.y - vec1.y); }
 
 Vec2i vec2i_add(Vec2i vec0, Vec2i vec1) { return vec2i(vec0.x + vec1.x, vec0.y + vec1.y); }
 
-void rec_draw_outline(Rectangle rec, Color color) { DrawRectangleLinesEx(rec, 1, color); }
+inline void rec_draw_outline(Rectangle rec, Color color) { DrawRectangleLinesEx(rec, 1, color); }
 
 bool vec2_eq(const Vec2i *vec1, const Vec2i *vec2) { return vec1->x == vec2->x && vec1->y == vec2->y; }
 
-Dimensionsf dimf(float width, float height) { return (Dimensionsf){.width = width, .height = height}; }
+inline Dimensionsf dimf(float width, float height) { return (Dimensionsf){.width = width, .height = height}; }
 
-Rectf rectf_from_dimf(float x, float y, Dimensionsf dimf) { return rectf(x, y, dimf.width, dimf.height); }
+inline Rectf rectf_from_dimf(float x, float y, Dimensionsf dimf) { return rectf(x, y, dimf.width, dimf.height); }
 
-Rectf rectf(float x, float y, float w, float h) { return (Rectf){.x = x, .y = y, .width = w, .height = h}; }
+inline Rectf rectf(float x, float y, float w, float h) { return (Rectf){.x = x, .y = y, .width = w, .height = h}; }
 
-Color color_rgb(int r, int g, int b) { return color_rgba(r, g, b, 255); }
+inline Color color_rgb(int r, int g, int b) { return color_rgba(r, g, b, 255); }
 
-Color color_rgba(int r, int g, int b, int a) { return (Color){.r = r, .g = g, .b = b, .a = a}; }
+inline Color color_rgba(int r, int g, int b, int a) { return (Color){.r = r, .g = g, .b = b, .a = a}; }
 
 void DrawTextureRecEx(Texture2D texture, Rectangle source, Vector2 pos, float rotation, float scale, Color tint) {
   DrawTexturePro(texture, source,
@@ -252,4 +252,44 @@ void stack_trace_print(void) {
   }
 
   free(symbols);
+}
+
+
+Color color_from_str(const char *color_literal) {
+    if (color_literal == NULL) return RAYWHITE;
+
+    if (strcmp(color_literal, "red") == 0) return RED;
+    if (strcmp(color_literal, "green") == 0) return GREEN;
+    if (strcmp(color_literal, "blue") == 0) return BLUE;
+    if (strcmp(color_literal, "yellow") == 0) return YELLOW;
+    if (strcmp(color_literal, "orange") == 0) return ORANGE;
+    if (strcmp(color_literal, "purple") == 0) return PURPLE;
+    if (strcmp(color_literal, "maroon") == 0) return MAROON;
+    if (strcmp(color_literal, "lime") == 0) return LIME;
+    if (strcmp(color_literal, "darkgreen") == 0) return DARKGREEN;
+    if (strcmp(color_literal, "skyblue") == 0) return SKYBLUE;
+    if (strcmp(color_literal, "darkblue") == 0) return DARKBLUE;
+    if (strcmp(color_literal, "white") == 0) return WHITE;
+    if (strcmp(color_literal, "black") == 0) return BLACK;
+    if (strcmp(color_literal, "gray") == 0 || strcmp(color_literal, "grey") == 0) return GRAY;
+    if (strcmp(color_literal, "lightgray") == 0 || strcmp(color_literal, "lightgrey") == 0) return LIGHTGRAY;
+    if (strcmp(color_literal, "darkgray") == 0 || strcmp(color_literal, "darkgrey") == 0) return DARKGRAY;
+    if (strcmp(color_literal, "pink") == 0) return PINK;
+    if (strcmp(color_literal, "beige") == 0) return BEIGE;
+    if (strcmp(color_literal, "brown") == 0) return BROWN;
+    if (strcmp(color_literal, "gold") == 0) return GOLD;
+    if (strcmp(color_literal, "violet") == 0) return VIOLET;
+
+    return RAYWHITE;
+}
+
+char *str_cpy_heap(const char *input) {
+  return str_cpy(input, &HEAP_ALLOCATOR);
+}
+
+char *str_cpy(const char *input, Allocator *allocator) {
+  size_t len = strlen(input) + 1;
+  char *buf = allocator->alloc(len);
+  strncpy(buf, input, len);
+  return buf;
 }

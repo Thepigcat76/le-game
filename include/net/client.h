@@ -56,6 +56,13 @@ void client_init_raylib(void);
 
 void client_deinit_raylib(void);
 
+// Saves
+
+/* Needs to be called after the world is loaded on common
+   to notify the client that the world and player need to
+   be rendered */
+void client_init_loaded_save(ClientGame *game);
+
 // TICKING
 
 void client_tick(ClientGame *game);

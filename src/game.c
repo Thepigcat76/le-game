@@ -1,12 +1,13 @@
 #include "../include/game.h"
 #include "../include/config.h"
 #include <dirent.h>
+#include <raylib.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 
-#define COMMON_RELOAD(game_ptr, src_file_prefix)                                                                       \
-  extern void src_file_prefix##_on_reload(Game *game);                                                                 \
+#define COMMON_RELOAD(game_ptr, src_file_prefix)                                                                                           \
+  extern void src_file_prefix##_on_reload(Game *game);                                                                                     \
   src_file_prefix##_on_reload(game_ptr)
 
 void game_create(Game *game) {
@@ -36,8 +37,7 @@ static void handle_tile_interaction(Game *game) {
   int x_index = floor_div(mouse_world_pos.x, TILE_SIZE);
   int y_index = floor_div(mouse_world_pos.y, TILE_SIZE);
 
-  bool interaction_in_range =
-      abs((int)game->player->box.x - x_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE &&
+  bool interaction_in_range = abs((int)game->player->box.x - x_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE &&
       abs((int)game->player->box.y - y_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE;
 
   if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && true /*!slot_selected*/ && interaction_in_range) {
@@ -62,14 +62,12 @@ static void handle_tile_interaction(Game *game) {
       return;
     }
 
-    if (game->player->last_broken_tile.type.layer == selected_tile->type.layer ||
-        game->player->last_broken_tile.type.id == TILE_EMPTY) {
+    if (game->player->last_broken_tile.type.layer == selected_tile->type.layer || game->player->last_broken_tile.type.id == TILE_EMPTY) {
 
       TileInstance tile = *selected_tile;
       TraceLog(LOG_DEBUG, "Break x: %d, y: %d, break progress: %d, tile: %s", x_index * TILE_SIZE, y_index * TILE_SIZE,
                game->player->break_progress, tile_type_to_string(&tile.type));
-      if (CheckCollisionPointRec(mouse_world_pos,
-                                 rectf_from_dimf(x_index * TILE_SIZE, y_index * TILE_SIZE, selected_tile->box))) {
+      if (CheckCollisionPointRec(mouse_world_pos, rectf_from_dimf(x_index * TILE_SIZE, y_index * TILE_SIZE, selected_tile->box))) {
         if (game->player->break_tile_pos.x != x_index || game->player->break_tile_pos.y != y_index) {
           game->player->break_tile_pos = vec2i(x_index, y_index);
           game->player->break_progress = -1;
@@ -125,8 +123,7 @@ static void handle_tile_interaction(Game *game) {
 
   if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && true /*!slot_selected*/ && interaction_in_range) {
     TileInstance *selected_tile = world_highest_tile_at(game->world, vec2i(x_index, y_index));
-    if (CheckCollisionPointRec(mouse_world_pos,
-                               rectf_from_dimf(x_index * TILE_SIZE, y_index * TILE_SIZE, selected_tile->box))) {
+    if (CheckCollisionPointRec(mouse_world_pos, rectf_from_dimf(x_index * TILE_SIZE, y_index * TILE_SIZE, selected_tile->box))) {
       if (selected_tile->type.id == TILE_CHEST) {
         // game_set_menu(game, MENU_DIALOG);
         return;
@@ -149,8 +146,7 @@ static void handle_mouse_interaction(Game *game) {
   if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
     for (int i = 0; i < game->world->beings_amount; i++) {
       BeingInstance being = game->world->beings[i];
-      if (being.id == BEING_NPC &&
-          CheckCollisionPointRec(GetScreenToWorld2D(GetMousePosition(), game->player->cam), being.context.box)) {
+      if (being.id == BEING_NPC && CheckCollisionPointRec(GetScreenToWorld2D(GetMousePosition(), game->player->cam), being.context.box)) {
         // game_set_menu(game, MENU_DIALOG);
         TraceLog(LOG_DEBUG, "Clicked being");
         being_clicked = true;
@@ -176,11 +172,13 @@ static void handle_item_pickup(Game *game) {
   }
 }
 
+static char *bts(bool b) { return b ? "true" : "false"; }
+
 void game_world_tick(Game *game) {
-  bool w = game->pressed_keys.move_backward_key;
-  bool a = game->pressed_keys.move_left_key;
-  bool s = game->pressed_keys.move_foreward_key;
-  bool d = game->pressed_keys.move_right_key;
+  bool w = IS_KEY_DOWN(move_backward);
+  bool a = IS_KEY_DOWN(move_left);
+  bool s = IS_KEY_DOWN(move_foreward);
+  bool d = IS_KEY_DOWN(move_right);
 
   player_tick(game->player);
 
@@ -202,11 +200,12 @@ void game_world_tick(Game *game) {
     WORLD_BEING_ID = game->world->beings_amount - 1;
   }
 
-  if (IsKeyPressed(KEYBINDS.open_close_debug_menu_key)) {
+  if (IS_KEY_PRESSED(open_close_debug_menu)) {
+    printf("F3 pressed\n");
     if (game->client_game->cur_menu == MENU_NONE) {
-      // game_set_menu(game, MENU_DEBUG);
+      client_set_menu(game->client_game, MENU_DEBUG);
     } else {
-      // game_set_menu(game, MENU_NONE);
+      client_set_menu(game->client_game, MENU_NONE);
     }
   }
 #endif
@@ -223,19 +222,17 @@ void game_tick(Game *game) {
     game_world_tick(game);
   }
 
-  if (IsKeyReleased(KEYBINDS.open_close_save_menu_key)) {
+  if (IS_KEY_PRESSED(open_close_save_menu)) {
     if (game->client_game->cur_menu == MENU_SAVE) {
-      game->client_game->cur_menu = MENU_NONE;
-      // game_set_menu(game, MENU_NONE);
+      client_set_menu(game->client_game, MENU_NONE);
       game->client_game->paused = false;
     } else if (game->client_game->cur_menu == MENU_NONE) {
-      // game_set_menu(game, MENU_SAVE);
+      client_set_menu(game->client_game, MENU_SAVE);
       game->client_game->paused = true;
     }
   }
 
-  if (IsKeyReleased(KEYBINDS.close_cur_menu) && game->client_game->cur_menu != MENU_NONE &&
-      game->client_game->cur_menu != MENU_SAVE) {
+  if (IS_KEY_PRESSED(close_cur_menu) && game->client_game->cur_menu != MENU_NONE && game->client_game->cur_menu != MENU_SAVE) {
     // game_set_menu(game, MENU_NONE);
   }
 
@@ -243,7 +240,7 @@ void game_tick(Game *game) {
   debug_tick();
 #endif
 
-  if (IsKeyPressed(KEYBINDS.reload_key)) {
+  if (IS_KEY_PRESSED(reload)) {
     client_reload(game->client_game);
     game_reload(game);
   }

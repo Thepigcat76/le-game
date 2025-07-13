@@ -33,7 +33,11 @@ WinLibraries = {
     "ws2_32"
 }
 
-_Params = {
+Params = {
+    "-rdynamic"
+}
+
+WinParams = {
     "-static-libgcc",
     "-static-libstdc++",
     "-static"

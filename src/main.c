@@ -3,33 +3,33 @@
 #include "../include/item/item_container.h"
 #include "../include/net/client.h"
 #include "../include/net/server.h"
+#include "../include/res_loader.h"
 #include "../include/shared.h"
 #include "raylib.h"
 #include "rlgl.h"
 #include <stdbool.h>
 
-void debug_rect(Rectangle *rect) {
-  TraceLog(LOG_DEBUG, "Rect{x=%f, y=%f, w=%f, h=%f}", rect->x, rect->y, rect->width, rect->height);
-}
-
-float frame_timer = 0;
+void debug_rect(Rectangle *rect) { TraceLog(LOG_DEBUG, "Rect{x=%f, y=%f, w=%f, h=%f}", rect->x, rect->y, rect->width, rect->height); }
 
 #define MAX_ANIMATIONS 2
 
-int prev_width;
-int prev_height;
+#define KEY_DOWN(key_name)                                                                                                                 \
+  client->pressed_keys.key_name##_down |= IsKeyDown(KEYBINDS.key_name);                                                                     \
+  client->pressed_keys.key_name##_pressed |= IsKeyPressed(KEYBINDS.key_name);
 
-static void render(ClientGame *game, float alpha) { client_render(game, alpha); }
-
-#define KEY_DOWN(key_name) game->pressed_keys.key_name = IsKeyDown(KEYBINDS.key_name)
-
-static void client_poll_keybinds(ClientGame *game) {
+static void client_poll_keybinds(ClientGame *client) {
   KEY_DOWN(move_foreward_key);
   KEY_DOWN(move_backward_key);
   KEY_DOWN(move_left_key);
   KEY_DOWN(move_right_key);
   KEY_DOWN(zoom_in_key);
   KEY_DOWN(zoom_out_key);
+  KEY_DOWN(open_close_save_menu_key);
+  KEY_DOWN(open_close_backpack_menu_key);
+  KEY_DOWN(open_close_debug_menu_key);
+  KEY_DOWN(close_cur_menu_key);
+  KEY_DOWN(toggle_hitbox_key);
+  KEY_DOWN(reload_key);
 }
 
 static void registry_init(void) {
@@ -80,6 +80,7 @@ static void client_start(void) {
 
   while (!WindowShouldClose()) {
     client_poll_keybinds(&CLIENT_GAME);
+    ticks_per_frame = 0;
 
     float cur_time = GetTime();
     float delta_time = cur_time - last_frame_time;
@@ -92,64 +93,63 @@ static void client_start(void) {
       ticks_per_frame++;
     }
 
-    render(&CLIENT_GAME, tick_accumulator / TICK_INTERVAL);
-
+    client_render(&CLIENT_GAME, tick_accumulator / TICK_INTERVAL);
   }
 
   client_deinit_raylib();
 }
 
-//static void game_run() {
-//  // Setup allocators
-//  alloc_init();
+// static void game_run() {
+//   // Setup allocators
+//   alloc_init();
 //
-//  // Create window
-//  game_begin();
+//   // Create window
+//   game_begin();
 //
-//  // Setup random, load textures
-//  shared_init();
-//  // Setup bump allocator for item containers
-//  _internal_item_container_init();
+//   // Setup random, load textures
+//   shared_init();
+//   // Setup bump allocator for item containers
+//   _internal_item_container_init();
 //
-//  GAME.player = &GAME.cur_save.player;
-//  GAME.world = &GAME.cur_save.world;
+//   GAME.player = &GAME.cur_save.player;
+//   GAME.world = &GAME.cur_save.world;
 //
-//  Game *game = &GAME;
+//   Game *game = &GAME;
 //
-//  game_reload(game);
+//   game_reload(game);
 //
-//  game_init(game);
+//   game_init(game);
 //
-//  float tickAccumulator = 0.0f;
-//  float lastFrameTime = GetTime();
+//   float tickAccumulator = 0.0f;
+//   float lastFrameTime = GetTime();
 //
-//  int ticksPerFrame = 0;
+//   int ticksPerFrame = 0;
 //
-//  game_set_menu(game, MENU_START);
+//   game_set_menu(game, MENU_START);
 //
-//  while (!WindowShouldClose()) {
-//    ticksPerFrame = 0;
+//   while (!WindowShouldClose()) {
+//     ticksPerFrame = 0;
 //
-//    poll_keybinds(game);
+//     poll_keybinds(game);
 //
-//    float currentTime = GetTime();
-//    float deltaTime = currentTime - lastFrameTime;
-//    lastFrameTime = currentTime;
+//     float currentTime = GetTime();
+//     float deltaTime = currentTime - lastFrameTime;
+//     lastFrameTime = currentTime;
 //
-//    tickAccumulator += deltaTime;
-//    while (tickAccumulator >= TICK_INTERVAL && ticksPerFrame < MAX_TICKS_PER_FRAME) {
-//      tick(game);
-//      tickAccumulator -= TICK_INTERVAL;
-//      ticksPerFrame++;
-//    }
+//     tickAccumulator += deltaTime;
+//     while (tickAccumulator >= TICK_INTERVAL && ticksPerFrame < MAX_TICKS_PER_FRAME) {
+//       tick(game);
+//       tickAccumulator -= TICK_INTERVAL;
+//       ticksPerFrame++;
+//     }
 //
-//    render(game, tickAccumulator / TICK_INTERVAL);
-//  }
+//     render(game, tickAccumulator / TICK_INTERVAL);
+//   }
 //
-//  game_deinit(game);
+//   game_deinit(game);
 //
-//  game_end();
-//}
+//   game_end();
+// }
 
 int main(int argc, char **argv) {
   bool server = argc > 1 && argv[1];

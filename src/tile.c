@@ -1,10 +1,13 @@
 #include "../include/tile.h"
 #include "../include/array.h"
 #include "../include/game.h"
+#include "../include/res_loader.h"
 #include "../include/shared.h"
 #include <dirent.h>
 #include <limits.h>
 #include <raylib.h>
+#include <stdio.h>
+#include <string.h>
 
 // TILE TYPE
 
@@ -12,15 +15,15 @@ static Bump ADV_TILE_BUMP;
 BUMP_ALLOCATOR(ADV_TILE_BUMP_ALLOCATOR, &ADV_TILE_BUMP);
 AdvTileInstance *ADV_TILES;
 
-#define INIT_TILE(src_file_name)                                                                                       \
-  extern void src_file_name##_tile_init();                                                                             \
+#define INIT_TILE(src_file_name)                                                                                                           \
+  extern void src_file_name##_tile_init();                                                                                                 \
   src_file_name##_tile_init();
 
-#define TILE_REGISTER_CATEGORY(tile_id, ...)                                                                           \
-  {                                                                                                                    \
-    GAME.tile_category_lookup.tiles[GAME.tile_category_lookup.tiles_amount] = tile_id;                                 \
-    GAME.tile_category_lookup.tile_categories[GAME.tile_category_lookup.tiles_amount] = (TileIdCategories)__VA_ARGS__; \
-    GAME.tile_category_lookup.tiles_amount++;                                                                          \
+#define TILE_REGISTER_CATEGORY(tile_id, ...)                                                                                               \
+  {                                                                                                                                        \
+    GAME.tile_category_lookup.tiles[GAME.tile_category_lookup.tiles_amount] = tile_id;                                                     \
+    GAME.tile_category_lookup.tile_categories[GAME.tile_category_lookup.tiles_amount] = (TileIdCategories)__VA_ARGS__;                     \
+    GAME.tile_category_lookup.tiles_amount++;                                                                                              \
   }
 
 static void debug_category_lookup(TileCategoryLookup lookup) {
@@ -36,15 +39,24 @@ TileType TILES[MAX_TILE_TYPES];
 size_t TILES_AMOUNT = 0;
 TileInstance TILE_INSTANCE_EMPTY;
 
+AdvTexture ERR_TEXTURE;
+
 void tile_types_init() {
   INIT_TILE(empty)
   INIT_TILE(simple_ground_tiles)
   INIT_TILE(simple_tiles)
+  
+  // tiles_load();
+  // char buf[1024];
+  // tile_type_debug_print(&TILES[0], buf);
+  // puts(buf);
 
   TILE_INSTANCE_EMPTY = tile_new(TILES[TILE_EMPTY]);
 
   bump_init(&ADV_TILE_BUMP, malloc(256 * sizeof(AdvTileInstance)), 256);
   ADV_TILES = array_new_capacity(AdvTileInstance, 256, &HEAP_ALLOCATOR);
+
+  ERR_TEXTURE = adv_texture_load("res/assets/err_texture.png");
 }
 
 void tile_categories_init(void) {
@@ -81,6 +93,12 @@ char *tile_type_to_string(const TileType *type) {
   }
 }
 
+void tile_type_debug_print(const TileType *type, char *buf) {
+  sprintf(buf, "-- Tile Type Info --\n  id: %s\n  id-literal: %s\n  name: %s\n  layer: %d\n  has-texture: %s\n  dimensions: [%d-%d]\n  Tile Item: %s",
+          tile_type_to_string(type), type->id_literal, type->name, type->layer, type->has_texture ? "true" : "false",
+          type->tile_dimensions.width, type->tile_dimensions.height, item_type_to_string(type->tile_item));
+}
+
 // TILE INSTANCE
 
 static AdvTileInstance *adv_tile_new(TileType type) {
@@ -96,6 +114,14 @@ static AdvTileInstance *adv_tile_new(TileType type) {
   }
 }
 
+TileLayer tile_layer_from_str(const char *layer_literal) {
+  if (strcmp(layer_literal, "ground") == 0)
+    return TILE_LAYER_GROUND;
+  else if (strcmp(layer_literal, "top") == 0)
+    return TILE_LAYER_TOP;
+  PANIC_FMT("Failed to get layer from string: %s", layer_literal);
+}
+
 TileInstance tile_new(TileType type) {
   Vec2i default_pos = tile_default_sprite_pos();
   int default_sprite_res = tile_default_sprite_resolution();
@@ -103,9 +129,8 @@ TileInstance tile_new(TileType type) {
       .type = type,
       .box = {.width = TILE_SIZE, .height = TILE_SIZE},
       .adv_tile_instance = adv_tile_new(type),
-      .cur_sprite_box = type.texture_props.uses_tileset
-          ? rectf(default_pos.x, default_pos.y, default_sprite_res, default_sprite_res)
-          : rectf(0, 0, type.texture.width, type.texture.height),
+      .cur_sprite_box = type.texture_props.uses_tileset ? rectf(default_pos.x, default_pos.y, default_sprite_res, default_sprite_res)
+                                                        : rectf(0, 0, type.texture.width, type.texture.height),
       .animation_frame = 0,
   };
 
@@ -163,8 +188,7 @@ TileInstance tile_break_remainder(const TileInstance *tile, TilePos pos) {
 void tile_render_scaled(TileInstance *tile, int x, int y, float scale) {
   if (tile->type.has_texture) {
     if (tile->type.variant_index != -1) {
-      DrawTextureRecEx(adv_texture_to_texture(&tile->variant_texture), tile->cur_sprite_box, vec2f(x, y), 0, scale,
-                       WHITE);
+      DrawTextureRecEx(adv_texture_to_texture(&tile->variant_texture), tile->cur_sprite_box, vec2f(x, y), 0, scale, WHITE);
     } else {
       Texture2D texture = adv_texture_to_texture(&tile->type.texture);
       int cur_frame = adv_texture_cur_frame(&tile->type.texture);

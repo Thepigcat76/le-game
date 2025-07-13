@@ -1,2 +1,5 @@
 CompileFlags:
-  Add: [-I/home/thepigcat/.surtur/deps]
+  Add: [
+    -I/home/thepigcat/.surtur/deps,
+    -DSURTUR_DEBUG
+  ]

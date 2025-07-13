@@ -8,7 +8,9 @@ static void load_save_menu_load_save(void *args) {
   SaveDescriptor save_desc = *(SaveDescriptor *)args;
   game_load_save(&GAME, save_desc);
   world_initialize(GAME.world);
+  client_init_loaded_save(&CLIENT_GAME);
   client_set_menu(&CLIENT_GAME, MENU_NONE);
+  GAME.save_loaded = true;
   GAME.client_game->paused = false;
 }
 

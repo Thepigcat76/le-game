@@ -122,7 +122,7 @@ void debug_tick() {
     TraceLog(LOG_DEBUG, "Added activity");
   }
 
-  if (IsKeyReleased(KEYBINDS.close_cur_menu) && GAME.client_game->cur_menu == MENU_DEBUG) {
+  if (IsKeyReleased(KEYBINDS.close_cur_menu_key) && GAME.client_game->cur_menu == MENU_DEBUG) {
     if (GAME.debug_options.game_object_display != DEBUG_DISPLAY_NONE) {
       GAME.debug_options.game_object_display = DEBUG_DISPLAY_NONE;
     } else {

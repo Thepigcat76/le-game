@@ -114,7 +114,6 @@ void client_tick(ClientGame *client) {
   }
 
   client_update_animations(client);
-  client->pressed_keys = (PressedKeys){};
 }
 
 // MENUS

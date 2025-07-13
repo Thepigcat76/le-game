@@ -1,17 +1,17 @@
 {
-    "id": "stone", // optional
-    "name": "Stone", // optional
-    "layer": "bottom",
-    "texture": "res/assets/stone.png", // optional
-    "has-texture": true, // optional
-    "dimensions": [16, 16], // optional
-    "tile-item": "stone_inv", // optional
-    "tile-props": { // optional
+    "id": "stone",
+    "name": "Stone",
+    "layer": "ground",
+    "texture": "res/assets/stone.png",
+    "has-texture": true,
+    "dimensions": [16, 16],
+    "tile-item": "stone_inv",
+    "tile-props": {
         "collisions": "true",
         "break-time": 64,
-        "tile-color": "gray" // can also be an int array representing an rgb color
+        "tile-color": "gray"
     },
-    "texture-props": { // optional
+    "texture-props": {
         "uses-tileset": false,
         "uses-variants": false
     }

@@ -1,7 +1,7 @@
 #include "../include/keys.h"
 #include "../include/config.h"
-#include "../vendor/cJSON.h"
 #include "../include/net/client.h"
+#include "../vendor/cJSON.h"
 #include <raylib.h>
 #include <string.h>
 
@@ -60,12 +60,14 @@ static int key_from_str(char *key) {
   return 0;
 }
 
-#define KEYBIND(keybind_field, keybind_name)                                                                           \
-  {                                                                                                                    \
-    cJSON *temp_key = cJSON_GetObjectItemCaseSensitive(json, keybind_name);                                            \
-    if (cJSON_IsString(temp_key))                                                                                      \
-      keybind_field = key_from_str(temp_key->valuestring);                                                             \
-  }
+#define KEYBIND(keybind_field, keybind_name)                                                                                               \
+  do {                                                                                                                                     \
+    cJSON *temp_key = cJSON_GetObjectItemCaseSensitive(json, keybind_name);                                                                \
+    if (cJSON_IsString(temp_key))                                                                                                          \
+      keybind_field = key_from_str(temp_key->valuestring);                                                                                 \
+    else                                                                                                                                   \
+      PANIC_FMT("Failed to get keybind: %s, %s", #keybind_field, keybind_name);\
+  } while (0)
 
 void keybinds_on_reload(ClientGame *game) {
   CONFIG_READ("keybinds", json, {
@@ -76,7 +78,7 @@ void keybinds_on_reload(ClientGame *game) {
     KEYBIND(KEYBINDS.open_close_save_menu_key, "open-close-save-menu");
     KEYBIND(KEYBINDS.open_close_backpack_menu_key, "open-close-backpack-menu");
     KEYBIND(KEYBINDS.open_close_debug_menu_key, "open-close-debug-menu");
-    KEYBIND(KEYBINDS.close_cur_menu, "close-cur-menu");
+    KEYBIND(KEYBINDS.close_cur_menu_key, "close-cur-menu");
     KEYBIND(KEYBINDS.toggle_hitbox_key, "toggle-hitbox");
     KEYBIND(KEYBINDS.reload_key, "reload");
     KEYBIND(KEYBINDS.zoom_in_key, "zoom-in");

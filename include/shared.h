@@ -6,6 +6,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Only project include
+#include "../include/alloc.h"
+
 #define SCREEN_WIDTH 800
 #define SCREEN_HEIGHT 800
 
@@ -173,35 +176,50 @@ int ip_addr(char *ip_addr_buf);
 
 void stack_trace_print(void);
 
+Color color_from_str(const char *color_literal);
+
+char *str_cpy(const char *in, Allocator *alloc);
+
+char *str_cpy_heap(const char *in);
+
 #define ANSI_RED "\033[1;31m"
 #define ANSI_RESET "\033[0m"
 
-#define PANIC(...)                                                                                                                                                                                     \
-  do {                                                                                                                                                                                                 \
-    puts(ANSI_RED "Program panicked" ANSI_RESET);                                                                                                                                                      \
-    __VA_OPT__(puts(__VA_ARGS__);)                                                                                                                                                                     \
-    exit(1);                                                                                                                                                                                           \
+#define PANIC(...)                                                                                                                         \
+  do {                                                                                                                                     \
+    puts(ANSI_RED "Program panicked" ANSI_RESET);                                                                                          \
+    __VA_OPT__(puts(__VA_ARGS__);)                                                                                                         \
+    puts("Crashed at:");                                                                                                                   \
+    stack_trace_print();                                                                                                                   \
+    exit(1);                                                                                                                               \
   } while (0)
 
-#define PANIC_FMT(fmt, ...)                                                                                                                                                                            \
-  do {                                                                                                                                                                                                 \
-    /* We allocate a huge buffer cuz this is gonna crash the program anyways lol */                                                                                                                    \
-    char buf[4096];                                                                                                                                                                                    \
-    snprintf(buf, 4096, fmt __VA_OPT__(, ) __VA_ARGS__);                                                                                                                                               \
+#define PANIC_FMT(fmt, ...)                                                                                                                \
+  do {                                                                                                                                     \
+    /* We allocate a huge buffer cuz this is gonna crash the program anyways lol */                                                        \
+    char buf[4096 + 2];                                                                                                                    \
+    snprintf(buf, 4096 + 2, fmt __VA_OPT__(, ) __VA_ARGS__);                                                                               \
+    buf[4096] = '\n';                                                                                                                      \
+    buf[4096 + 1] = '\0';                                                                                                                  \
+    PANIC(buf);                                                                                                                            \
   } while (0)
 
-#define DIR_ITER(dir_name, entry, ...)                                                                                                                                                                 \
-  do {                                                                                                                                                                                                 \
-    DIR *_dir_ptr = opendir(dir_name);                                                                                                                                                                 \
-    if (_dir_ptr == NULL) {                                                                                                                                                                            \
-      PANIC_FMT("Failed to open %s", dir_name);                                                                                                                                                        \
-    }                                                                                                                                                                                                  \
-    struct dirent *entry;                                                                                                                                                                              \
-    while ((entry = readdir(_dir_ptr)) != NULL) {                                                                                                                                                      \
-      if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {                                                                                                                       \
-        continue;                                                                                                                                                                                      \
-      }                                                                                                                                                                                                \
-      __VA_ARGS__                                                                                                                                                                                      \
-    }                                                                                                                                                                                                  \
-    closedir(_dir_ptr);                                                                                                                                                                                \
+#define DIR_ITER(dir_name, entry, ...)                                                                                                     \
+  do {                                                                                                                                     \
+    DIR *_dir_ptr = opendir(dir_name);                                                                                                     \
+    if (_dir_ptr == NULL) {                                                                                                                \
+      PANIC_FMT("Failed to open %s", dir_name);                                                                                            \
+    }                                                                                                                                      \
+    struct dirent *entry;                                                                                                                  \
+    while ((entry = readdir(_dir_ptr)) != NULL) {                                                                                          \
+      if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {                                                           \
+        continue;                                                                                                                          \
+      }                                                                                                                                    \
+      __VA_ARGS__                                                                                                                          \
+    }                                                                                                                                      \
+    closedir(_dir_ptr);                                                                                                                    \
   } while (0)
+
+// The assignment consumes the key
+#define IS_KEY_PRESSED(id) GAME.client_game->pressed_keys.id##_key_pressed && !(GAME.client_game->pressed_keys.id##_key_pressed = false)
+#define IS_KEY_DOWN(id) GAME.client_game->pressed_keys.id##_key_down && !(GAME.client_game->pressed_keys.id##_key_down = false)

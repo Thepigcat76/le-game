@@ -1,4 +1,4 @@
 BasedOnStyle: LLVM
 BreakBeforeBinaryOperators: None
 AlignOperands: false
-ColumnLimit: 200  # or whatever fits your screen
+ColumnLimit: 140  # or whatever fits your screen

@@ -52,3 +52,5 @@ int item_attack_damage(const ItemType *type);
 void item_save(const ItemInstance *item, DataMap *data);
 
 void item_load(ItemInstance *item, const DataMap *data);
+
+ItemType *item_from_str(const char *item_iteral);

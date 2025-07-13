@@ -2,9 +2,10 @@
 #include "../include/data.h"
 #include <raylib.h>
 #include <stdio.h>
+#include <string.h>
 
-#define INIT_ITEM(src_file_name)                                                                                       \
-  extern void src_file_name##_item_init();                                                                             \
+#define INIT_ITEM(src_file_name)                                                                                                           \
+  extern void src_file_name##_item_init();                                                                                                 \
   src_file_name##_item_init();
 
 ItemType ITEMS[MAX_ITEM_TYPES];
@@ -21,11 +22,11 @@ void item_types_init() {
   ITEM_INSTANCE_EMPTY = (ItemInstance){.type = ITEMS[ITEM_EMPTY]};
 }
 
-void item_render(const ItemInstance *item, int x, int y) {
-  DrawTextureEx(item->type.texture, (Vector2){.x = x, .y = y}, 0, 3.5, WHITE);
-}
+void item_render(const ItemInstance *item, int x, int y) { DrawTextureEx(item->type.texture, (Vector2){.x = x, .y = y}, 0, 3.5, WHITE); }
 
 char *item_type_to_string(const ItemType *type) {
+  if (type == NULL) return "ITEM TYPE IS NULL";
+
   switch (type->id) {
   case ITEM_EMPTY:
     return "empty";
@@ -36,6 +37,18 @@ char *item_type_to_string(const ItemType *type) {
   default:
     return "NYI Item";
   }
+}
+
+ItemType *item_from_str(const char *item_iteral) {
+  if (item_iteral == NULL)
+    return NULL;
+
+  for (int i = 0; i < ITEMS_AMOUNT; i++) {
+    if (strcmp(item_iteral, item_type_to_string(&ITEMS[i])))
+      return &ITEMS[i];
+  }
+
+  return NULL;
 }
 
 void item_tooltip(const ItemInstance *item, char *buf, size_t buf_capacity) {
