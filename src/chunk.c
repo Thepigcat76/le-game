@@ -39,9 +39,9 @@ void chunk_gen(Chunk *chunk, ChunkPos chunk_pos, float world_seed) {
           } else {
             type = TILES[TILE_WATER];
           }
-          chunk->tiles[y][x][l] = tile_new(type);
+          chunk->tiles[y][x][l] = tile_new(&type);
         } else {
-          chunk->tiles[y][x][l] = tile_new(TILES[TILE_EMPTY]);
+          chunk->tiles[y][x][l] = tile_new(&TILES[TILE_EMPTY]);
         }
       }
     }
@@ -51,7 +51,7 @@ void chunk_gen(Chunk *chunk, ChunkPos chunk_pos, float world_seed) {
 }
 
 bool chunk_can_place_tile_on_layer(Chunk *chunk, TileInstance tile, int x, int y, TileLayer layer) {
-  if (chunk->tiles[y][x][layer].type.id == tile.type.id) {
+  if (chunk->tiles[y][x][layer].type->id == tile.type->id) {
     return false; // No need to update if the tile is the same
   }
 
@@ -68,6 +68,7 @@ bool chunk_set_tile(Chunk *chunk, TileInstance tile, int x, int y, TileLayer lay
   }
 
   chunk->tiles[y][x][layer] = tile;
+  printf("Set tile on layer: %d\n", layer);
   return true;
 }
 
@@ -77,14 +78,12 @@ void chunk_load(Chunk *chunk, const DataMap *data) {
   chunk_pos.y = (int)data_map_get(data, "chunk_y").var.data_int;
 
   for (int l = 0; l < TILE_LAYERS_AMOUNT; l++) {
-    char tiles_key[sizeof("tiles") + 1];
-    sprintf(tiles_key, "tiles%d", l);
-    DataList list = data_map_get(data, tiles_key).var.data_list;
+    DataList list = data_map_get(data, TextFormat("tiles%d", l)).var.data_list;
     for (int y = 0; y < CHUNK_SIZE; y++) {
       for (int x = 0; x < CHUNK_SIZE; x++) {
         int8_t id = list.items[y * CHUNK_SIZE + x].var.data_byte;
 
-        chunk->tiles[y][x][l] = tile_new(TILES[id]);
+        chunk->tiles[y][x][l] = tile_new(&TILES[id]);
         // TileInstance *tile = &chunk->tiles[y][x];
         // if (TILES[tile_id].stores_custom_data) {
         //   char custom_data[length + 13 + 1];
@@ -108,7 +107,7 @@ void chunk_save(const Chunk *chunk, DataMap *data) {
 
         const TileInstance *tile = &chunk->tiles[y][x][l];
         // Insert with a duplicated/copy string if needed
-        data_list_add(&tiles, data_byte(tile->type.id));
+        data_list_add(&tiles, data_byte(tile->type->id));
 
         // if (tile->type.stores_custom_data) {
         //   char custom_data[length + 13 + 1];

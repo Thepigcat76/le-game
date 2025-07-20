@@ -38,7 +38,7 @@ void client_world_render(ClientGame *client, float alpha) {
   world_render_layer_top_split(client->world, &client->player, false);
 
   game_render_break_progress(client, client->player->break_tile_pos,
-                             client->player->break_tile.type.tile_props.break_time, client->player->break_progress);
+                             client->player->break_tile.type->tile_props.break_time, client->player->break_progress);
 
   int x_index = floor_div(mouse_world_pos.x, TILE_SIZE);
   int y_index = floor_div(mouse_world_pos.y, TILE_SIZE);

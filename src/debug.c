@@ -111,7 +111,7 @@ void debug_tick() {
   if (keycode >= KEY_ZERO && keycode <= KEY_NINE) {
     int tile_index = keycode - KEY_ZERO;
     if (tile_index < array_len(TILES)) {
-      GAME.debug_options.selected_tile_to_place_instance = tile_new(TILES[tile_index]);
+      GAME.debug_options.selected_tile_to_place_instance = tile_new(&TILES[tile_index]);
     }
   }
 

@@ -24,8 +24,6 @@ typedef enum {
   TILE_TREE,
   TILE_TREE_STUMP,
   TILE_CHEST,
-  TILE_DEEZ,
-  TILE_FANCY_STONE,
 } TileId;
 
 typedef struct {
@@ -68,21 +66,23 @@ char *tile_type_to_string(const TileType *type);
 void tile_type_debug_print(const TileType *type, char *buf);
 
 typedef struct {
-  TileType type;
+  const TileType *type;
   Dimensionsf box;
 
   AdvTileInstance *adv_tile_instance;
 
   // TEXTURES
   TileTextureData texture_data;
-  Rectangle cur_sprite_box;
+  Rectf cur_sprite_box;
   AdvTexture variant_texture;
   int animation_frame;
 } TileInstance;
 
 extern TileInstance TILE_INSTANCE_EMPTY;
 
-TileInstance tile_new(TileType type);
+TileInstance tile_new(const TileType *type);
+
+void tile_instance_debug(const TileInstance *tile, char *buf);
 
 Rectf tile_collision_box_at(const TileInstance *tile, int x, int y);
 
@@ -90,7 +90,7 @@ Dimensionsf tile_collision_dimensions_at(const TileInstance *tile);
 
 Vec2f tile_collision_offset_at(const TileInstance *tile);
 
-void tile_render(TileInstance *tile, int x, int y);
+void tile_render(TileInstance *tile, int x, int y, bool dbg);
 
 void tile_render_scaled(TileInstance *tile, int x, int y, float scale);
 

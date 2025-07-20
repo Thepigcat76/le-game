@@ -223,3 +223,5 @@ char *str_cpy_heap(const char *in);
 // The assignment consumes the key
 #define IS_KEY_PRESSED(id) GAME.client_game->pressed_keys.id##_key_pressed && !(GAME.client_game->pressed_keys.id##_key_pressed = false)
 #define IS_KEY_DOWN(id) GAME.client_game->pressed_keys.id##_key_down && !(GAME.client_game->pressed_keys.id##_key_down = false)
+
+char *btos(bool b);

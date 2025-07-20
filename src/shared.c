@@ -293,3 +293,7 @@ char *str_cpy(const char *input, Allocator *allocator) {
   strncpy(buf, input, len);
   return buf;
 }
+
+char *btos(bool b) {
+  return b ? "true" : "false";
+}

@@ -3,6 +3,7 @@
 #include "../include/game.h"
 #include "../include/item.h"
 #include <raylib.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -62,14 +63,12 @@ void world_gen_chunk_at(World *world, Vec2i chunk_pos) {
   world_add_chunk(world, chunk_pos, chunk);
 }
 
-TileInstance *world_ground_tile_at(World *world, TilePos tile_pos) {
-  return world_tile_at(world, tile_pos, TILE_LAYER_GROUND);
-}
+TileInstance *world_ground_tile_at(World *world, TilePos tile_pos) { return world_tile_at(world, tile_pos, TILE_LAYER_GROUND); }
 
 TileInstance *world_highest_tile_at(World *world, TilePos tile_pos) {
   for (int l = TILE_LAYERS_AMOUNT - 1; l >= 0; l--) {
     TileInstance *tile = world_tile_at(world, tile_pos, l);
-    if (tile->type.id != TILE_EMPTY || l == 0) {
+    if (tile->type->id != TILE_EMPTY || l == 0) {
       return tile;
     }
   }
@@ -97,7 +96,7 @@ TileInstance *world_tile_at(World *world, TilePos tile_pos, TileLayer layer) {
 void world_gen(World *world) { world_gen_chunk_at(world, vec2i(0, 0)); }
 
 bool world_set_tile(World *world, TilePos tile_pos, TileInstance tile) {
-  return world_set_tile_on_layer(world, tile_pos, tile, tile.type.layer);
+  return world_set_tile_on_layer(world, tile_pos, tile, tile.type->layer);
 }
 
 bool world_set_tile_on_layer(World *world, TilePos tile_pos, TileInstance tile, TileLayer layer) {
@@ -138,9 +137,9 @@ bool world_set_tile_on_layer(World *world, TilePos tile_pos, TileInstance tile, 
 }
 
 bool world_place_tile(World *world, TilePos tile_pos, TileInstance tile) {
-  TileLayer layer = tile.type.layer;
-  for (int l = layer - 1; l >= 0; l--) {
-    if (world_tile_at(world, tile_pos, l)->type.id == TILE_EMPTY)
+  TileLayer layer = tile.type->layer;
+  for (int l = layer; l >= 0; l--) {
+    if (world_tile_at(world, tile_pos, l)->type->id == TILE_EMPTY)
       return false;
     if (l == 0)
       break;
@@ -152,22 +151,20 @@ bool world_place_tile(World *world, TilePos tile_pos, TileInstance tile) {
 bool world_remove_tile(World *world, TilePos tile_pos) {
   TileInstance empty_instance = TILE_INSTANCE_EMPTY;
   TileInstance *tile = world_highest_tile_at(world, tile_pos);
-  Color color = tile->type.tile_props.tile_color;
-  ItemType *item_type = tile->type.tile_item;
-  if (world_set_tile_on_layer(world, tile_pos, empty_instance, tile->type.layer)) {
+  Color color = tile->type->tile_props.tile_color;
+  ItemType *item_type = tile->type->tile_item;
+  if (world_set_tile_on_layer(world, tile_pos, empty_instance, tile->type->layer)) {
     if (item_type != NULL) {
       world_add_being(world,
-                      being_item_new((ItemInstance){.type = *item_type},
-                                     (tile_pos.x * TILE_SIZE) + GetRandomValue(-7, 9),
+                      being_item_new((ItemInstance){.type = *item_type}, (tile_pos.x * TILE_SIZE) + GetRandomValue(-7, 9),
                                      (tile_pos.y * TILE_SIZE) + GetRandomValue(-7, 9)));
     }
 
     for (int i = 0; i < 5; i++) {
-      ParticleInstance *particle =
-          client_emit_particle(&CLIENT_GAME, tile_pos.x * TILE_SIZE + GetRandomValue(-9, 14),
-                             tile_pos.y * TILE_SIZE + GetRandomValue(-9, 14), PARTICLE_TILE_BREAK,
-                             (ParticleInstanceEx){.type = PARTICLE_INSTANCE_TILE_BREAK,
-                                                  .var = {.tile_break = {.texture = particle_texture, .tint = color}}});
+      ParticleInstance *particle = client_emit_particle(
+          &CLIENT_GAME, tile_pos.x * TILE_SIZE + GetRandomValue(-9, 14), tile_pos.y * TILE_SIZE + GetRandomValue(-9, 14),
+          PARTICLE_TILE_BREAK,
+          (ParticleInstanceEx){.type = PARTICLE_INSTANCE_TILE_BREAK, .var = {.tile_break = {.texture = particle_texture, .tint = color}}});
       particle->velocity = vec2f(0, 0);
     }
     return true;
@@ -203,7 +200,7 @@ void world_prepare_chunk_rendering(World *world, Chunk *chunk) {
       int chunk_y = chunk->chunk_pos.y * CHUNK_SIZE;
       TilePos pos = vec2i(chunk_x + x, chunk_y + y);
       TileInstance *tile = world_ground_tile_at(world, vec2i(pos.x, pos.y));
-      if (tile->type.id != TILE_EMPTY) {
+      if (tile->type->id != TILE_EMPTY) {
         world_set_tile_texture_data(world, tile, pos.x, pos.y);
       }
     }
@@ -213,7 +210,7 @@ void world_prepare_chunk_rendering(World *world, Chunk *chunk) {
     for (int x = 0; x < CHUNK_SIZE; x++) {
       TilePos pos = vec2i((chunk->chunk_pos.x * CHUNK_SIZE) + x, (chunk->chunk_pos.y * CHUNK_SIZE) + y);
       TileInstance *tile = world_ground_tile_at(world, vec2i(pos.x, pos.y));
-      if (tile->type.id != TILE_EMPTY) {
+      if (tile->type->id != TILE_EMPTY) {
         tile_calc_sprite_box(tile);
       }
     }
@@ -222,14 +219,14 @@ void world_prepare_chunk_rendering(World *world, Chunk *chunk) {
 
 void world_set_tile_texture_data(World *world, TileInstance *tile, int x, int y) {
   TileTextureData *texture_data = &tile->texture_data;
-  texture_data->surrounding_tiles[0] = world_ground_tile_at(world, vec2i(x - 1, y - 1))->type.id;
-  texture_data->surrounding_tiles[1] = world_ground_tile_at(world, vec2i(x, y - 1))->type.id;
-  texture_data->surrounding_tiles[2] = world_ground_tile_at(world, vec2i(x + 1, y - 1))->type.id;
-  texture_data->surrounding_tiles[3] = world_ground_tile_at(world, vec2i(x - 1, y))->type.id;
-  texture_data->surrounding_tiles[4] = world_ground_tile_at(world, vec2i(x + 1, y))->type.id;
-  texture_data->surrounding_tiles[5] = world_ground_tile_at(world, vec2i(x - 1, y + 1))->type.id;
-  texture_data->surrounding_tiles[6] = world_ground_tile_at(world, vec2i(x, y + 1))->type.id;
-  texture_data->surrounding_tiles[7] = world_ground_tile_at(world, vec2i(x + 1, y + 1))->type.id;
+  texture_data->surrounding_tiles[0] = world_ground_tile_at(world, vec2i(x - 1, y - 1))->type->id;
+  texture_data->surrounding_tiles[1] = world_ground_tile_at(world, vec2i(x, y - 1))->type->id;
+  texture_data->surrounding_tiles[2] = world_ground_tile_at(world, vec2i(x + 1, y - 1))->type->id;
+  texture_data->surrounding_tiles[3] = world_ground_tile_at(world, vec2i(x - 1, y))->type->id;
+  texture_data->surrounding_tiles[4] = world_ground_tile_at(world, vec2i(x + 1, y))->type->id;
+  texture_data->surrounding_tiles[5] = world_ground_tile_at(world, vec2i(x - 1, y + 1))->type->id;
+  texture_data->surrounding_tiles[6] = world_ground_tile_at(world, vec2i(x, y + 1))->type->id;
+  texture_data->surrounding_tiles[7] = world_ground_tile_at(world, vec2i(x + 1, y + 1))->type->id;
 }
 
 void world_prepare_rendering(World *world) {
@@ -247,8 +244,8 @@ void world_render_layer(World *world, TileLayer layer) {
     if (layer == TILE_LAYER_GROUND) {
       for (int y = chunk_y; y < chunk_y + CHUNK_SIZE; y++) {
         for (int x = chunk_x; x < chunk_x + CHUNK_SIZE; x++) {
-          DrawTexture(adv_texture_to_texture(&tile_variants_by_index(
-                          chunk->variant_index, 0, 0)[chunk->background_texture_variants[y - chunk_y][x - chunk_x]]),
+          DrawTexture(adv_texture_to_texture(&tile_variants_by_index(chunk->variant_index, 0,
+                                                                     0)[chunk->background_texture_variants[y - chunk_y][x - chunk_x]]),
                       x * TILE_SIZE, y * TILE_SIZE, WHITE);
         }
       }
@@ -256,14 +253,17 @@ void world_render_layer(World *world, TileLayer layer) {
 
     for (int y = 0; y < CHUNK_SIZE; y++) {
       for (int x = 0; x < CHUNK_SIZE; x++) {
+        int world_x = chunk_x + x;
+        int world_y = chunk_y + y;
         TileInstance *tile = &chunk->tiles[y][x][layer];
-        tile_render(tile, (chunk_x + x) * TILE_SIZE, (chunk_y + y) * TILE_SIZE);
+        tile_render(tile, world_x * TILE_SIZE, world_y * TILE_SIZE, world_x == 3 && world_y == 4);
       }
     }
   }
 }
 
 void world_render_layer_top_split(World *world, void *_player, bool draw_before_player) {
+  bool correct_tile = false;
   Player *player = (Player *)_player;
   float player_feet_y = player->box.y + player->box.height;
 
@@ -282,11 +282,10 @@ void world_render_layer_top_split(World *world, void *_player, bool draw_before_
         TileInstance *tile = &chunk->tiles[y][x][TILE_LAYER_TOP];
         float tile_screen_y = (world_y + 0) * TILE_SIZE;
 
-        bool should_draw = (tile_screen_y <= player_feet_y && draw_before_player) ||
-            (tile_screen_y > player_feet_y && !draw_before_player);
+        bool should_draw = (tile_screen_y <= player_feet_y && draw_before_player) || (tile_screen_y > player_feet_y && !draw_before_player);
 
         if (should_draw) {
-          tile_render(tile, world_x * TILE_SIZE, world_y * TILE_SIZE);
+          tile_render(tile, world_x * TILE_SIZE, world_y * TILE_SIZE, false);
         }
       }
     }

@@ -155,8 +155,8 @@ static Rectangle select_tile(bool *same_tile) {
 }
 
 void tile_calc_sprite_box(TileInstance *tile) {
-  if (tile->type.texture_props.uses_tileset) {
-    TileId self_id = tile->type.id;
+  if (tile->type->texture_props.uses_tileset) {
+    TileId self_id = tile->type->id;
     TileId *texture_data = tile->texture_data.surrounding_tiles;
     bool same_tile[8];
     same_tile[0] = texture_data[0] == self_id;

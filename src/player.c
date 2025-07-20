@@ -29,6 +29,7 @@ Player player_new() {
                   .chunk_pos = vec2i(0, 0),
                   .tile_pos = vec2i(0, 0),
                   .break_progress = -1,
+                  .break_tile = TILE_INSTANCE_EMPTY,
                   .break_tile_pos = vec2i(0, 0)};
 }
 
@@ -100,7 +101,7 @@ void player_render(Player *player, float alpha) {
 
 void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool walking_particles,
                        bool check_for_water) {
-  player->in_water = world_ground_tile_at(WORLD_PTR, player->tile_pos)->type.id == TILE_WATER;
+  player->in_water = world_ground_tile_at(WORLD_PTR, player->tile_pos)->type->id == TILE_WATER;
   if (check_for_water && player->in_water) {
     x -= (x - player->box.x) / 2;
     y -= (y - player->box.y) / 2;
@@ -144,7 +145,7 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool
         client_emit_particle(&CLIENT_GAME, x + GetRandomValue(-5, 7), y + GetRandomValue(-5, 7) + 27, PARTICLE_WALKING,
                            (ParticleInstanceEx){.type = PARTICLE_INSTANCE_WALKING,
                                                 .var = {.tile_break = {.texture = particle_texture0,
-                                                                       .tint = tile->type.tile_props.tile_color}}});
+                                                                       .tint = tile->type->tile_props.tile_color}}});
     particle->lifetime /= 1.5;
     particle->velocity = vec2f(0, 0);
   }
@@ -203,7 +204,7 @@ static void check_collisions(const Player *player, Vec2f *player_pos, Vec2f play
     for (int x = -1; x <= 1; x++) {
       TilePos tile_pos = vec2i(player_tile_pos.x + x, player_tile_pos.y + y);
       TileInstance *tile = world_tile_at(WORLD_PTR, tile_pos, TILE_LAYER_TOP);
-      if (tile->type.id != TILE_EMPTY) {
+      if (tile->type->id != TILE_EMPTY) {
         Rectf tile_box = tile_collision_box_at(tile, tile_pos.x * TILE_SIZE, tile_pos.y * TILE_SIZE);
 
         if (CheckCollisionRecs(player_hitbox, tile_box)) {
