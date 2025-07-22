@@ -129,6 +129,7 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool
           WORLD_PTR,
           &WORLD_PTR->chunks[world_chunk_index_by_pos(WORLD_PTR, vec2i(player->chunk_pos.x + offset.x, player->chunk_pos.y + offset.y))]);
     }
+    world_prepare_rendering(WORLD_PTR);
   }
 
   if (walking_particles && GetRandomValue(0, 4) == 0) {

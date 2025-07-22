@@ -26,8 +26,11 @@ static void debug_menu_collisions_button_clicked() {
 }
 
 static void debug_menu_hitboxes_button_clicked() {
-  TraceLog(LOG_DEBUG, "Deez nuts");
   GAME.debug_options.hitboxes_shown = !GAME.debug_options.hitboxes_shown;
+}
+
+static void debug_menu_tile_info_button_clicked() {
+  GAME.debug_options.print_tile_debug_info = !GAME.debug_options.print_tile_debug_info;
 }
 
 void debug_menu_render(UiRenderer *renderer, const ClientGame *game) {
@@ -75,6 +78,14 @@ void debug_menu_render(UiRenderer *renderer, const ClientGame *game) {
                  .x_offset = x_offset,
                  .y_offset = y_offset,
                  .width = 120,
+                 .height = 16});
+  RENDER_BUTTON({.message = GAME.debug_options.print_tile_debug_info ? "Print tile info" : "Don't Print tile info",
+                 .texture = DEBUG_BUTTON_TEXTURE,
+                 .selected_texture = DEBUG_BUTTON_SELECTED_TEXTURE,
+                 .on_click_func = button_click_simple(debug_menu_tile_info_button_clicked),
+                 .x_offset = x_offset,
+                 .y_offset = y_offset,
+                 .width = 132,
                  .height = 16});
   RENDER_TEXT({.text = TextFormat("x: %d, y: %d", (int) game->player->box.x, (int) game->player->box.y), .color = WHITE});
 }

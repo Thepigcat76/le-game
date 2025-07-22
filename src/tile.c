@@ -162,7 +162,7 @@ TileInstance tile_new(const TileType *type) {
 }
 
 void tile_instance_debug(const TileInstance *tile, char *buf) {
-  char tex_data_buf[128];
+  char tex_data_buf[256];
   strcat(tex_data_buf, "Surrounding tiles: [");
   for (int i = 0; i < 8; i++) {
     strcat(tex_data_buf, tile_type_to_string(&TILES[tile->texture_data.surrounding_tiles[i]]));

@@ -256,6 +256,7 @@ void world_prepare_rendering(World *world) {
   TraceLog(LOG_DEBUG, "Chunks for world render prep: %zu", len);
   for (int i = 0; i < len; i++) {
     world_prepare_chunk_rendering(world, &world->chunks[i]);
+    TraceLog(LOG_DEBUG, "Chunk at pos: %d, %d prepared", world->chunks[i].chunk_pos.x, world->chunks[i].chunk_pos.y);
   }
 }
 

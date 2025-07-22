@@ -46,6 +46,10 @@ static void client_start(void) {
   // NEEDS TO BE CALLED BEFORE client_init and shared_init, because both load textures
   client_init_raylib();
 
+#ifdef DEBUG_BUILD
+  SetTraceLogLevel(LOG_DEBUG);
+#endif
+
   // Load Textures, init random
   shared_init();
 
@@ -105,9 +109,9 @@ static void client_start(void) {
     while (tick_accumulator >= TICK_INTERVAL && ticks_per_frame < MAX_TICKS_PER_FRAME) {
       game_tick(&GAME);
       if (GAME.world != NULL) {
-        //printf("Placing tile\n");
-        //GAME.world->chunks[0].tiles[0][0][TILE_LAYER_GROUND] = tile_new(&TILES[TILE_GRASS]);
-        //world_place_tile(GAME.world, vec2i(0, 0), tile_new(&TILES[TILE_GRASS]));
+        // printf("Placing tile\n");
+        // GAME.world->chunks[0].tiles[0][0][TILE_LAYER_GROUND] = tile_new(&TILES[TILE_GRASS]);
+        // world_place_tile(GAME.world, vec2i(0, 0), tile_new(&TILES[TILE_GRASS]));
       }
       tick_accumulator -= TICK_INTERVAL;
       ticks_per_frame++;

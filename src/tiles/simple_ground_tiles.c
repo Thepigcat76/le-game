@@ -3,20 +3,20 @@
 #include <raylib.h>
 
 void empty_tile_init() {
-  TileType type = {
-      .id = TILE_EMPTY,
-      .texture = {},
-      .has_texture = false,
-      .layer = TILE_LAYER_GROUND,
-      .tile_dimensions = dimf(0, 0),
-      .tile_item = NULL,
-      .tile_props = {.break_time = 0,
-                     .tile_color = TILE_PROPS_DEFAULT.tile_color,
-                     .disable_collisions = TILE_PROPS_DEFAULT.disable_collisions},
+  array_add(TILES,
+            (TileType){
+                .id = TILE_EMPTY,
+                .texture = {},
+                .has_texture = false,
+                .layer = TILE_LAYER_GROUND,
+                .tile_dimensions = dimf(0, 0),
+                .tile_item = NULL,
+                .tile_props = {.break_time = 0,
+                               .tile_color = TILE_PROPS_DEFAULT.tile_color,
+                               .disable_collisions = TILE_PROPS_DEFAULT.disable_collisions},
 
-      .texture_props = {.uses_tileset = false, .has_variants = false},
-  };
-  array_add(TILES, type);
+                .texture_props = {.uses_tileset = false, .has_variants = false},
+            });
 }
 
 void simple_ground_tiles_tile_init() {

@@ -38,9 +38,27 @@ static size_t _interal_cache_src_files_amount = 0;
 
 static char _internal_cache_src_files[256][256] = {};
 
-static void cached_compile(const char *compiler, const char *libs, const char *flags, const char *out_dir, const char *out_name);
+static void cached_compile(const char *compiler, const char *libs, const char *flags, const char *defined_flags, const char *extra_flags,
+                           const char *out_dir, const char *out_name);
 
 static void collect_src_files_for_cache(char *directory);
+
+static char _internal_def_flags[512] = "";
+static char _internal_ex_flags[512] = "";
+
+static char *build_def_flags(char **def_flags) {
+  for (int i = 0; def_flags[i] != NULL; i++) {
+    strcat(_internal_def_flags, str_fmt("-D%s ", def_flags[i]));
+  }
+  return _internal_def_flags;
+}
+
+static char *build_ex_flags(char **ex_flags) {
+  for (int i = 0; ex_flags[i] != NULL; i++) {
+    strcat(_internal_ex_flags, ex_flags[i]);
+  }
+  return _internal_ex_flags;
+}
 
 int main(int argc, char **argv) {
   char *compiler = build_compiler(OPTS.compiler, OPTS.target);
@@ -48,9 +66,11 @@ int main(int argc, char **argv) {
   char *libraries = link_libs(OPTS.libraries);
   char *flags = build_flags(&OPTS);
   char *out_name = build_name(OPTS.out_name, OPTS.target);
+  char *defined_flags = build_def_flags(OPTS.define_flags);
+  char *extra_flags = build_ex_flags(OPTS.extra_flags);
 
   make_dir(OPTS.out_dir);
-  cached_compile(OPTS.compiler, libraries, flags, OPTS.out_dir, out_name);
+  cached_compile(OPTS.compiler, libraries, flags, defined_flags, extra_flags, OPTS.out_dir, out_name);
   printf("Cmd: %s\n", _internal_cmd_buf);
 
   if (argc >= 2) {
@@ -104,14 +124,6 @@ static char *build_flags(void *_opts) {
     strcat(_internal_flags_buf, str_fmt("-std=%s ", opts->std));
   }
 
-  for (int i = 0; opts->define_flags[i] != NULL; i++) {
-    strcat(_internal_flags_buf, str_fmt("-D%s ", opts->define_flags[i]));
-  }
-
-  for (int i = 0; opts->extra_flags[i] != NULL; i++) {
-    strcat(_internal_flags_buf, opts->extra_flags[i]);
-  }
-
   return _internal_flags_buf;
 }
 
@@ -141,9 +153,7 @@ static void collect_src_files_for_cache(char *directory) {
     if (dot != NULL) {
       ext = dot + 1;
       if (ext && strcmp(ext, "c") == 0) {
-        snprintf(_internal_cache_src_files[_interal_cache_src_files_amount],
-                 sizeof(_internal_cache_src_files[_interal_cache_src_files_amount]), "%s/%s", directory, entry->d_name);
-
+        strcpy(_internal_cache_src_files[_interal_cache_src_files_amount], str_fmt("%s/%s", directory, entry->d_name));
         _interal_cache_src_files_amount++;
       }
     }
@@ -152,7 +162,8 @@ static void collect_src_files_for_cache(char *directory) {
   closedir(dp);
 }
 
-static void cached_compile(const char *compiler, const char *libs, const char *flags, const char *out_dir, const char *out_name) {
+static void cached_compile(const char *compiler, const char *libs, const char *flags, const char *defined_flags, const char *extra_flags,
+                           const char *out_dir, const char *out_name) {
   char out_files[256][256] = {};
   size_t out_files_amount = 0;
 
@@ -173,7 +184,7 @@ static void cached_compile(const char *compiler, const char *libs, const char *f
     filename = filename ? filename + 1 : file_buf;
     filename[strlen(filename) - 1] = 'o';
 
-    compile("ccache %s -c %s -o ./build/%s", compiler, _internal_cache_src_files[i], filename);
+    compile("ccache %s -c %s -o ./build/%s %s %s", compiler, _internal_cache_src_files[i], filename, flags, defined_flags);
     sprintf(out_files[out_files_amount++], "./build/%s", filename);
   }
 
@@ -190,13 +201,10 @@ static void cached_compile(const char *compiler, const char *libs, const char *f
   strcat(link_cmd, libs);
   strcat(link_cmd, " ");
 
-  strcat(link_cmd, flags);
-  strcat(link_cmd, " ");
-
   strcat(link_cmd, "-o ");
   strcat(link_cmd, out_dir);
   strcat(link_cmd, "/");
   strcat(link_cmd, out_name);
 
-  compile("%s", link_cmd);
+  compile("%s %s", link_cmd, extra_flags);
 }

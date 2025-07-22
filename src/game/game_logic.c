@@ -1,5 +1,5 @@
-#include "../../include/game.h"
 #include "../../include/config.h"
+#include "../../include/game.h"
 
 static void game_world_tick(Game *game);
 
@@ -182,19 +182,14 @@ static void game_handle_tile_interaction(Game *game) {
         // game_set_menu(game, MENU_DIALOG);
         return;
       }
-      world_set_tile(game->world, vec2i(x_index, y_index), tile_new(game->debug_options.selected_tile_to_place_instance.type));
-      char buf[512];
-      tile_instance_debug(selected_tile, buf);
-      puts(buf);
       TileInstance new_tile = tile_new(game->debug_options.selected_tile_to_place_instance.type);
-      bool placed = world_place_tile(game->world, vec2i(x_index, y_index), new_tile);
-      TraceLog(LOG_DEBUG, "Placed le tile: %s", btos(placed));
-      TileInstance *tile = world_tile_at(game->world, vec2i(x_index, y_index), TILE_LAYER_GROUND);
-      tile_calc_sprite_box(tile);
-      world_prepare_rendering(game->world);
-      TraceLog(LOG_DEBUG, "Tile at pos %s, %d, %d", tile_type_to_string(tile->type), x_index, y_index);
-      tile_instance_debug(tile, buf);
-      puts(buf);
+      if (!game->debug_options.print_tile_debug_info) {
+        bool placed = world_place_tile(game->world, vec2i(x_index, y_index), new_tile);
+      } else {
+        char buf[512];
+        tile_instance_debug(world_highest_tile_at(game->world, vec2i(x_index, y_index)), buf);
+        puts(buf);
+      }
       // if (placed && game->sound_manager.sound_timer >= SOUND_COOLDOWN) {
       //   PlaySound(game->sound_manager.sound_buffers[SOUND_PLACE].sound_buf[game->sound_manager.cur_sound++]);
       //   if (game->sound_manager.cur_sound >= SOUND_BUFFER_LIMIT) {

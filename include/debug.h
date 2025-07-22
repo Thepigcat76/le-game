@@ -24,6 +24,7 @@ typedef struct {
     ItemInstance *selectable_items;
     TileInstance *selectable_tiles;
     TileInstance selected_tile_to_place_instance;
+    bool print_tile_debug_info;
 } DebugOptions;
 
 void debug_init();
