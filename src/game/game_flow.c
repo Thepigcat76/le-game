@@ -3,7 +3,7 @@
 #include <raylib.h>
 
 void client_init_raylib(void) {
-#ifdef SURTUR_DEBUG
+#ifdef DEBUG_BUILD
   SetTraceLogLevel(LOG_DEBUG);
 #endif
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
@@ -20,7 +20,7 @@ void client_deinit_raylib(void) {
 }
 
 void game_init(Game *game) {
-#ifdef SURTUR_DEBUG
+#ifdef DEBUG_BUILD
   debug_init();
 #endif
 }
@@ -36,7 +36,7 @@ void game_deinit(Game *game) {
   free(GLOBAL_BUMP.buffer);
 
   if (game->save_loaded) {
-    free(game->world->chunks);
+    array_free(game->world->chunks);
   }
   
   free(ITEM_CONTAINER_BUMP.buffer);

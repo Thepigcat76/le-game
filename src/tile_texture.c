@@ -1,8 +1,8 @@
+#include "../include/array.h"
 #include "../include/game.h"
+#include "../include/net/client.h"
 #include "../include/shared.h"
 #include "../include/tile.h"
-#include "../include/array.h"
-#include "../include/net/client.h"
 #include "../vendor/cJSON.h"
 #include <dirent.h>
 #include <raylib.h>
@@ -245,7 +245,6 @@ static void init_variant_info(cJSON *meta_json, char *texture_file_name) {
   for (int i = 0; i < VARIANT_INFO.tiles_amount; i++) {
     const char *texture_name = VARIANT_INFO.tile_texture_names[i];
     if (strcmp(texture_name, texture_file_name) == 0) {
-
       variant_index = i;
     }
   }
@@ -347,17 +346,13 @@ int tile_variants_index_for_name(const char *texture_path, int x, int y) {
   return -1;
 }
 
-AdvTexture *tile_variants_by_index(int index, int x, int y) {
-  return VARIANT_INFO.variants[index].var.single_tile_variant.variants;
-}
+AdvTexture *tile_variants_by_index(int index, int x, int y) { return VARIANT_INFO.variants[index].var.single_tile_variant.variants; }
 
 int tile_variants_amount_for_tile(const TileType *type, int x, int y) {
   return VARIANT_INFO.variants[type->variant_index].var.single_tile_variant.variants_amount;
 }
 
-int tile_variants_amount_by_index(int index, int x, int y) {
-  return VARIANT_INFO.variants[index].var.single_tile_variant.variants_amount;
-}
+int tile_variants_amount_by_index(int index, int x, int y) { return VARIANT_INFO.variants[index].var.single_tile_variant.variants_amount; }
 
 // -- SHARED --
 
@@ -366,8 +361,16 @@ void tile_type_init(TileType *type) {
   for (int i = 0; i < amount; i++) {
     if (strcmp(VARIANT_INFO.tile_texture_names[i], type->texture.path) == 0) {
       type->variant_index = i;
+      //type->texture_props.has_variants = true;
       return;
     }
   }
   type->variant_index = -1;
+  //type->texture_props.has_variants = false;
+  TraceLog(LOG_DEBUG, "Tile: %s, var index: %d", tile_type_to_string(type), type->variant_index);
+  if (type->id == TILE_STONE) {
+    char buf[512];
+    tile_type_debug_print(type, buf);
+    puts(buf);
+  }
 }

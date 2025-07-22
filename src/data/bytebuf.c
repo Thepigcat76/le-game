@@ -89,8 +89,7 @@ void byte_buf_from_file(ByteBuf *buf, const char *name) {
 void byte_buf_to_file(const ByteBuf *buf, const char *name) {
   FILE *f = fopen(name, "wb");
   if (!f) {
-    printf("Failed to open file for writing\n");
-    exit(1);
+    PANIC_FMT("Failed to open file %s for writing\n", name);
   }
 
   TraceLog(LOG_DEBUG, "writer index of bytebuf before saving to file: %d", buf->writer_index);

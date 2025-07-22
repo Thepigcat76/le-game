@@ -15,7 +15,7 @@ void debug_rect(Rectangle *rect) { TraceLog(LOG_DEBUG, "Rect{x=%f, y=%f, w=%f, h
 #define MAX_ANIMATIONS 2
 
 #define KEY_DOWN(key_name)                                                                                                                 \
-  client->pressed_keys.key_name##_down |= IsKeyDown(KEYBINDS.key_name);                                                                     \
+  client->pressed_keys.key_name##_down |= IsKeyDown(KEYBINDS.key_name);                                                                    \
   client->pressed_keys.key_name##_pressed |= IsKeyPressed(KEYBINDS.key_name);
 
 static void client_poll_keybinds(ClientGame *client) {
@@ -65,7 +65,7 @@ static void client_start(void) {
   registry_init();
 
   GAME.debug_options.selected_tile_to_place_instance = tile_new(&TILES[TILE_DIRT]);
-  
+
   GAME.debug_options.selectable_tiles = array_new_capacity(TileInstance, 256, &HEAP_ALLOCATOR);
 
   for (int i = 0; i < array_len(TILES); i++) {
@@ -91,6 +91,8 @@ static void client_start(void) {
 
   client_set_menu(&CLIENT_GAME, MENU_START);
 
+  HideCursor();
+
   while (!WindowShouldClose()) {
     client_poll_keybinds(&CLIENT_GAME);
     ticks_per_frame = 0;
@@ -102,6 +104,11 @@ static void client_start(void) {
     tick_accumulator += delta_time;
     while (tick_accumulator >= TICK_INTERVAL && ticks_per_frame < MAX_TICKS_PER_FRAME) {
       game_tick(&GAME);
+      if (GAME.world != NULL) {
+        //printf("Placing tile\n");
+        //GAME.world->chunks[0].tiles[0][0][TILE_LAYER_GROUND] = tile_new(&TILES[TILE_GRASS]);
+        //world_place_tile(GAME.world, vec2i(0, 0), tile_new(&TILES[TILE_GRASS]));
+      }
       tick_accumulator -= TICK_INTERVAL;
       ticks_per_frame++;
     }

@@ -15,7 +15,6 @@ typedef struct {
 
 typedef struct _world {
   Chunk *chunks;
-  size_t chunks_amount;
   ChunkLookup chunk_lookup;
   struct _being_instance beings[MAX_WORLD_BEINGS_AMOUNT];
   int beings_amount;
@@ -68,6 +67,6 @@ void world_add_being(World *world, BeingInstance being);
 // TODO: Use UUID at some point
 void world_remove_being(World *world, BeingInstance *being);
 
-void load_world(World *world, const DataMap *data);
+void world_load(World *world, const DataMap *data);
 
-void save_world(const World *world, DataMap *data);
+void world_save(const World *world, DataMap *data);

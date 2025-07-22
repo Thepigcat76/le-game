@@ -185,6 +185,10 @@ char *str_cpy_heap(const char *in);
 #define ANSI_RED "\033[1;31m"
 #define ANSI_RESET "\033[0m"
 
+#define ASSERT(cond, fmt, ...) do {\
+  if (!(cond)) PANIC_FMT(fmt, __VA_ARGS__);\
+} while (0)
+
 #define PANIC(...)                                                                                                                         \
   do {                                                                                                                                     \
     puts(ANSI_RED "Program panicked" ANSI_RESET);                                                                                          \

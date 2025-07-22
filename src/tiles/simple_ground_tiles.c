@@ -20,10 +20,11 @@ void empty_tile_init() {
 }
 
 void simple_ground_tiles_tile_init() {
-  TILE_TYPE_INIT(TILE_DIRT, TILE_LAYER_GROUND, &ITEMS[ITEM_DIRT], "lighter_dirt_tiles",
-                 TILE_PROPS_DEFAULT_WITH_COLOR(BROWN), {.uses_tileset = true});
-  TILE_TYPE_INIT(TILE_GRASS, TILE_LAYER_GROUND, &ITEMS[ITEM_DIRT], "grass_tiles", TILE_PROPS_DEFAULT_WITH_COLOR(GREEN), {.uses_tileset = true});
-  TILE_TYPE_INIT(TILE_STONE, TILE_LAYER_GROUND, &ITEMS[ITEM_DIRT], "stone", TILE_PROPS_DEFAULT_WITH_COLOR(GRAY));
-  TILE_TYPE_INIT(TILE_WATER, TILE_LAYER_GROUND, &ITEMS[ITEM_DIRT], "water",
-                 {.tile_color = BLUE, .break_time = -1, .disable_collisions = false}, {.uses_tileset = true});
+  TILE_TYPE_INIT(TILE_DIRT, TILE_LAYER_GROUND, &ITEMS[ITEM_DIRT], "lighter_dirt_tiles", {.tile_color = BROWN, .break_time = 16},
+                 {.uses_tileset = true});
+  TILE_TYPE_INIT(TILE_GRASS, TILE_LAYER_GROUND, &ITEMS[ITEM_GRASS], "grass_tiles", {.tile_color = BROWN, .break_time = 16},
+                 {.uses_tileset = true});
+  TILE_TYPE_INIT(TILE_STONE, TILE_LAYER_GROUND, &ITEMS[ITEM_STONE], "stone", TILE_PROPS_DEFAULT_WITH_COLOR(GRAY));
+  TILE_TYPE_INIT(TILE_WATER, TILE_LAYER_GROUND, NULL, "water", {.tile_color = BLUE, .break_time = -1, .disable_collisions = false},
+                 {.uses_tileset = true});
 }

@@ -57,7 +57,7 @@ void game_load_saves(Game *game) {
 
 static void game_load_cur_save(Game *game, SaveDescriptor desc) {
   game_load_save_data(game, desc);
-  game->world = &game->cur_save.world;
+  game->world = &game->cur_save.cur_space->world;
   game->player = &game->cur_save.player;
 
   // TODO: world_prepare_rendering(game->world);
@@ -106,12 +106,9 @@ static void game_create_save_config_file(Game *game, SaveConfig config) {
 
 void game_create_save_world(Game *game) {
   float seed = game->cur_save.descriptor.config.seed;
-  player_set_pos_ex(&game->cur_save.player, TILE_SIZE * ((float)CHUNK_SIZE / 2), TILE_SIZE * ((float)CHUNK_SIZE / 2),
-                    false, false, false);
-  game->cur_save.world.seed = seed;
-  world_gen(&game->cur_save.world);
-
-  world_initialize(&game->cur_save.world);
+  player_set_pos_ex(&game->cur_save.player, TILE_SIZE * ((float)CHUNK_SIZE / 2), TILE_SIZE * ((float)CHUNK_SIZE / 2), false, false, false);
+  game->cur_save.cur_space->world.seed = seed;
+  world_gen(&game->cur_save.cur_space->world);
 }
 
 void game_create_save(Game *game, SaveDescriptor save_desc) {
@@ -121,8 +118,8 @@ void game_create_save(Game *game, SaveDescriptor save_desc) {
 
   char *save_name_copy = malloc(strlen(save_desc.config.save_name) + 1);
   strcpy(save_name_copy, save_desc.config.save_name);
-  //float seed = string_to_world_seed(seed_lit);
-  //size_t id = array_len(game->local_saves);
+  // float seed = string_to_world_seed(seed_lit);
+  // size_t id = array_len(game->local_saves);
   float seed = save_desc.config.seed;
   size_t id = save_desc.id;
 
@@ -135,8 +132,18 @@ void game_create_save(Game *game, SaveDescriptor save_desc) {
   dir_create(TextFormat("save/save%d", id));
   game_create_save_config_file(game, desc.config);
 
+  dir_create(TextFormat("save/save%d/spaces", id));
+
   array_add(game->client_game->local_saves, desc);
-  game->cur_save = (Save){.descriptor = desc, .world = world_new(), .player = player_new()};
-  game->world = &game->cur_save.world;
+  game->cur_save = (Save){.descriptor = desc,
+                          .player = player_new(),
+                          .spaces = array_new_capacity(SpaceDescriptor, 8, &HEAP_ALLOCATOR),
+                          .loaded_spaces = array_new_capacity(Space, 8, &HEAP_ALLOCATOR)};
+  array_add(game->cur_save.spaces, SPACE_DESC_DEFAULT);
+  Space default_space;
+  space_create_default(&default_space);
+  array_add(game->cur_save.loaded_spaces, default_space);
+  game->cur_save.cur_space = &game->cur_save.loaded_spaces[0];
+  game->world = &game->cur_save.cur_space->world;
   game->player = &game->cur_save.player;
 }

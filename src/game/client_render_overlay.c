@@ -10,7 +10,7 @@ void client_render_overlay(ClientGame *client) {
   DrawTextureEx(MAIN_HAND_SLOT_TEXTURE, (Vector2){pos.x, pos.y}, 0, 4.5, WHITE);
   item_render(&client->player->held_item, pos.x + 2 * 3.5, pos.y + 2 * 3.5);
 
-#ifdef SURTUR_DEBUG
+#ifdef DEBUG_BUILD
   debug_render_overlay();
 #endif
 

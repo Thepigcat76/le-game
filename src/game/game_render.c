@@ -18,7 +18,7 @@ void client_world_render(ClientGame *client, float alpha) {
   Vec2f mouse_pos = GetMousePosition();
   Vec2f mouse_world_pos = GetScreenToWorld2D(mouse_pos, client->player->cam);
 
-  world_render_layer(client->world, TILE_LAYER_GROUND);
+  world_render_layer(client->game->world, TILE_LAYER_GROUND);
 
   world_render_layer_top_split(client->world, &client->player, true);
 
@@ -37,23 +37,21 @@ void client_world_render(ClientGame *client, float alpha) {
 
   world_render_layer_top_split(client->world, &client->player, false);
 
-  game_render_break_progress(client, client->player->break_tile_pos,
-                             client->player->break_tile.type->tile_props.break_time, client->player->break_progress);
+  game_render_break_progress(client, client->player->break_tile_pos, client->player->break_tile.type->tile_props.break_time,
+                             client->player->break_progress);
 
   int x_index = floor_div(mouse_world_pos.x, TILE_SIZE);
   int y_index = floor_div(mouse_world_pos.y, TILE_SIZE);
-  Rectangle rec =
-      (Rectangle){.x = x_index * (TILE_SIZE), .y = y_index * (TILE_SIZE), .width = (TILE_SIZE), .height = (TILE_SIZE)};
+  Rectangle rec = (Rectangle){.x = x_index * (TILE_SIZE), .y = y_index * (TILE_SIZE), .width = (TILE_SIZE), .height = (TILE_SIZE)};
   bool slot_selected = client->slot_selected;
-  bool interaction_in_range =
-      abs((int)client->player->box.x - x_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE &&
+  bool interaction_in_range = abs((int)client->player->box.x - x_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE &&
       abs((int)client->player->box.y - y_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE;
 
   if (!slot_selected && interaction_in_range) {
     rec_draw_outline(rec, BLUE);
   }
 
-#ifdef SURTUR_DEBUG
+#ifdef DEBUG_BUILD
   debug_render();
 #endif
 }
@@ -74,8 +72,11 @@ void client_render(ClientGame *client, float alpha) {
       Vector2 light_pos = {(mousePos.x / GetScreenWidth()), 1.0 - (mousePos.y / GetScreenHeight())};
 
       Vector3 light_color = {1.0f, 1.0f, 0.8f}; // warm white
-      float light_radius =
-          GAME.player->held_item.type.item_props.light_source ? 0.08f * cam->zoom * (1.0f + 0.11f * sin(GetTime())) : 0;
+      float light_radius = 0;
+
+      if (GAME.player != NULL) {
+        light_radius = GAME.player->held_item.type.item_props.light_source ? 0.08f * cam->zoom * (1.0f + 0.11f * sin(GetTime())) : 0;
+      }
 
       ShaderVarLookupLighting lighting_lookup = client->shader_manager.lookups[SHADER_LIGHTING].var.lighting;
       Shader lighting_shader = client->shader_manager.shaders[SHADER_LIGHTING];
@@ -113,20 +114,10 @@ void client_render(ClientGame *client, float alpha) {
         BeginShaderMode(lighting_shader);
         {
           DrawTextureRec(client->world_texture.texture,
-                         (Rectangle){0, 0, (float)client->world_texture.texture.width,
-                                     -(float)client->world_texture.texture.height},
+                         (Rectangle){0, 0, (float)client->world_texture.texture.width, -(float)client->world_texture.texture.height},
                          (Vector2){0, 0}, WHITE);
         }
         EndShaderMode();
-      }
-
-      if (client->player->held_item.type.id != ITEM_EMPTY) {
-        HideCursor();
-        float scale = 3;
-        DrawTextureEx(client->texture_manager.textures[TEXTURE_CURSOR], (Vector2){.x = mousePos.x, .y = mousePos.y}, 0,
-                      scale, WHITE);
-      } else {
-        ShowCursor();
       }
 
       if (!client_cur_menu_hides_game(client)) {
@@ -137,6 +128,9 @@ void client_render(ClientGame *client, float alpha) {
     // Always render menus
 
     client_render_menu(client);
+
+    float scale = 3;
+    DrawTextureEx(client->texture_manager.textures[TEXTURE_CURSOR], (Vector2){.x = mousePos.x, .y = mousePos.y}, 0, scale, WHITE);
   }
 
   EndDrawing();

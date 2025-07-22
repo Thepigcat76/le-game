@@ -57,7 +57,7 @@ void _internal_array_remove(void *arr_ptr, size_t index) {
   _InternalArrayHeader *h = ((_InternalArrayHeader *)arr_ptr) - 1;
 
   if (index >= h->len) {
-#ifdef SURTUR_DEBUG
+#ifdef DEBUG_BUILD
 #include <stdio.h>
     printf("Index %zu out of bounds for array of length %zu\n", index, h->len);
 #endif

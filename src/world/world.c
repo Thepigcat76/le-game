@@ -1,7 +1,10 @@
-#include "../include/world.h"
-#include "../include/being.h"
-#include "../include/game.h"
-#include "../include/item.h"
+#include "../../include/world.h"
+#include "../../include/array.h"
+#include "../../include/being.h"
+#include "../../include/game.h"
+#include "../../include/item.h"
+#include "../../include/net/client.h"
+#include "../../include/particle.h"
 #include <raylib.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -15,7 +18,6 @@ World world_new_no_chunks() {
   particle_texture = LoadTexture("res/assets/particle.png");
   return (World){
       .chunks = NULL,
-      .chunks_amount = 0,
       .initialized = false,
   };
 }
@@ -23,8 +25,7 @@ World world_new_no_chunks() {
 World world_new() {
   particle_texture = LoadTexture("res/assets/particle.png");
   return (World){
-      .chunks = malloc(WORLD_LOADED_CHUNKS * sizeof(Chunk)),
-      .chunks_amount = 0,
+      .chunks = array_new_capacity(Chunk, WORLD_LOADED_CHUNKS, &HEAP_ALLOCATOR),
       .initialized = false,
   };
 }
@@ -35,14 +36,15 @@ void world_initialize(World *world) {
 }
 
 void world_add_chunk(World *world, ChunkPos pos, Chunk chunk) {
-  world->chunks[world->chunks_amount] = chunk;
-  world->chunk_lookup.indices[world->chunks_amount] = world->chunks_amount;
-  world->chunk_lookup.chunks_positions[world->chunks_amount] = pos;
-  world->chunks_amount++;
+  array_add(world->chunks, chunk);
+  size_t len = array_len(world->chunks) - 1;
+  world->chunk_lookup.indices[len] = len;
+  world->chunk_lookup.chunks_positions[len] = pos;
 }
 
 ssize_t world_chunk_index_by_pos(const World *world, ChunkPos pos) {
-  for (size_t i = 0; i < world->chunks_amount; i++) {
+  size_t len = array_len(world->chunks) - 1;
+  for (size_t i = 0; i < len; i++) {
     if (vec2_eq(&world->chunk_lookup.chunks_positions[i], &pos)) {
       return world->chunk_lookup.indices[i];
     }
@@ -93,7 +95,22 @@ TileInstance *world_tile_at(World *world, TilePos tile_pos, TileLayer layer) {
   return &TILE_INSTANCE_EMPTY;
 }
 
-void world_gen(World *world) { world_gen_chunk_at(world, vec2i(0, 0)); }
+void world_gen(World *world) {
+  for (int y = -1; y <= 1; y++) {
+    for (int x = -1; x <= 1; x++) {
+      world_gen_chunk_at(world, vec2i(x, y));
+      // for (int cy = 0; cy < 16; cy++) {
+      //   for (int cx = 0; cx < 16; cx++) {
+      //     printf("%d", world->chunks[0].tiles[cy][cx][TILE_LAYER_GROUND].type->id);
+      //   }
+      //   puts("");
+      // }
+    }
+  }
+  TraceLog(LOG_INFO, "Generated world");
+
+  world_initialize(world);
+}
 
 bool world_set_tile(World *world, TilePos tile_pos, TileInstance tile) {
   return world_set_tile_on_layer(world, tile_pos, tile, tile.type->layer);
@@ -105,7 +122,9 @@ bool world_set_tile_on_layer(World *world, TilePos tile_pos, TileInstance tile, 
   int chunk_x = floor_div((tile_pos.x - chunk_tile_x), CHUNK_SIZE);
   int chunk_y = floor_div((tile_pos.y - chunk_tile_y), CHUNK_SIZE);
   ChunkPos chunk_pos = vec2i(chunk_x, chunk_y);
+  printf("set tile\n");
   if (world_has_chunk_at(world, chunk_pos)) {
+    printf("has chunk\n");
     Chunk *chunk = &world->chunks[world_chunk_index_by_pos(world, chunk_pos)];
     bool success = chunk_set_tile(chunk, tile, chunk_tile_x, chunk_tile_y, layer);
 
@@ -139,10 +158,13 @@ bool world_set_tile_on_layer(World *world, TilePos tile_pos, TileInstance tile, 
 bool world_place_tile(World *world, TilePos tile_pos, TileInstance tile) {
   TileLayer layer = tile.type->layer;
   for (int l = layer; l >= 0; l--) {
-    if (world_tile_at(world, tile_pos, l)->type->id == TILE_EMPTY)
-      return false;
-    if (l == 0)
+    if (l == 0) {
       break;
+    }
+
+    if (world_tile_at(world, tile_pos, l)->type->id == TILE_EMPTY) {
+      return false;
+    }
   }
 
   return world_set_tile_on_layer(world, tile_pos, tile, layer);
@@ -230,13 +252,16 @@ void world_set_tile_texture_data(World *world, TileInstance *tile, int x, int y)
 }
 
 void world_prepare_rendering(World *world) {
-  for (int i = 0; i < world->chunks_amount; i++) {
+  size_t len = array_len(world->chunks);
+  TraceLog(LOG_DEBUG, "Chunks for world render prep: %zu", len);
+  for (int i = 0; i < len; i++) {
     world_prepare_chunk_rendering(world, &world->chunks[i]);
   }
 }
 
 void world_render_layer(World *world, TileLayer layer) {
-  for (int i = 0; i < world->chunks_amount; i++) {
+  size_t len = array_len(world->chunks);
+  for (int i = 0; i < len; i++) {
     Vec2i chunk_pos = world->chunk_lookup.chunks_positions[i];
     int chunk_x = chunk_pos.x * CHUNK_SIZE;
     int chunk_y = chunk_pos.y * CHUNK_SIZE;
@@ -256,7 +281,7 @@ void world_render_layer(World *world, TileLayer layer) {
         int world_x = chunk_x + x;
         int world_y = chunk_y + y;
         TileInstance *tile = &chunk->tiles[y][x][layer];
-        tile_render(tile, world_x * TILE_SIZE, world_y * TILE_SIZE, world_x == 3 && world_y == 4);
+        tile_render(tile, world_x * TILE_SIZE, world_y * TILE_SIZE, false);
       }
     }
   }
@@ -267,7 +292,8 @@ void world_render_layer_top_split(World *world, void *_player, bool draw_before_
   Player *player = (Player *)_player;
   float player_feet_y = player->box.y + player->box.height;
 
-  for (int i = 0; i < world->chunks_amount; i++) {
+  size_t len = array_len(world->chunks);
+  for (int i = 0; i < len; i++) {
     Chunk *chunk = &world->chunks[i];
     Vec2i chunk_pos = world->chunk_lookup.chunks_positions[i];
     int chunk_x = chunk_pos.x * CHUNK_SIZE;
@@ -284,7 +310,7 @@ void world_render_layer_top_split(World *world, void *_player, bool draw_before_
 
         bool should_draw = (tile_screen_y <= player_feet_y && draw_before_player) || (tile_screen_y > player_feet_y && !draw_before_player);
 
-        if (should_draw) {
+        if (should_draw && tile->type->id != TILE_EMPTY) {
           tile_render(tile, world_x * TILE_SIZE, world_y * TILE_SIZE, false);
         }
       }
@@ -303,7 +329,7 @@ static void world_load_beings(World *world, const DataMap *data) {
   }
 }
 
-void load_world(World *world, const DataMap *data) {
+void world_load(World *world, const DataMap *data) {
   DataList chunks_list = data_map_get(data, "chunks").var.data_list;
   size_t chunks = chunks_list.len;
   for (int i = 0; i < chunks; i++) {
@@ -329,16 +355,17 @@ static void world_save_beings(const World *world, DataMap *data) {
   data_map_insert(data, "beings", data_list(list));
 }
 
-void save_world(const World *world, DataMap *data) {
+void world_save(const World *world, DataMap *data) {
   DataList chunks_list = data_list_new(WORLD_LOADED_CHUNKS);
-  for (int i = 0; i < world->chunks_amount; i++) {
+  size_t len = array_len(world->chunks);
+  for (int i = 0; i < len; i++) {
     DataMap map = data_map_new(8);
     const Chunk *chunk = &world->chunks[i];
     chunk_save(chunk, &map);
     data_list_add(&chunks_list, data_map(map));
   }
   data_map_insert(data, "chunks", data_list(chunks_list));
-  TraceLog(LOG_DEBUG, "Total saved chunks: %u", world->chunks_amount);
+  TraceLog(LOG_DEBUG, "Total saved chunks: %zu", array_len(world->chunks));
   world_save_beings(world, data);
   TraceLog(LOG_DEBUG, "Total saved beings: %d", world->beings_amount);
 }

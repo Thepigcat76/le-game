@@ -1,8 +1,8 @@
-#include "../include/chunk.h"
+#include "../../include/chunk.h"
 #ifndef _WIN32
 #define STB_PERLIN_IMPLEMENTATION
 #endif
-#include "../vendor/stb_perlin.h"
+#include "../../vendor/stb_perlin.h"
 #include <raylib.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -22,6 +22,7 @@ void chunk_gen(Chunk *chunk, ChunkPos chunk_pos, float world_seed) {
   int chunk_y = chunk_pos.y * CHUNK_SIZE;
   float seed_offset = world_seed * 37.77f;
   for (int l = 0; l < TILE_LAYERS_AMOUNT; l++) {
+    TraceLog(LOG_INFO, "Generating chunk, layer: %s", l == TILE_LAYER_GROUND ? "Ground" : "Top");
     for (int y = 0; y < CHUNK_SIZE; y++) {
       for (int x = 0; x < CHUNK_SIZE; x++) {
         if (l == TILE_LAYER_GROUND) {
@@ -29,17 +30,17 @@ void chunk_gen(Chunk *chunk, ChunkPos chunk_pos, float world_seed) {
           float fy = (chunk_y + y) * 0.1 + seed_offset;
           int noise = (stb_perlin_noise3(fx, fy, 0.0f, 0, 0, 0) + 1) * 10;
 
-          TileType type;
+          TileId tile_id;
           if (noise > 5) {
             if (noise < 8) {
-              type = TILES[TILE_DIRT];
+              tile_id = TILE_DIRT;
             } else {
-              type = TILES[TILE_GRASS];
+              tile_id = TILE_GRASS;
             }
           } else {
-            type = TILES[TILE_WATER];
+            tile_id = TILE_WATER;
           }
-          chunk->tiles[y][x][l] = tile_new(&type);
+          chunk->tiles[y][x][l] = tile_new(&TILES[tile_id]);
         } else {
           chunk->tiles[y][x][l] = tile_new(&TILES[TILE_EMPTY]);
         }

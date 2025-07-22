@@ -13,10 +13,8 @@ Texture2D particle_texture0;
 Player player_new() {
   particle_texture0 = LoadTexture("res/assets/walk_particles.png");
   return (Player){.cam = camera_new(SCREEN_WIDTH, SCREEN_HEIGHT),
-                  .animated_textures = {LoadTexture("res/assets/player_front_walk.png"),
-                                        LoadTexture("res/assets/player_back_walk.png"),
-                                        LoadTexture("res/assets/player_left_walk.png"),
-                                        LoadTexture("res/assets/player_right_walk.png")},
+                  .animated_textures = {LoadTexture("res/assets/player_front_walk.png"), LoadTexture("res/assets/player_back_walk.png"),
+                                        LoadTexture("res/assets/player_left_walk.png"), LoadTexture("res/assets/player_right_walk.png")},
                   .textures = {LoadTexture("res/assets/player_front.png"), LoadTexture("res/assets/player_back.png"),
                                LoadTexture("res/assets/player_left.png"), LoadTexture("res/assets/player_right.png")},
                   .direction = DIRECTION_DOWN,
@@ -86,8 +84,7 @@ void player_render(Player *player, float alpha) {
 
   double scale = 1;
   Texture2D player_texture = player_get_texture(player);
-  DrawTexturePro(player_texture,
-                 (Rectangle){0, player->walking ? 32 * player->animation_frame : 32, 16, player->in_water ? 24 : 32},
+  DrawTexturePro(player_texture, (Rectangle){0, player->walking ? 32 * player->animation_frame : 32, 16, player->in_water ? 24 : 32},
                  (Rectangle){.x = player->box.x + 8 * scale,
                              .y = player->box.y + 16 * scale,
                              .width = 16 * scale,
@@ -99,12 +96,15 @@ void player_render(Player *player, float alpha) {
   }
 }
 
-void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool walking_particles,
-                       bool check_for_water) {
-  player->in_water = world_ground_tile_at(WORLD_PTR, player->tile_pos)->type->id == TILE_WATER;
-  if (check_for_water && player->in_water) {
-    x -= (x - player->box.x) / 2;
-    y -= (y - player->box.y) / 2;
+static const Vec2i RENDER_CHUNK_OFFSETS[4] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+
+void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool walking_particles, bool check_for_water) {
+  if (check_for_water) {
+    player->in_water = world_ground_tile_at(WORLD_PTR, player->tile_pos)->type->id == TILE_WATER;
+    if (player->in_water) {
+      x -= (x - player->box.x) / 2;
+      y -= (y - player->box.y) / 2;
+    }
   }
 
   ChunkPos old_chunk_pos = player->chunk_pos;
@@ -122,30 +122,21 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool
   if (update_chunk && !world_has_chunk_at(WORLD_PTR, player->chunk_pos)) {
     world_gen_chunk_at(WORLD_PTR, player->chunk_pos);
 
-    world_prepare_chunk_rendering(WORLD_PTR,
-                                  &WORLD_PTR->chunks[world_chunk_index_by_pos(WORLD_PTR, player->chunk_pos)]);
-    Vec2i offsets[4] = {
-        vec2i(-1, 0),
-        vec2i(+1, 0),
-        vec2i(0, -1),
-        vec2i(0, +1),
-    };
+    world_prepare_chunk_rendering(WORLD_PTR, &WORLD_PTR->chunks[world_chunk_index_by_pos(WORLD_PTR, player->chunk_pos)]);
     for (int i = 0; i < 4; i++) {
-      Vec2i offset = offsets[i];
+      Vec2i offset = RENDER_CHUNK_OFFSETS[i];
       world_prepare_chunk_rendering(
           WORLD_PTR,
-          &WORLD_PTR->chunks[world_chunk_index_by_pos(
-              WORLD_PTR, vec2i(player->chunk_pos.x + offset.x, player->chunk_pos.y + offset.y))]);
+          &WORLD_PTR->chunks[world_chunk_index_by_pos(WORLD_PTR, vec2i(player->chunk_pos.x + offset.x, player->chunk_pos.y + offset.y))]);
     }
   }
 
   if (walking_particles && GetRandomValue(0, 4) == 0) {
     TileInstance *tile = world_ground_tile_at(GAME.world, player->tile_pos);
-    ParticleInstance *particle =
-        client_emit_particle(&CLIENT_GAME, x + GetRandomValue(-5, 7), y + GetRandomValue(-5, 7) + 27, PARTICLE_WALKING,
-                           (ParticleInstanceEx){.type = PARTICLE_INSTANCE_WALKING,
-                                                .var = {.tile_break = {.texture = particle_texture0,
-                                                                       .tint = tile->type->tile_props.tile_color}}});
+    ParticleInstance *particle = client_emit_particle(
+        &CLIENT_GAME, x + GetRandomValue(-5, 7), y + GetRandomValue(-5, 7) + 27, PARTICLE_WALKING,
+        (ParticleInstanceEx){.type = PARTICLE_INSTANCE_WALKING,
+                             .var = {.tile_break = {.texture = particle_texture0, .tint = tile->type->tile_props.tile_color}}});
     particle->lifetime /= 1.5;
     particle->velocity = vec2f(0, 0);
   }
@@ -169,8 +160,7 @@ void player_handle_zoom(Player *player, bool zoom_in, bool zoom_out, float alpha
   }
 }
 
-Rectangle rec_offset(Rectangle rectangle, int32_t x_offset, int32_t y_offset, int32_t width_offset,
-                     int32_t height_offset) {
+Rectangle rec_offset(Rectangle rectangle, int32_t x_offset, int32_t y_offset, int32_t width_offset, int32_t height_offset) {
   return (Rectangle){
       .x = rectangle.x + x_offset,
       .y = rectangle.y + y_offset,
@@ -192,8 +182,7 @@ Rectangle rec_offset_direction(Rectangle rec, Direction direction, int32_t dista
   }
 }
 
-static void check_collisions(const Player *player, Vec2f *player_pos, Vec2f player_move, TilePos player_tile_pos,
-                             bool move_x) {
+static void check_collisions(const Player *player, Vec2f *player_pos, Vec2f player_move, TilePos player_tile_pos, bool move_x) {
   Rectf player_hitbox = player_collision_box(player);
   if (move_x) {
     player_hitbox.x += player_move.x;
@@ -289,9 +278,7 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
   }
 }
 
-Rectf player_collision_box(const Player *player) {
-  return rectf(player->box.x, player->box.y + 24, player->box.width, player->box.height);
-}
+Rectf player_collision_box(const Player *player) { return rectf(player->box.x, player->box.y + 24, player->box.width, player->box.height); }
 
 void player_load(Player *player, DataMap *map) {
   player->essence = data_map_get_or_default(map, "essence", data_int(0)).var.data_int;

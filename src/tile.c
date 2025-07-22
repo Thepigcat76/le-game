@@ -54,6 +54,9 @@ void tile_types_init() {
   // tile_type_debug_print(&TILES[0], buf);
   // puts(buf);
 
+  for (int i = 0; i < array_len(TILES); i++) {
+  }
+
   TILE_INSTANCE_EMPTY = tile_new(&TILES[TILE_EMPTY]);
 
   bump_init(&ADV_TILE_BUMP, malloc(256 * sizeof(AdvTileInstance)), 256);
@@ -67,6 +70,8 @@ void tile_categories_init(void) {
   TILE_REGISTER_CATEGORY(TILE_TREE, {.categories = {TILE_CATEGORY_WOOD}, .categories_amount = 1});
   TILE_REGISTER_CATEGORY(TILE_OVEN, {.categories = {TILE_CATEGORY_STONE}, .categories_amount = 1});
   TILE_REGISTER_CATEGORY(TILE_STONE, {.categories = {TILE_CATEGORY_STONE}, .categories_amount = 1});
+  // DEBUG
+  TILE_REGISTER_CATEGORY(TILE_GRASS, {.categories = {TILE_CATEGORY_STONE}, .categories_amount = 1});
 
   debug_category_lookup(GAME.tile_category_lookup);
 }
@@ -99,9 +104,9 @@ char *tile_type_to_string(const TileType *type) {
 void tile_type_debug_print(const TileType *type, char *buf) {
   sprintf(buf,
           "-- Tile Type Info --\n  id: %s\n  id-literal: %s\n  name: %s\n  layer: %d\n  has-texture: %s\n  dimensions: [%d-%d]\n  Tile "
-          "Item: %s",
+          "Item: %s\n  Var index: %d\n",
           tile_type_to_string(type), type->id_literal, type->name, type->layer, type->has_texture ? "true" : "false",
-          type->tile_dimensions.width, type->tile_dimensions.height, item_type_to_string(type->tile_item));
+          type->tile_dimensions.width, type->tile_dimensions.height, item_type_to_string(type->tile_item), type->variant_index);
 }
 
 // TILE INSTANCE
@@ -135,11 +140,11 @@ TileInstance tile_new(const TileType *type) {
       .box = {.width = TILE_SIZE, .height = TILE_SIZE},
       .adv_tile_instance = adv_tile_new(type),
       .cur_sprite_box = type->texture_props.uses_tileset ? rectf(default_pos.x, default_pos.y, default_sprite_res, default_sprite_res)
-                                                        : rectf(0, 0, type->texture.width, type->texture.height),
+                                                         : rectf(0, 0, type->texture.width, type->texture.height),
       .animation_frame = 0,
   };
 
-  if (type->id != TILE_EMPTY && type->variant_index != -1) {
+  if (type->id != TILE_EMPTY && type->texture_props.has_variants) {
     int max = tile_variants_amount_for_tile(type, 0, 0) - 1;
     if (max >= 0) {
       int r = GetRandomValue(0, max);
@@ -166,10 +171,10 @@ void tile_instance_debug(const TileInstance *tile, char *buf) {
   strcat(tex_data_buf, "]");
   sprintf(buf,
           "-- %s --\n  box: {w: %d, h: %d}\n  adv_tile: %p\n  texture_data: %s\n  sprite box: {x: %f, y: %f, w: %f, h: %f}\n  var_texture: "
-          "%s\n  anim_frame: %d",
-          tile_type_to_string(tile->type), tile->box.width, tile->box.height, tile->adv_tile_instance, tex_data_buf,
-          tile->cur_sprite_box.x, tile->cur_sprite_box.y, tile->cur_sprite_box.width, tile->cur_sprite_box.height,
-          tile->variant_texture.path, tile->animation_frame);
+          "%s\n  var_index: %d\n  anim_frame: %d",
+          tile_type_to_string(tile->type), tile->box.width, tile->box.height, tile->adv_tile_instance, tex_data_buf, tile->cur_sprite_box.x,
+          tile->cur_sprite_box.y, tile->cur_sprite_box.width, tile->cur_sprite_box.height, tile->variant_texture.path,
+          tile->type->variant_index, tile->animation_frame);
 }
 
 Rectf tile_collision_box_at(const TileInstance *tile, int x, int y) {
@@ -212,7 +217,7 @@ TileInstance tile_break_remainder(const TileInstance *tile, TilePos pos) {
 
 void tile_render_scaled(TileInstance *tile, int x, int y, float scale) {
   if (tile->type->has_texture) {
-    if (tile->type->variant_index != -1) {
+    if (tile->type->texture_props.has_variants) {
       DrawTextureRecEx(adv_texture_to_texture(&tile->variant_texture), tile->cur_sprite_box, vec2f(x, y), 0, scale, WHITE);
     } else {
       Texture2D texture = adv_texture_to_texture(&tile->type->texture);
@@ -226,7 +231,7 @@ void tile_render_scaled(TileInstance *tile, int x, int y, float scale) {
         // TraceLog(LOG_DEBUG, "height: %d, cur_frame: %d", frame_height, cur_frame);
       }
       DrawTextureRecEx(texture, sprite_rect, vec2f(x - offset_x, y - offset_y), 0, scale, WHITE);
-#ifdef SURTUR_DEBUG
+#ifdef DEBUG_BUILD
 #include "../include/game.h"
       if (GAME.debug_options.hitboxes_shown && tile->type->layer == TILE_LAYER_TOP) {
         rec_draw_outline(tile_collision_box_at(tile, x, y), GREEN);
@@ -238,10 +243,8 @@ void tile_render_scaled(TileInstance *tile, int x, int y, float scale) {
 
 void tile_render(TileInstance *tile, int x, int y, bool dbg) {
   if (tile->type->has_texture) {
-    if (tile->type->variant_index != -1) {
-      if (dbg) {
-        printf("Renderign\n");
-      }
+    if (tile->type->texture_props.has_variants) {
+      ASSERT(tile->variant_texture.path != NULL, "Tile %s doesnt have variant texture", tile_type_to_string(tile->type));
       DrawTextureRec(adv_texture_to_texture(&tile->variant_texture), tile->cur_sprite_box, vec2f(x, y), WHITE);
     } else {
       Texture2D texture = adv_texture_to_texture(&tile->type->texture);
@@ -251,20 +254,16 @@ void tile_render(TileInstance *tile, int x, int y, bool dbg) {
       sprite_rect.y += frame_height * cur_frame;
       int offset_x = (tile->type->tile_dimensions.width - TILE_SIZE) / 2;
       int offset_y = tile->type->tile_dimensions.height - TILE_SIZE;
-      if (tile->type->texture.type == TEXTURE_ANIMATED) {
-        // TraceLog(LOG_DEBUG, "height: %d, cur_frame: %d", frame_height, cur_frame);
-      }
-      if (dbg) {
-        printf("texture: %s, frame: %d, height: %d\n", tile->type->texture.path, cur_frame, frame_height);
-      }
       DrawTextureRec(texture, sprite_rect, vec2f(x - offset_x, y - offset_y), WHITE);
-#ifdef SURTUR_DEBUG
+#ifdef DEBUG_BUILD
 #include "../include/game.h"
       if (GAME.debug_options.hitboxes_shown && tile->type->layer == TILE_LAYER_TOP) {
         rec_draw_outline(tile_collision_box_at(tile, x, y), GREEN);
       }
 #endif
     }
+  } else {
+    TraceLog(LOG_DEBUG, "No texture: %s", tile_type_to_string(tile->type));
   }
 }
 

@@ -2,21 +2,19 @@
 
 #include "game_feature.h"
 #include "player.h"
-#include "world.h"
-
-typedef struct {
-  char *save_name;
-  float seed;
-} SaveConfig;
-
-typedef struct {
-    int id;
-    SaveConfig config;
-} SaveDescriptor;
+#include "space.h"
+#include "save_desc.h"
 
 typedef struct {
   SaveDescriptor descriptor;
-  World world;
+  Space *cur_space;
+  Space *loaded_spaces;
+  SpaceDescriptor *spaces;
   Player player;
   GameFeatureStore feature_store;
 } Save;
+
+Save save_new(SaveDescriptor desc);
+
+// Load space descriptors in save
+void save_load_spaces(Save *save);
