@@ -297,3 +297,7 @@ char *str_cpy(const char *input, Allocator *allocator) {
 char *btos(bool b) {
   return b ? "true" : "false";
 }
+
+inline bool str_eq(const char *a, const char *b) {
+  return strcmp(a, b) == 0;
+}

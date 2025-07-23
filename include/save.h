@@ -4,6 +4,7 @@
 #include "player.h"
 #include "space.h"
 #include "save_desc.h"
+#include "space_desc.h"
 
 typedef struct {
   SaveDescriptor descriptor;
@@ -12,6 +13,7 @@ typedef struct {
   SpaceDescriptor *spaces;
   Player player;
   GameFeatureStore feature_store;
+  SpaceIdLookup space_id_lookup;
 } Save;
 
 Save save_new(SaveDescriptor desc);

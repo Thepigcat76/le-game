@@ -1,5 +1,6 @@
 #include "../../include/config.h"
 #include "../../include/game.h"
+#include <raylib.h>
 
 static void game_world_tick(Game *game);
 
@@ -75,6 +76,10 @@ static void game_world_tick(Game *game) {
     } else {
       client_set_menu(game->client_game, MENU_NONE);
     }
+  }
+
+  if (IsKeyPressed(KEY_G)) {
+    game_enter_space(game, (SpaceDescriptor){.type = &SPACES[SPACE_DUNGEON_TEST], .id = 0});
   }
 #endif
 }

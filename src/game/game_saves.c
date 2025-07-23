@@ -105,10 +105,7 @@ static void game_create_save_config_file(Game *game, SaveConfig config) {
 }
 
 void game_create_save_world(Game *game) {
-  float seed = game->cur_save.descriptor.config.seed;
   player_set_pos_ex(&game->cur_save.player, TILE_SIZE * ((float)CHUNK_SIZE / 2), TILE_SIZE * ((float)CHUNK_SIZE / 2), false, false, false);
-  game->cur_save.cur_space->world.seed = seed;
-  world_gen(&game->cur_save.cur_space->world);
 }
 
 void game_create_save(Game *game, SaveDescriptor save_desc) {
@@ -139,9 +136,9 @@ void game_create_save(Game *game, SaveDescriptor save_desc) {
                           .player = player_new(),
                           .spaces = array_new_capacity(SpaceDescriptor, 8, &HEAP_ALLOCATOR),
                           .loaded_spaces = array_new_capacity(Space, 8, &HEAP_ALLOCATOR)};
-  array_add(game->cur_save.spaces, SPACE_DESC_DEFAULT);
+  array_add(game->cur_save.spaces, (SpaceDescriptor){.type = &SPACES[SPACE_BASE], .id = 0});
   Space default_space;
-  space_create_default(&default_space);
+  space_create_default(save_desc.config.seed, &default_space);
   array_add(game->cur_save.loaded_spaces, default_space);
   game->cur_save.cur_space = &game->cur_save.loaded_spaces[0];
   game->world = &game->cur_save.cur_space->world;

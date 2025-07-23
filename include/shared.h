@@ -14,7 +14,7 @@
 
 #define CHUNK_SIZE 16
 
-#define WORLD_LOADED_CHUNKS 40
+#define WORLD_LOADED_CHUNKS 10
 
 #define TILE_SIZE 16
 
@@ -198,11 +198,11 @@ char *str_cpy_heap(const char *in);
     exit(1);                                                                                                                               \
   } while (0)
 
-#define PANIC_FMT(fmt, ...)                                                                                                                \
+#define PANIC_FMT(...)                                                                                                                \
   do {                                                                                                                                     \
     /* We allocate a huge buffer cuz this is gonna crash the program anyways lol */                                                        \
     char buf[4096 + 2];                                                                                                                    \
-    snprintf(buf, 4096 + 2, fmt __VA_OPT__(, ) __VA_ARGS__);                                                                               \
+    __VA_OPT__(snprintf(buf, 4096 + 2, __VA_ARGS__);)                                                                               \
     buf[4096] = '\n';                                                                                                                      \
     buf[4096 + 1] = '\0';                                                                                                                  \
     PANIC(buf);                                                                                                                            \
@@ -229,3 +229,5 @@ char *str_cpy_heap(const char *in);
 #define IS_KEY_DOWN(id) GAME.client_game->pressed_keys.id##_key_down && !(GAME.client_game->pressed_keys.id##_key_down = false)
 
 char *btos(bool b);
+
+bool str_eq(const char *a, const char *b);

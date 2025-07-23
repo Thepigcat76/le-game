@@ -34,8 +34,12 @@ static void client_poll_keybinds(ClientGame *client) {
 }
 
 static void registry_init(void) {
+  // Items need to be done before tiles,
+  // cuz tiles reference the items
   item_types_init();
   tile_types_init();
+  world_types_init();
+  space_types_init();
 }
 
 static void client_start(void) {
@@ -64,6 +68,7 @@ static void client_start(void) {
   game_init(&GAME);
   CLIENT_GAME.game = &GAME;
   CLIENT_GAME.cur_save = &CLIENT_GAME.game->cur_save;
+  CLIENT_GAME.world = GAME.world;
 
   // init registries
   registry_init();

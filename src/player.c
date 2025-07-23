@@ -96,8 +96,6 @@ void player_render(Player *player, float alpha) {
   }
 }
 
-static const Vec2i RENDER_CHUNK_OFFSETS[4] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
-
 void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool walking_particles, bool check_for_water) {
   if (check_for_water) {
     player->in_water = world_ground_tile_at(WORLD_PTR, player->tile_pos)->type->id == TILE_WATER;
@@ -122,14 +120,10 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool
   if (update_chunk && !world_has_chunk_at(WORLD_PTR, player->chunk_pos)) {
     world_gen_chunk_at(WORLD_PTR, player->chunk_pos);
 
-    world_prepare_chunk_rendering(WORLD_PTR, &WORLD_PTR->chunks[world_chunk_index_by_pos(WORLD_PTR, player->chunk_pos)]);
-    for (int i = 0; i < 4; i++) {
-      Vec2i offset = RENDER_CHUNK_OFFSETS[i];
-      world_prepare_chunk_rendering(
-          WORLD_PTR,
-          &WORLD_PTR->chunks[world_chunk_index_by_pos(WORLD_PTR, vec2i(player->chunk_pos.x + offset.x, player->chunk_pos.y + offset.y))]);
+    Chunk *chunk = world_chunk_at(WORLD_PTR, player->chunk_pos);
+    if (chunk != NULL) {
+      world_prepare_chunk_rendering_update_nearby(WORLD_PTR, chunk);
     }
-    world_prepare_rendering(WORLD_PTR);
   }
 
   if (walking_particles && GetRandomValue(0, 4) == 0) {

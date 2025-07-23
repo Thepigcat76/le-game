@@ -12,6 +12,16 @@
 
 #define array_free(arr) _internal_array_free(arr)
 
+#define array_foreach(arr, type, elem, ...)                                                                                                \
+  do {                                                                                                                                     \
+    size_t len = array_len(arr);                                                                                                           \
+    type elem;                                                                                                                             \
+    for (size_t _arr_foreach_index = 0; _arr_foreach_index < len; _arr_foreach_index++) {                                                         \
+      elem = arr[_arr_foreach_index];                                                                                                      \
+      __VA_ARGS__                                                                                                                          \
+    }                                                                                                                                      \
+  } while (0)
+
 typedef struct {
   Allocator *allocator;
   size_t capacity;
@@ -33,10 +43,10 @@ void _internal_array_remove(void *arr_ptr, size_t index);
 
 void _internal_array_clear(void *arr_ptr);
 
-#define array_add(arr, ...)                                                                                            \
-  do {                                                                                                                 \
-    __typeof__(*(arr)) _tmp = (__VA_ARGS__);                                                                           \
-    _internal_array_add((void **)&(arr), &_tmp, sizeof(_tmp));                                                         \
+#define array_add(arr, ...)                                                                                                                \
+  do {                                                                                                                                     \
+    __typeof__(*(arr)) _tmp = (__VA_ARGS__);                                                                                               \
+    _internal_array_add((void **)&(arr), &_tmp, sizeof(_tmp));                                                                             \
   } while (0)
 
 #define array_remove(array, index) _internal_array_remove(array, index)

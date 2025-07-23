@@ -1,6 +1,9 @@
 #pragma once
 
 #include "being.h"
+#include "save_desc.h"
+#include "space_desc.h"
+#include "world_type.h"
 #include "chunk.h"
 #include "data.h"
 #include "shared.h"
@@ -9,22 +12,25 @@
 #include <unistd.h>
 
 typedef struct {
-  Vec2i chunks_positions[WORLD_LOADED_CHUNKS];
-  size_t indices[WORLD_LOADED_CHUNKS];
+  Vec2i *chunks_positions;
+  size_t *indices;
 } ChunkLookup;
 
-typedef struct _world {
+typedef struct {
+  const WorldType *type;
+  const SaveDescriptor *save_desc;
   Chunk *chunks;
   ChunkLookup chunk_lookup;
+  // TODO: Use dynamic array for beings
   struct _being_instance beings[MAX_WORLD_BEINGS_AMOUNT];
   int beings_amount;
-  float seed;
   bool initialized;
+  float seed;
 } World;
 
-World world_new_no_chunks();
+World world_new_no_chunks(void);
 
-World world_new();
+World world_new(const WorldType *world_type, float seed);
 
 void world_initialize(World *world);
 
@@ -34,11 +40,13 @@ void world_add_chunk(World *world, Vec2i pos, Chunk chunk);
 
 ssize_t world_chunk_index_by_pos(const World *world, Vec2i pos);
 
-TileInstance *world_ground_tile_at(World *world, TilePos tile_pos);
+Chunk *world_chunk_at(const World *world, ChunkPos tile_pos);
 
-TileInstance *world_highest_tile_at(World *world, TilePos tile_pos);
+TileInstance *world_ground_tile_at(const World *world, TilePos tile_pos);
 
-TileInstance *world_tile_at(World *world, TilePos tile_pos, TileLayer layer);
+TileInstance *world_highest_tile_at(const World *world, TilePos tile_pos);
+
+TileInstance *world_tile_at(const World *world, TilePos tile_pos, TileLayer layer);
 
 void world_gen(World *world);
 
@@ -55,6 +63,8 @@ bool world_remove_tile(World *world, TilePos tile_pos);
 void world_prepare_rendering(World *world);
 
 void world_prepare_chunk_rendering(World *world, Chunk *chunk);
+
+void world_prepare_chunk_rendering_update_nearby(World *world, Chunk *chunk);
 
 void world_set_tile_texture_data(World *world, TileInstance *tile, int x, int y);
 

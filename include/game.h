@@ -11,6 +11,7 @@
 #include "shaders.h"
 #include "shared.h"
 #include "sounds.h"
+#include "space_desc.h"
 #include "tile.h"
 #include "window.h"
 #include "ui.h"
@@ -74,6 +75,10 @@ void game_feature_create(Game *game);
 void game_reload(Game *game);
 
 void game_tick(Game *game);
+
+// GAME SPACES
+
+void game_enter_space(Game *game, SpaceDescriptor desc);
 
 // GAME LOAD/SAVE
 

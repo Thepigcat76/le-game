@@ -21,33 +21,50 @@ static void *_internal_array_double_size(void *arr, size_t item_size) {
   _InternalArrayHeader *h = ((_InternalArrayHeader *)arr) - 1;
   size_t arr_len = h->len;
   size_t arr_new_capacity = h->capacity * 2;
-  Allocator *arr_allocator = h->allocator;
-  size_t size = item_size * arr_new_capacity + sizeof(_InternalArrayHeader);
-  void *temp = h->allocator->alloc(size);
-  memcpy(temp, h, sizeof(_InternalArrayHeader) + h->len * item_size);
-  h->allocator->dealloc(h);
-  return ((_InternalArrayHeader *)temp) + 1;
+  Allocator *allocator = h->allocator;
+
+  size_t new_size = item_size * arr_new_capacity + sizeof(_InternalArrayHeader);
+  void *temp = allocator->alloc(new_size);
+  if (!temp)
+    return NULL;
+
+  _InternalArrayHeader *new_h = (_InternalArrayHeader *)temp;
+  *new_h = *h;  // Copy metadata
+  new_h->capacity = arr_new_capacity;
+
+  void *new_arr = new_h + 1;
+  memcpy(new_arr, arr, arr_len * item_size);
+
+  allocator->dealloc(h);
+  return new_arr;
 }
 
-static size_t _internal_array_prepare_add(void *arr, size_t item_size) {
+static void *_internal_array_prepare_add(void *arr, size_t item_size, size_t *out_len) {
   _InternalArrayHeader *h = ((_InternalArrayHeader *)(arr)) - 1;
+
   if (h->len >= h->capacity) {
     arr = _internal_array_double_size(arr, item_size);
     h = ((_InternalArrayHeader *)(arr)) - 1;
   }
-  return h->len;
+
+  if (out_len) {
+    *out_len = h->len;
+  }
+
+  return arr;
 }
 
 inline void _internal_array_add(void **arr_ptr, void *item, size_t item_size) {
-  void *arr = *arr_ptr;
-  size_t len = _internal_array_prepare_add(arr, item_size);
+  size_t len = 0;
+
+  // Prepare and get updated pointer and target index
+  void *arr = _internal_array_prepare_add(*arr_ptr, item_size, &len);
+  *arr_ptr = arr;
 
   _InternalArrayHeader *h = ((_InternalArrayHeader *)arr) - 1;
-  memcpy((char *)arr + len * item_size, item, item_size);
-  _internal_array_set_len(arr, len + 1);
 
-  // In case realloc happened
-  *arr_ptr = arr;
+  memcpy((char *)arr + len * item_size, item, item_size);
+  h->len++;
 }
 
 void _internal_array_remove(void *arr_ptr, size_t index) {

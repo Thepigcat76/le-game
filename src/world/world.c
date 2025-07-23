@@ -1,7 +1,6 @@
 #include "../../include/world.h"
 #include "../../include/array.h"
 #include "../../include/being.h"
-#include "../../include/game.h"
 #include "../../include/item.h"
 #include "../../include/net/client.h"
 #include "../../include/particle.h"
@@ -12,22 +11,35 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
+WorldType *WORLD_TYPES;
+
 Texture2D particle_texture;
 
-World world_new_no_chunks() {
+World world_new_no_chunks(void) {
   particle_texture = LoadTexture("res/assets/particle.png");
   return (World){
       .chunks = NULL,
       .initialized = false,
+      .type = NULL,
   };
 }
 
-World world_new() {
+World world_new(const WorldType *world_type, float seed) {
   particle_texture = LoadTexture("res/assets/particle.png");
   return (World){
       .chunks = array_new_capacity(Chunk, WORLD_LOADED_CHUNKS, &HEAP_ALLOCATOR),
+      .chunk_lookup = {.chunks_positions = array_new_capacity(ChunkPos, WORLD_LOADED_CHUNKS, &HEAP_ALLOCATOR),
+                       .indices = array_new_capacity(size_t, WORLD_LOADED_CHUNKS, &HEAP_ALLOCATOR)},
       .initialized = false,
+      .type = world_type,
+      .seed = seed,
   };
+}
+
+void world_types_init(void) {
+  WORLD_TYPES = array_new_capacity(WorldType, 16, &HEAP_ALLOCATOR);
+  WORLD_TYPES[WORLD_BASE] = (WorldType){.id = WORLD_BASE};
+  WORLD_TYPES[WORLD_DUNGEON_TEST] = (WorldType){.id = WORLD_DUNGEON_TEST};
 }
 
 void world_initialize(World *world) {
@@ -38,12 +50,12 @@ void world_initialize(World *world) {
 void world_add_chunk(World *world, ChunkPos pos, Chunk chunk) {
   array_add(world->chunks, chunk);
   size_t len = array_len(world->chunks) - 1;
-  world->chunk_lookup.indices[len] = len;
-  world->chunk_lookup.chunks_positions[len] = pos;
+  array_add(world->chunk_lookup.indices, len);
+  array_add(world->chunk_lookup.chunks_positions, pos);
 }
 
 ssize_t world_chunk_index_by_pos(const World *world, ChunkPos pos) {
-  size_t len = array_len(world->chunks) - 1;
+  size_t len = array_len(world->chunks);
   for (size_t i = 0; i < len; i++) {
     if (vec2_eq(&world->chunk_lookup.chunks_positions[i], &pos)) {
       return world->chunk_lookup.indices[i];
@@ -52,22 +64,44 @@ ssize_t world_chunk_index_by_pos(const World *world, ChunkPos pos) {
   return -1;
 }
 
-bool world_has_chunk_at(const World *world, Vec2i chunk_pos) {
+bool world_has_chunk_at(const World *world, ChunkPos chunk_pos) {
   ssize_t index = world_chunk_index_by_pos(world, chunk_pos);
   return index != -1;
 }
 
-void world_gen_chunk_at(World *world, Vec2i chunk_pos) {
-  Chunk chunk;
+static void world_print_debug_chunk_lookup(const ChunkLookup *lookup) {
+  printf("-- Chunk Lookup --\n");
+  size_t len = array_len(lookup->chunks_positions);
+  for (int i = 0; i < len; i++) {
+    printf("Chunk %d, %d - %zu\n", lookup->chunks_positions[i].x, lookup->chunks_positions[i].y, lookup->indices[i]);
+  }
+}
+
+void world_gen_chunk_at(World *world, ChunkPos chunk_pos) {
+  Chunk chunk = {.world_type = world->type};
 
   chunk_gen(&chunk, chunk_pos, world->seed);
 
   world_add_chunk(world, chunk_pos, chunk);
+
+  TraceLog(LOG_INFO, "Added chunk %zu", array_len(world->chunks) - 1);
+
+  world_print_debug_chunk_lookup(&world->chunk_lookup);
 }
 
-TileInstance *world_ground_tile_at(World *world, TilePos tile_pos) { return world_tile_at(world, tile_pos, TILE_LAYER_GROUND); }
+Chunk *world_chunk_at(const World *world, ChunkPos chunk_pos) {
+  if (world_has_chunk_at(world, chunk_pos)) {
+    ssize_t index = world_chunk_index_by_pos(world, chunk_pos);
+    if (index != -1) {
+      return &world->chunks[index];
+    }
+  }
+  return NULL;
+}
 
-TileInstance *world_highest_tile_at(World *world, TilePos tile_pos) {
+TileInstance *world_ground_tile_at(const World *world, TilePos tile_pos) { return world_tile_at(world, tile_pos, TILE_LAYER_GROUND); }
+
+TileInstance *world_highest_tile_at(const World *world, TilePos tile_pos) {
   for (int l = TILE_LAYERS_AMOUNT - 1; l >= 0; l--) {
     TileInstance *tile = world_tile_at(world, tile_pos, l);
     if (tile->type->id != TILE_EMPTY || l == 0) {
@@ -77,7 +111,7 @@ TileInstance *world_highest_tile_at(World *world, TilePos tile_pos) {
   return &TILE_INSTANCE_EMPTY;
 }
 
-TileInstance *world_tile_at(World *world, TilePos tile_pos, TileLayer layer) {
+TileInstance *world_tile_at(const World *world, TilePos tile_pos, TileLayer layer) {
   int chunk_tile_x = floor_mod(tile_pos.x, CHUNK_SIZE);
   int chunk_tile_y = floor_mod(tile_pos.y, CHUNK_SIZE);
 
@@ -95,6 +129,19 @@ TileInstance *world_tile_at(World *world, TilePos tile_pos, TileLayer layer) {
   return &TILE_INSTANCE_EMPTY;
 }
 
+static const Vec2i RENDER_CHUNK_OFFSETS[4] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+
+void world_prepare_chunk_rendering_update_nearby(World *world, Chunk *chunk) {
+  world_prepare_chunk_rendering(world, chunk);
+  for (int i = 0; i < 4; i++) {
+    Vec2i offset = RENDER_CHUNK_OFFSETS[i];
+    int index = world_chunk_index_by_pos(world, vec2i(chunk->chunk_pos.x + offset.x, chunk->chunk_pos.y + offset.y));
+    if (index != -1) {
+      world_prepare_chunk_rendering(world, &world->chunks[index]);
+    }
+  }
+}
+
 void world_gen(World *world) {
   for (int y = -1; y <= 1; y++) {
     for (int x = -1; x <= 1; x++) {
@@ -108,6 +155,7 @@ void world_gen(World *world) {
     }
   }
   TraceLog(LOG_INFO, "Generated world");
+  world_print_debug_chunk_lookup(&world->chunk_lookup);
 
   world_initialize(world);
 }
@@ -255,7 +303,7 @@ void world_prepare_rendering(World *world) {
   size_t len = array_len(world->chunks);
   TraceLog(LOG_DEBUG, "Chunks for world render prep: %zu", len);
   for (int i = 0; i < len; i++) {
-    world_prepare_chunk_rendering(world, &world->chunks[i]);
+    world_prepare_chunk_rendering_update_nearby(world, &world->chunks[i]);
     TraceLog(LOG_DEBUG, "Chunk at pos: %d, %d prepared", world->chunks[i].chunk_pos.x, world->chunks[i].chunk_pos.y);
   }
 }
@@ -331,11 +379,13 @@ static void world_load_beings(World *world, const DataMap *data) {
 }
 
 void world_load(World *world, const DataMap *data) {
+  WorldId world_id = data_map_get(data, "world_id").var.data_int;
+  world->type = &WORLD_TYPES[world_id];
   DataList chunks_list = data_map_get(data, "chunks").var.data_list;
   size_t chunks = chunks_list.len;
   for (int i = 0; i < chunks; i++) {
     DataMap data_map = data_list_get(&chunks_list, i).var.data_map;
-    Chunk chunk;
+    Chunk chunk = {.world_type = world->type};
     chunk_load(&chunk, &data_map);
     world_add_chunk(world, chunk.chunk_pos, chunk);
   }
@@ -365,6 +415,7 @@ void world_save(const World *world, DataMap *data) {
     chunk_save(chunk, &map);
     data_list_add(&chunks_list, data_map(map));
   }
+  data_map_insert(data, "world_id", data_int(world->type->id));
   data_map_insert(data, "chunks", data_list(chunks_list));
   TraceLog(LOG_DEBUG, "Total saved chunks: %zu", array_len(world->chunks));
   world_save_beings(world, data);

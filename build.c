@@ -71,7 +71,6 @@ int main(int argc, char **argv) {
 
   make_dir(OPTS.out_dir);
   cached_compile(OPTS.compiler, libraries, flags, defined_flags, extra_flags, OPTS.out_dir, out_name);
-  printf("Cmd: %s\n", _internal_cmd_buf);
 
   if (argc >= 2) {
     if (STR_CMP_OR(argv[1], "r", "run")) {
@@ -184,7 +183,9 @@ static void cached_compile(const char *compiler, const char *libs, const char *f
     filename = filename ? filename + 1 : file_buf;
     filename[strlen(filename) - 1] = 'o';
 
-    compile("ccache %s -c %s -o ./build/%s %s %s", compiler, _internal_cache_src_files[i], filename, flags, defined_flags);
+    const char *extra_compile_flags = "";//"-Wall -Wextra";
+
+    compile("ccache %s -c %s -o ./build/%s %s %s %s", compiler, _internal_cache_src_files[i], filename, flags, defined_flags, extra_compile_flags);
     sprintf(out_files[out_files_amount++], "./build/%s", filename);
   }
 
