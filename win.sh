@@ -1,3 +1,3 @@
-surtur build --win -d
+gurd
 mv ./build/cozy-wrath.exe ./
 git add cozy-wrath.exe

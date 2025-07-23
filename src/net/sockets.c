@@ -1,6 +1,6 @@
 #include "../../include/net/sockets.h"
 #include <pthread.h>
-#ifdef SURTUR_BUILD_WIN
+#ifdef TARGET_WIN
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
@@ -17,7 +17,7 @@
 
 int32_t sockets_open_server(const char *ip_address, uint32_t port) {
   int opt = 1;
-#ifdef SURTUR_BUILD_WIN
+#ifdef TARGET_WIN
   SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
   setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (const char *)&opt, sizeof(opt));
 #else
@@ -31,7 +31,7 @@ int32_t sockets_open_server(const char *ip_address, uint32_t port) {
     return -1;
   }
 
-#ifdef SURTUR_BUILD_WIN
+#ifdef TARGET_WIN
   if (sock == SOCKET_ERROR) {
     fprintf(stderr, "Socket failed: %d\n", WSAGetLastError());
     return -1;
@@ -59,7 +59,7 @@ int32_t sockets_open_server(const char *ip_address, uint32_t port) {
 }
 
 int32_t sockets_connect_to_server(const char *ip_address, uint32_t port) {
-#ifdef SURTUR_BUILD_WIN
+#ifdef TARGET_WIN
   SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
 #else
   int sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -88,7 +88,7 @@ int32_t sockets_connect_to_server(const char *ip_address, uint32_t port) {
 int64_t sockets_server_accept_client(int32_t socket_addr) {
   struct sockaddr_in client_addr;
   socklen_t client_len = sizeof(client_addr);
-#ifdef SURTUR_BUILD_WIN
+#ifdef TARGET_WIN
   SOCKET client_fd = accept(socket_addr, (struct sockaddr *)&client_addr, &client_len);
 #else
   int client_fd = accept(socket_addr, (struct sockaddr *)&client_addr, &client_len);
@@ -116,7 +116,7 @@ void sockets_server_listen_to_clients(ConnectionHandleFunc connection_handle_fun
 int64_t sockets_server_poll_clients(PollClient *client_addresses, uint64_t client_addresses_amount, int32_t timeout) {
   if (client_addresses_amount > 0) {
 
-#ifdef SURTUR_BUILD_WIN
+#ifdef TARGET_WIN
     int poll_result = WSAPoll(client_addresses, client_addresses_amount, timeout);
 #else
     int poll_result = poll(client_addresses, client_addresses_amount, timeout);
@@ -127,7 +127,7 @@ int64_t sockets_server_poll_clients(PollClient *client_addresses, uint64_t clien
 }
 
 void sockets_server_handle_poll(int64_t result) {
-#ifdef SURTUR_BUILD_WIN
+#ifdef TARGET_WIN
   if (result == SOCKET_ERROR) {
     fprintf(stderr, "WSAPoll failed: %d\n", WSAGetLastError());
   }
@@ -139,7 +139,7 @@ void sockets_server_handle_poll(int64_t result) {
 }
 
 void sockets_close(int socket_addr) {
-#ifdef SURTUR_BUILD_WIN
+#ifdef TARGET_WIN
   closesocket(socket_addr);
 #else
   close(socket_addr);

@@ -1,5 +1,5 @@
 CompileFlags:
   Add: [
-    -I/home/thepigcat/.surtur/deps,
-    -DDEBUG_BUILD
+    -DDEBUG_BUILD,
+    -DTARGET_LINUX
   ]

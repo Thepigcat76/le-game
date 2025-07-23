@@ -19,6 +19,7 @@ typedef struct {
   PRESSED_KEY(reload);
   PRESSED_KEY(zoom_in);
   PRESSED_KEY(zoom_out);
+  PRESSED_KEY(visit_dungeon);
 } PressedKeys;
 
 typedef struct {
@@ -34,6 +35,7 @@ typedef struct {
   int reload_key;
   int zoom_in_key;
   int zoom_out_key;
+  int visit_dungeon_key;
 } Keybinds;
 
 extern Keybinds KEYBINDS;

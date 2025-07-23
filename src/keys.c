@@ -83,5 +83,6 @@ void keybinds_on_reload(ClientGame *game) {
     KEYBIND(KEYBINDS.reload_key, "reload");
     KEYBIND(KEYBINDS.zoom_in_key, "zoom-in");
     KEYBIND(KEYBINDS.zoom_out_key, "zoom-out");
+    KEYBIND(KEYBINDS.visit_dungeon_key, "visit-dungeon");
   });
 }

@@ -1,5 +1,5 @@
 #include "../include/shared.h"
-#ifndef SURTUR_BUILD_WIN
+#ifndef TARGET_WIN
 #include <arpa/inet.h>
 #include <ifaddrs.h>
 #include <netinet/in.h>
@@ -11,7 +11,9 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
+#if defined (TARGET_LINUX) && defined (DEBUG_BUILD)
 #include <execinfo.h>
+#endif
 
 Texture2D TEXT_INPUT_TEXTURE;
 
@@ -212,7 +214,7 @@ float string_to_world_seed(const char *str) {
   return (hash % 100000) / 100000.0f;
 }
 int ip_addr(char *ip_addr_buf) {
-#ifndef SURTUR_BUILD_WIN
+#ifndef TARGET_WIN
   struct ifaddrs *ifaddr, *ifa;
 
   if (getifaddrs(&ifaddr) == -1) {
@@ -237,6 +239,7 @@ int ip_addr(char *ip_addr_buf) {
 }
 
 void stack_trace_print(void) {
+#if defined (TARGET_LINUX) && defined (DEBUG_BUILD)
   void *buffer[100];
   int nptrs = backtrace(buffer, 100);
   char **symbols = backtrace_symbols(buffer, nptrs);
@@ -252,6 +255,7 @@ void stack_trace_print(void) {
   }
 
   free(symbols);
+#endif
 }
 
 

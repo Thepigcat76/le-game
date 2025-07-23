@@ -10,5 +10,6 @@
   "toggle-hitbox": "H",
   "zoom-in": "Up",
   "zoom-out": "Down",
-  "open-close-debug-menu": "F3"
+  "open-close-debug-menu": "F3",
+  "visit-dungeon": "G"
 }

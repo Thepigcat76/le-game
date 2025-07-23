@@ -78,7 +78,7 @@ static void game_world_tick(Game *game) {
     }
   }
 
-  if (IsKeyPressed(KEY_G)) {
+  if (IS_KEY_PRESSED(visit_dungeon)) {
     game_enter_space(game, (SpaceDescriptor){.type = &SPACES[SPACE_DUNGEON_TEST], .id = 0});
   }
 #endif
