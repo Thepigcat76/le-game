@@ -57,11 +57,12 @@ int main(int argc, char **argv) {
 
   if (argc >= 2) {
     if (STR_CMP_OR(argv[1], "r", "run")) {
-      run(OPTS.out_dir, out_name, argc, argv);
-      return 0;
+      return run(OPTS.out_dir, out_name, argc, argv);
     } else if (STR_CMP_OR(argv[1], "d", "dbg")) {
       dbg(OPTS.out_dir, out_name, OPTS.debug);
       return 0;
+    } else if (STR_CMP_OR(argv[1], "s", "server")) {
+      return run(OPTS.out_dir, out_name, 5, (char *[5]) {"gurd", "r", "--server", "127.0.0.1", "12345"});
     } else {
       fprintf(stderr, "[Error]: Invalid first arg: %s\n", argv[1]);
       return 1;

@@ -1,11 +1,21 @@
 #pragma once
 
+#ifdef TARGET_WIN
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
+#include <poll.h>
+#endif
 #include <pthread.h>
 #include <stdint.h>
 #include <stdlib.h>
 
 #define DEBUG_PORT 12345
 #define MAX_CLIENTS 32
+
+#define _INVALID_SOCKET (int)(~0)
 
 typedef int32_t addr_t;
 
