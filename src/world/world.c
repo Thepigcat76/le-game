@@ -146,12 +146,6 @@ void world_gen(World *world) {
   for (int y = -1; y <= 1; y++) {
     for (int x = -1; x <= 1; x++) {
       world_gen_chunk_at(world, vec2i(x, y));
-      // for (int cy = 0; cy < 16; cy++) {
-      //   for (int cx = 0; cx < 16; cx++) {
-      //     printf("%d", world->chunks[0].tiles[cy][cx][TILE_LAYER_GROUND].type->id);
-      //   }
-      //   puts("");
-      // }
     }
   }
   TraceLog(LOG_INFO, "Generated world");

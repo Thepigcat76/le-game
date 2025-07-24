@@ -18,7 +18,7 @@ void space_types_init(void) {
 
 void space_create(SpaceDescriptor desc, float seed, Space *space) {
   space->desc = desc;
-  space->world = world_new(desc.type->world_type, space->seed);
+  space->world = world_new(desc.type->world_type, seed);
   world_gen(&space->world);
 }
 
