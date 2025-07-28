@@ -27,8 +27,8 @@ void chunk_gen(Chunk *chunk, ChunkPos chunk_pos, float world_seed) {
         float fx = (chunk_x + x) * 0.1 + seed_offset;
         float fy = (chunk_y + y) * 0.1 + seed_offset;
         float noise = (stb_perlin_noise3(fx, fy, 0.0f, 0, 0, 0) + 1) * 10.0;
+        TileId tile_id;
         if (l == TILE_LAYER_GROUND) {
-          TileId tile_id;
           if (chunk->world_type->id == WORLD_BASE) {
             if (noise > 5) {
               if (noise < 8) {
@@ -40,18 +40,22 @@ void chunk_gen(Chunk *chunk, ChunkPos chunk_pos, float world_seed) {
               tile_id = TILE_WATER;
             }
           } else if (chunk->world_type->id == WORLD_DUNGEON_TEST) {
-            tile_id = TILE_STONE;
+            if (noise > 4) {
+              tile_id = TILE_DUNGEON_FLOOR;
+            } else {
+              tile_id = TILE_STONE;
+            }
           } else {
             PANIC_FMT("NYI World gen for type: %d", chunk->world_type->id);
           }
-          chunk->tiles[y][x][l] = tile_new(&TILES[tile_id]);
         } else {
           // if (noise > 9.9) {
           //   chunk->tiles[y][x][l] = tile_new(&TILES[TILE_TREE]);
           // } else {
-          chunk->tiles[y][x][l] = tile_new(&TILES[TILE_EMPTY]);
+          tile_id = TILE_EMPTY;
           //}
         }
+        chunk->tiles[y][x][l] = tile_new(&TILES[tile_id]);
       }
     }
   }

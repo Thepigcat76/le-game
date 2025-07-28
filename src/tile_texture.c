@@ -22,7 +22,7 @@ void tile_on_reload(ClientGame *game) {
 
   on_tile_variants_reload();
 
-  for (int i = 0; i < array_len(TILES); i++) {
+  for (int i = 0; i < TILES_AMOUNT; i++) {
     if (TILES[i].id != TILE_EMPTY) {
       tile_type_init(&TILES[i]);
     }

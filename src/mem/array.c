@@ -29,7 +29,7 @@ static void *_internal_array_double_size(void *arr, size_t item_size) {
     return NULL;
 
   _InternalArrayHeader *new_h = (_InternalArrayHeader *)temp;
-  *new_h = *h;  // Copy metadata
+  *new_h = *h; // Copy metadata
   new_h->capacity = arr_new_capacity;
 
   void *new_arr = new_h + 1;
@@ -67,19 +67,31 @@ inline void _internal_array_add(void **arr_ptr, void *item, size_t item_size) {
   h->len++;
 }
 
+void _internal_array_set(void **arr_ptr, void *item, size_t index, size_t item_size) {
+  void *arr = *arr_ptr;
+  _InternalArrayHeader *h = ((_InternalArrayHeader *)arr) - 1;
+
+#ifdef DEBUG_BUILD
+  if (index >= h->len) {
+    PANIC_FMT("Index %zu out of bounds for array of length %zu", index, h->len);
+  }
+#endif
+
+  memcpy((char *)arr + index * item_size, item, item_size);
+}
+
 void _internal_array_remove(void *arr_ptr, size_t index) {
   if (!arr_ptr)
     return;
 
   _InternalArrayHeader *h = ((_InternalArrayHeader *)arr_ptr) - 1;
 
-  if (index >= h->len) {
 #ifdef DEBUG_BUILD
 #include <stdio.h>
-    printf("Index %zu out of bounds for array of length %zu\n", index, h->len);
-#endif
-    return;
+  if (index >= h->len) {
+    PANIC_FMT("Index %zu out of bounds for array of length %zu", index, h->len);
   }
+#endif
 
   char *arr = (char *)arr_ptr;
   size_t item_size = h->item_size;

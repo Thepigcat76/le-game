@@ -10,7 +10,7 @@ struct _tile_props {
 };
 
 #define TILE_TYPE_INIT(tile_id, tile_layer, item_type_ptr, texture_path, ...)                                                              \
-  do {                                                                                                                                        \
+  do {                                                                                                                                     \
     bool has_texture = texture_path != NULL;                                                                                               \
     AdvTexture texture = has_texture ? adv_texture_load("res/assets/" texture_path ".png") : (AdvTexture){0};                              \
     struct _tile_props props = (struct _tile_props){__VA_ARGS__};                                                                          \
@@ -24,5 +24,6 @@ struct _tile_props {
                             .tile_item = item_type_ptr,                                                                                    \
                             .tile_props = props.tile_props,                                                                                \
                             .texture_props = props.texture_props};                                                                         \
-    array_add(TILES, t);                                                                                                                    \
+    array_set(TILES, tile_id, t);                                                                                                          \
+    TILES_AMOUNT++;                                                                                                                        \
   } while (0)

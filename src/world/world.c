@@ -199,8 +199,8 @@ bool world_set_tile_on_layer(World *world, TilePos tile_pos, TileInstance tile, 
 
 bool world_place_tile(World *world, TilePos tile_pos, TileInstance tile) {
   TileLayer layer = tile.type->layer;
-  for (int l = layer; l >= 0; l--) {
-    if (l == 0) {
+  for (int l = layer - 1; l >= 0; l--) {
+    if (l <= 0) {
       break;
     }
 

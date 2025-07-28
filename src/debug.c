@@ -38,7 +38,7 @@ static void debug_render_game_object_overlay() {
   }
   case DEBUG_DISPLAY_ALL_TILES: {
     GAME.client_game->paused = true;
-    for (int i = 0; i < array_len(TILES); i++) {
+    for (int i = 0; i < TILES_AMOUNT; i++) {
       double x = ((float)SCREEN_WIDTH / 2) - (ITEMS_AMOUNT * 16 * 3.5) / 2 + (i * 32 * 3.5);
       double y = ((float)SCREEN_HEIGHT / 2) - 8 * 3.5;
       tile_render_scaled(&GAME.debug_options.selectable_tiles[i], x - 160, y, 3.5);
@@ -110,7 +110,7 @@ void debug_tick() {
 
   if (keycode >= KEY_ZERO && keycode <= KEY_NINE) {
     int tile_index = keycode - KEY_ZERO;
-    if (tile_index < array_len(TILES)) {
+    if (tile_index < TILES_AMOUNT) {
       GAME.debug_options.selected_tile_to_place_instance = tile_new(&TILES[tile_index]);
     }
   }

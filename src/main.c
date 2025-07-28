@@ -78,7 +78,9 @@ static void client_start(void) {
 
   GAME.debug_options.selectable_tiles = array_new_capacity(TileInstance, 256, &HEAP_ALLOCATOR);
 
-  for (int i = 0; i < array_len(TILES); i++) {
+  TraceLog(LOG_DEBUG, "Tiles amount: %zu", TILES_AMOUNT);
+
+  for (int i = 0; i < TILES_AMOUNT; i++) {
     TileInstance tile = tile_new(&TILES[i]);
     array_add(GAME.debug_options.selectable_tiles, tile);
     char buf[512];

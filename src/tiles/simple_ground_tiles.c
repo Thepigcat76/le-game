@@ -17,6 +17,7 @@ void empty_tile_init() {
 
                 .texture_props = {.uses_tileset = false, .has_variants = false},
             });
+  TILES_AMOUNT++;
 }
 
 void simple_ground_tiles_tile_init() {
@@ -27,4 +28,6 @@ void simple_ground_tiles_tile_init() {
   TILE_TYPE_INIT(TILE_STONE, TILE_LAYER_GROUND, &ITEMS[ITEM_STONE], "stone", TILE_PROPS_DEFAULT_WITH_COLOR(GRAY));
   TILE_TYPE_INIT(TILE_WATER, TILE_LAYER_GROUND, NULL, "water", {.tile_color = BLUE, .break_time = -1, .disable_collisions = false},
                  {.uses_tileset = true});
+  TILE_TYPE_INIT(TILE_DUNGEON_FLOOR, TILE_LAYER_GROUND, NULL, "dungeon_floor",
+                 {.tile_color = GRAY, .break_time = 16, .disable_collisions = false}, {.uses_tileset = true});
 }

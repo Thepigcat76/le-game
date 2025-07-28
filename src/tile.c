@@ -44,6 +44,7 @@ AdvTexture ERR_TEXTURE;
 void tile_types_init() {
   if (TILES == NULL) {
     TILES = array_new_capacity(TileType, 256, &HEAP_ALLOCATOR);
+    array_fill(TILES, 256, (TileType){0});
   }
 
   INIT_TILE(empty)
@@ -54,7 +55,7 @@ void tile_types_init() {
   // tile_type_debug_print(&TILES[0], buf);
   // puts(buf);
 
-  for (int i = 0; i < array_len(TILES); i++) {
+  for (int i = 0; i < TILES_AMOUNT; i++) {
   }
 
   TILE_INSTANCE_EMPTY = tile_new(&TILES[TILE_EMPTY]);
@@ -70,6 +71,7 @@ void tile_categories_init(void) {
   TILE_REGISTER_CATEGORY(TILE_TREE, {.categories = {TILE_CATEGORY_WOOD}, .categories_amount = 1});
   TILE_REGISTER_CATEGORY(TILE_OVEN, {.categories = {TILE_CATEGORY_STONE}, .categories_amount = 1});
   TILE_REGISTER_CATEGORY(TILE_STONE, {.categories = {TILE_CATEGORY_STONE}, .categories_amount = 1});
+  TILE_REGISTER_CATEGORY(TILE_DUNGEON_FLOOR, {.categories = {TILE_CATEGORY_STONE}, .categories_amount = 1});
   // DEBUG
   TILE_REGISTER_CATEGORY(TILE_GRASS, {.categories = {TILE_CATEGORY_STONE}, .categories_amount = 1});
 
@@ -98,6 +100,10 @@ char *tile_type_to_string(const TileType *type) {
     return "tree_stump";
   case TILE_CHEST:
     return "chest";
+  case TILE_DUNGEON_FLOOR:
+    return "dungeon_floor";
+  case TILE_DUNGEON_PORTAL:
+    return "dungeon_portal";
   }
 }
 

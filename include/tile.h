@@ -24,6 +24,8 @@ typedef enum {
   TILE_TREE,
   TILE_TREE_STUMP,
   TILE_CHEST,
+  TILE_DUNGEON_FLOOR,
+  TILE_DUNGEON_PORTAL,
 } TileId;
 
 typedef struct {
@@ -54,6 +56,7 @@ typedef struct {
 } TileType;
 
 extern TileType *TILES;
+extern size_t TILES_AMOUNT;
 
 extern AdvTexture ERR_TEXTURE;
 
