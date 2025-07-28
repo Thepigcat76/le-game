@@ -1,6 +1,7 @@
 #include "../../include/world.h"
 #include "../../include/array.h"
 #include "../../include/being.h"
+#include "../../include/game.h"
 #include "../../include/item.h"
 #include "../../include/net/client.h"
 #include "../../include/particle.h"
@@ -10,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 WorldType *WORLD_TYPES;
 
@@ -129,7 +131,7 @@ TileInstance *world_tile_at(const World *world, TilePos tile_pos, TileLayer laye
   return &TILE_INSTANCE_EMPTY;
 }
 
-static const Vec2i RENDER_CHUNK_OFFSETS[4] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+static const Vec2i RENDER_CHUNK_OFFSETS[8] = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, 1}, {1, 0}, {1, -1}};
 
 void world_prepare_chunk_rendering_update_nearby(World *world, Chunk *chunk) {
   world_prepare_chunk_rendering(world, chunk);
@@ -358,6 +360,12 @@ void world_render_layer_top_split(World *world, void *_player, bool draw_before_
         }
       }
     }
+  }
+}
+
+void world_on_reload(ClientGame *game) {
+  if (game->game->world != NULL) {
+    world_prepare_rendering(game->game->world);
   }
 }
 

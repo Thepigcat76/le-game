@@ -118,7 +118,7 @@ static void init_connected_info() {
   free(file);
 }
 
-#define IS_MAIN_TILE(i) (i == 1 || i == 3 || i == 4 || i == 6)
+//#define IS_MAIN_TILE(i) (i == 1 || i == 3 || i == 4 || i == 6)
 
 static bool indices_true_and_other_false(bool *arr, int indices[], int indices_amount, int size) {
   for (int i = 0; i < size; i++) {
@@ -133,7 +133,7 @@ static bool indices_true_and_other_false(bool *arr, int indices[], int indices_a
       if (!arr[i])
         return false; // selected index must be true
     } else {
-      if (arr[i] && IS_MAIN_TILE(i))
+      if (arr[i]/* && IS_MAIN_TILE(i)*/)
         return false; // non-selected index must be false
     }
   }

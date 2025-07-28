@@ -72,6 +72,7 @@ void client_reload(ClientGame *game) {
   CLIENT_RELOAD(game, keybinds);
   CLIENT_RELOAD(game, save_names);
   CLIENT_RELOAD(game, shaders);
+  CLIENT_RELOAD(game, world);
 }
 
 static void client_update_animations(ClientGame *client) {
