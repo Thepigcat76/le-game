@@ -23,13 +23,14 @@ Player player_new() {
                   .animation_frame = 0,
                   .frame_timer = 0,
                   .held_item = {.type = ITEMS[ITEM_PICKAXE]},
-                  .dragged_item = ITEM_INSTANCE_EMPTY,
+                  .dragged_item = {.type = ITEMS[ITEM_DIRT]},
                   .box = {.x = 0, .y = 20, .width = 16, .height = 8},
                   .chunk_pos = vec2i(0, 0),
                   .tile_pos = vec2i(0, 0),
                   .break_progress = -1,
                   .break_tile = TILE_INSTANCE_EMPTY,
-                  .break_tile_pos = vec2i(0, 0)};
+                  .break_tile_pos = vec2i(0, 0),
+                  .inv_container = item_container_new(9)};
 }
 
 static Texture2D player_get_texture(Player *player) {
@@ -285,6 +286,21 @@ void player_load(Player *player, DataMap *map) {
   player->box.y = y;
   player->cam.target.x = x;
   player->cam.target.y = y;
+
+  if (data_map_contains(map, "held_item")) {
+    DataMap held_item_map = data_map_get(map, "held_item").var.data_map;
+    item_load(&player->held_item, &held_item_map);
+  }
+
+  if (data_map_contains(map, "dragged_item")) {
+    DataMap dragged_item_map = data_map_get(map, "dragged_item").var.data_map;
+    item_load(&player->dragged_item, &dragged_item_map);
+  }
+
+  if (data_map_contains(map, "inv")) {
+    DataMap inv_map = data_map_get(map, "inv").var.data_map;
+    item_container_load(&player->inv_container, &inv_map);
+  }
 }
 
 void player_save(Player *player, DataMap *map) {
@@ -292,4 +308,16 @@ void player_save(Player *player, DataMap *map) {
   data_map_insert(map, "direction", data_int(player->direction));
   data_map_insert(map, "pos_x", data_int(player->box.x));
   data_map_insert(map, "pos_y", data_int(player->box.y));
+
+  DataMap held_item_map = data_map_new(4);
+  item_save(&player->held_item, &held_item_map);
+  data_map_insert(map, "held_item", data_map(held_item_map));
+
+  DataMap dragged_item_map = data_map_new(4);
+  item_save(&player->dragged_item, &dragged_item_map);
+  data_map_insert(map, "dragged_item", data_map(dragged_item_map));
+
+  DataMap inv_map = data_map_new(4);
+  item_container_save(&player->inv_container, &inv_map);
+  data_map_insert(map, "inv", data_map(inv_map));
 }

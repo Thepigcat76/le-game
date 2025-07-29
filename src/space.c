@@ -20,6 +20,7 @@ void space_create(SpaceDescriptor desc, float seed, Space *space) {
   space->desc = desc;
   space->world = world_new(desc.type->world_type, seed);
   world_gen(&space->world);
+  world_initialize(&space->world);
 }
 
 void space_create_default(float seed, Space *space) { space_create((SpaceDescriptor){.type = &SPACES[SPACE_BASE], .id = 0}, seed, space); }

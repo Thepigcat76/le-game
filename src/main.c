@@ -32,6 +32,7 @@ static void client_poll_keybinds(ClientGame *client) {
   KEY_DOWN(toggle_hitbox_key);
   KEY_DOWN(reload_key);
   KEY_DOWN(visit_dungeon_key);
+  KEY_DOWN(open_close_inventory_key);
 }
 
 static void registry_init(void) {

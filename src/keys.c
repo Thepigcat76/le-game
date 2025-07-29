@@ -66,7 +66,7 @@ static int key_from_str(char *key) {
     if (cJSON_IsString(temp_key))                                                                                                          \
       keybind_field = key_from_str(temp_key->valuestring);                                                                                 \
     else                                                                                                                                   \
-      PANIC_FMT("Failed to get keybind: %s, %s", #keybind_field, keybind_name);\
+      PANIC_FMT("Failed to get keybind: %s - %s", #keybind_field, keybind_name);\
   } while (0)
 
 void keybinds_on_reload(ClientGame *game) {
@@ -84,5 +84,6 @@ void keybinds_on_reload(ClientGame *game) {
     KEYBIND(KEYBINDS.zoom_in_key, "zoom-in");
     KEYBIND(KEYBINDS.zoom_out_key, "zoom-out");
     KEYBIND(KEYBINDS.visit_dungeon_key, "visit-dungeon");
+    KEYBIND(KEYBINDS.open_close_inventory_key, "open-close-inventory");
   });
 }

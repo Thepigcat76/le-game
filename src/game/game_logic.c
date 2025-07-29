@@ -63,6 +63,14 @@ static void game_world_tick(Game *game) {
 
   // game->sound_manager.sound_timer += GetFrameTime();
 
+  if (IS_KEY_PRESSED(open_close_inventory)) {
+    if (game->client_game->cur_menu == MENU_NONE) {
+      client_set_menu(game->client_game, MENU_INVENTORY);
+    } else {
+      client_set_menu(game->client_game, MENU_NONE);
+    }
+  }
+
 #ifdef DEBUG_BUILD
   if (IsKeyPressed(KEY_F1)) {
     world_add_being(game->world, being_npc_new(game->player->box.x, game->player->box.y));

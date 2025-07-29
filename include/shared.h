@@ -93,6 +93,8 @@ extern Texture2D NPC_ANIMATED_TEXTURES[DIRECTIONS_AMOUNT];
 
 extern Texture2D NPC_TEXTURE_OLD_MAN;
 
+extern Texture2D SLOT_TEXTURE;
+
 typedef enum {
   DIRECTION_UP,
   DIRECTION_DOWN,

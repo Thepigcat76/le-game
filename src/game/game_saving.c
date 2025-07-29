@@ -34,6 +34,7 @@ void game_load_save_data(Game *game, SaveDescriptor save_desc) {
     data_free(&data_map);
   });
 
+  // Load the save's spaces
   save_load_spaces(&save);
 
   // TODO: Load into the space that the player last played

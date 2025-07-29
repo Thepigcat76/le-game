@@ -2,6 +2,7 @@
 
 #include "data.h"
 #include "item.h"
+#include "item/item_container.h"
 #include "shared.h"
 #include "tile.h"
 #include <stdint.h>
@@ -36,6 +37,7 @@ typedef struct {
   ChunkPos chunk_pos;
   ItemInstance held_item;
   ItemInstance dragged_item;
+  ItemContainer inv_container;
 } Player;
 
 Player player_new();

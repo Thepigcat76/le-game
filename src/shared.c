@@ -36,6 +36,8 @@ Texture2D NPC_ANIMATED_TEXTURES[DIRECTIONS_AMOUNT];
 
 Texture NPC_TEXTURE_OLD_MAN;
 
+Texture2D SLOT_TEXTURE;
+
 void shared_init() {
   TEXT_INPUT_TEXTURE = LoadTexture("res/assets/gui/text_input.png");
 
@@ -64,6 +66,8 @@ void shared_init() {
   NPC_ANIMATED_TEXTURES[DIRECTION_RIGHT] = LoadTexture("res/assets/beings/npc_right_walking.png");
 
   NPC_TEXTURE_OLD_MAN = LoadTexture("res/assets/old_man.png");
+
+  SLOT_TEXTURE = LoadTexture("res/assets/gui/slot.png");
 
   srand(time(NULL));
 }

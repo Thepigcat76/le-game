@@ -31,12 +31,13 @@ static size_t space_disk_id_from_id(const SpaceIdLookup *lookup, SpaceId space_i
 
 void save_load_spaces(Save *save) {
   DIR_ITER(TextFormat("save/save%d/spaces", save->descriptor.id), entry, {
+    printf("Found space: %s\n", entry->d_name);
     char path_buf[strlen(entry->d_name) + 1];
     strcpy(path_buf, entry->d_name);
     char *path_buf_end_of_id_lit = strrchr(path_buf, '-');
     *path_buf_end_of_id_lit = '\0';
     SpaceId space_id = space_id_by_name(path_buf);
-    SpaceDescriptor desc = {.type = space_type_from_id(space_id), .id = space_disk_id_from_str(entry->d_name)};
+    SpaceDescriptor desc = {.type = &SPACES[space_id], .id = space_disk_id_from_str(entry->d_name)};
     array_add(save->spaces, desc);
     TraceLog(LOG_INFO, "Found save: Type: %s with index: %zu", space_id_to_name(space_id), desc.id);
     ssize_t space_id_index = -1;
@@ -54,13 +55,9 @@ void save_load_spaces(Save *save) {
     }
   });
 
-  printf("-- Space id lookup --\n");
-  array_foreach(save->space_id_lookup.entries, SpaceIdLookupEntry, entry, {
-    printf("  Space: %s\n", space_id_to_name(entry.space_id));
-    array_foreach(save->space_id_lookup.entries->disk_ids, size_t, entry, {
-      printf("    Disk id: %zu\n", entry);
-    });
-  });
-
-  PANIC_FMT("look at da lookup :3");
+  for (int i = 0; i < array_len(save->spaces); i++) {
+    SpaceDescriptor desc = save->spaces[i];
+    printf("Space: %s - disk id: %zu\n", space_id_to_name(desc.type->space_id), desc.id);
+  }
+  
 }

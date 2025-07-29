@@ -81,6 +81,24 @@ static void move(UiRenderer *renderer, int width, int height) {
   }
 }
 
+static void align(UiRenderer *renderer, int width, int height, int x_offset, int y_offset) {
+  UiStyle style = renderer->cur_style;
+  float scale = renderer->cur_style.scale * ui_scale(renderer);
+  switch (renderer->cur_style.alignment) {
+  case UI_VERTICAL: {
+    if (style.positions[0] == UI_CENTER || style.positions[1] == UI_CENTER) {
+      renderer->cur_x = (renderer->context.screen_width - width * scale) / 2;
+    }
+    renderer->cur_x += x_offset;
+    break;
+  }
+  case UI_HORIZONTAL: {
+    renderer->cur_x += x_offset;
+    break;
+  }
+  }
+}
+
 void ui_button_render(UiRenderer *renderer, ButtonUiComponent component) {
   if (component.width == 0) {
     component.width = component.texture.width;
@@ -92,19 +110,7 @@ void ui_button_render(UiRenderer *renderer, ButtonUiComponent component) {
 
   float scale = renderer->cur_style.scale * ui_scale(renderer);
   UiStyle style = renderer->cur_style;
-  switch (renderer->cur_style.alignment) {
-  case UI_VERTICAL: {
-    if (style.positions[0] == UI_CENTER || style.positions[1] == UI_CENTER) {
-      renderer->cur_x = (renderer->context.screen_width - component.width * scale) / 2;
-    }
-    renderer->cur_x += component.x_offset;
-    break;
-  }
-  case UI_HORIZONTAL: {
-    renderer->cur_x += component.x_offset;
-    break;
-  }
-  }
+  align(renderer, component.width, component.height, component.x_offset, component.y_offset);
 
   renderer->cur_x += component.x_offset;
   renderer->cur_y += component.y_offset;
@@ -185,19 +191,7 @@ void ui_text_input_render(UiRenderer *renderer, TextInputUiComponent component) 
   bool selected = *component.selected;
   float scale = renderer->cur_style.scale * ui_scale(renderer);
   UiStyle style = renderer->cur_style;
-  switch (renderer->cur_style.alignment) {
-  case UI_VERTICAL: {
-    if (style.positions[0] == UI_CENTER || style.positions[1] == UI_CENTER) {
-      renderer->cur_x = (renderer->context.screen_width - component.width * scale) / 2;
-    }
-    renderer->cur_x += component.x_offset;
-    break;
-  }
-  case UI_HORIZONTAL: {
-    renderer->cur_x += component.x_offset;
-    break;
-  }
-  }
+  align(renderer, component.width, component.height, component.x_offset, component.y_offset);
   int x = renderer->cur_x + (component.width * scale) / 2;
   int y = renderer->cur_y + (component.height * scale) / 2;
 
@@ -251,15 +245,20 @@ void ui_spacing_render(UiRenderer *renderer, SpacingUiComponent component) {
 
 void ui_slot_render(UiRenderer *renderer, SlotUiComponent component) {
   if (component.width == 0) {
-    component.width = 16 * ui_scale(renderer);
+    component.width = 16;
   }
 
   if (component.height == 0) {
-    component.height = 16 * ui_scale(renderer);
+    component.height = 16;
   }
 
-  if (CheckCollisionPointRec(GetMousePosition(), rectf(renderer->cur_x, renderer->cur_y, component.width, component.height))) {
-    DrawRectangle(renderer->cur_x, renderer->cur_y, component.width, component.height, color_rgba(150, 150, 150, 150));
+  align(renderer, component.width, component.height, component.x_offset, component.y_offset);
+
+  int width = component.width * ui_scale(renderer);
+  int height = component.height * ui_scale(renderer);
+
+  if (CheckCollisionPointRec(GetMousePosition(), rectf(renderer->cur_x, renderer->cur_y, width, height)) && !component.fake) {
+    DrawRectangle(renderer->cur_x, renderer->cur_y, width, height, color_rgba(150, 150, 150, 150));
 
     if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
       if (item_is_empty(&CLIENT_GAME.player->dragged_item)) {
@@ -279,6 +278,8 @@ void ui_slot_render(UiRenderer *renderer, SlotUiComponent component) {
   if (component.item != NULL) {
     item_render(component.item, renderer->cur_x, renderer->cur_y);
   }
+
+  DrawTextureEx(SLOT_TEXTURE, vec2f(renderer->cur_x - 2 * ui_scale(renderer), renderer->cur_y - 2 * ui_scale(renderer)), 0, ui_scale(renderer), WHITE);
 
   move(renderer, component.width, component.height);
 }

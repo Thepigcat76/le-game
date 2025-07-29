@@ -89,6 +89,10 @@ void client_render_menu(ClientGame *client) {
     RENDER_MENU(ui_renderer, dialog_menu);
     break;
   }
+  case MENU_INVENTORY: {
+    RENDER_MENU(ui_renderer, inventory_menu);
+    break;
+  }
   case MENU_MULTIPLAYER: {
     RENDER_MENU(ui_renderer, multiplayer_menu);
     break;

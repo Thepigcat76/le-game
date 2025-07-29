@@ -66,7 +66,7 @@ void item_tooltip(const ItemInstance *item, char *buf, size_t buf_capacity) {
 void item_save(const ItemInstance *item, DataMap *data) { data_map_insert(data, "item", data_int(item->type.id)); }
 
 void item_load(ItemInstance *item, const DataMap *data) {
-  ItemId item_id = data_map_get(data, "item").var.data_int;
+  ItemId item_id = data_map_get_or_default(data, "item", data_int(ITEM_EMPTY)).var.data_int;
   item->type = ITEMS[item_id];
 }
 
