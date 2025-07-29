@@ -52,6 +52,8 @@ float ui_scale(UiRenderer *renderer);
 
 #define RENDER_SPACING(...) ui_spacing_render(&CLIENT_GAME.ui_renderer, (SpacingUiComponent)__VA_ARGS__)
 
+#define RENDER_SLOT(...) ui_slot_render(&CLIENT_GAME.ui_renderer, (SlotUiComponent)__VA_ARGS__)
+
 #define UI_GROUP_CREATE(...) ui_group_create(&CLIENT_GAME.ui_renderer, (GroupUiComponent)__VA_ARGS__)
 
 #define UI_GROUP_DESTROY() ui_group_destroy(&CLIENT_GAME.ui_renderer)
@@ -75,6 +77,10 @@ void ui_spacing_render(UiRenderer *renderer, SpacingUiComponent component);
 // TEXTURE
 
 void ui_texture_render(UiRenderer *renderer, TextureUiComponent component);
+
+// SLOT
+
+void ui_slot_render(UiRenderer *renderer, SlotUiComponent component);
 
 // GROUP
 

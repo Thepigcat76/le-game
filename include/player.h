@@ -35,6 +35,7 @@ typedef struct {
   TilePos tile_pos;
   ChunkPos chunk_pos;
   ItemInstance held_item;
+  ItemInstance dragged_item;
 } Player;
 
 Player player_new();

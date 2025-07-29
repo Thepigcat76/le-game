@@ -69,3 +69,7 @@ void item_load(ItemInstance *item, const DataMap *data) {
   ItemId item_id = data_map_get(data, "item").var.data_int;
   item->type = ITEMS[item_id];
 }
+
+bool item_is_empty(ItemInstance *item) {
+  return item->type.id == ITEM_EMPTY;
+}

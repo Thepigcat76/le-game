@@ -32,15 +32,17 @@ void tile_on_reload(ClientGame *game) {
 // -- CONNECTED TEXTURES --
 
 typedef struct {
-  int predicate[8];
-  int predicates;
+  int predicates[8];
+  int predicates_amount;
+  int ignored_tiles[8];
+  int ignored_tiles_amount;
   Vec2i sprite_pos;
 } Connection;
 
 typedef struct {
   int res;
   Vec2i default_sprite_pos;
-  Connection connections[100];
+  Connection connections[256];
   int connections_amount;
 } ConnectedInfo;
 
@@ -80,6 +82,18 @@ static void init_connected_info() {
       cJSON *entry = cJSON_GetArrayItem(values, i);
       cJSON *tiles = cJSON_GetObjectItemCaseSensitive(entry, "tiles");
       cJSON *value = cJSON_GetObjectItemCaseSensitive(entry, "value");
+      if (cJSON_HasObjectItem(entry, "ignored_tiles")) {
+        cJSON *ignored = cJSON_GetObjectItemCaseSensitive(entry, "ignored_tiles");
+        int j = 0;
+        cJSON *elem;
+        cJSON_ArrayForEach(elem, ignored) {
+          if (cJSON_IsNumber(elem)) {
+            info.connections[i].ignored_tiles[j] = elem->valueint;
+            j++;
+          }
+        }
+        info.connections[i].ignored_tiles_amount = j;
+      }
 
       if (cJSON_IsArray(tiles)) {
         int size = cJSON_GetArraySize(tiles);
@@ -87,10 +101,10 @@ static void init_connected_info() {
           cJSON *entry = cJSON_GetArrayItem(tiles, j);
 
           if (cJSON_IsNumber(entry)) {
-            info.connections[i].predicate[j] = entry->valueint;
+            info.connections[i].predicates[j] = entry->valueint;
           } else {
           }
-          info.connections[i].predicates = size;
+          info.connections[i].predicates_amount = size;
         }
       }
 
@@ -112,32 +126,75 @@ static void init_connected_info() {
     info.connections_amount = size;
   }
 
+  // DEBUG ignored tiles
+  //for (int i = 0; i < info.connections_amount; i++) {
+  //  Connection *connection = &info.connections[i];
+  //  if (connection->ignored_tiles_amount > 0) {
+  //    TraceLog(LOG_DEBUG, "!!Ignored tiles for %d %d!!", connection->sprite_pos.x, connection->sprite_pos.y);
+  //    for (int j = 0; j < connection->ignored_tiles_amount; j++) {
+  //      int ignored_tile = connection->ignored_tiles[j];
+  //      TraceLog(LOG_DEBUG, "%d", ignored_tile);
+  //    }
+  //  }
+  //}
+
   CONNECTED_INFO = info;
 
   cJSON_Delete(json);
   free(file);
 }
 
-//#define IS_MAIN_TILE(i) (i == 1 || i == 3 || i == 4 || i == 6)
-
-static bool indices_true_and_other_false(bool *arr, int indices[], int indices_amount, int size) {
-  for (int i = 0; i < size; i++) {
-    bool is_selected = false;
-    for (int j = 0; j < indices_amount; j++) {
-      if (i == indices[j]) {
-        is_selected = true;
-        break;
-      }
+static bool tile_is_ignored(int *ignored_tiles, int ignored_tiles_amount, int ignored_index) {
+  for (int i = 0; i < ignored_tiles_amount; i++) {
+    if (ignored_tiles[i] == ignored_index) {
+      return true;
     }
-    if (is_selected) {
-      if (!arr[i])
-        return false; // selected index must be true
-    } else {
-      if (arr[i]/* && IS_MAIN_TILE(i)*/)
-        return false; // non-selected index must be false
+  }
+  return false;
+}
+
+static void indices_arr_to_bool_arr(int *indices, int indices_amount, bool *arr) {
+  for (int i = 0; i < indices_amount; i++) {
+    arr[indices[i]] = true;
+  }
+}
+
+static bool cmp_same_tiles(bool *expected_same_tiles, bool *physical_same_tiles, int *ignored_tiles, int ignored_tiles_amount) {
+  for (int i = 0; i < 8; i++) {
+    if (tile_is_ignored(ignored_tiles, ignored_tiles_amount, i)) continue;
+
+    if (expected_same_tiles[i] != physical_same_tiles[i]) {
+      return false;
     }
   }
   return true;
+}
+
+static bool indices_true_and_other_false(bool *physical_same_tiles, int *indices, int indices_amount, int *ignored, int ignored_amount, int size) {
+  bool expected_same_tiles[8] = {false};
+  indices_arr_to_bool_arr(indices, indices_amount, expected_same_tiles);
+  bool same_tiles = cmp_same_tiles(expected_same_tiles, physical_same_tiles, ignored, ignored_amount);
+  return same_tiles;
+  //// iterate through surrounding tiles (size=8)
+  //for (int i = 0; i < size; i++) {
+  //  bool is_selected = false;
+  //  // iterate through the connections indices array
+  //  for (int j = 0; j < indices_amount; j++) {
+  //    // Check if iteration index equals the current index
+  //    if (i == indices[j]) {
+  //      is_selected = true;
+  //      break;
+  //    }
+  //  }
+  //  if (is_selected) {
+  //    if (!phys_surrounding_tiles[i])
+  //      return false; // selected index must be true
+  //  } else {
+  //    if (phys_surrounding_tiles[i] && !tile_is_ignored(ignored, ignored_amount, i))
+  //      return false; // non-selected index must be false
+  //  }
+  //}
+  //return true;
 }
 
 static Rectangle sprite_rect(int x, int y) { return (Rectangle){.x = x, .y = y, .width = 16, .height = 16}; }
@@ -145,7 +202,8 @@ static Rectangle sprite_rect(int x, int y) { return (Rectangle){.x = x, .y = y, 
 static Rectangle select_tile(bool *same_tile) {
   for (int i = 0; i < CONNECTED_INFO.connections_amount; i++) {
     Connection connection = CONNECTED_INFO.connections[i];
-    if (indices_true_and_other_false(same_tile, connection.predicate, connection.predicates, 8)) {
+    if (indices_true_and_other_false(same_tile, connection.predicates, connection.predicates_amount, connection.ignored_tiles,
+                                     connection.ignored_tiles_amount, 8)) {
       return sprite_rect(connection.sprite_pos.x, connection.sprite_pos.y);
     }
   }
@@ -361,12 +419,12 @@ void tile_type_init(TileType *type) {
   for (int i = 0; i < amount; i++) {
     if (strcmp(VARIANT_INFO.tile_texture_names[i], type->texture.path) == 0) {
       type->variant_index = i;
-      //type->texture_props.has_variants = true;
+      // type->texture_props.has_variants = true;
       return;
     }
   }
   type->variant_index = -1;
-  //type->texture_props.has_variants = false;
+  // type->texture_props.has_variants = false;
   TraceLog(LOG_DEBUG, "Tile: %s, var index: %d", tile_type_to_string(type), type->variant_index);
   if (type->id == TILE_STONE) {
     char buf[512];

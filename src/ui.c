@@ -1,5 +1,7 @@
 #include "../include/ui.h"
 #include "../include/config.h"
+#include "../include/net/client.h"
+#include "../include/shared.h"
 #include "raylib.h"
 #include <stdbool.h>
 
@@ -65,6 +67,20 @@ float ui_scale(UiRenderer *renderer) { return ((float)CONFIG.default_font_size /
 
 // BUTTONS
 
+static void move(UiRenderer *renderer, int width, int height) {
+  float scale = renderer->cur_style.scale * ui_scale(renderer);
+  switch (renderer->cur_style.alignment) {
+  case UI_VERTICAL: {
+    renderer->cur_y += height * scale + renderer->cur_style.padding;
+    break;
+  }
+  case UI_HORIZONTAL: {
+    renderer->cur_x += width * scale + renderer->cur_style.padding;
+    break;
+  }
+  }
+}
+
 void ui_button_render(UiRenderer *renderer, ButtonUiComponent component) {
   if (component.width == 0) {
     component.width = component.texture.width;
@@ -93,11 +109,9 @@ void ui_button_render(UiRenderer *renderer, ButtonUiComponent component) {
   renderer->cur_x += component.x_offset;
   renderer->cur_y += component.y_offset;
 
-  bool hovered = CheckCollisionPointRec(GetMousePosition(),
-                                        (Rectangle){.x = renderer->cur_x,
-                                                    .y = renderer->cur_y,
-                                                    .width = component.width * scale,
-                                                    .height = component.height * scale});
+  bool hovered = CheckCollisionPointRec(
+      GetMousePosition(),
+      (Rectangle){.x = renderer->cur_x, .y = renderer->cur_y, .width = component.width * scale, .height = component.height * scale});
   DrawTexturePro(hovered ? component.selected_texture : component.texture,
                  (Rectangle){.x = 0, .y = 0, .width = component.texture.width, .height = component.texture.height},
                  (Rectangle){.x = renderer->cur_x + (component.width * scale) / 2,
@@ -107,24 +121,14 @@ void ui_button_render(UiRenderer *renderer, ButtonUiComponent component) {
                  (Vector2){.x = (component.width * scale) / 2, .y = (component.height * scale) / 2}, 0, WHITE);
   int text_width = MeasureText(component.message, renderer->cur_style.font_scale);
   float text_x = renderer->cur_x + component.text_x_offset + (float)(component.width * scale - text_width) / 2;
-  float text_y = renderer->cur_y + ((component.height * scale) / 2 - (float)renderer->cur_style.font_scale / 2) +
-      component.text_y_offset;
+  float text_y = renderer->cur_y + ((component.height * scale) / 2 - (float)renderer->cur_style.font_scale / 2) + component.text_y_offset;
   DrawText(component.message, text_x, text_y, renderer->cur_style.font_scale, WHITE);
 
   if (renderer->cur_style.alignment == UI_VERTICAL) {
   } else if (renderer->cur_style.alignment == UI_HORIZONTAL) {
   }
 
-  switch (renderer->cur_style.alignment) {
-  case UI_VERTICAL: {
-    renderer->cur_y += component.height * scale + renderer->cur_style.padding;
-    break;
-  }
-  case UI_HORIZONTAL: {
-    renderer->cur_x += component.width * scale + renderer->cur_style.padding;
-    break;
-  }
-  }
+  move(renderer, component.width, component.height);
 
   if (hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
     switch (component.on_click_func.func_type) {
@@ -159,8 +163,8 @@ void ui_text_render(UiRenderer *renderer, TextUiComponent component) {
   }
   }
   if (!renderer->simulate) {
-    DrawText(component.text, renderer->cur_x + component.x_offset, renderer->cur_y + component.y_offset,
-             renderer->cur_style.font_scale, color);
+    DrawText(component.text, renderer->cur_x + component.x_offset, renderer->cur_y + component.y_offset, renderer->cur_style.font_scale,
+             color);
   }
   // TODO: Move cur coordinate by dimension depdening on style
   // renderer->cur_x += component->dimensions.x + component->offset.x;
@@ -197,13 +201,12 @@ void ui_text_input_render(UiRenderer *renderer, TextInputUiComponent component) 
   int x = renderer->cur_x + (component.width * scale) / 2;
   int y = renderer->cur_y + (component.height * scale) / 2;
 
-  DrawTexturePro(component.texture,
-                 (Rectangle){.x = 0, .y = 0, .width = component.texture.width, .height = component.texture.height},
+  DrawTexturePro(component.texture, (Rectangle){.x = 0, .y = 0, .width = component.texture.width, .height = component.texture.height},
                  (Rectangle){.x = x, .y = y, .width = component.width * scale, .height = component.height * scale},
                  (Vector2){.x = (component.width * scale) / 2, .y = (component.height * scale) / 2}, 0, WHITE);
 
-  DrawText(component.text_input->buf, renderer->cur_x + 3 * scale + component.text_x_offset,
-           renderer->cur_y + 3 + component.text_y_offset, renderer->cur_style.font_scale, WHITE);
+  DrawText(component.text_input->buf, renderer->cur_x + 3 * scale + component.text_x_offset, renderer->cur_y + 3 + component.text_y_offset,
+           renderer->cur_style.font_scale, WHITE);
 
   int line_x = renderer->cur_x + MeasureText(component.text_input->buf, renderer->cur_style.font_scale);
 
@@ -231,21 +234,11 @@ void ui_text_input_render(UiRenderer *renderer, TextInputUiComponent component) 
 
   if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
 
-    Rectangle text_input_box =
-        rectf(renderer->cur_x, renderer->cur_y, component.width * scale, component.height * scale);
+    Rectangle text_input_box = rectf(renderer->cur_x, renderer->cur_y, component.width * scale, component.height * scale);
     (*component.selected) = CheckCollisionPointRec(GetMousePosition(), text_input_box);
   }
 
-  switch (renderer->cur_style.alignment) {
-  case UI_VERTICAL: {
-    renderer->cur_y += component.height * scale + renderer->cur_style.padding;
-    break;
-  }
-  case UI_HORIZONTAL: {
-    renderer->cur_x += component.width * scale + renderer->cur_style.padding;
-    break;
-  }
-  }
+  move(renderer, component.width, component.height);
 }
 
 // SPACING
@@ -254,11 +247,46 @@ void ui_spacing_render(UiRenderer *renderer, SpacingUiComponent component) {
   renderer->cur_y += component.height + component.y_offset + renderer->cur_style.padding;
 }
 
+// SLOT
+
+void ui_slot_render(UiRenderer *renderer, SlotUiComponent component) {
+  if (component.width == 0) {
+    component.width = 16 * ui_scale(renderer);
+  }
+
+  if (component.height == 0) {
+    component.height = 16 * ui_scale(renderer);
+  }
+
+  if (CheckCollisionPointRec(GetMousePosition(), rectf(renderer->cur_x, renderer->cur_y, component.width, component.height))) {
+    DrawRectangle(renderer->cur_x, renderer->cur_y, component.width, component.height, color_rgba(150, 150, 150, 150));
+
+    if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+      if (item_is_empty(&CLIENT_GAME.player->dragged_item)) {
+        CLIENT_GAME.player->dragged_item = *component.item;
+        *component.item = ITEM_INSTANCE_EMPTY;
+      } else if (item_is_empty(component.item)) {
+        *component.item = CLIENT_GAME.player->dragged_item;
+        CLIENT_GAME.player->dragged_item = ITEM_INSTANCE_EMPTY;
+      } else {
+        ItemInstance dragged_item = CLIENT_GAME.player->dragged_item;
+        CLIENT_GAME.player->dragged_item = *component.item;
+        *component.item = dragged_item;
+      }
+    }
+  }
+
+  if (component.item != NULL) {
+    item_render(component.item, renderer->cur_x, renderer->cur_y);
+  }
+
+  move(renderer, component.width, component.height);
+}
+
 // GROUP
 
 void ui_group_create(UiRenderer *renderer, GroupUiComponent component) {
-  renderer->groups[renderer->groups_amount++] =
-      (UiGroup){.component = component, .prev_x = renderer->cur_x, renderer->cur_y};
+  renderer->groups[renderer->groups_amount++] = (UiGroup){.component = component, .prev_x = renderer->cur_x, renderer->cur_y};
   renderer->cur_style = component.group_style;
 
   bool scissors = (component.width != -1 && component.height != -1);
@@ -296,8 +324,7 @@ void ui_group_destroy(UiRenderer *renderer) {
     renderer->cur_y = group.prev_y + group.component.height;
   }
 
-  UiStyle prev_ui_style = renderer->groups_amount > 0
-      ? renderer->groups[renderer->groups_amount - 1].component.group_style
-      : renderer->initial_style;
+  UiStyle prev_ui_style =
+      renderer->groups_amount > 0 ? renderer->groups[renderer->groups_amount - 1].component.group_style : renderer->initial_style;
   renderer->cur_style = prev_ui_style;
 }

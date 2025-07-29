@@ -65,4 +65,5 @@ void save_menu_render(UiRenderer *renderer, const ClientGame *game) {
                  .on_click_func = button_click_simple(save_menu_save_game_button_clicked),
                  .text_x_offset = x_offset,
                  .text_y_offset = y_offset});
+  RENDER_SLOT({.item = &game->game->player->held_item});
 }

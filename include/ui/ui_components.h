@@ -2,6 +2,7 @@
 
 #include "raylib.h"
 #include "ui_style.h"
+#include "../item.h"
 #include <stdlib.h>
 
 typedef struct {
@@ -84,3 +85,12 @@ typedef struct {
   int *scroll_y_offset;
   UiStyle group_style;
 } GroupUiComponent;
+
+typedef struct {
+  int width;
+  int height;
+  int x_offset;
+  int y_offset;
+  bool fake;
+  ItemInstance *item;
+} SlotUiComponent;
