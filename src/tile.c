@@ -268,8 +268,6 @@ void tile_render(TileInstance *tile, int x, int y, bool dbg) {
       }
 #endif
     }
-  } else {
-    TraceLog(LOG_DEBUG, "No texture: %s", tile_type_to_string(tile->type));
   }
 }
 

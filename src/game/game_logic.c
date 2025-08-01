@@ -92,6 +92,8 @@ static void game_world_tick(Game *game) {
 #endif
 }
 
+static TileIdCategories item_tile_categories(ItemInstance *item) { return item->type.item_props.tool_props.break_categories; }
+
 static void game_handle_tile_interaction(Game *game) {
   Vec2f mouse_pos = GetMousePosition();
   Vec2f mouse_world_pos = GetScreenToWorld2D(mouse_pos, game->player->cam);
@@ -101,18 +103,23 @@ static void game_handle_tile_interaction(Game *game) {
   bool interaction_in_range = abs((int)game->player->box.x - x_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE &&
       abs((int)game->player->box.y - y_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE;
 
+  // Break tile
   if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && true /*!slot_selected*/ && interaction_in_range) {
     TileInstance *selected_tile = world_highest_tile_at(game->world, vec2i(x_index, y_index));
     bool correct_tool = false;
-    if (game->player->held_item.type.item_props.tool_props.break_categories.categories_amount > 0) {
-      TileIdCategories tool_categories = game->player->held_item.type.item_props.tool_props.break_categories;
+    ItemInstance *player_held_item = &game->player->held_item;
+    TileIdCategories tool_break_categories = item_tile_categories(player_held_item);
+    // Check if tool has break categories
+    if (tool_break_categories.categories_amount > 0) {
       TileIdCategories selected_tile_categories = tile_categories(selected_tile->type);
-      for (int i = 0; i < tool_categories.categories_amount; i++) {
-        for (int j = 0; j < selected_tile_categories.categories_amount; j++) {
-          if (tool_categories.categories_amount > 0 && selected_tile_categories.categories_amount > 0 &&
-              tool_categories.categories[i] == selected_tile_categories.categories[j]) {
-            correct_tool = true;
-            break;
+      if (selected_tile_categories.categories_amount > 0) {
+        // Check if tool has correct tile category as the tile that should be broken
+        for (int i = 0; i < tool_break_categories.categories_amount; i++) {
+          for (int j = 0; j < selected_tile_categories.categories_amount; j++) {
+            if (tool_break_categories.categories[i] == selected_tile_categories.categories[j]) {
+              correct_tool = true;
+              break;
+            }
           }
         }
       }
@@ -173,14 +180,12 @@ static void game_handle_tile_interaction(Game *game) {
     game->player->break_progress = -1;
   }
 
-  if (IsKeyPressed(KEY_P)) {
-    world_set_tile(GAME.world, vec2i(0, 0), tile_new(&TILES[TILE_STONE]));
-  }
-
+  // Reset last broken tile, which allows you to break any tile again
   if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
     game->player->last_broken_tile = TILE_INSTANCE_EMPTY;
   }
 
+  // Debug - set target position for npc to go to
   if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON)) {
     if (game->client_game->cur_menu == MENU_DEBUG) {
       DEBUG_GO_TO_POSITION = vec2f(x_index * TILE_SIZE, y_index * TILE_SIZE);
@@ -188,6 +193,7 @@ static void game_handle_tile_interaction(Game *game) {
     }
   }
 
+  // Place/Interact tile
   if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && true /*!slot_selected*/ && interaction_in_range) {
     TileInstance *selected_tile = world_highest_tile_at(game->world, vec2i(x_index, y_index));
     if (CheckCollisionPointRec(mouse_world_pos, rectf_from_dimf(x_index * TILE_SIZE, y_index * TILE_SIZE, selected_tile->box))) {

@@ -5,6 +5,7 @@
 #include "../../include/item.h"
 #include "../../include/net/client.h"
 #include "../../include/particle.h"
+#include "../../include/data/data_reader.h"
 #include <raylib.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -412,7 +413,7 @@ void world_save(const World *world, DataMap *data) {
   DataList chunks_list = data_list_new(WORLD_LOADED_CHUNKS);
   size_t len = array_len(world->chunks);
   for (int i = 0; i < len; i++) {
-    DataMap map = data_map_new(8);
+    DataMap map = data_map_new(len);
     const Chunk *chunk = &world->chunks[i];
     chunk_save(chunk, &map);
     data_list_add(&chunks_list, data_map(map));

@@ -59,8 +59,6 @@ static void game_load_cur_save(Game *game, SaveDescriptor desc) {
   game_load_save_data(game, desc);
   game->world = &game->cur_save.cur_space->world;
   game->player = &game->cur_save.player;
-
-  // TODO: world_prepare_rendering(game->world);
 }
 
 void game_load_save(Game *game, SaveDescriptor desc) {

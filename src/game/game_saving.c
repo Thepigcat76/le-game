@@ -37,14 +37,16 @@ void game_load_save_data(Game *game, SaveDescriptor save_desc) {
   // Load the save's spaces
   save_load_spaces(&save);
 
+  if (array_len(save.spaces) == 0) PANIC_FMT("Failed to get spaces, non exist :(");
+
   // TODO: Load into the space that the player last played
   Space space;
-  space_create_default(save_desc.config.seed, &space);
+  space_create(save.spaces[0], save_desc.config.seed, &space);
   space_load(save_desc, space.desc, &space);
   array_add(save.loaded_spaces, space);
 
   game->cur_save = save;
-  game->cur_save.cur_space = &save.loaded_spaces[0];
+  game->cur_save.cur_space = &game->cur_save.loaded_spaces[0];
 }
 
 // UNLOAD

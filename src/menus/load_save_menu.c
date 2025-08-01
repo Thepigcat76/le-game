@@ -7,7 +7,6 @@ static int scroll_y_offset = 0;
 static void load_save_menu_load_save(void *args) {
   SaveDescriptor save_desc = *(SaveDescriptor *)args;
   game_load_save(&GAME, save_desc);
-  world_initialize(GAME.world);
   client_init_loaded_save(&CLIENT_GAME);
   client_set_menu(&CLIENT_GAME, MENU_NONE);
   GAME.save_loaded = true;
@@ -41,7 +40,7 @@ void load_save_menu_render(UiRenderer *renderer, const ClientGame *game) {
   {
     size_t saves = array_len(game->local_saves);
     for (int i = 0; i < saves; i++) {
-      RENDER_BUTTON({.message = TextFormat("%s", game->local_saves[i].config.save_name),
+      RENDER_BUTTON({.message = game->local_saves[i].config.save_name,
                      .texture = SAVE_SLOT_TEXTURE,
                      .selected_texture = SAVE_SLOT_SELECTED_TEXTURE,
                      .on_click_func = button_click_args(load_save_menu_load_save, &game->local_saves[i]),

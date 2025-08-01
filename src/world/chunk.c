@@ -16,6 +16,11 @@ static void chunk_assign_dirt_variants(Chunk *chunk) {
   }
 }
 
+void chunk_empty(Chunk *chunk, ChunkPos chunk_pos, float world_seed) {
+  chunk->chunk_pos = chunk_pos;
+  chunk_assign_dirt_variants(chunk);
+}
+
 void chunk_gen(Chunk *chunk, ChunkPos chunk_pos, float world_seed) {
   int chunk_x = chunk_pos.x * CHUNK_SIZE;
   int chunk_y = chunk_pos.y * CHUNK_SIZE;

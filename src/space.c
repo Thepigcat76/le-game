@@ -19,8 +19,9 @@ void space_types_init(void) {
 void space_create(SpaceDescriptor desc, float seed, Space *space) {
   space->desc = desc;
   space->world = world_new(desc.type->world_type, seed);
-  world_gen(&space->world);
-  world_initialize(&space->world);
+  if (!desc.loaded_from_disk) {
+    world_gen(&space->world);
+  }
 }
 
 void space_create_default(float seed, Space *space) { space_create((SpaceDescriptor){.type = &SPACES[SPACE_BASE], .id = 0}, seed, space); }
@@ -37,6 +38,7 @@ void space_load(SaveDescriptor save_desc, SpaceDescriptor space_desc, Space *spa
 
     data_free(&data_map);
   });
+  world_initialize(&space->world);
 }
 
 void space_save(SaveDescriptor save_desc, const Space *space) {
