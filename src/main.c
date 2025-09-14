@@ -184,6 +184,60 @@ static void client_start(void) {
 //   game_end();
 // }
 
+#include "../include/map.h"
+
+typedef struct {
+  char *name;
+  int age;
+} TestUser;
+
+static int strv_hash(const void *a) {
+  const char *str = (char *)a;
+  int hash = 5381;
+  int c;
+
+  while ((c = (unsigned char)*str++)) {
+    hash = ((hash << 5) + hash) + c;
+  }
+
+  if (hash < 0) {
+    hash = -hash;
+  }
+
+  return hash;
+}
+
+static bool strv_eq(const void *a, const void *b) { return str_eq(a, b); }
+
+static bool test_userv_eq(const void *a, const void *b) {
+  TestUser *ua = (TestUser *)a;
+  TestUser *ub = (TestUser *)b;
+  return str_eq(ua->name, ub->name) && ua->age == ub->age;
+}
+
+void test() {
+  alloc_init();
+  char *string = "bA";
+  int hash = strv_hash(string);
+  printf("String: %s, Hash: %d\n", string, hash);
+
+  Hashmap(char *, TestUser) map = hashmap_new(char *, TestUser, &HEAP_ALLOCATOR, strv_hash, strv_eq, NULL);
+  TestUser user = {.name = "Jeff", .age = 10};
+  TestUser user1 = {.name = "Joe", .age = 102};
+  hashmap_insert(&map, "ab", &user);
+  hashmap_insert(&map, "bA", &user1);
+  bool inserted = hashmap_insert(&map, "bA", &user);
+  printf("inserted: %s\n", btos(inserted));
+
+  TestUser *le_user = hashmap_value(&map, "bA");
+
+  if (le_user != NULL) {
+    printf("User{.name = %s, .age = %d}\n", le_user->name, le_user->age);
+  } else {
+    printf("NULL\n");
+  }
+}
+
 int main(int argc, char **argv) {
   bool server = argc > 1 && str_eq(argv[1], "--server");
 
