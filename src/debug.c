@@ -2,23 +2,20 @@
 #include "../include/keys.h"
 #include "../include/net/client.h"
 #include "../include/game.h"
-#include "../include/array.h"
 #include "raylib.h"
 #include "rlgl.h"
 
-static BeingInstance DEBUG_BEINGS[BEINGS_AMOUNT];
-static int DEBUG_BEINGS_WIDTH = 0;
-Vec2f DEBUG_GO_TO_POSITION = {.x = 0, .y = 0};
-int WORLD_BEING_ID = 0;
+void debug_init(Debug *debug, struct _game *game) {
+  debug->options = game->debug_options;
+  debug->game = game;
 
-void debug_init() {
   for (int i = 0; i < BEINGS_AMOUNT; i++) {
-    DEBUG_BEINGS[i] = being_new_default(i);
-    DEBUG_BEINGS_WIDTH += DEBUG_BEINGS[i].context.box.width * 3;
+    debug->debug_beings[i] = being_new_default(i);
+    debug->debug_beings_width += debug->debug_beings[i].context.box.width * 3;
   }
 }
 
-static void debug_render_game_object_overlay() {
+static void debug_render_game_object_overlay(Debug *debug) {
   switch (GAME.debug_options.game_object_display) {
   case DEBUG_DISPLAY_ALL_ITEMS: {
     GAME.client_game->paused = true;
@@ -55,9 +52,9 @@ static void debug_render_game_object_overlay() {
     float scale = 3;
     for (int i = 0; i < BEINGS_AMOUNT; i++) {
       int start_x = 0;
-      BeingInstance being = DEBUG_BEINGS[i];
+      BeingInstance being = debug->debug_beings[i];
       being.context.box.x =
-          ((float)(GetScreenWidth() - DEBUG_BEINGS_WIDTH) / 2 + i * being.context.box.width * scale) / scale;
+          ((float)(GetScreenWidth() - debug->debug_beings_width) / 2 + i * being.context.box.width * scale) / scale;
       being.context.box.y = 100;
       rlPushMatrix();
       {
@@ -75,16 +72,16 @@ static void debug_render_game_object_overlay() {
   }
 }
 
-void debug_render_overlay() {
+void debug_render_overlay(Debug *debug) {
   Vec2i selected_tile_render_pos = SELECTED_TILE_RENDER_POS(GetScreenWidth(), GetScreenHeight());
   tile_render_scaled(&GAME.debug_options.selected_tile_to_place_instance, selected_tile_render_pos.x + 35,
                      selected_tile_render_pos.y - 60, 4);
   if (GAME.client_game->cur_menu == MENU_DEBUG) {
-    debug_render_game_object_overlay();
+    debug_render_game_object_overlay(debug);
   }
 }
 
-void debug_render() {
+void debug_render(Debug *debug) {
   if (GAME.debug_options.hitboxes_shown) {
     Rectangle player_hitbox = player_collision_box(GAME.player);
     rec_draw_outline(player_hitbox, BLUE);
@@ -105,7 +102,7 @@ void debug_render() {
   }
 }
 
-void debug_tick() {
+void debug_tick(Debug *debug) {
   int keycode = GetKeyPressed();
 
   if (keycode >= KEY_ZERO && keycode <= KEY_NINE) {

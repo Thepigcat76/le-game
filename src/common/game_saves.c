@@ -131,7 +131,7 @@ void game_create_save(Game *game, SaveDescriptor save_desc) {
 
   array_add(game->client_game->local_saves, desc);
   game->cur_save = (Save){.descriptor = desc,
-                          .player = player_new(),
+                          .player = player_new(game),
                           .spaces = array_new_capacity(SpaceDescriptor, 8, &HEAP_ALLOCATOR),
                           .loaded_spaces = array_new_capacity(Space, 8, &HEAP_ALLOCATOR)};
   array_add(game->cur_save.spaces, (SpaceDescriptor){.type = &SPACES[SPACE_BASE], .id = 0});

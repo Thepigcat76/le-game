@@ -270,11 +270,11 @@ void tile_render(TileInstance *tile, int x, int y, bool dbg) {
   }
 }
 
-TileIdCategories tile_categories(const TileType *type) {
-  for (int i = 0; i < GAME.tile_category_lookup.tiles_amount; i++) {
-    TileId tile_id = GAME.tile_category_lookup.tiles[i];
-    if (type->id == tile_id) {
-      return GAME.tile_category_lookup.tile_categories[i];
+TileIdCategories tile_categories(const struct _game *game, const TileType *tile) {
+  for (int i = 0; i < game->tile_category_lookup.tiles_amount; i++) {
+    TileId tile_id = game->tile_category_lookup.tiles[i];
+    if (tile->id == tile_id) {
+      return game->tile_category_lookup.tile_categories[i];
     }
   }
   return (TileIdCategories){};

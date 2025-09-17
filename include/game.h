@@ -13,7 +13,6 @@
 #include "sounds.h"
 #include "space_desc.h"
 #include "tile.h"
-#include "window.h"
 #include "ui.h"
 #include "net/client.h"
 #include "net/server.h"
@@ -29,6 +28,7 @@ typedef struct _game {
   // TILE CATEGORIES
   TileCategoryLookup tile_category_lookup;
   // DEBUGGING
+  Debug debug;
   DebugOptions debug_options;
   // KEYS PRESSED
   PressedKeys pressed_keys;

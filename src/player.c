@@ -6,11 +6,9 @@
 #include "math.h"
 #include <raylib.h>
 
-#define WORLD_PTR (GAME.world)
-
 Texture2D particle_texture0;
 
-Player player_new() {
+Player player_new(struct _game *game) {
   particle_texture0 = LoadTexture("res/assets/walk_particles.png");
   return (Player){.cam = camera_new(SCREEN_WIDTH, SCREEN_HEIGHT),
                   .animated_textures = {LoadTexture("res/assets/player_front_walk.png"), LoadTexture("res/assets/player_back_walk.png"),
@@ -30,6 +28,7 @@ Player player_new() {
                   .break_progress = -1,
                   .break_tile = TILE_INSTANCE_EMPTY,
                   .break_tile_pos = vec2i(0, 0),
+                  .game = game,
                   .inv_container = item_container_new(9)};
 }
 
@@ -100,7 +99,7 @@ void player_render(Player *player, float alpha) {
 
 void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool walking_particles, bool check_for_water) {
   if (check_for_water) {
-    player->in_water = world_ground_tile_at(WORLD_PTR, player->tile_pos)->type->id == TILE_WATER;
+    player->in_water = world_ground_tile_at(player->game->world, player->tile_pos)->type->id == TILE_WATER;
     if (player->in_water) {
       x -= (x - player->box.x) / 2;
       y -= (y - player->box.y) / 2;
@@ -119,17 +118,18 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool
   player->chunk_pos.x = floor_div(x, CHUNK_SIZE * TILE_SIZE);
   player->chunk_pos.y = floor_div(y, CHUNK_SIZE * TILE_SIZE);
 
-  if (update_chunk && !world_has_chunk_at(WORLD_PTR, player->chunk_pos)) {
-    world_gen_chunk_at(WORLD_PTR, player->chunk_pos);
+  World *world = player->game->world;
+  if (update_chunk && !world_has_chunk_at(world, player->chunk_pos)) {
+    world_gen_chunk_at(world, player->chunk_pos);
 
-    Chunk *chunk = world_chunk_at(WORLD_PTR, player->chunk_pos);
+    Chunk *chunk = world_chunk_at(world, player->chunk_pos);
     if (chunk != NULL) {
-      world_prepare_chunk_rendering_update_nearby(WORLD_PTR, chunk);
+      world_prepare_chunk_rendering_update_nearby(world, chunk);
     }
   }
 
   if (walking_particles && GetRandomValue(0, 4) == 0) {
-    TileInstance *tile = world_ground_tile_at(GAME.world, player->tile_pos);
+    TileInstance *tile = world_ground_tile_at(player->game->world, player->tile_pos);
     ParticleInstance *particle = client_emit_particle(
         &CLIENT_GAME, x + GetRandomValue(-5, 7), y + GetRandomValue(-5, 7) + 27, PARTICLE_WALKING,
         (ParticleInstanceEx){.type = PARTICLE_INSTANCE_WALKING,
@@ -189,7 +189,7 @@ static void check_collisions(const Player *player, Vec2f *player_pos, Vec2f play
   for (int y = -1; y <= 1; y++) {
     for (int x = -1; x <= 1; x++) {
       TilePos tile_pos = vec2i(player_tile_pos.x + x, player_tile_pos.y + y);
-      TileInstance *tile = world_tile_at(WORLD_PTR, tile_pos, TILE_LAYER_TOP);
+      TileInstance *tile = world_tile_at(player->game->world, tile_pos, TILE_LAYER_TOP);
       if (tile->type->id != TILE_EMPTY) {
         Rectf tile_box = tile_collision_box_at(tile, tile_pos.x * TILE_SIZE, tile_pos.y * TILE_SIZE);
 
@@ -263,7 +263,7 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
       player_pos_copy.y = player_pos(player).y + player_move.y;
   }
 
-  if (GAME.debug_options.collisions_enabled) {
+  if (player->game->debug_options.collisions_enabled) {
     check_collisions(player, &player_pos_copy, player_move, player_tile_pos, true);
     check_collisions(player, &player_pos_copy, player_move, player_tile_pos, false);
   }

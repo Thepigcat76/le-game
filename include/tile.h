@@ -1,6 +1,7 @@
 #pragma once
 
 #include "data.h"
+#include "game_feature.h"
 #include "item.h"
 #include "raylib.h"
 #include "shared.h"
@@ -8,6 +9,9 @@
 #include "tile/tile_category.h"
 #include "tile/tile_props.h"
 #include "tile/adv_tile.h"
+
+// Extern structs
+struct _game;
 
 #define DEFAULT_TILE_DIMENSIONS dimf(16, 16)
 
@@ -137,4 +141,4 @@ typedef struct {
 
 void tile_categories_init(void);
 
-TileIdCategories tile_categories(const TileType *tile);
+TileIdCategories tile_categories(const struct _game *game, const TileType *tile);

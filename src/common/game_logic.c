@@ -34,7 +34,7 @@ void game_tick(Game *game) {
   }
 
 #ifdef DEBUG_BUILD
-  debug_tick();
+  debug_tick(&game->debug);
 #endif
 
   if (IS_KEY_PRESSED(reload)) {
@@ -111,7 +111,7 @@ static void game_handle_tile_interaction(Game *game) {
     TileIdCategories tool_break_categories = item_tile_categories(player_held_item);
     // Check if tool has break categories
     if (tool_break_categories.categories_amount > 0) {
-      TileIdCategories selected_tile_categories = tile_categories(selected_tile->type);
+      TileIdCategories selected_tile_categories = tile_categories(game, selected_tile->type);
       if (selected_tile_categories.categories_amount > 0) {
         // Check if tool has correct tile category as the tile that should be broken
         for (int i = 0; i < tool_break_categories.categories_amount; i++) {

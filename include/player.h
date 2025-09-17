@@ -8,6 +8,8 @@
 #include <stdint.h>
 #include <raylib.h>
 
+struct _game;
+
 typedef struct {
   Camera2D cam;
   Vec2f cur_cam_pos;
@@ -23,6 +25,7 @@ typedef struct {
   int frame_timer;
   bool walking;
   bool in_water;
+  struct _game *game;
   TileInstance last_broken_tile;
   // 0 - 64 ( / 16 for anim frames)
   int break_progress;
@@ -40,7 +43,7 @@ typedef struct {
   ItemContainer inv_container;
 } Player;
 
-Player player_new();
+Player player_new(struct _game *game);
 
 Rectf player_collision_box(const Player *player);
 

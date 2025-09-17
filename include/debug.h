@@ -2,7 +2,9 @@
 
 #include <stdbool.h>
 #include "../include/tile.h"
+#include "being.h"
 #include "item.h"
+#include "shared.h"
 
 #define SELECTED_TILE_RENDER_POS(screen_w, screen_h) vec2i(screen_w - (3.5 * 16) - 30, (screen_h / 2.0f) - (3.5 * 8))
 
@@ -27,10 +29,21 @@ typedef struct {
     bool print_tile_debug_info;
 } DebugOptions;
 
-void debug_init();
+struct _game;
 
-void debug_render_overlay();
+typedef struct {
+    DebugOptions options;
+    struct _game *game;
+    BeingInstance debug_beings[BEINGS_AMOUNT];
+    int debug_beings_width;
+    Vec2f debug_go_to_pos;
+    int debug_controlled_being_id;
+} Debug;
 
-void debug_render();
+void debug_init(Debug *debug, struct _game *game);
 
-void debug_tick();
+void debug_render_overlay(Debug *debug);
+
+void debug_render(Debug *debug);
+
+void debug_tick(Debug *debug);

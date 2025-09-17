@@ -1,11 +1,12 @@
 #include "../../include/save.h"
 #include "../../include/array.h"
+#include "../../include/game.h"
 #include <raylib.h>
 
 // TODO: create bumps for both of these possibly
 Save save_new(SaveDescriptor desc) {
   return (Save){.descriptor = desc,
-                .player = player_new(),
+                .player = player_new(&GAME),
                 .spaces = array_new_capacity(SpaceDescriptor, 16, &HEAP_ALLOCATOR),
                 .loaded_spaces = array_new_capacity(Space, 16, &HEAP_ALLOCATOR),
                 .space_id_lookup = {.entries = array_new_capacity(SpaceIdLookupEntry, 16, &HEAP_ALLOCATOR)}};
