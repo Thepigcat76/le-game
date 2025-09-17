@@ -1,8 +1,6 @@
 #include "../../include/data.h"
 #include "../../vendor/cJSON.h"
 #include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 
 static cJSON *data_reader_data_to_json(Data *data) {
   switch (data->type) {

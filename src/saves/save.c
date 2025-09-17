@@ -1,5 +1,5 @@
-#include "../include/save.h"
-#include "../include/array.h"
+#include "../../include/save.h"
+#include "../../include/array.h"
 #include <raylib.h>
 
 // TODO: create bumps for both of these possibly

@@ -1,4 +1,5 @@
-#include "../../include/game.h"
+#include "../../../include/particle.h"
+#include "../../../include/net/client.h"
 
 // TODO: Allow spawning particles on common/server by sending packet
 

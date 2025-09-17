@@ -1,4 +1,4 @@
-#include "../../include/net/client.h"
+#include "../../../include/net/client.h"
 
 void client_render_particle(ClientGame *game, ParticleInstance particle, bool behind_player) {
   if (particle.active) {

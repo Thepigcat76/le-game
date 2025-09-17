@@ -1,5 +1,5 @@
-#include "../include/shaders.h"
-#include "../include/net/client.h"
+#include "../../include/shaders.h"
+#include "../../include/net/client.h"
 #include <raylib.h>
 #include <stdbool.h>
 

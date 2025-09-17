@@ -1,5 +1,5 @@
-#include "../include/item/item_container.h"
-#include "../include/array.h"
+#include "../../include/item/item_container.h"
+#include "../../include/array.h"
 
 Bump ITEM_CONTAINER_BUMP;
 BUMP_ALLOCATOR(ITEM_CONTAINER_BUMP_ALLOCATOR, &ITEM_CONTAINER_BUMP);

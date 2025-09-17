@@ -1,5 +1,5 @@
-#include "../include/item.h"
-#include "../include/data.h"
+#include "../../include/item.h"
+#include "../../include/data.h"
 #include <raylib.h>
 #include <stdio.h>
 #include <string.h>

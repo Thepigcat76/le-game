@@ -1,8 +1,7 @@
-#include "../include/tile.h"
-#include "../include/array.h"
-#include "../include/game.h"
-#include "../include/res_loader.h"
-#include "../include/shared.h"
+#include "../../include/tile.h"
+#include "../../include/array.h"
+#include "../../include/game.h"
+#include "../../include/shared.h"
 #include <dirent.h>
 #include <limits.h>
 #include <raylib.h>
@@ -238,7 +237,7 @@ void tile_render_scaled(TileInstance *tile, int x, int y, float scale) {
       }
       DrawTextureRecEx(texture, sprite_rect, vec2f(x - offset_x, y - offset_y), 0, scale, WHITE);
 #ifdef DEBUG_BUILD
-#include "../include/game.h"
+#include "../../include/game.h"
       if (GAME.debug_options.hitboxes_shown && tile->type->layer == TILE_LAYER_TOP) {
         rec_draw_outline(tile_collision_box_at(tile, x, y), GREEN);
       }
@@ -262,7 +261,7 @@ void tile_render(TileInstance *tile, int x, int y, bool dbg) {
       int offset_y = tile->type->tile_dimensions.height - TILE_SIZE;
       DrawTextureRec(texture, sprite_rect, vec2f(x - offset_x, y - offset_y), WHITE);
 #ifdef DEBUG_BUILD
-#include "../include/game.h"
+#include "../../include/game.h"
       if (GAME.debug_options.hitboxes_shown && tile->type->layer == TILE_LAYER_TOP) {
         rec_draw_outline(tile_collision_box_at(tile, x, y), GREEN);
       }

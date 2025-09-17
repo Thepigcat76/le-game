@@ -46,6 +46,9 @@ extern Game GAME;
 // Initializes the game
 void game_create(Game *game);
 
+// Initialize registries
+void game_registry_init(void);
+
 // GAME CREATION
 
 // Creates a new directory for this save and the config file

@@ -1,7 +1,7 @@
-#include "../include/keys.h"
-#include "../include/config.h"
-#include "../include/net/client.h"
-#include "../vendor/cJSON.h"
+#include "../../include/keys.h"
+#include "../../include/config.h"
+#include "../../include/net/client.h"
+#include "../../vendor/cJSON.h"
 #include <raylib.h>
 #include <string.h>
 

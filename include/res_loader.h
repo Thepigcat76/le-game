@@ -1,3 +1,5 @@
+#pragma once
+
 // Starts a thread for each resource type and loads it
 void res_load(void);
 

@@ -1,7 +1,7 @@
-#include "../include/ui.h"
-#include "../include/config.h"
-#include "../include/net/client.h"
-#include "../include/shared.h"
+#include "../../include/ui.h"
+#include "../../include/config.h"
+#include "../../include/net/client.h"
+#include "../../include/shared.h"
 #include "raylib.h"
 #include <stdbool.h>
 

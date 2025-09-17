@@ -1,7 +1,9 @@
 #include "menu_includes.h"
 #include <raylib.h>
 
-static void multiplayer_menu_join() {}
+static void multiplayer_menu_join() {
+    client_join_server(&CLIENT_GAME, "127.0.0.1", 12345);
+}
 
 static void multiplayer_menu_host() {
     client_set_menu(&CLIENT_GAME, MENU_HOST_SERVER);

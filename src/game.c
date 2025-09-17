@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <sys/stat.h>
 
+Game GAME;
+
 #define COMMON_RELOAD(game_ptr, src_file_prefix)                                                                                           \
   extern void src_file_prefix##_on_reload(Game *game);                                                                                     \
   src_file_prefix##_on_reload(game_ptr)
@@ -15,7 +17,14 @@ void game_create(Game *game) {
                 .server_game = NULL};
 }
 
-Game GAME;
+void game_registry_init(void) {
+  // Items need to be done before tiles,
+  // cuz tiles reference the items
+  item_types_init();
+  tile_types_init();
+  world_types_init();
+  space_types_init();
+}
 
 void game_feature_add(Game *game, GameFeature game_feature) {
   if (game->cur_save.feature_store.game_features_amount < game->cur_save.feature_store.game_features_capacity) {

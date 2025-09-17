@@ -12,6 +12,7 @@
 #include "../window.h"
 #include "../world.h"
 #include "common.h"
+#include "sockets.h"
 
 typedef struct {
   PlayerDescriptor *server_players;
@@ -47,6 +48,8 @@ typedef struct {
 } ClientGame;
 
 extern ClientGame CLIENT_GAME;
+
+void client_start(void);
 
 void client_init(void);
 
@@ -97,3 +100,7 @@ ParticleInstance *client_emit_particle_ex(ClientGame *game, ParticleInstance par
 
 ParticleInstance *client_emit_particle(ClientGame *game, int x, int y, ParticleId particle_id,
                                      ParticleInstanceEx particle_extra);
+
+// Networking
+
+void client_join_server(ClientGame *game, const char *ip_addr, uint32_t port);

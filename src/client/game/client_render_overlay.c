@@ -1,5 +1,6 @@
-#include "../../include/config.h"
-#include "../../include/game.h"
+#include "../../../include/config.h"
+#include "../../../include/debug.h"
+#include "../../../include/net/client.h"
 
 #define RENDER_MENU(ui_renderer, menu_name)                                                                                                \
   extern void menu_name##_render(UiRenderer *renderer, const ClientGame *client);                                                          \

@@ -1,4 +1,4 @@
-#include "../include/being.h"
+#include "../../include/being.h"
 
 BeingActivitiesEcs BEING_ACTIVITIES_ECS = {};
 

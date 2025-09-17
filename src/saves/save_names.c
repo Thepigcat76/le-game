@@ -1,6 +1,6 @@
-#include "../include/save_names.h"
-#include "../include/shared.h"
-#include "../vendor/cJSON.h"
+#include "../../include/save_names.h"
+#include "../../include/shared.h"
+#include "../../vendor/cJSON.h"
 #include <raylib.h>
 #include <stdlib.h>
 #include <string.h>

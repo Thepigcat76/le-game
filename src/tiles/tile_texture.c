@@ -1,9 +1,7 @@
-#include "../include/array.h"
-#include "../include/game.h"
-#include "../include/net/client.h"
-#include "../include/shared.h"
-#include "../include/tile.h"
-#include "../vendor/cJSON.h"
+#include "../../include/net/client.h"
+#include "../../include/shared.h"
+#include "../../include/tile.h"
+#include "../../vendor/cJSON.h"
 #include <dirent.h>
 #include <raylib.h>
 #include <stdio.h>

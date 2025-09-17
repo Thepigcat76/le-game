@@ -1,6 +1,6 @@
-#include "../include/textures.h"
-#include "../include/shared.h"
-#include "../vendor/cJSON.h"
+#include "../../include/textures.h"
+#include "../../include/shared.h"
+#include "../../vendor/cJSON.h"
 #include "raylib.h"
 #include <stdlib.h>
 

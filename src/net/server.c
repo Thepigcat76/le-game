@@ -11,7 +11,7 @@ void server_init(void) { SERVER_GAME = (ServerGame){}; }
 
 static void *server_game(void *args) {
   while (true) {
-    printf("Game logic\n");
+    //printf("Game logic\n");
   }
   return NULL;
 }
@@ -72,6 +72,7 @@ static void *server_player_listener(void *args) {
       size_t player_id = SERVER_GAME.players++;
       SERVER_GAME.client_addresses[player_id] = client_fd;
       // TODO: Send packets to clients
+      printf("Player connected!\n");
     }
     pthread_mutex_unlock(&SERVER_MUTEX);
   }
