@@ -45,6 +45,8 @@ typedef struct {
   // in CLIENT_GAME.cur_save
   World *world;
   Player *player;
+  addr_t server_addr;
+  bool connected_to_server;
 } ClientGame;
 
 extern ClientGame CLIENT_GAME;

@@ -117,7 +117,7 @@ void client_start(void) {
     printf("Failed to create packet listener thread\n");
     return;
   }
-  
+
   pthread_join(game_thread, NULL);
   pthread_join(packet_listener_thread, NULL);
 }
@@ -129,13 +129,7 @@ void client_init(void) {
       .world_texture = LoadRenderTexture(GetScreenWidth(), GetScreenHeight()),
       .local_saves = array_new_capacity(SaveDescriptor, 64, &HEAP_ALLOCATOR),
       .window = {.prev_width = GetScreenWidth(), .prev_height = GetScreenHeight(), .width = GetScreenWidth(), .height = GetScreenHeight()},
-      .ui_renderer = (UiRenderer){.cur_x = 0,
-                                  .cur_y = 0,
-                                  .simulate = false,
-                                  .ui_height = -1,
-                                  .cur_style = {0},
-                                  .initial_style = {0},
-                                  .context = {.screen_width = GetScreenWidth(), .screen_height = GetScreenHeight()}}};
+      .ui_renderer = ui_renderer_new()};
 
   ClientGame *game = &CLIENT_GAME;
 
@@ -304,4 +298,15 @@ static void client_poll_keybinds(ClientGame *client) {
   KEY_DOWN(open_close_inventory_key);
 }
 
-void client_join_server(ClientGame *game, const char *ip_addr, uint32_t port) { sockets_connect_to_server(ip_addr, port); }
+void client_join_server(ClientGame *game, const char *ip_addr, uint32_t port) {
+  if (!game->connected_to_server) {
+    addr_t server_addr = sockets_connect_to_server(ip_addr, port);
+    if (server_addr != -1) {
+      game->server_addr = server_addr;
+      game->connected_to_server = true;
+      printf("Successfully connected to server %u, at addr: %s, port: %u\n", server_addr, ip_addr, port);
+    } else {
+      printf("Failed to connect to server at addr: %s, port: %u\n", ip_addr, port);
+    }
+  }
+}

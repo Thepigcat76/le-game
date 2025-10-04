@@ -36,16 +36,16 @@ void host_menu_render(UiRenderer *renderer, const ClientGame *game) {
   });
   RENDER_BUTTON({
       .message = "Host",
-      .texture = BUTTON_TEXTURE,
-      .selected_texture = BUTTON_SELECTED_TEXTURE,
+      .texture = OPT_TEX(BUTTON_TEXTURE),
+      .selected_texture = OPT_TEX(BUTTON_SELECTED_TEXTURE),
       .on_click_func = button_click_simple(host_menu_host),
       .x_offset = x_offset,
       .y_offset = y_offset,
   });
   RENDER_BUTTON({
       .message = "Back",
-      .texture = BUTTON_TEXTURE,
-      .selected_texture = BUTTON_SELECTED_TEXTURE,
+      .texture = OPT_TEX(BUTTON_TEXTURE),
+      .selected_texture = OPT_TEX(BUTTON_SELECTED_TEXTURE),
       .on_click_func = button_click_simple(host_menu_back),
       .x_offset = x_offset,
       .y_offset = y_offset,

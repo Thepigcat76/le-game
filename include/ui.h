@@ -6,6 +6,15 @@
 #include <raylib.h>
 #include <stdlib.h>
 
+#ifdef CTX_SERVER
+#define UI_RENDERER_PTR server_ui_renderer
+#else
+#define UI_RENDERER_PTR &CLIENT_GAME.ui_renderer
+#endif
+
+extern Texture2D BUTTON_TEXTURE_DEFAULT;
+extern Texture2D BUTTON_TEXTURE_SELECTED_DEFAULT;
+
 typedef struct {
   GroupUiComponent component;
   int prev_x;
@@ -27,12 +36,14 @@ typedef struct {
   } context;
 } UiRenderer;
 
+UiRenderer ui_renderer_new(void);
+
 // Setup (Order of declaratiion should also be)
 
 // Needs to be called after setting the style
-#define UI_SETUP(...) ui_setup(&CLIENT_GAME.ui_renderer, (UiStyle)__VA_ARGS__)
+#define UI_SETUP(...) ui_setup(UI_RENDERER_PTR, (UiStyle)__VA_ARGS__)
 
-#define UI_BACKGROUND(...) ui_set_background(&CLIENT_GAME.ui_renderer, (BackgroundUiComponent)__VA_ARGS__)
+#define UI_BACKGROUND(...) ui_set_background(UI_RENDERER_PTR, (BackgroundUiComponent)__VA_ARGS__)
 
 void ui_setup(UiRenderer *renderer, UiStyle style);
 
@@ -42,21 +53,21 @@ float ui_scale(UiRenderer *renderer);
 
 // COMPONENTS
 
-#define RENDER_BUTTON(...) ui_button_render(&CLIENT_GAME.ui_renderer, (ButtonUiComponent)__VA_ARGS__)
+#define RENDER_BUTTON(...) ui_button_render(UI_RENDERER_PTR, (ButtonUiComponent)__VA_ARGS__)
 
-#define RENDER_TEXT(...) ui_text_render(&CLIENT_GAME.ui_renderer, (TextUiComponent)__VA_ARGS__)
+#define RENDER_TEXT(...) ui_text_render(UI_RENDERER_PTR, (TextUiComponent)__VA_ARGS__)
 
-#define RENDER_TEXT_INPUT(...) ui_text_input_render(&CLIENT_GAME.ui_renderer, (TextInputUiComponent)__VA_ARGS__)
+#define RENDER_TEXT_INPUT(...) ui_text_input_render(UI_RENDERER_PTR, (TextInputUiComponent)__VA_ARGS__)
 
-#define RENDER_TEXTURE(...) ui_texture_render(&CLIENT_GAME.ui_renderer, (TextureUiComponent)__VA_ARGS__)
+#define RENDER_TEXTURE(...) ui_texture_render(UI_RENDERER_PTR, (TextureUiComponent)__VA_ARGS__)
 
-#define RENDER_SPACING(...) ui_spacing_render(&CLIENT_GAME.ui_renderer, (SpacingUiComponent)__VA_ARGS__)
+#define RENDER_SPACING(...) ui_spacing_render(UI_RENDERER_PTR, (SpacingUiComponent)__VA_ARGS__)
 
-#define RENDER_SLOT(...) ui_slot_render(&CLIENT_GAME.ui_renderer, (SlotUiComponent)__VA_ARGS__)
+#define RENDER_SLOT(...) ui_slot_render(UI_RENDERER_PTR, (SlotUiComponent)__VA_ARGS__)
 
-#define UI_GROUP_CREATE(...) ui_group_create(&CLIENT_GAME.ui_renderer, (GroupUiComponent)__VA_ARGS__)
+#define UI_GROUP_CREATE(...) ui_group_create(UI_RENDERER_PTR, (GroupUiComponent)__VA_ARGS__)
 
-#define UI_GROUP_DESTROY() ui_group_destroy(&CLIENT_GAME.ui_renderer)
+#define UI_GROUP_DESTROY() ui_group_destroy(UI_RENDERER_PTR)
 
 // BUTTONS
 

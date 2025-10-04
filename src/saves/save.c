@@ -12,6 +12,16 @@ Save save_new(SaveDescriptor desc) {
                 .space_id_lookup = {.entries = array_new_capacity(SpaceIdLookupEntry, 16, &HEAP_ALLOCATOR)}};
 }
 
+cJSON *save_config_to_json(const SaveConfig *config) {
+  cJSON *json = cJSON_CreateObject();
+  cJSON_AddStringToObject(json, "name", config->save_name);
+  {
+    cJSON *world_json = cJSON_AddObjectToObject(json, "world");
+    cJSON_AddNumberToObject(world_json, "seed", config->seed);
+  }
+  return json;
+}
+
 static const SpaceType *space_type_from_id(SpaceId space_id) {
   size_t len = array_len(SPACES);
   for (size_t i = 0; i < len; i++) {

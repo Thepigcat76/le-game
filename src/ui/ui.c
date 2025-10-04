@@ -1,9 +1,28 @@
 #include "../../include/ui.h"
-#include "../../include/config.h"
 #include "../../include/net/client.h"
 #include "../../include/shared.h"
 #include "raylib.h"
 #include <stdbool.h>
+
+Texture2D BUTTON_TEXTURE_DEFAULT;
+Texture2D BUTTON_TEXTURE_SELECTED_DEFAULT;
+static bool DEFAULT_TEXTURES_INITIALIZED = false;
+
+UiRenderer ui_renderer_new(void) {
+  if (!DEFAULT_TEXTURES_INITIALIZED) {
+    BUTTON_TEXTURE_DEFAULT = LoadTexture("res/assets/gui/button_default.png");
+    BUTTON_TEXTURE_SELECTED_DEFAULT = LoadTexture("res/assets/gui/button_default_selected.png");
+    DEFAULT_TEXTURES_INITIALIZED = true;
+  }
+
+  return (UiRenderer){.cur_x = 0,
+                      .cur_y = 0,
+                      .simulate = false,
+                      .ui_height = -1,
+                      .cur_style = {0},
+                      .initial_style = {0},
+                      .context = {.screen_width = GetScreenWidth(), .screen_height = GetScreenHeight()}};
+}
 
 void ui_set_background(UiRenderer *renderer, BackgroundUiComponent component) {
 
@@ -61,7 +80,7 @@ void ui_setup(UiRenderer *renderer, UiStyle ui_style) {
   renderer->context.screen_height = GetScreenHeight();
 }
 
-float ui_scale(UiRenderer *renderer) { return ((float)CONFIG.default_font_size / 10) * renderer->cur_style.scale; }
+float ui_scale(UiRenderer *renderer) { return renderer->cur_style.scale * (renderer->cur_style.font_scale / 10); }
 
 // COMPONENTS
 
@@ -100,12 +119,27 @@ static void align(UiRenderer *renderer, int width, int height, int x_offset, int
 }
 
 void ui_button_render(UiRenderer *renderer, ButtonUiComponent component) {
+  Texture2D texture;
+
+  if (component.texture.present) {
+    texture = component.texture.texture;
+  } else {
+    texture = BUTTON_TEXTURE_DEFAULT;
+  }
+
+  Texture2D selected_texture;
+  if (component.selected_texture.present) {
+    selected_texture = component.selected_texture.texture;
+  } else {
+    selected_texture = BUTTON_TEXTURE_SELECTED_DEFAULT;
+  }
+
   if (component.width == 0) {
-    component.width = component.texture.width;
+    component.width = texture.width;
   }
 
   if (component.height == 0) {
-    component.height = component.texture.height;
+    component.height = texture.height;
   }
 
   float scale = renderer->cur_style.scale * ui_scale(renderer);
@@ -118,8 +152,7 @@ void ui_button_render(UiRenderer *renderer, ButtonUiComponent component) {
   bool hovered = CheckCollisionPointRec(
       GetMousePosition(),
       (Rectangle){.x = renderer->cur_x, .y = renderer->cur_y, .width = component.width * scale, .height = component.height * scale});
-  DrawTexturePro(hovered ? component.selected_texture : component.texture,
-                 (Rectangle){.x = 0, .y = 0, .width = component.texture.width, .height = component.texture.height},
+  DrawTexturePro(hovered ? selected_texture : texture, (Rectangle){.x = 0, .y = 0, .width = texture.width, .height = texture.height},
                  (Rectangle){.x = renderer->cur_x + (component.width * scale) / 2,
                              .y = renderer->cur_y + (component.height * scale) / 2,
                              .width = component.width * scale,
@@ -279,7 +312,8 @@ void ui_slot_render(UiRenderer *renderer, SlotUiComponent component) {
     item_render(component.item, renderer->cur_x, renderer->cur_y);
   }
 
-  DrawTextureEx(SLOT_TEXTURE, vec2f(renderer->cur_x - 2 * ui_scale(renderer), renderer->cur_y - 2 * ui_scale(renderer)), 0, ui_scale(renderer), WHITE);
+  DrawTextureEx(SLOT_TEXTURE, vec2f(renderer->cur_x - 2 * ui_scale(renderer), renderer->cur_y - 2 * ui_scale(renderer)), 0,
+                ui_scale(renderer), WHITE);
 
   move(renderer, component.width, component.height);
 }

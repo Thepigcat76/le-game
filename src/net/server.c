@@ -1,24 +1,66 @@
 #include "../../include/net/server.h"
+#include "../../include/server_ui.h"
+#include "../../include/save_names.h"
+#include "../../include/ui.h"
 #include <pthread.h>
+#include <raylib.h>
 #include <stdbool.h>
 #include <stdio.h>
 
 ServerGame SERVER_GAME;
+UiRenderer UI_RENDERER;
+
+
 
 static pthread_mutex_t SERVER_MUTEX = PTHREAD_MUTEX_INITIALIZER;
 
-void server_init(void) { SERVER_GAME = (ServerGame){}; }
+void server_init(void) {
+  SERVER_GAME = (ServerGame){};
+}
+
+static void calc_server_ui_height(UiRenderer *ui_renderer) {
+  if (ui_renderer->ui_height == -1) {
+    ui_renderer->cur_y = 0;
+    ui_renderer->simulate = true;
+    server_ui_render(ui_renderer, &SERVER_GAME);
+    ui_renderer->ui_height = ui_renderer->cur_y;
+
+    ui_renderer->simulate = false;
+    ui_renderer->cur_x = 0;
+    ui_renderer->cur_y = 0;
+  }
+}
 
 static void *server_game(void *args) {
-  while (true) {
-    //printf("Game logic\n");
+  InitWindow(400, 400, "Server UI");
+  SetTargetFPS(60);
+
+  UI_RENDERER = ui_renderer_new();
+
+  calc_server_ui_height(&UI_RENDERER);
+
+  extern void save_names_on_reload();
+  save_names_on_reload();
+
+  while (!WindowShouldClose()) {
+    UI_RENDERER.cur_x = 0;
+    UI_RENDERER.cur_y = 0;
+
+    BeginDrawing();
+    {
+      ClearBackground(BLACK);
+      server_ui_render(&UI_RENDERER, &SERVER_GAME);
+    }
+    EndDrawing();
   }
+
+  CloseWindow();
+  exit(0);
+
   return NULL;
 }
 
-static void handle_connection(addr_t client_addr) {
-  
-}
+static void handle_connection(addr_t client_addr) {}
 
 static void *server_packet_listener(void *args) {
   PollClient fds[MAX_CLIENTS];

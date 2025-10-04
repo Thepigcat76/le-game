@@ -46,8 +46,8 @@ void debug_menu_render(UiRenderer *renderer, const ClientGame *game) {
   int y_offset = 0;//4 + 1 * ui_scale(renderer);
 
   RENDER_BUTTON({.message = "Items",
-                 .texture = DEBUG_BUTTON_TEXTURE,
-                 .selected_texture = DEBUG_BUTTON_SELECTED_TEXTURE,
+                 .texture = OPT_TEX(DEBUG_BUTTON_TEXTURE),
+                 .selected_texture = OPT_TEX(DEBUG_BUTTON_SELECTED_TEXTURE),
                  .on_click_func = button_click_simple(debug_menu_items_button_clicked),
                  .x_offset = x_offset,
                  .y_offset = y_offset});

@@ -80,13 +80,7 @@ void game_unload_save(Game *game) {
 }
 
 static void game_create_save_config_file(Game *game, SaveConfig config) {
-  cJSON *json = cJSON_CreateObject();
-  cJSON_AddStringToObject(json, "name", config.save_name);
-  {
-    cJSON *world_json = cJSON_AddObjectToObject(json, "world");
-    cJSON_AddNumberToObject(world_json, "seed", config.seed);
-  }
-
+  cJSON *json = save_config_to_json(&config);
   // TO FILE
   char *json_str = cJSON_Print(json);
   size_t index = array_len(game->client_game->local_saves);

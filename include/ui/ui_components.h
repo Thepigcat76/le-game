@@ -18,9 +18,16 @@ ButtonClickFunction button_click_simple(void (*on_click_func)());
 
 ButtonClickFunction button_click_args(void (*on_click_func)(void *), void *args);
 
-typedef struct {
+#define OPT_TEX(tex) (struct _optional_texture){.texture = tex, .present = true}
+
+struct _optional_texture {
   Texture2D texture;
-  Texture2D selected_texture;
+  bool present;
+};
+
+typedef struct {
+  struct _optional_texture texture;
+  struct _optional_texture selected_texture;
   const char *message;
   int width;
   int height;

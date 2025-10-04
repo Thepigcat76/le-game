@@ -66,6 +66,8 @@ void save_names_on_reload() {
 
   free(file_content);
   cJSON_Delete(json);
+
+  printf("Reloaded savenames \n");
 }
 
 char *save_names_random_name() {
