@@ -8,9 +8,6 @@
 
 #define SELECTED_TILE_RENDER_POS(screen_w, screen_h) vec2i(screen_w - (3.5 * 16) - 30, (screen_h / 2.0f) - (3.5 * 8))
 
-extern Vec2f DEBUG_GO_TO_POSITION;
-extern int WORLD_BEING_ID;
-
 typedef enum {
     DEBUG_DISPLAY_NONE,
     DEBUG_DISPLAY_ALL_ITEMS,

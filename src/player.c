@@ -263,7 +263,7 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
       player_pos_copy.y = player_pos(player).y + player_move.y;
   }
 
-  if (player->game->debug_options.collisions_enabled) {
+  if (player->game->debug.options.collisions_enabled) {
     check_collisions(player, &player_pos_copy, player_move, player_tile_pos, true);
     check_collisions(player, &player_pos_copy, player_move, player_tile_pos, false);
   }

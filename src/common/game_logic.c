@@ -74,7 +74,7 @@ static void game_world_tick(Game *game) {
 #ifdef DEBUG_BUILD
   if (IsKeyPressed(KEY_F1)) {
     world_add_being(game->world, being_npc_new(game->player->box.x, game->player->box.y));
-    WORLD_BEING_ID = game->world->beings_amount - 1;
+    game->debug.debug_controlled_being_id = game->world->beings_amount - 1;
   }
 
   if (IS_KEY_PRESSED(open_close_debug_menu)) {
@@ -188,7 +188,7 @@ static void game_handle_tile_interaction(Game *game) {
   // Debug - set target position for npc to go to
   if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON)) {
     if (game->client_game->cur_menu == MENU_DEBUG) {
-      DEBUG_GO_TO_POSITION = vec2f(x_index * TILE_SIZE, y_index * TILE_SIZE);
+      game->debug.debug_go_to_pos = vec2f(x_index * TILE_SIZE, y_index * TILE_SIZE);
       TraceLog(LOG_DEBUG, "Set target position");
     }
   }
@@ -201,8 +201,8 @@ static void game_handle_tile_interaction(Game *game) {
         // game_set_menu(game, MENU_DIALOG);
         return;
       }
-      TileInstance new_tile = tile_new(game->debug_options.selected_tile_to_place_instance.type);
-      if (!game->debug_options.print_tile_debug_info) {
+      TileInstance new_tile = tile_new(game->debug.options.selected_tile_to_place_instance.type);
+      if (!game->debug.options.print_tile_debug_info) {
         bool placed = world_place_tile(game->world, vec2i(x_index, y_index), new_tile);
       } else {
         char buf[512];

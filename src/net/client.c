@@ -51,9 +51,9 @@ static void *client_game(void *args) {
   // init registries
   game_registry_init();
 
-  GAME.debug_options.selected_tile_to_place_instance = tile_new(&TILES[TILE_DIRT]);
+  GAME.debug.options.selected_tile_to_place_instance = tile_new(&TILES[TILE_DIRT]);
 
-  GAME.debug_options.selectable_tiles = array_new_capacity(TileInstance, 256, &HEAP_ALLOCATOR);
+  GAME.debug.options.selectable_tiles = array_new_capacity(TileInstance, 256, &HEAP_ALLOCATOR);
 
   tile_categories_init();
 

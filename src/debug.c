@@ -6,7 +6,7 @@
 #include "rlgl.h"
 
 void debug_init(Debug *debug, struct _game *game) {
-  debug->options = game->debug_options;
+  debug->options = game->debug.options;
   debug->game = game;
 
   for (int i = 0; i < BEINGS_AMOUNT; i++) {
@@ -16,7 +16,7 @@ void debug_init(Debug *debug, struct _game *game) {
 }
 
 static void debug_render_game_object_overlay(Debug *debug) {
-  switch (GAME.debug_options.game_object_display) {
+  switch (GAME.debug.options.game_object_display) {
   case DEBUG_DISPLAY_ALL_ITEMS: {
     GAME.client_game->paused = true;
     for (int i = 0; i < ITEMS_AMOUNT; i++) {
@@ -38,11 +38,11 @@ static void debug_render_game_object_overlay(Debug *debug) {
     for (int i = 0; i < TILES_AMOUNT; i++) {
       double x = ((float)SCREEN_WIDTH / 2) - (ITEMS_AMOUNT * 16 * 3.5) / 2 + (i * 32 * 3.5);
       double y = ((float)SCREEN_HEIGHT / 2) - 8 * 3.5;
-      tile_render_scaled(&GAME.debug_options.selectable_tiles[i], x - 160, y, 3.5);
+      tile_render_scaled(&GAME.debug.options.selectable_tiles[i], x - 160, y, 3.5);
       Rectf tile_box = rectf(x - 185, y - TILE_SIZE * 2, TILE_SIZE * 3.5, TILE_SIZE * 3.5);
       rec_draw_outline(tile_box, WHITE);
       if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && CheckCollisionPointRec(GetMousePosition(), tile_box)) {
-        GAME.debug_options.selected_tile_to_place_instance = GAME.debug_options.selectable_tiles[i];
+        GAME.debug.options.selected_tile_to_place_instance = GAME.debug.options.selectable_tiles[i];
       }
     }
     break;
@@ -74,7 +74,7 @@ static void debug_render_game_object_overlay(Debug *debug) {
 
 void debug_render_overlay(Debug *debug) {
   Vec2i selected_tile_render_pos = SELECTED_TILE_RENDER_POS(GetScreenWidth(), GetScreenHeight());
-  tile_render_scaled(&GAME.debug_options.selected_tile_to_place_instance, selected_tile_render_pos.x + 35,
+  tile_render_scaled(&GAME.debug.options.selected_tile_to_place_instance, selected_tile_render_pos.x + 35,
                      selected_tile_render_pos.y - 60, 4);
   if (GAME.client_game->cur_menu == MENU_DEBUG) {
     debug_render_game_object_overlay(debug);
@@ -82,7 +82,7 @@ void debug_render_overlay(Debug *debug) {
 }
 
 void debug_render(Debug *debug) {
-  if (GAME.debug_options.hitboxes_shown) {
+  if (GAME.debug.options.hitboxes_shown) {
     Rectangle player_hitbox = player_collision_box(GAME.player);
     rec_draw_outline(player_hitbox, BLUE);
     rec_draw_outline(rectf(GAME.player->tile_pos.x * TILE_SIZE, GAME.player->tile_pos.y * TILE_SIZE, 16, 16), RED);
@@ -93,7 +93,7 @@ void debug_render(Debug *debug) {
   }
 
   if (GAME.client_game->cur_menu == MENU_DEBUG) {
-    int id = WORLD_BEING_ID;
+    int id = debug->debug_controlled_being_id;
     BeingBrain brain = GAME.world->beings[id].brain;
     //if (brain.activities_amount > 0) {
     //  BeingActivityWalkAround wa_activity = brain.activities[0].var.activity_walk_around;
@@ -108,20 +108,20 @@ void debug_tick(Debug *debug) {
   if (keycode >= KEY_ZERO && keycode <= KEY_NINE) {
     int tile_index = keycode - KEY_ZERO;
     if (tile_index < TILES_AMOUNT) {
-      GAME.debug_options.selected_tile_to_place_instance = tile_new(&TILES[tile_index]);
+      GAME.debug.options.selected_tile_to_place_instance = tile_new(&TILES[tile_index]);
     }
   }
 
   if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON) && GAME.client_game->cur_menu == MENU_DEBUG) {
-    BeingInstance *being = &GAME.world->beings[WORLD_BEING_ID];
+    BeingInstance *being = &GAME.world->beings[debug->debug_controlled_being_id];
     being_brain_reset(being);
-    being_activities_add_walk_around(being, DEBUG_GO_TO_POSITION);
+    being_activities_add_walk_around(being, debug->debug_go_to_pos);
     TraceLog(LOG_DEBUG, "Added activity");
   }
 
   if (IsKeyReleased(KEYBINDS.close_cur_menu_key) && GAME.client_game->cur_menu == MENU_DEBUG) {
-    if (GAME.debug_options.game_object_display != DEBUG_DISPLAY_NONE) {
-      GAME.debug_options.game_object_display = DEBUG_DISPLAY_NONE;
+    if (GAME.debug.options.game_object_display != DEBUG_DISPLAY_NONE) {
+      GAME.debug.options.game_object_display = DEBUG_DISPLAY_NONE;
     } else {
       client_set_menu(&CLIENT_GAME, MENU_NONE);
     }

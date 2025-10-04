@@ -12,9 +12,8 @@ Game GAME;
   src_file_prefix##_on_reload(game_ptr)
 
 void game_create(Game *game) {
-  GAME = (Game){.debug_options = {.game_object_display = DEBUG_DISPLAY_NONE, .collisions_enabled = true, .hitboxes_shown = false},
-                .client_game = NULL,
-                .server_game = NULL};
+  Debug debug = {.options = {.game_object_display = DEBUG_DISPLAY_NONE, .collisions_enabled = true, .hitboxes_shown = false}};
+  GAME = (Game){.debug = debug, .client_game = NULL, .server_game = NULL};
 }
 
 void game_registry_init(void) {

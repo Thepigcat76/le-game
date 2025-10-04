@@ -52,7 +52,7 @@ void client_world_render(ClientGame *client, float alpha) {
   }
 
 #ifdef DEBUG_BUILD
-  debug_render();
+  debug_render(&client->game->debug);
 #endif
 }
 

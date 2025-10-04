@@ -55,6 +55,8 @@ int main(int argc, char **argv) {
   make_dir(OPTS.out_dir);
   cached_compile(compiler, libraries, flags, defined_flags, extra_flags, OPTS.out_dir, out_name);
 
+  puts(_internal_cmd_buf);
+
   if (argc >= 2) {
     if (STR_CMP_OR(argv[1], "r", "run")) {
       return run(OPTS.out_dir, out_name, argc, argv);

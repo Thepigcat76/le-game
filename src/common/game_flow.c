@@ -21,7 +21,7 @@ void client_deinit_raylib(void) {
 
 void game_init(Game *game) {
 #ifdef DEBUG_BUILD
-  debug_init();
+  debug_init(&game->debug, game);
 #endif
 }
 

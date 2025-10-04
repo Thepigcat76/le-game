@@ -29,7 +29,6 @@ typedef struct _game {
   TileCategoryLookup tile_category_lookup;
   // DEBUGGING
   Debug debug;
-  DebugOptions debug_options;
   // KEYS PRESSED
   PressedKeys pressed_keys;
   bool slot_selected;

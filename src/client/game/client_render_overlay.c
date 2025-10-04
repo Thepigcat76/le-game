@@ -1,5 +1,6 @@
 #include "../../../include/config.h"
 #include "../../../include/debug.h"
+#include "../../../include/game.h"
 #include "../../../include/net/client.h"
 
 #define RENDER_MENU(ui_renderer, menu_name)                                                                                                \
@@ -12,7 +13,7 @@ void client_render_overlay(ClientGame *client) {
   item_render(&client->player->held_item, pos.x + 2 * 3.5, pos.y + 2 * 3.5);
 
 #ifdef DEBUG_BUILD
-  debug_render_overlay();
+  debug_render_overlay(&client->game->debug);
 #endif
 
   Vec2f mouse_pos = GetMousePosition();
