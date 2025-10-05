@@ -14,11 +14,9 @@
 
 typedef struct {
   addr_t server_addr;
-  Save *cur_save;
   struct _game *game;
-  World *world;
-  Player *player;
-  size_t players;
+  SaveDescriptor server_save;
+  size_t clients_amount;
   addr_t client_addresses[MAX_CLIENTS];
 } ServerGame;
 
@@ -26,7 +24,7 @@ extern ServerGame SERVER_GAME;
 
 void server_start(const char *ip_addr, uint32_t port);
 
-void server_init(void);
+void server_init(ServerGame *game);
 
 void server_deinit(ServerGame *game);
 

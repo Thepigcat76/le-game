@@ -119,7 +119,9 @@ typedef Rectangle Rectf;
 typedef Vec2i ChunkPos;
 typedef Vec2i TilePos;
 
-void shared_init();
+void shared_client_setup(void);
+
+void shared_setup();
 
 char *read_file_to_string(const char *filename);
 
@@ -227,8 +229,8 @@ char *str_cpy_heap(const char *in);
   } while (0)
 
 // The assignment consumes the key
-#define IS_KEY_PRESSED(id) GAME.client_game->pressed_keys.id##_key_pressed && !(GAME.client_game->pressed_keys.id##_key_pressed = false)
-#define IS_KEY_DOWN(id) GAME.client_game->pressed_keys.id##_key_down && !(GAME.client_game->pressed_keys.id##_key_down = false)
+#define IS_KEY_PRESSED(id) CLIENT_GAME.pressed_keys.id##_key_pressed && !(CLIENT_GAME.pressed_keys.id##_key_pressed = false)
+#define IS_KEY_DOWN(id) CLIENT_GAME.pressed_keys.id##_key_down && !(CLIENT_GAME.pressed_keys.id##_key_down = false)
 
 char *btos(bool b);
 

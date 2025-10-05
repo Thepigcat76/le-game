@@ -139,6 +139,6 @@ typedef struct {
   size_t tiles_amount;
 } TileCategoryLookup;
 
-void tile_categories_init(void);
+void tile_categories_setup(struct _game *game);
 
 TileIdCategories tile_categories(const struct _game *game, const TileType *tile);

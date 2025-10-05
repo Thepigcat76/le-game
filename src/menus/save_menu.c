@@ -2,8 +2,8 @@
 #include <raylib.h>
 
 static void save_menu_back_to_game_button_clicked() {
-  GAME.client_game->cur_menu = MENU_NONE;
-  GAME.client_game->paused = false;
+  CLIENT_GAME.cur_menu = MENU_NONE;
+  CLIENT_GAME.paused = false;
 }
 
 static void save_menu_general_settings_button_clicked() { TraceLog(LOG_DEBUG, "Button clicked"); }
@@ -13,7 +13,7 @@ static void save_menu_gameplay_settings_button_clicked() { TraceLog(LOG_DEBUG, "
 static void save_menu_save_game_button_clicked() {
   client_set_menu(&CLIENT_GAME, MENU_START);
 
-  game_unload_save(&GAME);
+  game_unload_save(CLIENT_GAME.game);
 }
 
 static Texture2D DECLARE_BUTTON_TEXTURE(BACK_TO_GAME_BUTTON_TEXTURE);

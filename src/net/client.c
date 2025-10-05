@@ -2,13 +2,17 @@
 #include "../../include/array.h"
 #include "../../include/camera.h"
 #include "../../include/game.h"
+#include "../../include/net/packet.h"
+#include <pthread.h>
 #include <raylib.h>
 
 #define CLIENT_RELOAD(client_game_ptr, src_file_prefix)                                                                                    \
   extern void src_file_prefix##_on_reload(ClientGame *game);                                                                               \
   src_file_prefix##_on_reload(client_game_ptr);
 
-ClientGame CLIENT_GAME;
+NetworkConnection CLIENT_CONNECTION = {.connected = false};
+pthread_mutex_t CLIENT_MUTEX = PTHREAD_MUTEX_INITIALIZER;
+ClientGame CLIENT_GAME = {0};
 
 static Music MUSIC;
 
@@ -27,40 +31,43 @@ static void *client_game(void *args) {
 #ifdef DEBUG_BUILD
   SetTraceLogLevel(LOG_DEBUG);
 #endif
-
-  // Setup raylib
-  // NEEDS TO BE CALLED BEFORE client_init and shared_init, because both load textures
-  client_init_raylib();
-
-  // Load Textures, init random...
-  shared_init();
-
-  // Init client and setup client game
-  client_init();
   // Setup bump allocator for item containers
   _internal_item_container_init();
 
-  // Create and setup common game
-  game_create(&GAME);
-  GAME.client_game = &CLIENT_GAME;
-  game_init(&GAME);
-  CLIENT_GAME.game = &GAME;
-  CLIENT_GAME.cur_save = &CLIENT_GAME.game->cur_save;
-  CLIENT_GAME.world = GAME.world;
+  // Setup raylib
+  // NEEDS TO BE CALLED BEFORE client_init and shared_init, because both load textures
+  client_setup_raylib();
+
+  // init random...
+  shared_setup();
+  // Load shared textures
+  shared_client_setup();
+
+  // Init client game
+  client_init(&CLIENT_GAME);
+
+  // Create and init common game
+  Game _game = {0};
+  Game *game = malloc(sizeof(Game));
+  memcpy(game, &_game, sizeof(Game));
+  game_init(game);
+  game->client_game = &CLIENT_GAME;
+  CLIENT_GAME.game = game;
+  CLIENT_GAME.cur_save = &game->cur_save;
+  CLIENT_GAME.world = game->client_world;
 
   // init registries
-  game_registry_init();
+  game_registry_setup();
 
-  GAME.debug.options.selected_tile_to_place_instance = tile_new(&TILES[TILE_DIRT]);
+  game->debug.options.selected_tile_to_place_instance = tile_new(&TILES[TILE_DIRT]);
+  game->debug.options.selectable_tiles = array_new_capacity(TileInstance, 256, &HEAP_ALLOCATOR);
 
-  GAME.debug.options.selectable_tiles = array_new_capacity(TileInstance, 256, &HEAP_ALLOCATOR);
-
-  tile_categories_init();
+  tile_categories_setup(game);
 
   // Reload client resources (initializes them)
   client_reload(&CLIENT_GAME);
   // Reload common resources (initializes them)
-  game_reload(&GAME);
+  game_reload(game);
 
   // Setup ticking
   float tick_accumulator = 0.0f;
@@ -84,8 +91,8 @@ static void *client_game(void *args) {
 
     tick_accumulator += delta_time;
     while (tick_accumulator >= TICK_INTERVAL && ticks_per_frame < MAX_TICKS_PER_FRAME) {
-      game_tick(&GAME);
-      if (GAME.world != NULL) {
+      game_tick(game);
+      if (game->client_world != NULL) {
         // printf("Placing tile\n");
         // GAME.world->chunks[0].tiles[0][0][TILE_LAYER_GROUND] = tile_new(&TILES[TILE_GRASS]);
         // world_place_tile(GAME.world, vec2i(0, 0), tile_new(&TILES[TILE_GRASS]));
@@ -102,7 +109,39 @@ static void *client_game(void *args) {
   return NULL;
 }
 
-static void *client_packet_listener(void *args) { return NULL; }
+static void *client_packet_listener(void *args) {
+  addr_t server_addr = -1;
+
+  // Very scuffed way to check for server connection
+  while (true) {
+    printf("Checking for server addr\n");
+    pthread_mutex_lock(&CLIENT_MUTEX);
+    {
+      if (CLIENT_CONNECTION.connected) {
+        server_addr = CLIENT_CONNECTION.server_addr;
+        printf("Found server addr\n");
+        break;
+      }
+    }
+    pthread_mutex_unlock(&CLIENT_MUTEX);
+    sleep(3);
+  }
+
+  // Listen for packets
+  while (true) {
+    printf("Listening for packets\n");
+    Packet packet = packet_receive(server_addr, true);
+
+    if (packet.type == PACKET_ERROR) {
+      perror("Error packet on client");
+      exit(1);
+    }
+
+    packet_handle(&packet);
+  }
+
+  return NULL;
+}
 
 void client_start(void) {
   pthread_t game_thread;
@@ -122,16 +161,15 @@ void client_start(void) {
   pthread_join(packet_listener_thread, NULL);
 }
 
-void client_init(void) {
-  CLIENT_GAME = (ClientGame){
-      .cur_menu = MENU_START,
-      .paused = false,
-      .world_texture = LoadRenderTexture(GetScreenWidth(), GetScreenHeight()),
-      .local_saves = array_new_capacity(SaveDescriptor, 64, &HEAP_ALLOCATOR),
-      .window = {.prev_width = GetScreenWidth(), .prev_height = GetScreenHeight(), .width = GetScreenWidth(), .height = GetScreenHeight()},
-      .ui_renderer = ui_renderer_new()};
-
-  ClientGame *game = &CLIENT_GAME;
+void client_init(ClientGame *game) {
+  int window_width = GetScreenWidth();
+  int window_height = GetScreenHeight();
+  game->cur_menu = MENU_START;
+  game->paused = false;
+  game->world_texture = LoadRenderTexture(window_width, window_height);
+  game->local_saves = array_new_capacity(SaveDescriptor, 64, &HEAP_ALLOCATOR);
+  game->window = (Window){.prev_width = window_height, .prev_height = window_height, .width = window_width, .height = window_height};
+  game->ui_renderer = ui_renderer_new();
 
   client_init_menu(game);
 
@@ -167,7 +205,6 @@ void client_deinit(ClientGame *client) {
 void client_reload(ClientGame *game) {
   CLIENT_RELOAD(game, tile);
   CLIENT_RELOAD(game, keybinds);
-  CLIENT_RELOAD(game, save_names);
   CLIENT_RELOAD(game, shaders);
   CLIENT_RELOAD(game, world);
 }
@@ -304,6 +341,12 @@ void client_join_server(ClientGame *game, const char *ip_addr, uint32_t port) {
     if (server_addr != -1) {
       game->server_addr = server_addr;
       game->connected_to_server = true;
+      pthread_mutex_lock(&CLIENT_MUTEX);
+      {
+        CLIENT_CONNECTION.connected = true;
+        CLIENT_CONNECTION.server_addr = server_addr;
+      }
+      pthread_mutex_unlock(&CLIENT_MUTEX);
       printf("Successfully connected to server %u, at addr: %s, port: %u\n", server_addr, ip_addr, port);
     } else {
       printf("Failed to connect to server at addr: %s, port: %u\n", ip_addr, port);

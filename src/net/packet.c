@@ -1,4 +1,5 @@
 #include "../../include/net/sockets.h"
+#include <stdlib.h>
 #ifdef TARGET_WIN
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -7,16 +8,13 @@
 #else
 #include <sys/socket.h>
 #endif
-#include "../../include/net/packet.h"
 #include "../../include/bytebuf.h"
+#include "../../include/net/packet.h"
 #include <stdio.h>
 
-static void byte_buf_send(int addr, ByteBuf buf) {
-  sockets_send(addr, (SocketDataBuffer){buf.bytes, buf.writer_index}, 0);
-}
+static void byte_buf_send(int addr, ByteBuf buf) { sockets_send(addr, (SocketDataBuffer){buf.bytes, buf.writer_index}, 0); }
 
-static void packet_fmt(Packet packet, int addr, bool serverbound,
-                       bool is_client, char *buf) {
+static void packet_fmt(Packet packet, int addr, bool serverbound, bool is_client, char *buf) {
   char *prefix = ">>>";
   char postfix[10];
   if (serverbound && is_client) {
@@ -39,15 +37,106 @@ static void packet_fmt(Packet packet, int addr, bool serverbound,
     break;
   }
   case PACKET_S2C_PLAYER_JOIN: {
-    sprintf(buf, "%s [PLAYER_JOIN]{player=%d} %s", prefix,
-            packet.var.s2c_player_join.player_id, postfix);
+    sprintf(buf, "%s [PLAYER_JOIN]{player=%d} %s", prefix, packet.var.s2c_player_join.player_id, postfix);
     break;
   }
   case PACKET_S2C_NEW_PLAYER_JOINED: {
-    sprintf(buf, "%s [NEW_PLAYER_JOINED]{player=%d} %s", prefix,
-            packet.var.s2c_new_player_joined.player_id, postfix);
+    sprintf(buf, "%s [NEW_PLAYER_JOINED]{player=%d} %s", prefix, packet.var.s2c_new_player_joined.new_player_id, postfix);
     break;
   }
+  case PACKET_S2C_SYNC_SPACE: {
+    PacketS2CSyncSpace *ss_packet = &packet.var.s2c_sync_space;
+    sprintf(buf, "%s [SYNC_SPACE]{space_world_seed=%f,save_name=%s} %s", prefix, ss_packet->space.seed,
+            ss_packet->space.world.save_desc != NULL ? ss_packet->space.world.save_desc->config.save_name : "No save desc provided", postfix);
+    break;
+  }
+  }
+}
+
+static void space_encode(const Space *space, ByteBuf *buf) {
+  // Desc
+  SpaceDescriptor desc = space->desc;
+  {
+    // Type
+    byte_buf_write_byte(buf, desc.type->space_id);
+    // Id
+    byte_buf_write_int(buf, desc.id);
+    // Loaded from disk
+    byte_buf_write_byte(buf, desc.loaded_from_disk);
+  }
+  // Seed
+  char seed[64];
+  sprintf(seed, "%f", space->world.seed);
+  byte_buf_write_string(buf, seed);
+
+  // World
+  const World *world = &space->world;
+  DataMap map = data_map_new(2000);
+  world_save(world, &map);
+  Data data = data_map(map);
+  byte_buf_write_data(buf, &data);
+  // Initialized
+  byte_buf_write_byte(buf, world->initialized);
+  // Save desc
+  const SaveDescriptor *save_desc = world->save_desc;
+  // Has save desc
+  bool has_save_desc = save_desc != NULL;
+  byte_buf_write_byte(buf, has_save_desc);
+  if (has_save_desc) {
+    printf("Save desc for encoding: %p\n", save_desc);
+    byte_buf_write_int(buf, save_desc->id);
+    byte_buf_write_byte(buf, save_desc->is_server_save);
+    // Save config
+    SaveConfig config = save_desc->config;
+    {
+      // Save name
+      byte_buf_write_string(buf, config.save_name);
+    }
+  }
+}
+
+static void space_decode(Space *space, ByteBuf *buf) {
+  // Desc
+  SpaceDescriptor *desc = &space->desc;
+  {
+    desc->type = &SPACES[byte_buf_read_byte(buf)];
+    desc->id = byte_buf_read_int(buf);
+    desc->loaded_from_disk = byte_buf_read_byte(buf);
+  }
+
+  // Seed
+  int len = byte_buf_read_int(buf);
+  char *seed_buf = malloc(len);
+  byte_buf_read_string(buf, seed_buf, len);
+
+  float seed = atof(seed_buf);
+  printf("Seed: %f, space: %p, desc: %p\n", seed, space, desc);
+  space_create(*desc, seed, space);
+
+  DataMap map = byte_buf_read_data(buf).var.data_map;
+  world_load(&space->world, &map);
+  // Initialized
+  space->world.initialized = byte_buf_read_byte(buf);
+
+  // Save desc
+  bool has_save_desc = byte_buf_read_byte(buf);
+  if (has_save_desc) {
+    SaveDescriptor save_desc;
+    {
+      save_desc.id = byte_buf_read_int(buf);
+      save_desc.is_server_save = byte_buf_read_byte(buf);
+      // Save config
+      {
+        // Save name
+        size_t len = byte_buf_read_int(buf);
+        char *save_name = malloc(len);
+        byte_buf_read_string(buf, save_name, len);
+        save_desc.config.save_name = save_name;
+      }
+    }
+    SaveDescriptor *save_desc_clone = malloc(sizeof(SaveDescriptor));
+    memcpy(save_desc_clone, &save_desc, sizeof(SaveDescriptor));
+    space->world.save_desc = save_desc_clone;
   }
 }
 
@@ -63,8 +152,13 @@ static void packet_encode(Packet packet, ByteBuf *buf) {
     break;
   }
   case PACKET_S2C_NEW_PLAYER_JOINED: {
-    int player_id = packet.var.s2c_new_player_joined.player_id;
+    int player_id = packet.var.s2c_new_player_joined.new_player_id;
     byte_buf_write_byte(buf, player_id);
+    break;
+  }
+  case PACKET_S2C_SYNC_SPACE: {
+    Space space = packet.var.s2c_sync_space.space;
+    space_encode(&space, buf);
     break;
   }
   }
@@ -75,13 +169,16 @@ static Packet packet_decode(ByteBuf *buf) {
   switch (type) {
   case PACKET_S2C_PLAYER_JOIN: {
     int player_id = byte_buf_read_byte(buf);
-    return (Packet){.type = type,
-                    .var = {.s2c_player_join = {.player_id = player_id}}};
+    return (Packet){.type = type, .var = {.s2c_player_join = {.player_id = player_id}}};
   }
   case PACKET_S2C_NEW_PLAYER_JOINED: {
     int player_id = byte_buf_read_byte(buf);
-    return (Packet){.type = type,
-                    .var = {.s2c_new_player_joined = {.player_id = player_id}}};
+    return (Packet){.type = type, .var = {.s2c_new_player_joined = {.new_player_id = player_id}}};
+  }
+  case PACKET_S2C_SYNC_SPACE: {
+    Space space;
+    space_decode(&space, buf);
+    return (Packet){.type = type, .var = {.s2c_sync_space = {.space = space}}};
   }
   default: {
     printf("ERROR DECODING\n");
@@ -90,8 +187,22 @@ static Packet packet_decode(ByteBuf *buf) {
   }
 }
 
+void packet_handle(Packet *packet) {
+  switch (packet->type) {
+  case PACKET_ERROR:
+  case PACKET_S2C_PLAYER_JOIN:
+  case PACKET_S2C_NEW_PLAYER_JOINED:
+    break;
+  case PACKET_S2C_SYNC_SPACE: {
+    printf("Syncing space...\n");
+    break;
+  }
+  }
+}
+
 void packet_send(int addr, Packet packet, bool is_client) {
-  ByteBuf buf = {.writer_index = 0, .reader_index = 0, .capacity = 512};
+  uint8_t bytes[128000];
+  ByteBuf buf = {.writer_index = 0, .reader_index = 0, .capacity = 512, .bytes = bytes};
   packet_encode(packet, &buf);
   // Send: 2-byte length + data
   uint16_t len = buf.writer_index;
@@ -105,8 +216,7 @@ void packet_send(int addr, Packet packet, bool is_client) {
 
 Packet packet_receive(int addr, bool is_client) {
   uint8_t len_buf[2];
-  ssize_t n =
-      sockets_receieve(addr, (SocketDataBuffer){len_buf, 2}, MSG_WAITALL);
+  ssize_t n = sockets_receieve(addr, (SocketDataBuffer){len_buf, 2}, MSG_WAITALL);
   if (n != 2) {
     perror("Failed to read length");
     return (Packet){.type = PACKET_ERROR};
@@ -118,7 +228,8 @@ Packet packet_receive(int addr, bool is_client) {
     return (Packet){.type = PACKET_ERROR};
   }
 
-  ByteBuf buf = {.reader_index = 0, .writer_index = len, .capacity = 512};
+  uint8_t bytes[1024];
+  ByteBuf buf = {.reader_index = 0, .writer_index = len, .capacity = 512, .bytes = bytes};
   n = sockets_receieve(addr, (SocketDataBuffer){buf.bytes, len}, MSG_WAITALL);
   if (n != len) {
     perror("Failed to read full packet");

@@ -1,11 +1,11 @@
 #include "../../include/world.h"
 #include "../../include/array.h"
 #include "../../include/being.h"
+#include "../../include/data/data_reader.h"
 #include "../../include/game.h"
 #include "../../include/item.h"
 #include "../../include/net/client.h"
 #include "../../include/particle.h"
-#include "../../include/data/data_reader.h"
 #include <raylib.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -17,18 +17,26 @@
 WorldType *WORLD_TYPES;
 
 Texture2D particle_texture;
+static bool particle_texture_loaded = false;
 
-World world_new_no_chunks(void) {
-  particle_texture = LoadTexture("res/assets/particle.png");
+World world_new_no_chunks(bool clientside) {
+  if (!particle_texture_loaded) {
+    particle_texture = LoadTexture("res/assets/particle.png");
+    particle_texture_loaded = true;
+  }
   return (World){
       .chunks = NULL,
       .initialized = false,
       .type = NULL,
+      .beings = array_new_capacity(BeingInstance, 200, &HEAP_ALLOCATOR),
   };
 }
 
 World world_new(const WorldType *world_type, float seed) {
-  particle_texture = LoadTexture("res/assets/particle.png");
+  if (!particle_texture_loaded) {
+    particle_texture = LoadTexture("res/assets/particle.png");
+    particle_texture_loaded = true;
+  }
   return (World){
       .chunks = array_new_capacity(Chunk, WORLD_LOADED_CHUNKS, &HEAP_ALLOCATOR),
       .chunk_lookup = {.chunks_positions = array_new_capacity(ChunkPos, WORLD_LOADED_CHUNKS, &HEAP_ALLOCATOR),
@@ -36,6 +44,7 @@ World world_new(const WorldType *world_type, float seed) {
       .initialized = false,
       .type = world_type,
       .seed = seed,
+      .beings = array_new_capacity(BeingInstance, 200, &HEAP_ALLOCATOR),
   };
 }
 
@@ -154,7 +163,10 @@ void world_gen(World *world) {
   TraceLog(LOG_INFO, "Generated world");
   world_print_debug_chunk_lookup(&world->chunk_lookup);
 
-  world_initialize(world);
+  world->initialized = true;
+  if (GAME_SIDE == SIDE_CLIENT) {
+    world_initialize(world);
+  }
 }
 
 bool world_set_tile(World *world, TilePos tile_pos, TileInstance tile) {
@@ -240,11 +252,9 @@ bool world_remove_tile(World *world, TilePos tile_pos) {
 }
 
 void world_add_being(World *world, BeingInstance being) {
-  if (world->beings_amount < MAX_WORLD_BEINGS_AMOUNT) {
-    world->beings[world->beings_amount] = being;
-    world->beings[world->beings_amount].being_instance_id = world->beings_amount;
-    world->beings_amount++;
-  }
+  size_t index = array_len(world->beings);
+  array_add(world->beings, being);
+  world->beings[index].being_instance_id = index;
 }
 
 void world_remove_being(World *world, BeingInstance *being) {
@@ -365,8 +375,8 @@ void world_render_layer_top_split(World *world, void *_player, bool draw_before_
 }
 
 void world_on_reload(ClientGame *game) {
-  if (game->game->world != NULL) {
-    world_prepare_rendering(game->game->world);
+  if (game->game->client_world != NULL) {
+    world_prepare_rendering(game->game->client_world);
   }
 }
 

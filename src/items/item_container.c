@@ -4,7 +4,7 @@
 Bump ITEM_CONTAINER_BUMP;
 BUMP_ALLOCATOR(ITEM_CONTAINER_BUMP_ALLOCATOR, &ITEM_CONTAINER_BUMP);
 
-void _internal_item_container_init() {
+void _internal_item_container_init(void) {
   bump_init(&ITEM_CONTAINER_BUMP, malloc(1024 * sizeof(ItemInstance)), 1024 * sizeof(ItemInstance));
 }
 

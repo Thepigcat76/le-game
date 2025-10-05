@@ -8,15 +8,14 @@
 
 typedef struct {
   SaveDescriptor descriptor;
-  Space *cur_space;
   Space *loaded_spaces;
   SpaceDescriptor *spaces;
-  Player player;
+  Player *players;
   GameFeatureStore feature_store;
   SpaceIdLookup space_id_lookup;
 } Save;
 
+// Create new save and return it
 Save save_new(SaveDescriptor desc);
 
-// Load space descriptors in save
 void save_load_spaces(Save *save);

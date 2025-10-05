@@ -38,7 +38,7 @@ Texture NPC_TEXTURE_OLD_MAN;
 
 Texture2D SLOT_TEXTURE;
 
-void shared_init() {
+void shared_client_setup(void) {
   TEXT_INPUT_TEXTURE = LoadTexture("res/assets/gui/text_input.png");
 
   DEBUG_BUTTON_TEXTURE = LoadTexture("res/assets/gui/debug_button.png");
@@ -68,7 +68,9 @@ void shared_init() {
   NPC_TEXTURE_OLD_MAN = LoadTexture("res/assets/old_man.png");
 
   SLOT_TEXTURE = LoadTexture("res/assets/gui/slot.png");
+}
 
+void shared_setup() {
   srand(time(NULL));
 }
 

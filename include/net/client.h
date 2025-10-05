@@ -38,7 +38,7 @@ typedef struct {
   // A save - this can either be a local save or
   // a save on the server
   Save *cur_save;
-  // Pointer to the common game struct
+  // Pointer to the game (heap-allocated)
   struct _game *game;
   // World, Player - points to the
   // world and player usually stored
@@ -49,15 +49,22 @@ typedef struct {
   bool connected_to_server;
 } ClientGame;
 
+typedef struct {
+  addr_t server_addr;
+  bool connected;
+} NetworkConnection;
+
 extern ClientGame CLIENT_GAME;
+extern NetworkConnection CLIENT_CONNECTION;
+extern pthread_mutex_t CLIENT_MUTEX;
 
 void client_start(void);
 
-void client_init(void);
+void client_init(ClientGame *game);
 
 void client_deinit(ClientGame *game);
 
-void client_init_raylib(void);
+void client_setup_raylib(void);
 
 void client_deinit_raylib(void);
 

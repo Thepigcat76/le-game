@@ -2,11 +2,14 @@
 #define CTX_SERVER
 #include "../../include/ui.h"
 #undef CTX_SERVER
+#include "../../include/array.h"
+#include "../../include/game.h"
+#include "../../include/net/packet.h"
 #include "../../include/net/server.h"
+#include "../../include/save_desc.h"
 #include "../../include/save_names.h"
 #include "../../include/server_ui.h"
 #include "../../include/shared.h"
-#include "../../include/save_desc.h"
 #include "../../vendor/cJSON.h"
 
 static void on_click(void) {
@@ -15,6 +18,7 @@ static void on_click(void) {
     dir_create("server-save");
   }
   SaveConfig config = {.save_name = save_names_random_name(), .seed = string_to_world_seed("")};
+  SaveDescriptor desc = {.id = 0, .config = config, .is_server_save = true};
   cJSON *json = save_config_to_json(&config);
   char *file_content = cJSON_Print(json);
   FILE *f = fopen("server-save/game.json", "w");
@@ -24,6 +28,17 @@ static void on_click(void) {
   free(file_content);
   if (!DirectoryExists("server-save/spaces")) {
     dir_create("server-save/spaces");
+    Save save = save_new(desc);
+    Space default_space;
+    printf("Seed: %f\n", config.seed);
+    space_create_default(config.seed, &default_space);
+    array_add(save.loaded_spaces, default_space);
+    SERVER_GAME.game->cur_save = save;
+    for (size_t i = 0; i < SERVER_GAME.clients_amount; i++) {
+      printf("Sending sync space packet to client: %u\n", SERVER_GAME.client_addresses[i]);
+      packet_send(SERVER_GAME.client_addresses[i],
+                  (Packet){.type = PACKET_S2C_NEW_PLAYER_JOINED, .var = {.s2c_new_player_joined = {.new_player_id = 69}}}, false);
+    }
   }
 }
 
@@ -37,8 +52,8 @@ void server_ui_render(UiRenderer *server_ui_renderer, ServerGame *server) {
   });
 
   RENDER_TEXT({.text = "Server"});
-  RENDER_TEXT({.text = TextFormat("Connected clients: %zu", server->players)});
-  for (size_t i = 0; i < server->players; i++) {
+  RENDER_TEXT({.text = TextFormat("Connected clients: %zu", server->clients_amount)});
+  for (size_t i = 0; i < server->clients_amount; i++) {
     RENDER_TEXT({.text = TextFormat("- Addr: %u", server->client_addresses[i])});
   }
   RENDER_BUTTON({.message = "Create save", .on_click_func = button_click_simple(on_click), .text_y_offset = -4});

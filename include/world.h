@@ -22,13 +22,14 @@ typedef struct {
   Chunk *chunks;
   ChunkLookup chunk_lookup;
   // TODO: Use dynamic array for beings
-  struct _being_instance beings[MAX_WORLD_BEINGS_AMOUNT];
+  struct _being_instance *beings;
   int beings_amount;
   bool initialized;
+  bool clientside;
   float seed;
 } World;
 
-World world_new_no_chunks(void);
+World world_new_no_chunks(bool clientside);
 
 World world_new(const WorldType *world_type, float seed);
 

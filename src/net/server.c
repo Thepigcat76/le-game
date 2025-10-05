@@ -1,21 +1,19 @@
 #include "../../include/net/server.h"
 #include "../../include/server_ui.h"
-#include "../../include/save_names.h"
+#include "../../include/array.h"
+#include "../../include/game.h"
 #include "../../include/ui.h"
 #include <pthread.h>
 #include <raylib.h>
 #include <stdbool.h>
 #include <stdio.h>
 
-ServerGame SERVER_GAME;
+ServerGame SERVER_GAME = {0};
 UiRenderer UI_RENDERER;
-
-
 
 static pthread_mutex_t SERVER_MUTEX = PTHREAD_MUTEX_INITIALIZER;
 
-void server_init(void) {
-  SERVER_GAME = (ServerGame){};
+void server_init(ServerGame *game) {
 }
 
 static void calc_server_ui_height(UiRenderer *ui_renderer) {
@@ -31,16 +29,54 @@ static void calc_server_ui_height(UiRenderer *ui_renderer) {
   }
 }
 
-static void *server_game(void *args) {
+static void save_save_data(const Save *save) {
+  size_t loaded_saves_len = array_len(save->loaded_spaces);
+  for (int i = 0; i < loaded_saves_len; i++) {
+    space_save(save->descriptor, &save->loaded_spaces[i]);
+  }
+}
+
+static void server_ui_setup_raylib(void) {
   InitWindow(400, 400, "Server UI");
   SetTargetFPS(60);
+}
 
+static void *server_game(void *args) {
+  // Setup bump allocator for item containers
+  _internal_item_container_init();
+
+  // Setup raylib for the server ui
+  // Make sure to call before any textures get loaded
+  server_ui_setup_raylib();
+
+  // init random
+  shared_setup();
+
+  // Init server game
+  server_init(&SERVER_GAME);
+
+  // Create and init common game
+  Game _game = {0};
+  Game *game = malloc(sizeof(Game));
+  memcpy(game, &_game, sizeof(Game));
+  game_init(game);
+  game->server_game = &SERVER_GAME;
+  SERVER_GAME.game = game;
+
+  // Create ui renderer for server ui
+  // And load button default textures
   UI_RENDERER = ui_renderer_new();
 
-  calc_server_ui_height(&UI_RENDERER);
+  // setup registries
+  game_registry_setup();
 
-  extern void save_names_on_reload();
-  save_names_on_reload();
+  // setup tile_categories
+  tile_categories_setup(game);
+
+  // Reload common resources (creates them)
+  game_reload(game);
+
+  calc_server_ui_height(&UI_RENDERER);
 
   while (!WindowShouldClose()) {
     UI_RENDERER.cur_x = 0;
@@ -53,6 +89,8 @@ static void *server_game(void *args) {
     }
     EndDrawing();
   }
+
+  save_save_data(&SERVER_GAME.game->cur_save);
 
   CloseWindow();
   exit(0);
@@ -68,7 +106,7 @@ static void *server_packet_listener(void *args) {
     size_t client_addresses_amount;
     pthread_mutex_lock(&SERVER_MUTEX);
     {
-      client_addresses_amount = SERVER_GAME.players;
+      client_addresses_amount = SERVER_GAME.clients_amount;
 
       for (int i = 0; i < client_addresses_amount; i++) {
         addr_t s = SERVER_GAME.client_addresses[i];
@@ -95,7 +133,7 @@ static void *server_packet_listener(void *args) {
         handle_connection(client_fd);
       }
       if (fds[i].revents & (POLLERR | POLLHUP | POLLNVAL)) {
-        fprintf(stderr, "Client %d disconnected or error\n", fds[i].fd);
+        //fprintf(stderr, "Client %d disconnected or error\n", fds[i].fd);
         sockets_close(fds[i].fd);
         // You may want to mark the player slot as disconnected
       }
@@ -111,7 +149,7 @@ static void *server_player_listener(void *args) {
 
     pthread_mutex_lock(&SERVER_MUTEX);
     {
-      size_t player_id = SERVER_GAME.players++;
+      size_t player_id = SERVER_GAME.clients_amount++;
       SERVER_GAME.client_addresses[player_id] = client_fd;
       // TODO: Send packets to clients
       printf("Player connected!\n");

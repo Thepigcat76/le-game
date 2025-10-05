@@ -49,7 +49,7 @@ void game_load_saves(Game *game) {
     if (dir_exists(full_dir_name) && string_starts_with(entry->d_name, "save")) {
       int id = atoi(TextSubtext(entry->d_name, 4, strlen(entry->d_name) - 4));
       SaveConfig config = game_load_save_config(full_dir_name);
-      SaveDescriptor desc = {.id = id, .config = config};
+      SaveDescriptor desc = {.id = id, .config = config, .is_server_save = false};
       array_add(game->client_game->local_saves, desc);
     }
   });
@@ -57,15 +57,15 @@ void game_load_saves(Game *game) {
 
 static void game_load_cur_save(Game *game, SaveDescriptor desc) {
   game_load_save_data(game, desc);
-  game->world = &game->cur_save.cur_space->world;
-  game->player = &game->cur_save.player;
+  game->client_game->world = &game->cur_save.loaded_spaces[0].world;
+  game->client_game->player = &game->cur_save.players[0];
 }
 
 void game_load_save(Game *game, SaveDescriptor desc) {
   size_t saves_len = array_len(game->client_game->local_saves);
   for (int i = 0; i < saves_len; i++) {
     if (game->client_game->local_saves[i].id == desc.id) {
-      game_load_cur_save(&GAME, desc);
+      game_load_cur_save(game, desc);
       break;
     }
   }
@@ -75,8 +75,8 @@ void game_unload_save(Game *game) {
   game_save_save_data(game, &game->cur_save);
 
   bump_reset(&ITEM_CONTAINER_BUMP);
-  game->world = NULL;
-  game->player = NULL;
+  game->client_world = NULL;
+  game->client_player = NULL;
 }
 
 static void game_create_save_config_file(Game *game, SaveConfig config) {
@@ -97,7 +97,12 @@ static void game_create_save_config_file(Game *game, SaveConfig config) {
 }
 
 void game_create_save_world(Game *game) {
-  player_set_pos_ex(&game->cur_save.player, TILE_SIZE * ((float)CHUNK_SIZE / 2), TILE_SIZE * ((float)CHUNK_SIZE / 2), false, false, false);
+  for (size_t i = 0; i < array_len(game->cur_save.players); i++) {
+    float x = TILE_SIZE * ((float)CHUNK_SIZE / 2);
+    float y = TILE_SIZE * ((float)CHUNK_SIZE / 2);
+    player_set_pos_ex(&game->cur_save.players[i], x, y, false, false,
+                      false);
+  }
 }
 
 void game_create_save(Game *game, SaveDescriptor save_desc) {
@@ -113,10 +118,12 @@ void game_create_save(Game *game, SaveDescriptor save_desc) {
   size_t id = save_desc.id;
 
   SaveDescriptor desc = {.id = id,
-                         .config = {
-                             .save_name = save_name_copy,
-                             .seed = seed,
-                         }};
+                         .config =
+                             {
+                                 .save_name = save_name_copy,
+                                 .seed = seed,
+                             },
+                         .is_server_save = save_desc.is_server_save};
 
   dir_create(TextFormat("save/save%d", id));
   game_create_save_config_file(game, desc.config);
@@ -124,16 +131,15 @@ void game_create_save(Game *game, SaveDescriptor save_desc) {
   dir_create(TextFormat("save/save%d/spaces", id));
 
   array_add(game->client_game->local_saves, desc);
-  game->cur_save = (Save){.descriptor = desc,
-                          .player = player_new(game),
-                          .spaces = array_new_capacity(SpaceDescriptor, 8, &HEAP_ALLOCATOR),
-                          .loaded_spaces = array_new_capacity(Space, 8, &HEAP_ALLOCATOR)};
+  game->cur_save = save_new(desc);
+  Player player = player_new(game);
+  array_add(game->cur_save.players, player);
   array_add(game->cur_save.spaces, (SpaceDescriptor){.type = &SPACES[SPACE_BASE], .id = 0});
   Space default_space;
   printf("Save Seed: %f\n", save_desc.config.seed);
   space_create_default(save_desc.config.seed, &default_space);
   array_add(game->cur_save.loaded_spaces, default_space);
-  game->cur_save.cur_space = &game->cur_save.loaded_spaces[0];
-  game->world = &game->cur_save.cur_space->world;
-  game->player = &game->cur_save.player;
+  //game->cur_save.cur_space = &game->cur_save.loaded_spaces[0];
+  game->client_world = &game->cur_save.loaded_spaces[0].world;
+  game->client_player = &game->cur_save.players[0];
 }

@@ -2,7 +2,7 @@
 #include "../../include/game.h"
 #include <raylib.h>
 
-void client_init_raylib(void) {
+void client_setup_raylib(void) {
 #ifdef DEBUG_BUILD
   SetTraceLogLevel(LOG_DEBUG);
 #endif
@@ -18,8 +18,8 @@ void client_deinit_raylib(void) {
   CloseAudioDevice();
   CloseWindow();
 }
-
 void game_init(Game *game) {
+  game->debug = (Debug){.options = {.game_object_display = DEBUG_DISPLAY_NONE, .collisions_enabled = true, .hitboxes_shown = false}};
 #ifdef DEBUG_BUILD
   debug_init(&game->debug, game);
 #endif
@@ -36,7 +36,7 @@ void game_deinit(Game *game) {
   free(GLOBAL_BUMP.buffer);
 
   if (game->save_loaded) {
-    array_free(game->world->chunks);
+    array_free(game->client_world->chunks);
   }
   
   free(ITEM_CONTAINER_BUMP.buffer);

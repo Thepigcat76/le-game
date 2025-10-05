@@ -23,8 +23,8 @@ typedef struct _game {
   // SAVE SPECIFIC
   Save cur_save;
   // pointers to the fields in the current save
-  Player *player;
-  World *world;
+  Player *client_player;
+  World *client_world;
   // TILE CATEGORIES
   TileCategoryLookup tile_category_lookup;
   // DEBUGGING
@@ -40,13 +40,15 @@ typedef struct _game {
   bool save_loaded;
 } Game;
 
-extern Game GAME;
+typedef enum {
+  SIDE_CLIENT,
+  SIDE_SERVER,
+} GameSide;
 
-// Initializes the game
-void game_create(Game *game);
+extern GameSide GAME_SIDE;
 
 // Initialize registries
-void game_registry_init(void);
+void game_registry_setup(void);
 
 // GAME CREATION
 

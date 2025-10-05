@@ -1,4 +1,5 @@
 #include "../../include/chunk.h"
+#include "../../include/game.h"
 #ifndef _WIN32
 #define STB_PERLIN_IMPLEMENTATION
 #endif
@@ -64,7 +65,9 @@ void chunk_gen(Chunk *chunk, ChunkPos chunk_pos, float world_seed) {
       }
     }
   }
-  chunk_assign_dirt_variants(chunk);
+  if (GAME_SIDE == SIDE_CLIENT) {
+    chunk_assign_dirt_variants(chunk);
+  }
   chunk->chunk_pos = chunk_pos;
 }
 

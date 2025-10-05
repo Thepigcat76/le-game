@@ -18,7 +18,9 @@ void client_world_render(ClientGame *client, float alpha) {
   Vec2f mouse_pos = GetMousePosition();
   Vec2f mouse_world_pos = GetScreenToWorld2D(mouse_pos, client->player->cam);
 
-  world_render_layer(client->game->world, TILE_LAYER_GROUND);
+  printf("Rendering world layer\n");
+
+  world_render_layer(client->game->client_world, TILE_LAYER_GROUND);
 
   world_render_layer_top_split(client->world, &client->player, true);
 
@@ -74,8 +76,8 @@ void client_render(ClientGame *client, float alpha) {
       Vector3 light_color = {1.0f, 1.0f, 0.8f}; // warm white
       float light_radius = 0;
 
-      if (GAME.player != NULL) {
-        light_radius = GAME.player->held_item.type.item_props.light_source ? 0.08f * cam->zoom * (1.0f + 0.11f * sin(GetTime())) : 0;
+      if (CLIENT_GAME.player != NULL) {
+        light_radius = CLIENT_GAME.player->held_item.type.item_props.light_source ? 0.08f * cam->zoom * (1.0f + 0.11f * sin(GetTime())) : 0;
       }
 
       ShaderVarLookupLighting lighting_lookup = client->shader_manager.lookups[SHADER_LIGHTING].var.lighting;
@@ -91,6 +93,7 @@ void client_render(ClientGame *client, float alpha) {
         {
           ClearBackground(DARKGRAY);
 
+          printf("Rendering\n");
           if (!client_cur_menu_hides_game(client)) {
             client_world_render(client, alpha);
 

@@ -14,8 +14,8 @@ void inventory_menu_render(UiRenderer *renderer, const ClientGame *game) {
   int y_offset = -2;
 
   RENDER_TEXT({.text = "Inventory"});
-  RENDER_SLOT({.item = &game->game->player->inv_container.items[0]});
-  RENDER_SLOT({.item = &game->game->player->inv_container.items[1]});
-  RENDER_SLOT({.item = &game->game->player->inv_container.items[2]});
+  RENDER_SLOT({.item = &game->game->client_player->inv_container.items[0]});
+  RENDER_SLOT({.item = &game->game->client_player->inv_container.items[1]});
+  RENDER_SLOT({.item = &game->game->client_player->inv_container.items[2]});
   
 }

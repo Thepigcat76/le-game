@@ -99,7 +99,7 @@ void player_render(Player *player, float alpha) {
 
 void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool walking_particles, bool check_for_water) {
   if (check_for_water) {
-    player->in_water = world_ground_tile_at(player->game->world, player->tile_pos)->type->id == TILE_WATER;
+    player->in_water = world_ground_tile_at(player->game->client_world, player->tile_pos)->type->id == TILE_WATER;
     if (player->in_water) {
       x -= (x - player->box.x) / 2;
       y -= (y - player->box.y) / 2;
@@ -118,7 +118,7 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool
   player->chunk_pos.x = floor_div(x, CHUNK_SIZE * TILE_SIZE);
   player->chunk_pos.y = floor_div(y, CHUNK_SIZE * TILE_SIZE);
 
-  World *world = player->game->world;
+  World *world = player->game->client_world;
   if (update_chunk && !world_has_chunk_at(world, player->chunk_pos)) {
     world_gen_chunk_at(world, player->chunk_pos);
 
@@ -129,7 +129,7 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool
   }
 
   if (walking_particles && GetRandomValue(0, 4) == 0) {
-    TileInstance *tile = world_ground_tile_at(player->game->world, player->tile_pos);
+    TileInstance *tile = world_ground_tile_at(player->game->client_world, player->tile_pos);
     ParticleInstance *particle = client_emit_particle(
         &CLIENT_GAME, x + GetRandomValue(-5, 7), y + GetRandomValue(-5, 7) + 27, PARTICLE_WALKING,
         (ParticleInstanceEx){.type = PARTICLE_INSTANCE_WALKING,
@@ -189,7 +189,7 @@ static void check_collisions(const Player *player, Vec2f *player_pos, Vec2f play
   for (int y = -1; y <= 1; y++) {
     for (int x = -1; x <= 1; x++) {
       TilePos tile_pos = vec2i(player_tile_pos.x + x, player_tile_pos.y + y);
-      TileInstance *tile = world_tile_at(player->game->world, tile_pos, TILE_LAYER_TOP);
+      TileInstance *tile = world_tile_at(player->game->client_world, tile_pos, TILE_LAYER_TOP);
       if (tile->type->id != TILE_EMPTY) {
         Rectf tile_box = tile_collision_box_at(tile, tile_pos.x * TILE_SIZE, tile_pos.y * TILE_SIZE);
 

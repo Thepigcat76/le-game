@@ -18,11 +18,11 @@ AdvTileInstance *ADV_TILES;
   extern void src_file_name##_tile_init();                                                                                                 \
   src_file_name##_tile_init();
 
-#define TILE_REGISTER_CATEGORY(tile_id, ...)                                                                                               \
+#define TILE_REGISTER_CATEGORY(game_ptr, tile_id, ...)                                                                                     \
   {                                                                                                                                        \
-    GAME.tile_category_lookup.tiles[GAME.tile_category_lookup.tiles_amount] = tile_id;                                                     \
-    GAME.tile_category_lookup.tile_categories[GAME.tile_category_lookup.tiles_amount] = (TileIdCategories)__VA_ARGS__;                     \
-    GAME.tile_category_lookup.tiles_amount++;                                                                                              \
+    (game_ptr)->tile_category_lookup.tiles[(game_ptr)->tile_category_lookup.tiles_amount] = tile_id;                                       \
+    (game_ptr)->tile_category_lookup.tile_categories[(game_ptr)->tile_category_lookup.tiles_amount] = (TileIdCategories)__VA_ARGS__;       \
+    (game_ptr)->tile_category_lookup.tiles_amount++;                                                                                       \
   }
 
 static void debug_category_lookup(TileCategoryLookup lookup) {
@@ -65,16 +65,16 @@ void tile_types_init() {
   ERR_TEXTURE = adv_texture_load("res/assets/err_texture.png");
 }
 
-void tile_categories_init(void) {
-  TILE_REGISTER_CATEGORY(TILE_WORKSTATION, {.categories = {TILE_CATEGORY_WOOD}, .categories_amount = 1});
-  TILE_REGISTER_CATEGORY(TILE_TREE, {.categories = {TILE_CATEGORY_WOOD}, .categories_amount = 1});
-  TILE_REGISTER_CATEGORY(TILE_OVEN, {.categories = {TILE_CATEGORY_STONE}, .categories_amount = 1});
-  TILE_REGISTER_CATEGORY(TILE_STONE, {.categories = {TILE_CATEGORY_STONE}, .categories_amount = 1});
-  TILE_REGISTER_CATEGORY(TILE_DUNGEON_FLOOR, {.categories = {TILE_CATEGORY_STONE}, .categories_amount = 1});
+void tile_categories_setup(Game *game) {
+  TILE_REGISTER_CATEGORY(game, TILE_WORKSTATION, {.categories = {TILE_CATEGORY_WOOD}, .categories_amount = 1});
+  TILE_REGISTER_CATEGORY(game, TILE_TREE, {.categories = {TILE_CATEGORY_WOOD}, .categories_amount = 1});
+  TILE_REGISTER_CATEGORY(game, TILE_OVEN, {.categories = {TILE_CATEGORY_STONE}, .categories_amount = 1});
+  TILE_REGISTER_CATEGORY(game, TILE_STONE, {.categories = {TILE_CATEGORY_STONE}, .categories_amount = 1});
+  TILE_REGISTER_CATEGORY(game, TILE_DUNGEON_FLOOR, {.categories = {TILE_CATEGORY_STONE}, .categories_amount = 1});
   // DEBUG
-  TILE_REGISTER_CATEGORY(TILE_GRASS, {.categories = {TILE_CATEGORY_STONE}, .categories_amount = 1});
+  TILE_REGISTER_CATEGORY(game, TILE_GRASS, {.categories = {TILE_CATEGORY_STONE}, .categories_amount = 1});
 
-  debug_category_lookup(GAME.tile_category_lookup);
+  debug_category_lookup(game->tile_category_lookup);
 }
 
 char *tile_type_to_string(const TileType *type) {
@@ -138,32 +138,38 @@ TileLayer tile_layer_from_str(const char *layer_literal) {
 }
 
 TileInstance tile_new(const TileType *type) {
-  Vec2i default_pos = tile_default_sprite_pos();
-  int default_sprite_res = tile_default_sprite_resolution();
-  TileInstance instance = {
-      .type = type,
-      .box = {.width = TILE_SIZE, .height = TILE_SIZE},
-      .adv_tile_instance = adv_tile_new(type),
-      .cur_sprite_box = type->texture_props.uses_tileset ? rectf(default_pos.x, default_pos.y, default_sprite_res, default_sprite_res)
-                                                         : rectf(0, 0, type->texture.width, type->texture.height),
-      .animation_frame = 0,
-  };
+  bool client = GAME_SIDE == SIDE_CLIENT;
 
-  if (type->id != TILE_EMPTY && type->texture_props.has_variants) {
-    int max = tile_variants_amount_for_tile(type, 0, 0) - 1;
-    if (max >= 0) {
-      int r = GetRandomValue(0, max);
-      instance.variant_texture = tile_variants_for_tile(type, 0, 0)[r];
-    } else {
-      // TODO: Properly fix this
-      instance.variant_texture = type->texture;
+  TileInstance tile = {0};
+  tile.type = type;
+  tile.box = (Dimensionsf){.width = TILE_SIZE, .height = TILE_SIZE};
+  tile.adv_tile_instance = adv_tile_new(type);
+
+  if (client && type->id != TILE_EMPTY) {
+    Vec2i default_pos = tile_default_sprite_pos();
+    int default_sprite_res = tile_default_sprite_resolution();
+
+    tile.cur_sprite_box = type->texture_props.uses_tileset ? rectf(default_pos.x, default_pos.y, default_sprite_res, default_sprite_res)
+                                                           : rectf(0, 0, type->texture.width, type->texture.height);
+    tile.animation_frame = 0;
+    if (type->texture_props.has_variants) {
+      int max = tile_variants_amount_for_tile(type, 0, 0) - 1;
+      if (max >= 0) {
+        int r = GetRandomValue(0, max);
+        tile.variant_texture = tile_variants_for_tile(type, 0, 0)[r];
+      } else {
+        // TODO: Properly fix this
+        tile.variant_texture = type->texture;
+      }
     }
+
+    for (int j = 0; j < 8; j++) {
+      tile.texture_data.surrounding_tiles[j] = TILE_EMPTY;
+    }
+
+    tile_calc_sprite_box(&tile);
   }
-  for (int j = 0; j < 8; j++) {
-    instance.texture_data.surrounding_tiles[j] = TILE_EMPTY;
-  }
-  tile_calc_sprite_box(&instance);
-  return instance;
+  return tile;
 }
 
 void tile_instance_debug(const TileInstance *tile, char *buf) {
@@ -238,7 +244,7 @@ void tile_render_scaled(TileInstance *tile, int x, int y, float scale) {
       DrawTextureRecEx(texture, sprite_rect, vec2f(x - offset_x, y - offset_y), 0, scale, WHITE);
 #ifdef DEBUG_BUILD
 #include "../../include/game.h"
-      if (GAME.debug.options.hitboxes_shown && tile->type->layer == TILE_LAYER_TOP) {
+      if (CLIENT_GAME.game->debug.options.hitboxes_shown && tile->type->layer == TILE_LAYER_TOP) {
         rec_draw_outline(tile_collision_box_at(tile, x, y), GREEN);
       }
 #endif
@@ -262,7 +268,7 @@ void tile_render(TileInstance *tile, int x, int y, bool dbg) {
       DrawTextureRec(texture, sprite_rect, vec2f(x - offset_x, y - offset_y), WHITE);
 #ifdef DEBUG_BUILD
 #include "../../include/game.h"
-      if (GAME.debug.options.hitboxes_shown && tile->type->layer == TILE_LAYER_TOP) {
+      if (CLIENT_GAME.game->debug.options.hitboxes_shown && tile->type->layer == TILE_LAYER_TOP) {
         rec_draw_outline(tile_collision_box_at(tile, x, y), GREEN);
       }
 #endif

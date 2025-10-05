@@ -14,13 +14,13 @@ static TextInputBuffer seed_text_input_buffer = {.buf = _text_buf_1, .len = 0, .
 
 static void new_save_create_world() {
   client_set_menu(&CLIENT_GAME, MENU_NONE);
-  GAME.client_game->paused = false;
+  CLIENT_GAME.paused = false;
 
   SaveDescriptor desc = {.id = array_len(CLIENT_GAME.local_saves),
                          .config = {.save_name = save_name_text_input_buffer.buf,
                                     .seed = string_to_world_seed(seed_text_input_buffer.buf)}};
-  game_create_save(&GAME, desc);
-  game_create_save_world(&GAME);
+  game_create_save(CLIENT_GAME.game, desc);
+  game_create_save_world(CLIENT_GAME.game);
   client_init_loaded_save(&CLIENT_GAME);
 }
 

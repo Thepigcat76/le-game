@@ -2,13 +2,13 @@
 #include <raylib.h>
 
 static void start_menu_new_save() {
-  game_load_saves(&GAME);
+  game_load_saves(CLIENT_GAME.game);
   client_set_menu(&CLIENT_GAME, MENU_NEW_SAVE);
   //StopMusicStream(MUSIC);
 }
 
 static void start_menu_load_save() {
-  game_load_saves(&GAME);
+  game_load_saves(CLIENT_GAME.game);
   client_set_menu(&CLIENT_GAME, MENU_LOAD_SAVE);
   //StopMusicStream(MUSIC);
 }
@@ -20,7 +20,7 @@ static void start_menu_multiplayer() {
 static void start_menu_settings() {}
 
 static void start_menu_leave_game() {
-  game_deinit(&GAME);
+  game_deinit(CLIENT_GAME.game);
   client_deinit_raylib();
   exit(0);
 }
