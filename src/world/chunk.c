@@ -138,7 +138,7 @@ void chunk_save(const Chunk *chunk, DataMap *data) {
       }
     }
     Data data_list_0 = data_list(tiles);
-    char tiles_key[sizeof("tiles") + 1];
+    char tiles_key[32];
     sprintf(tiles_key, "tiles%d", l);
     data_map_insert(data, tiles_key, data_list_0);
   }

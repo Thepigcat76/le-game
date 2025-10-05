@@ -1,5 +1,6 @@
 #include "../../include/data.h"
 #include "../../include/array.h"
+#include "../../include/data/data_reader.h"
 #include <raylib.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -86,7 +87,8 @@ void byte_buf_read_data_map(ByteBuf *buf, DataMap *map, int len) {
     int key_str_len = byte_buf_read_int(buf);
     char key_buf[key_str_len + 1];
     byte_buf_read_string(buf, key_buf, key_str_len);
-    data_map_insert(map, key_buf, byte_buf_read_data(buf));
+    Data data = byte_buf_read_data(buf);
+    data_map_insert(map, key_buf, data);
   }
 }
 
@@ -160,6 +162,7 @@ Data byte_buf_read_data(ByteBuf *buf) {
   }
   case DATA_TYPE_LIST: {
     size_t len = byte_buf_read_int(buf);
+    printf("Data list len: %zu\n", len);
     DataList list = data_list_new(len);
     byte_buf_read_data_list(buf, &list, len);
     return (Data){.type = type, .var = {.data_list = list}};
@@ -210,7 +213,7 @@ void data_free(Data *data) {
     for (int i = 0; i < data_list->len; i++) {
       data_free(&data_list->items[i]);
     }
-   //array_free(data_list->items);
+    // array_free(data_list->items);
     break;
   }
   default:

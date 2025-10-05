@@ -107,7 +107,7 @@ int64_t sockets_send(int32_t socket_addr, SocketDataBuffer buf, int32_t flags) {
   return send(socket_addr, buf.buffer, buf.buffer_size, 0);
 }
 
-int64_t sockets_receieve(int32_t socket_addr, SocketDataBuffer buf, int32_t flags) {
+int64_t sockets_receive(int32_t socket_addr, SocketDataBuffer buf, int32_t flags) {
   return recv(socket_addr, buf.buffer, buf.buffer_size, 0);
 }
 

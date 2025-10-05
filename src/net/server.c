@@ -1,7 +1,7 @@
 #include "../../include/net/server.h"
-#include "../../include/server_ui.h"
 #include "../../include/array.h"
 #include "../../include/game.h"
+#include "../../include/server_ui.h"
 #include "../../include/ui.h"
 #include <pthread.h>
 #include <raylib.h>
@@ -13,8 +13,7 @@ UiRenderer UI_RENDERER;
 
 static pthread_mutex_t SERVER_MUTEX = PTHREAD_MUTEX_INITIALIZER;
 
-void server_init(ServerGame *game) {
-}
+void server_init(ServerGame *game) {}
 
 static void calc_server_ui_height(UiRenderer *ui_renderer) {
   if (ui_renderer->ui_height == -1) {
@@ -133,7 +132,7 @@ static void *server_packet_listener(void *args) {
         handle_connection(client_fd);
       }
       if (fds[i].revents & (POLLERR | POLLHUP | POLLNVAL)) {
-        //fprintf(stderr, "Client %d disconnected or error\n", fds[i].fd);
+        // fprintf(stderr, "Client %d disconnected or error\n", fds[i].fd);
         sockets_close(fds[i].fd);
         // You may want to mark the player slot as disconnected
       }
@@ -153,6 +152,8 @@ static void *server_player_listener(void *args) {
       SERVER_GAME.client_addresses[player_id] = client_fd;
       // TODO: Send packets to clients
       printf("Player connected!\n");
+
+      packet_send(client_fd, (Packet){.type = PACKET_S2C_PLAYER_JOIN, .var = {.s2c_player_join = {.player_id = client_fd}}}, false);
     }
     pthread_mutex_unlock(&SERVER_MUTEX);
   }

@@ -36,7 +36,7 @@ int32_t sockets_connect_to_server(const char *ip_address, uint32_t port);
 int64_t sockets_send(int32_t socket_addr, SocketDataBuffer buf, int32_t flags);
 
 // Returns the amount of bytes or -1 if receiving fails
-int64_t sockets_receieve(int32_t socket_addr, SocketDataBuffer buf,
+int64_t sockets_receive(int32_t socket_addr, SocketDataBuffer buf,
                          int32_t flags);
 
 // Returns the address of the accepted client or -1 if accepting fails

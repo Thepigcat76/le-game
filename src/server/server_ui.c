@@ -28,17 +28,17 @@ static void on_click(void) {
   free(file_content);
   if (!DirectoryExists("server-save/spaces")) {
     dir_create("server-save/spaces");
-    Save save = save_new(desc);
-    Space default_space;
-    printf("Seed: %f\n", config.seed);
-    space_create_default(config.seed, &default_space);
-    array_add(save.loaded_spaces, default_space);
-    SERVER_GAME.game->cur_save = save;
-    for (size_t i = 0; i < SERVER_GAME.clients_amount; i++) {
-      printf("Sending sync space packet to client: %u\n", SERVER_GAME.client_addresses[i]);
-      packet_send(SERVER_GAME.client_addresses[i],
-                  (Packet){.type = PACKET_S2C_NEW_PLAYER_JOINED, .var = {.s2c_new_player_joined = {.new_player_id = 69}}}, false);
-    }
+  }
+  Save save = save_new(desc);
+  Space default_space;
+  printf("Seed: %f\n", config.seed);
+  space_create_default(config.seed, &default_space);
+  array_add(save.loaded_spaces, default_space);
+  SERVER_GAME.game->cur_save = save;
+  for (size_t i = 0; i < SERVER_GAME.clients_amount; i++) {
+    printf("Sending sync space packet to client: %u\n", SERVER_GAME.client_addresses[i]);
+    packet_send(SERVER_GAME.client_addresses[i],
+                (Packet){.type = PACKET_S2C_SYNC_SPACE, .var = {.s2c_sync_space = {.space = default_space}}}, false);
   }
 }
 

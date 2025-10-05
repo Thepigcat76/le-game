@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #endif
 #include "../../include/bytebuf.h"
+#include "../../include/data/data_reader.h"
 #include "../../include/net/packet.h"
 #include <stdio.h>
 
@@ -47,7 +48,8 @@ static void packet_fmt(Packet packet, int addr, bool serverbound, bool is_client
   case PACKET_S2C_SYNC_SPACE: {
     PacketS2CSyncSpace *ss_packet = &packet.var.s2c_sync_space;
     sprintf(buf, "%s [SYNC_SPACE]{space_world_seed=%f,save_name=%s} %s", prefix, ss_packet->space.seed,
-            ss_packet->space.world.save_desc != NULL ? ss_packet->space.world.save_desc->config.save_name : "No save desc provided", postfix);
+            ss_packet->space.world.save_desc != NULL ? ss_packet->space.world.save_desc->config.save_name : "No save desc provided",
+            postfix);
     break;
   }
   }
@@ -66,14 +68,19 @@ static void space_encode(const Space *space, ByteBuf *buf) {
   }
   // Seed
   char seed[64];
-  sprintf(seed, "%f", space->world.seed);
+  sprintf(seed, "%f", space->seed);
   byte_buf_write_string(buf, seed);
 
+  printf("Writer index, before world: %zu", buf->writer_index);
   // World
   const World *world = &space->world;
   DataMap map = data_map_new(2000);
   world_save(world, &map);
   Data data = data_map(map);
+  char *data_string = data_reader_read_data(&data);
+  FILE *f = fopen("space_packet_world.json", "w");
+  fputs(data_string, f);
+  fclose(f);
   byte_buf_write_data(buf, &data);
   // Initialized
   byte_buf_write_byte(buf, world->initialized);
@@ -113,10 +120,18 @@ static void space_decode(Space *space, ByteBuf *buf) {
   printf("Seed: %f, space: %p, desc: %p\n", seed, space, desc);
   space_create(*desc, seed, space);
 
+  printf("Reader index, before world: %zu", buf->reader_index);
   DataMap map = byte_buf_read_data(buf).var.data_map;
+  Data data = data_map(map);
+  char *map_str = data_reader_read_data(&data);
+  FILE *f = fopen("server-save-world-decoded", "w");
+  fputs(map_str, f);
+  fclose(f);
+
   world_load(&space->world, &map);
   // Initialized
   space->world.initialized = byte_buf_read_byte(buf);
+  space->world.seed = seed;
 
   // Save desc
   bool has_save_desc = byte_buf_read_byte(buf);
@@ -189,10 +204,16 @@ static Packet packet_decode(ByteBuf *buf) {
 
 void packet_handle(Packet *packet) {
   switch (packet->type) {
-  case PACKET_ERROR:
-  case PACKET_S2C_PLAYER_JOIN:
-  case PACKET_S2C_NEW_PLAYER_JOINED:
+  case PACKET_ERROR: {
     break;
+  }
+  case PACKET_S2C_PLAYER_JOIN: {
+    printf("Welcome from the server\n");
+    break;
+  }
+  case PACKET_S2C_NEW_PLAYER_JOINED: {
+    break;
+  }
   case PACKET_S2C_SYNC_SPACE: {
     printf("Syncing space...\n");
     break;
@@ -202,7 +223,7 @@ void packet_handle(Packet *packet) {
 
 void packet_send(int addr, Packet packet, bool is_client) {
   uint8_t bytes[128000];
-  ByteBuf buf = {.writer_index = 0, .reader_index = 0, .capacity = 512, .bytes = bytes};
+  ByteBuf buf = {.writer_index = 0, .reader_index = 0, .capacity = 128000, .bytes = bytes};
   packet_encode(packet, &buf);
   // Send: 2-byte length + data
   uint16_t len = buf.writer_index;
@@ -216,21 +237,21 @@ void packet_send(int addr, Packet packet, bool is_client) {
 
 Packet packet_receive(int addr, bool is_client) {
   uint8_t len_buf[2];
-  ssize_t n = sockets_receieve(addr, (SocketDataBuffer){len_buf, 2}, MSG_WAITALL);
+  ssize_t n = sockets_receive(addr, (SocketDataBuffer){len_buf, 2}, MSG_WAITALL);
   if (n != 2) {
     perror("Failed to read length");
     return (Packet){.type = PACKET_ERROR};
   }
 
   uint16_t len = (len_buf[0] << 8) | len_buf[1];
-  if (len > 512) {
+  if (len > 16000) {
     fprintf(stderr, "Packet too long: %u\n", len);
     return (Packet){.type = PACKET_ERROR};
   }
 
-  uint8_t bytes[1024];
-  ByteBuf buf = {.reader_index = 0, .writer_index = len, .capacity = 512, .bytes = bytes};
-  n = sockets_receieve(addr, (SocketDataBuffer){buf.bytes, len}, MSG_WAITALL);
+  uint8_t bytes[16000];
+  ByteBuf buf = {.reader_index = 0, .writer_index = len, .capacity = 16000, .bytes = bytes};
+  n = sockets_receive(addr, (SocketDataBuffer){buf.bytes, len}, MSG_WAITALL);
   if (n != len) {
     perror("Failed to read full packet");
     return (Packet){.type = PACKET_ERROR};

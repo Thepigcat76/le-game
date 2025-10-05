@@ -105,6 +105,7 @@ static void *client_game(void *args) {
   }
 
   client_deinit_raylib();
+  exit(0);
 
   return NULL;
 }
@@ -113,14 +114,15 @@ static void *client_packet_listener(void *args) {
   addr_t server_addr = -1;
 
   // Very scuffed way to check for server connection
-  while (true) {
+  bool found_addr = false;
+  while (!found_addr) {
     printf("Checking for server addr\n");
     pthread_mutex_lock(&CLIENT_MUTEX);
     {
       if (CLIENT_CONNECTION.connected) {
         server_addr = CLIENT_CONNECTION.server_addr;
         printf("Found server addr\n");
-        break;
+        found_addr = true;
       }
     }
     pthread_mutex_unlock(&CLIENT_MUTEX);
@@ -131,13 +133,19 @@ static void *client_packet_listener(void *args) {
   while (true) {
     printf("Listening for packets\n");
     Packet packet = packet_receive(server_addr, true);
+    printf("Packet: %d\n", packet.type);
 
     if (packet.type == PACKET_ERROR) {
       perror("Error packet on client");
       exit(1);
     }
 
-    packet_handle(&packet);
+    pthread_mutex_lock(&CLIENT_MUTEX);
+    {
+      printf("Handling packet\n");
+      packet_handle(&packet);
+    }
+    pthread_mutex_unlock(&CLIENT_MUTEX);
   }
 
   return NULL;

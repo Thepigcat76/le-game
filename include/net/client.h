@@ -13,6 +13,7 @@
 #include "../world.h"
 #include "common.h"
 #include "sockets.h"
+#include "packet.h"
 
 typedef struct {
   PlayerDescriptor *server_players;
@@ -52,6 +53,7 @@ typedef struct {
 typedef struct {
   addr_t server_addr;
   bool connected;
+  Packet packet;
 } NetworkConnection;
 
 extern ClientGame CLIENT_GAME;

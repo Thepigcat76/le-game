@@ -10,7 +10,8 @@ void byte_buf_write_byte(ByteBuf *buf, uint8_t byte) {
 
 void byte_buf_write_int(ByteBuf *buf, int32_t integer) {
   if (buf->writer_index + sizeof(int32_t) > buf->capacity) {
-    return;
+    printf("Not writing integer to buf, yolo: %d\n", integer);
+    exit(1);
   }
 
   for (int i = sizeof(int32_t) - 1; i >= 0; i--) {
@@ -32,9 +33,9 @@ uint8_t byte_buf_read_byte(ByteBuf *buf) {
 }
 
 int32_t byte_buf_read_int(ByteBuf *buf) {
-  if (buf->writer_index < sizeof(int32_t)) {
-    return 0;
-  }
+  //if (buf->writer_index < sizeof(int32_t)) {
+  //  return 0;
+  //}
 
   int32_t integer = 0;
 

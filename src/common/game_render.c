@@ -18,8 +18,6 @@ void client_world_render(ClientGame *client, float alpha) {
   Vec2f mouse_pos = GetMousePosition();
   Vec2f mouse_world_pos = GetScreenToWorld2D(mouse_pos, client->player->cam);
 
-  printf("Rendering world layer\n");
-
   world_render_layer(client->game->client_world, TILE_LAYER_GROUND);
 
   world_render_layer_top_split(client->world, &client->player, true);
@@ -93,7 +91,6 @@ void client_render(ClientGame *client, float alpha) {
         {
           ClearBackground(DARKGRAY);
 
-          printf("Rendering\n");
           if (!client_cur_menu_hides_game(client)) {
             client_world_render(client, alpha);
 
