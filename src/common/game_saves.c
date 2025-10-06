@@ -72,7 +72,9 @@ void game_load_save(Game *game, SaveDescriptor desc) {
 }
 
 void game_unload_save(Game *game) {
-  game_save_save_data(game, &game->cur_save);
+  if (GAME_SIDE == SIDE_SERVER || !game->cur_save.descriptor.is_server_save) {
+    game_save_save_data(game, &game->cur_save);
+  }
 
   bump_reset(&ITEM_CONTAINER_BUMP);
   game->client_world = NULL;
@@ -100,8 +102,7 @@ void game_create_save_world(Game *game) {
   for (size_t i = 0; i < array_len(game->cur_save.players); i++) {
     float x = TILE_SIZE * ((float)CHUNK_SIZE / 2);
     float y = TILE_SIZE * ((float)CHUNK_SIZE / 2);
-    player_set_pos_ex(&game->cur_save.players[i], x, y, false, false,
-                      false);
+    player_set_pos_ex(&game->cur_save.players[i], x, y, false, false, false);
   }
 }
 
@@ -139,7 +140,7 @@ void game_create_save(Game *game, SaveDescriptor save_desc) {
   printf("Save Seed: %f\n", save_desc.config.seed);
   space_create_default(save_desc.config.seed, &default_space);
   array_add(game->cur_save.loaded_spaces, default_space);
-  //game->cur_save.cur_space = &game->cur_save.loaded_spaces[0];
+  // game->cur_save.cur_space = &game->cur_save.loaded_spaces[0];
   game->client_world = &game->cur_save.loaded_spaces[0].world;
   game->client_player = &game->cur_save.players[0];
 }

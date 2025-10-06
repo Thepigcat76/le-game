@@ -265,6 +265,9 @@ void tile_render(TileInstance *tile, int x, int y, bool dbg) {
       sprite_rect.y += frame_height * cur_frame;
       int offset_x = (tile->type->tile_dimensions.width - TILE_SIZE) / 2;
       int offset_y = tile->type->tile_dimensions.height - TILE_SIZE;
+      if (tile->type->id == TILE_GRASS) {
+        // printf("Sprite rect: x: %f, y: %f, w: %f, h: %f\n", sprite_rect.x, sprite_rect.y, sprite_rect.width, sprite_rect.height);
+      }
       DrawTextureRec(texture, sprite_rect, vec2f(x - offset_x, y - offset_y), WHITE);
 #ifdef DEBUG_BUILD
 #include "../../include/game.h"

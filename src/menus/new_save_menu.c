@@ -21,7 +21,7 @@ static void new_save_create_world() {
                                     .seed = string_to_world_seed(seed_text_input_buffer.buf)}};
   game_create_save(CLIENT_GAME.game, desc);
   game_create_save_world(CLIENT_GAME.game);
-  client_init_loaded_save(&CLIENT_GAME);
+  client_init_loaded_save(&CLIENT_GAME, &CLIENT_GAME.game->cur_save);
 }
 
 static void new_save_back_to_start_menu() { client_set_menu(&CLIENT_GAME, MENU_START); }

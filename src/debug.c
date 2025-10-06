@@ -1,7 +1,8 @@
 #include "../include/debug.h"
+#include "../include/config.h"
+#include "../include/game.h"
 #include "../include/keys.h"
 #include "../include/net/client.h"
-#include "../include/game.h"
 #include "raylib.h"
 #include "rlgl.h"
 
@@ -53,8 +54,7 @@ static void debug_render_game_object_overlay(Debug *debug) {
     for (int i = 0; i < BEINGS_AMOUNT; i++) {
       int start_x = 0;
       BeingInstance being = debug->debug_beings[i];
-      being.context.box.x =
-          ((float)(GetScreenWidth() - debug->debug_beings_width) / 2 + i * being.context.box.width * scale) / scale;
+      being.context.box.x = ((float)(GetScreenWidth() - debug->debug_beings_width) / 2 + i * being.context.box.width * scale) / scale;
       being.context.box.y = 100;
       rlPushMatrix();
       {
@@ -74,10 +74,15 @@ static void debug_render_game_object_overlay(Debug *debug) {
 
 void debug_render_overlay(Debug *debug) {
   Vec2i selected_tile_render_pos = SELECTED_TILE_RENDER_POS(GetScreenWidth(), GetScreenHeight());
-  tile_render_scaled(&debug->options.selected_tile_to_place_instance, selected_tile_render_pos.x + 35,
-                     selected_tile_render_pos.y - 60, 4);
+  tile_render_scaled(&debug->options.selected_tile_to_place_instance, selected_tile_render_pos.x + 35, selected_tile_render_pos.y - 60, 4);
   if (debug->game->client_game->cur_menu == MENU_DEBUG) {
     debug_render_game_object_overlay(debug);
+
+    TileInstance *hovered_tile = debug->game->client_game->hovered_tile;
+    if (hovered_tile != NULL) {
+      char *tile_name = tile_type_to_string(hovered_tile->type);
+      DrawText(tile_name, 0, 32, CONFIG.default_font_size / 1.5, WHITE);
+    }
   }
 }
 
@@ -85,7 +90,8 @@ void debug_render(Debug *debug) {
   if (debug->game->debug.options.hitboxes_shown) {
     Rectangle player_hitbox = player_collision_box(debug->game->client_player);
     rec_draw_outline(player_hitbox, BLUE);
-    rec_draw_outline(rectf(debug->game->client_player->tile_pos.x * TILE_SIZE, debug->game->client_player->tile_pos.y * TILE_SIZE, 16, 16), RED);
+    rec_draw_outline(rectf(debug->game->client_player->tile_pos.x * TILE_SIZE, debug->game->client_player->tile_pos.y * TILE_SIZE, 16, 16),
+                     RED);
 
     for (int i = 0; i < debug->game->client_world->beings_amount; i++) {
       rec_draw_outline(debug->game->client_world->beings[i].context.box, WHITE);
@@ -95,10 +101,10 @@ void debug_render(Debug *debug) {
   if (debug->game->client_game->cur_menu == MENU_DEBUG) {
     int id = debug->debug_controlled_being_id;
     BeingBrain brain = debug->game->client_world->beings[id].brain;
-    //if (brain.activities_amount > 0) {
-    //  BeingActivityWalkAround wa_activity = brain.activities[0].var.activity_walk_around;
-    //  DrawCircleV(wa_activity.cur_target_pos, 8, WHITE);
-    //}
+    // if (brain.activities_amount > 0) {
+    //   BeingActivityWalkAround wa_activity = brain.activities[0].var.activity_walk_around;
+    //   DrawCircleV(wa_activity.cur_target_pos, 8, WHITE);
+    // }
   }
 }
 

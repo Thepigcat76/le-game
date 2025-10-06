@@ -14,6 +14,7 @@
 #include "common.h"
 #include "sockets.h"
 #include "packet.h"
+#include "queue.h"
 
 typedef struct {
   PlayerDescriptor *server_players;
@@ -32,6 +33,7 @@ typedef struct {
   RenderTexture2D world_texture;
   bool slot_selected;
   PressedKeys pressed_keys;
+  TileInstance *hovered_tile;
   bool singleplayer;
   // Saves
   // These are saves that are actually stored on disk
@@ -53,7 +55,7 @@ typedef struct {
 typedef struct {
   addr_t server_addr;
   bool connected;
-  Packet packet;
+  PacketQueue queue;
 } NetworkConnection;
 
 extern ClientGame CLIENT_GAME;
@@ -75,7 +77,7 @@ void client_deinit_raylib(void);
 /* Needs to be called after the world is loaded on common
    to notify the client that the world and player need to
    be rendered */
-void client_init_loaded_save(ClientGame *game);
+void client_init_loaded_save(ClientGame *game, Save *save);
 
 // TICKING
 

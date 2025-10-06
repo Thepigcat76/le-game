@@ -1,4 +1,5 @@
 #include "../../include/net/sockets.h"
+#include <complex.h>
 #include <stdlib.h>
 #ifdef TARGET_WIN
 #define WIN32_LEAN_AND_MEAN
@@ -8,8 +9,10 @@
 #else
 #include <sys/socket.h>
 #endif
+#include "../../include/array.h"
 #include "../../include/bytebuf.h"
 #include "../../include/data/data_reader.h"
+#include "../../include/game.h"
 #include "../../include/net/packet.h"
 #include <stdio.h>
 
@@ -17,7 +20,7 @@ static void byte_buf_send(int addr, ByteBuf buf) { sockets_send(addr, (SocketDat
 
 static void packet_fmt(Packet packet, int addr, bool serverbound, bool is_client, char *buf) {
   char *prefix = ">>>";
-  char postfix[10];
+  char postfix[16];
   if (serverbound && is_client) {
     prefix = "<<<";
     sprintf(postfix, "TO %d", addr);
@@ -64,7 +67,7 @@ static void space_encode(const Space *space, ByteBuf *buf) {
     // Id
     byte_buf_write_int(buf, desc.id);
     // Loaded from disk
-    byte_buf_write_byte(buf, desc.loaded_from_disk);
+    byte_buf_write_byte(buf, desc.external);
   }
   // Seed
   char seed[64];
@@ -108,7 +111,7 @@ static void space_decode(Space *space, ByteBuf *buf) {
   {
     desc->type = &SPACES[byte_buf_read_byte(buf)];
     desc->id = byte_buf_read_int(buf);
-    desc->loaded_from_disk = byte_buf_read_byte(buf);
+    desc->external = byte_buf_read_byte(buf);
   }
 
   // Seed
@@ -119,6 +122,7 @@ static void space_decode(Space *space, ByteBuf *buf) {
   float seed = atof(seed_buf);
   printf("Seed: %f, space: %p, desc: %p\n", seed, space, desc);
   space_create(*desc, seed, space);
+  space->seed = seed;
 
   printf("Reader index, before world: %zu", buf->reader_index);
   DataMap map = byte_buf_read_data(buf).var.data_map;
@@ -132,6 +136,9 @@ static void space_decode(Space *space, ByteBuf *buf) {
   // Initialized
   space->world.initialized = byte_buf_read_byte(buf);
   space->world.seed = seed;
+  if (GAME_SIDE == SIDE_CLIENT) {
+    world_initialize(&space->world);
+  }
 
   // Save desc
   bool has_save_desc = byte_buf_read_byte(buf);
@@ -173,6 +180,7 @@ static void packet_encode(Packet packet, ByteBuf *buf) {
   }
   case PACKET_S2C_SYNC_SPACE: {
     Space space = packet.var.s2c_sync_space.space;
+    space.desc.external = true;
     space_encode(&space, buf);
     break;
   }
@@ -202,7 +210,26 @@ static Packet packet_decode(ByteBuf *buf) {
   }
 }
 
-void packet_handle(Packet *packet) {
+static void handle_space_sync(PacketS2CSyncSpace *packet, Game *game) {
+    world_initialize(&packet->space.world);
+    // Create save
+    Save save = save_new((SaveDescriptor){.id = 0, .is_server_save = true, .config = {.seed = packet->space.seed, .save_name = "Server-Save"}});
+    array_add(save.loaded_spaces, packet->space);
+    // Assign save to cur_save
+    game->cur_save = save;
+    // Create player
+    Player player = player_new(game);
+    array_add(game->cur_save.players, player);
+    
+    game->client_world = &game->cur_save.loaded_spaces[0].world;
+    game->client_player = &game->cur_save.players[0];
+    client_init_loaded_save(&CLIENT_GAME, &game->cur_save);
+    client_set_menu(&CLIENT_GAME, MENU_NONE);
+    CLIENT_GAME.game->save_loaded = true;
+    CLIENT_GAME.paused = false;
+}
+
+void packet_handle(Packet *packet, Game *game) {
   switch (packet->type) {
   case PACKET_ERROR: {
     break;
@@ -215,7 +242,7 @@ void packet_handle(Packet *packet) {
     break;
   }
   case PACKET_S2C_SYNC_SPACE: {
-    printf("Syncing space...\n");
+    handle_space_sync(&packet->var.s2c_sync_space, game);
     break;
   }
   }

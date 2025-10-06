@@ -25,4 +25,4 @@ void packet_send(int addr, Packet packet, bool is_client);
 
 Packet packet_receive(int addr, bool is_client);
 
-void packet_handle(Packet *packet);
+void packet_handle(Packet *packet, struct _game *game);

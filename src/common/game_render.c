@@ -18,7 +18,7 @@ void client_world_render(ClientGame *client, float alpha) {
   Vec2f mouse_pos = GetMousePosition();
   Vec2f mouse_world_pos = GetScreenToWorld2D(mouse_pos, client->player->cam);
 
-  world_render_layer(client->game->client_world, TILE_LAYER_GROUND);
+  world_render_layer(client->world, TILE_LAYER_GROUND);
 
   world_render_layer_top_split(client->world, &client->player, true);
 
@@ -42,6 +42,7 @@ void client_world_render(ClientGame *client, float alpha) {
 
   int x_index = floor_div(mouse_world_pos.x, TILE_SIZE);
   int y_index = floor_div(mouse_world_pos.y, TILE_SIZE);
+  client->hovered_tile = world_highest_tile_at(client->world, vec2i(x_index, y_index));
   Rectangle rec = (Rectangle){.x = x_index * (TILE_SIZE), .y = y_index * (TILE_SIZE), .width = (TILE_SIZE), .height = (TILE_SIZE)};
   bool slot_selected = client->slot_selected;
   bool interaction_in_range = abs((int)client->player->box.x - x_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE &&

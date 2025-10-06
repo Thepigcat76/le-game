@@ -92,6 +92,15 @@ static void *client_game(void *args) {
     tick_accumulator += delta_time;
     while (tick_accumulator >= TICK_INTERVAL && ticks_per_frame < MAX_TICKS_PER_FRAME) {
       game_tick(game);
+
+      pthread_mutex_lock(&CLIENT_MUTEX);
+      {
+        Packet p;
+        if (queue_pop(&CLIENT_CONNECTION.queue, &p)) {
+          packet_handle(&p, game);
+        }
+      }
+      pthread_mutex_unlock(&CLIENT_MUTEX);
       if (game->client_world != NULL) {
         // printf("Placing tile\n");
         // GAME.world->chunks[0].tiles[0][0][TILE_LAYER_GROUND] = tile_new(&TILES[TILE_GRASS]);
@@ -142,8 +151,8 @@ static void *client_packet_listener(void *args) {
 
     pthread_mutex_lock(&CLIENT_MUTEX);
     {
-      printf("Handling packet\n");
-      packet_handle(&packet);
+      printf("Adding packet to queue\n");
+      queue_push(&CLIENT_CONNECTION.queue, packet);
     }
     pthread_mutex_unlock(&CLIENT_MUTEX);
   }
@@ -170,6 +179,12 @@ void client_start(void) {
 }
 
 void client_init(ClientGame *game) {
+  pthread_mutex_lock(&CLIENT_MUTEX);
+  {
+    queue_init(&CLIENT_CONNECTION.queue);
+  }
+  pthread_mutex_unlock(&CLIENT_MUTEX);
+
   int window_width = GetScreenWidth();
   int window_height = GetScreenHeight();
   game->cur_menu = MENU_START;

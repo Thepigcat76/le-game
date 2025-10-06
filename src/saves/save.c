@@ -54,7 +54,7 @@ void save_load_spaces(Save *save) {
     char *path_buf_end_of_id_lit = strrchr(path_buf, '-');
     *path_buf_end_of_id_lit = '\0';
     SpaceId space_id = space_id_by_name(path_buf);
-    SpaceDescriptor desc = {.type = &SPACES[space_id], .id = space_disk_id_from_str(entry->d_name), .loaded_from_disk = true};
+    SpaceDescriptor desc = {.type = &SPACES[space_id], .id = space_disk_id_from_str(entry->d_name), .external = true};
     array_add(save->spaces, desc);
     TraceLog(LOG_INFO, "Found save: Type: %s with index: %zu", space_id_to_name(space_id), desc.id);
     ssize_t space_id_index = -1;

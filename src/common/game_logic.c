@@ -150,26 +150,26 @@ static void game_handle_tile_interaction(Game *game) {
             for (int y = -1; y <= 1; y++) {
               for (int x = -1; x <= 1; x++) {
                 TilePos tile_pos = vec2i(x_index + x, y_index + y);
-                TileInstance *tile_ptr = world_highest_tile_at(game->client_world, tile_pos);
+                TileInstance *tile_ptr = world_highest_tile_at(game->client_game->world, tile_pos);
                 TileInstance tile = TILE_INSTANCE_EMPTY;
                 if (tile_ptr != NULL) {
                   tile = *tile_ptr;
                 }
-                world_remove_tile(game->client_world, tile_pos);
+                world_remove_tile(game->client_game->world, tile_pos);
                 TileInstance remainder = tile_break_remainder(&tile, tile_pos);
-                world_set_tile_on_layer(game->client_world, tile_pos, remainder, remainder.type->layer);
+                world_set_tile_on_layer(game->client_game->world, tile_pos, remainder, remainder.type->layer);
               }
             }
           } else {
-            TileInstance *tile_ptr = world_highest_tile_at(game->client_world, vec2i(x_index, y_index));
+            TileInstance *tile_ptr = world_highest_tile_at(game->client_game->world, vec2i(x_index, y_index));
             TileInstance tile = TILE_INSTANCE_EMPTY;
             if (tile_ptr != NULL) {
               tile = *tile_ptr;
             }
             TilePos tile_pos = vec2i(x_index, y_index);
-            world_remove_tile(game->client_world, tile_pos);
+            world_remove_tile(game->client_game->world, tile_pos);
             TileInstance remainder = tile_break_remainder(&tile, tile_pos);
-            world_set_tile_on_layer(game->client_world, tile_pos, remainder, remainder.type->layer);
+            world_set_tile_on_layer(game->client_game->world, tile_pos, remainder, remainder.type->layer);
           }
           game->client_player->break_progress = -1;
           game->client_player->last_broken_tile = tile;

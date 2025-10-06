@@ -43,5 +43,5 @@ SpaceId space_id_by_name(const char *name);
 typedef struct {
   const SpaceType *type;
   size_t id;
-  bool loaded_from_disk;
+  bool external;
 } SpaceDescriptor;
