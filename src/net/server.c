@@ -7,6 +7,7 @@
 #include <raylib.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include "../../include/netincludes.h"
 
 ServerGame SERVER_GAME = {0};
 UiRenderer UI_RENDERER;

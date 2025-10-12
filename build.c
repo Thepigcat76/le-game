@@ -35,10 +35,14 @@ static BuildOptions OPTS = {.compiler = "clang",
                             .libraries = ARRAY("raylib", "GL", "m", "pthread", "dl", "rt", "X11", "cjson"),
                             .win_libraries = ARRAY("winraylib", "opengl32", "gdi32", "winmm", "wincjson", "ws2_32"),
                             .define_flags = ARRAY("DEBUG_BUILD", "TARGET"),
-                            .extra_flags = ARRAY("-rdynamic"),
+                            .extra_flags = ARRAY("-rdynamic", "-w"),
                           .win_extra_flags = ARRAY("-static-libgcc", "-static-libstdc++", "-static")};
 
 int main(int argc, char **argv) {
+  if (argc >= 2 && STR_CMP_OR(argv[1], "--win")) {
+    OPTS.target = TARGET_WIN;
+  }
+
   if (OPTS.target == TARGET_WIN)
     OPTS.define_flags[1] = "TARGET_WIN";
   else if (OPTS.target == TARGET_LINUX)
@@ -57,7 +61,7 @@ int main(int argc, char **argv) {
 
   puts(_internal_cmd_buf);
 
-  if (argc >= 2) {
+  if (argc >= 2 && OPTS.target != TARGET_WIN) {
     if (STR_CMP_OR(argv[1], "r", "run")) {
       return run(OPTS.out_dir, out_name, argc, argv);
     } else if (STR_CMP_OR(argv[1], "d", "dbg")) {
