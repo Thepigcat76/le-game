@@ -179,9 +179,7 @@ bool world_set_tile_on_layer(World *world, TilePos tile_pos, TileInstance tile, 
   int chunk_x = floor_div((tile_pos.x - chunk_tile_x), CHUNK_SIZE);
   int chunk_y = floor_div((tile_pos.y - chunk_tile_y), CHUNK_SIZE);
   ChunkPos chunk_pos = vec2i(chunk_x, chunk_y);
-  printf("set tile\n");
   if (world_has_chunk_at(world, chunk_pos)) {
-    printf("has chunk\n");
     Chunk *chunk = &world->chunks[world_chunk_index_by_pos(world, chunk_pos)];
     bool success = chunk_set_tile(chunk, tile, chunk_tile_x, chunk_tile_y, layer);
 

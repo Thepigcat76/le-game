@@ -24,7 +24,9 @@
 
 #define SAVE_DIR "save/"
 
+#ifndef TARGET_WIN
 #define PATH_MAX 4096
+#endif
 
 #define SAVE_DATA_BYTES 20000
 
