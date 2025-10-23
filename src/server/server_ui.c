@@ -54,7 +54,7 @@ void server_ui_render(UiRenderer *server_ui_renderer, ServerGame *server) {
   RENDER_TEXT({.text = "Server"});
   RENDER_TEXT({.text = TextFormat("Connected clients: %zu", server->clients_amount)});
   for (size_t i = 0; i < server->clients_amount; i++) {
-    RENDER_TEXT({.text = TextFormat("- Addr: %u", server->client_addresses[i])});
+    RENDER_TEXT({.text = TextFormat("- Addr: %u - %s", server->client_addresses[i], server->client_names[i])});
   }
   RENDER_BUTTON({.message = "Create save", .on_click_func = button_click_simple(on_click), .text_y_offset = -4});
 }

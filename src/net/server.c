@@ -1,20 +1,22 @@
 #include "../../include/net/server.h"
 #include "../../include/array.h"
 #include "../../include/game.h"
+#include "../../include/netincludes.h"
 #include "../../include/server_ui.h"
 #include "../../include/ui.h"
 #include <pthread.h>
 #include <raylib.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include "../../include/netincludes.h"
 
 ServerGame SERVER_GAME = {0};
 UiRenderer UI_RENDERER;
 
 static pthread_mutex_t SERVER_MUTEX = PTHREAD_MUTEX_INITIALIZER;
 
-void server_init(ServerGame *game) {}
+void server_init(ServerGame *game) {
+  game->client_names = array_new(char *, &HEAP_ALLOCATOR);
+}
 
 static void calc_server_ui_height(UiRenderer *ui_renderer) {
   if (ui_renderer->ui_height == -1) {
@@ -98,12 +100,23 @@ static void *server_game(void *args) {
   return NULL;
 }
 
-static void handle_connection(addr_t client_addr) {}
+static void handle_connection(int32_t client_addr) {
+  Packet packet = packet_receive(client_addr, false);
+  if (packet.type == PACKET_ERROR) {
+    fprintf(stderr, "Error or disconnect on fd %d\n", client_addr);
+    // Optionally remove player or close connection here
+    return;
+  }
+
+  packet_handle(&packet, SERVER_GAME.game);
+
+  printf("Received packet: %d from: %d\n", packet.type, client_addr);
+}
 
 static void *server_packet_listener(void *args) {
   PollClient fds[MAX_CLIENTS];
   while (true) {
-    size_t client_addresses_amount;
+    size_t client_addresses_amount = 0;
     pthread_mutex_lock(&SERVER_MUTEX);
     {
       client_addresses_amount = SERVER_GAME.clients_amount;
@@ -116,7 +129,7 @@ static void *server_packet_listener(void *args) {
           fds[i].events = 0;
         } else {
           fds[i].fd = s;
-          fds[i].events = POLLRDNORM;
+          fds[i].events = POLLIN | POLLRDNORM;
         }
       }
     }
@@ -127,7 +140,7 @@ static void *server_packet_listener(void *args) {
     sockets_server_handle_poll(poll_result);
 
     for (int i = 0; i < client_addresses_amount; i++) {
-      if (fds[i].revents & POLLIN) {
+      if (fds[i].revents & (POLLIN | POLLRDNORM)) {
         addr_t client_fd = fds[i].fd;
 
         handle_connection(client_fd);

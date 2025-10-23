@@ -116,4 +116,4 @@ ParticleInstance *client_emit_particle(ClientGame *game, int x, int y, ParticleI
 
 // Networking
 
-void client_join_server(ClientGame *game, const char *ip_addr, uint32_t port);
+addr_t client_join_server(ClientGame *game, const char *ip_addr, uint32_t port);

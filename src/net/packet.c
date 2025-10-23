@@ -1,5 +1,6 @@
 #include "../../include/net/sockets.h"
 #include <complex.h>
+#include <pthread.h>
 #include <stdlib.h>
 #ifdef TARGET_WIN
 #define Rectangle winapiIsSoOldAndGrossSoMangleIt_Rectangle
@@ -10,8 +11,8 @@
 #define DrawTextEx winapiIsSoOldAndGrossSoMangleIt_DrawTextEx
 #define PlaySound winapiIsSoOldAndGrossSoMangleIt_PlaySound
 
-#include <winsock2.h>
 #include <windows.h>
+#include <winsock2.h>
 
 #undef Rectangle
 #undef CloseWindow
@@ -67,6 +68,10 @@ static void packet_fmt(Packet packet, int addr, bool serverbound, bool is_client
     sprintf(buf, "%s [SYNC_SPACE]{space_world_seed=%f,save_name=%s} %s", prefix, ss_packet->space.seed,
             ss_packet->space.world.save_desc != NULL ? ss_packet->space.world.save_desc->config.save_name : "No save desc provided",
             postfix);
+    break;
+  }
+  case PACKET_C2S_CLIENT_CONNECT: {
+    sprintf(buf, "%s [CLIENT_CONNECT]{dev_name=%s} %s", prefix, packet.var.c2s_client_connect.client_name, postfix);
     break;
   }
   }
@@ -198,6 +203,10 @@ static void packet_encode(Packet packet, ByteBuf *buf) {
     space_encode(&space, buf);
     break;
   }
+  case PACKET_C2S_CLIENT_CONNECT: {
+    byte_buf_write_string(buf, packet.var.c2s_client_connect.client_name);
+    break;
+  }
   }
 }
 
@@ -217,6 +226,13 @@ static Packet packet_decode(ByteBuf *buf) {
     space_decode(&space, buf);
     return (Packet){.type = type, .var = {.s2c_sync_space = {.space = space}}};
   }
+  case PACKET_C2S_CLIENT_CONNECT: {
+    size_t str_len = byte_buf_read_int(buf);
+    char *dev_name = malloc(str_len + 1);
+    byte_buf_read_string(buf, dev_name, str_len);
+
+    return (Packet){.type = type, .var = {.c2s_client_connect = {.client_name = dev_name}}};
+  }
   default: {
     printf("ERROR DECODING\n");
     return (Packet){.type = PACKET_ERROR};
@@ -225,22 +241,23 @@ static Packet packet_decode(ByteBuf *buf) {
 }
 
 static void handle_space_sync(PacketS2CSyncSpace *packet, Game *game) {
-    world_initialize(&packet->space.world);
-    // Create save
-    Save save = save_new((SaveDescriptor){.id = 0, .is_server_save = true, .config = {.seed = packet->space.seed, .save_name = "Server-Save"}});
-    array_add(save.loaded_spaces, packet->space);
-    // Assign save to cur_save
-    game->cur_save = save;
-    // Create player
-    Player player = player_new(game);
-    array_add(game->cur_save.players, player);
-    
-    game->client_world = &game->cur_save.loaded_spaces[0].world;
-    game->client_player = &game->cur_save.players[0];
-    client_init_loaded_save(&CLIENT_GAME, &game->cur_save);
-    client_set_menu(&CLIENT_GAME, MENU_NONE);
-    CLIENT_GAME.game->save_loaded = true;
-    CLIENT_GAME.paused = false;
+  world_initialize(&packet->space.world);
+  // Create save
+  Save save =
+      save_new((SaveDescriptor){.id = 0, .is_server_save = true, .config = {.seed = packet->space.seed, .save_name = "Server-Save"}});
+  array_add(save.loaded_spaces, packet->space);
+  // Assign save to cur_save
+  game->cur_save = save;
+  // Create player
+  Player player = player_new(game);
+  array_add(game->cur_save.players, player);
+
+  game->client_world = &game->cur_save.loaded_spaces[0].world;
+  game->client_player = &game->cur_save.players[0];
+  client_init_loaded_save(&CLIENT_GAME, &game->cur_save);
+  client_set_menu(&CLIENT_GAME, MENU_NONE);
+  CLIENT_GAME.game->save_loaded = true;
+  CLIENT_GAME.paused = false;
 }
 
 void packet_handle(Packet *packet, Game *game) {
@@ -257,6 +274,11 @@ void packet_handle(Packet *packet, Game *game) {
   }
   case PACKET_S2C_SYNC_SPACE: {
     handle_space_sync(&packet->var.s2c_sync_space, game);
+    break;
+  }
+  case PACKET_C2S_CLIENT_CONNECT: {
+    printf("Client connect data\n");
+    array_add(SERVER_GAME.client_names, packet->var.c2s_client_connect.client_name);
     break;
   }
   }

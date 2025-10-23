@@ -18,6 +18,7 @@ typedef struct {
   SaveDescriptor server_save;
   size_t clients_amount;
   addr_t client_addresses[MAX_CLIENTS];
+  char **client_names;
 } ServerGame;
 
 extern ServerGame SERVER_GAME;

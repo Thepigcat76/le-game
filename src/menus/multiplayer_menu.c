@@ -2,12 +2,11 @@
 #include <raylib.h>
 
 static void multiplayer_menu_join() {
-    client_join_server(&CLIENT_GAME, "127.0.0.1", 12345);
+  addr_t server_addr = client_join_server(&CLIENT_GAME, "127.0.0.1", 12345);
+  packet_send(server_addr, (Packet){.type = PACKET_C2S_CLIENT_CONNECT, .var = {.c2s_client_connect = {.client_name = "Dev"}}}, true);
 }
 
-static void multiplayer_menu_host() {
-    client_set_menu(&CLIENT_GAME, MENU_HOST_SERVER);
-}
+static void multiplayer_menu_host() { client_set_menu(&CLIENT_GAME, MENU_HOST_SERVER); }
 
 static void multiplayer_menu_back() { client_set_menu(&CLIENT_GAME, MENU_START); }
 

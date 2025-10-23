@@ -13,11 +13,13 @@ typedef struct{
         // Send to all players
         PACKET_S2C_NEW_PLAYER_JOINED,
         PACKET_S2C_SYNC_SPACE,
+        PACKET_C2S_CLIENT_CONNECT,
     } type;
     union {
         PacketS2CPlayerJoin s2c_player_join;
         PacketS2CNewPlayerJoined s2c_new_player_joined;
         PacketS2CSyncSpace s2c_sync_space;
+        PacketC2SClientConnect c2s_client_connect;
     } var;
 } Packet;
 

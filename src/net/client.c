@@ -358,7 +358,7 @@ static void client_poll_keybinds(ClientGame *client) {
   KEY_DOWN(open_close_inventory_key);
 }
 
-void client_join_server(ClientGame *game, const char *ip_addr, uint32_t port) {
+addr_t client_join_server(ClientGame *game, const char *ip_addr, uint32_t port) {
   if (!game->connected_to_server) {
     addr_t server_addr = sockets_connect_to_server(ip_addr, port);
     if (server_addr != -1) {
@@ -374,5 +374,7 @@ void client_join_server(ClientGame *game, const char *ip_addr, uint32_t port) {
     } else {
       printf("Failed to connect to server at addr: %s, port: %u\n", ip_addr, port);
     }
+    return server_addr;
   }
+  return -1;
 }
