@@ -2,6 +2,7 @@
 #include "../../include/array.h"
 #include "../../include/camera.h"
 #include "../../include/game.h"
+#include "../../include/log.h"
 #include "../../include/net/packet.h"
 #include <pthread.h>
 #include <raylib.h>
@@ -10,8 +11,9 @@
   extern void src_file_prefix##_on_reload(ClientGame *game);                                                                               \
   src_file_prefix##_on_reload(client_game_ptr);
 
-NetworkConnection CLIENT_CONNECTION = {.connected = false};
+NetworkConnection CLIENT_CONNECTION = {.connected = false, .server_addr = -1};
 pthread_mutex_t CLIENT_MUTEX = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t CLIENT_COND = PTHREAD_COND_INITIALIZER;
 ClientGame CLIENT_GAME = {0};
 
 static Music MUSIC;
@@ -122,27 +124,22 @@ static void *client_game(void *args) {
 static void *client_packet_listener(void *args) {
   addr_t server_addr = -1;
 
-  // Very scuffed way to check for server connection
-  bool found_addr = false;
-  while (!found_addr) {
-    printf("Checking for server addr\n");
-    pthread_mutex_lock(&CLIENT_MUTEX);
-    {
-      if (CLIENT_CONNECTION.connected) {
-        server_addr = CLIENT_CONNECTION.server_addr;
-        printf("Found server addr\n");
-        found_addr = true;
-      }
+  pthread_mutex_lock(&CLIENT_MUTEX);
+  {
+    while (!CLIENT_CONNECTION.connected) {
+      log_info("Waiting for server connection...");
+      pthread_cond_wait(&CLIENT_COND, &CLIENT_MUTEX);
     }
-    pthread_mutex_unlock(&CLIENT_MUTEX);
-    sleep(3);
+
+    server_addr = CLIENT_CONNECTION.server_addr;
   }
+  pthread_mutex_unlock(&CLIENT_MUTEX);
 
   // Listen for packets
   while (true) {
-    printf("Listening for packets\n");
+    log_debug("Listening for packets");
     Packet packet = packet_receive(server_addr, true);
-    printf("Packet: %d\n", packet.type);
+    log_debug("Packet: %d", packet.type);
 
     if (packet.type == PACKET_ERROR) {
       perror("Error packet on client");
@@ -151,7 +148,7 @@ static void *client_packet_listener(void *args) {
 
     pthread_mutex_lock(&CLIENT_MUTEX);
     {
-      printf("Adding packet to queue\n");
+      log_debug("Adding packet to queue");
       queue_push(&CLIENT_CONNECTION.queue, packet);
     }
     pthread_mutex_unlock(&CLIENT_MUTEX);
@@ -193,6 +190,7 @@ void client_init(ClientGame *game) {
   game->local_saves = array_new_capacity(SaveDescriptor, 64, &HEAP_ALLOCATOR);
   game->window = (Window){.prev_width = window_height, .prev_height = window_height, .width = window_width, .height = window_height};
   game->ui_renderer = ui_renderer_new();
+  game->players = array_new_capacity(Player, 12, &HEAP_ALLOCATOR);
 
   client_init_menu(game);
 
@@ -266,8 +264,8 @@ void client_tick(ClientGame *client) {
     UnloadRenderTexture(client->world_texture);
     client->world_texture = LoadRenderTexture(client->window.width, client->window.height);
 
-    if (client->player != NULL) {
-      camera_focus(&client->player->cam);
+    if (CLIENT_PLAYER != NULL) {
+      camera_focus(&CLIENT_PLAYER->cam);
     }
   }
 
@@ -358,6 +356,8 @@ static void client_poll_keybinds(ClientGame *client) {
   KEY_DOWN(open_close_inventory_key);
 }
 
+static void start_packet_listener() {}
+
 addr_t client_join_server(ClientGame *game, const char *ip_addr, uint32_t port) {
   if (!game->connected_to_server) {
     addr_t server_addr = sockets_connect_to_server(ip_addr, port);
@@ -368,6 +368,7 @@ addr_t client_join_server(ClientGame *game, const char *ip_addr, uint32_t port) 
       {
         CLIENT_CONNECTION.connected = true;
         CLIENT_CONNECTION.server_addr = server_addr;
+        pthread_cond_signal(&CLIENT_COND);
       }
       pthread_mutex_unlock(&CLIENT_MUTEX);
       printf("Successfully connected to server %u, at addr: %s, port: %u\n", server_addr, ip_addr, port);
@@ -377,4 +378,18 @@ addr_t client_join_server(ClientGame *game, const char *ip_addr, uint32_t port) 
     return server_addr;
   }
   return -1;
+}
+
+void client_leave_server(ClientGame *game) {
+  addr_t server_addr;
+  pthread_mutex_lock(&CLIENT_MUTEX);
+  {
+    packet_send(CLIENT_CONNECTION.server_addr, PACKET_C2S_CLIENT_DISCONNECT_NEW({.player_id = game->player_id}), true);
+    CLIENT_CONNECTION.connected = false;
+    server_addr = CLIENT_CONNECTION.server_addr;
+    CLIENT_CONNECTION.server_addr = -1;
+  }
+  pthread_mutex_unlock(&CLIENT_MUTEX);
+  sockets_close(server_addr);
+  game->connected_to_server = false;
 }

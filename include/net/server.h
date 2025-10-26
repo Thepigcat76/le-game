@@ -2,6 +2,7 @@
 
 //#include "../game.h"
 //#include <pthread.h>
+#include "queue.h"
 #include "sockets.h"
 #include "../save.h"
 //
@@ -13,15 +14,23 @@
 //} Server;
 
 typedef struct {
+  int32_t player_id;
+  char *name;
+  addr_t address;
+} Client;
+
+typedef struct {
   addr_t server_addr;
   struct _game *game;
   SaveDescriptor server_save;
-  size_t clients_amount;
-  addr_t client_addresses[MAX_CLIENTS];
-  char **client_names;
+  Client *clients;
+  PacketQueue packet_queue;
 } ServerGame;
 
 extern ServerGame SERVER_GAME;
+
+// Mutex needs to be locked
+Client *server_client_by_id(ServerGame *game, int32_t player_id);
 
 void server_start(const char *ip_addr, uint32_t port);
 

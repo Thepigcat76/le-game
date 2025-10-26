@@ -35,10 +35,10 @@ static void on_click(void) {
   space_create_default(config.seed, &default_space);
   array_add(save.loaded_spaces, default_space);
   SERVER_GAME.game->cur_save = save;
-  for (size_t i = 0; i < SERVER_GAME.clients_amount; i++) {
-    printf("Sending sync space packet to client: %u\n", SERVER_GAME.client_addresses[i]);
-    packet_send(SERVER_GAME.client_addresses[i],
-                (Packet){.type = PACKET_S2C_SYNC_SPACE, .var = {.s2c_sync_space = {.space = default_space}}}, false);
+  for (size_t i = 0; i < array_len(SERVER_GAME.clients); i++) {
+    addr_t addr = SERVER_GAME.clients[i].address;
+    printf("Sending sync space packet to client: %d\n", addr);
+    packet_send(addr, (Packet){.type = PACKET_S2C_SYNC_SPACE, .var = {.s2c_sync_space = {.space = default_space}}}, false);
   }
 }
 
@@ -52,9 +52,9 @@ void server_ui_render(UiRenderer *server_ui_renderer, ServerGame *server) {
   });
 
   RENDER_TEXT({.text = "Server"});
-  RENDER_TEXT({.text = TextFormat("Connected clients: %zu", server->clients_amount)});
-  for (size_t i = 0; i < server->clients_amount; i++) {
-    RENDER_TEXT({.text = TextFormat("- Addr: %u - %s", server->client_addresses[i], server->client_names[i])});
+  RENDER_TEXT({.text = TextFormat("Connected clients: %zu", array_len(server->clients))});
+  for (size_t i = 0; i < array_len(server->clients); i++) {
+    RENDER_TEXT({.text = TextFormat("- Addr: %u - %s", server->clients[i].address, server->clients[i].name)});
   }
   RENDER_BUTTON({.message = "Create save", .on_click_func = button_click_simple(on_click), .text_y_offset = -4});
 }

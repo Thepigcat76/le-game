@@ -95,5 +95,5 @@ void debug_menu_render(UiRenderer *renderer, const ClientGame *game) {
                  .y_offset = y_offset,
                  .width = 132,
                  .height = 16});
-  RENDER_TEXT({.text = TextFormat("x: %d, y: %d", (int) game->player->box.x, (int) game->player->box.y), .color = WHITE});
+  RENDER_TEXT({.text = TextFormat("x: %d, y: %d", (int) CLIENT_PLAYER->box.x, (int) CLIENT_PLAYER->box.y), .color = WHITE});
 }

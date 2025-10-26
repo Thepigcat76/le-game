@@ -47,7 +47,9 @@ typedef struct {
   // world and player usually stored
   // in CLIENT_GAME.cur_save
   World *world;
+  Player *players;
   Player *player;
+  int player_id;
   addr_t server_addr;
   bool connected_to_server;
 } ClientGame;
@@ -61,6 +63,9 @@ typedef struct {
 extern ClientGame CLIENT_GAME;
 extern NetworkConnection CLIENT_CONNECTION;
 extern pthread_mutex_t CLIENT_MUTEX;
+extern pthread_cond_t CLIENT_COND;
+
+#define CLIENT_PLAYER (CLIENT_GAME.players)
 
 void client_start(void);
 
@@ -117,3 +122,5 @@ ParticleInstance *client_emit_particle(ClientGame *game, int x, int y, ParticleI
 // Networking
 
 addr_t client_join_server(ClientGame *game, const char *ip_addr, uint32_t port);
+
+void client_leave_server(ClientGame *game);

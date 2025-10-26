@@ -294,15 +294,15 @@ void ui_slot_render(UiRenderer *renderer, SlotUiComponent component) {
     DrawRectangle(renderer->cur_x, renderer->cur_y, width, height, color_rgba(150, 150, 150, 150));
 
     if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
-      if (item_is_empty(&CLIENT_GAME.player->dragged_item)) {
-        CLIENT_GAME.player->dragged_item = *component.item;
+      if (item_is_empty(&CLIENT_PLAYER->dragged_item)) {
+        CLIENT_PLAYER->dragged_item = *component.item;
         *component.item = ITEM_INSTANCE_EMPTY;
       } else if (item_is_empty(component.item)) {
-        *component.item = CLIENT_GAME.player->dragged_item;
-        CLIENT_GAME.player->dragged_item = ITEM_INSTANCE_EMPTY;
+        *component.item = CLIENT_PLAYER->dragged_item;
+        CLIENT_PLAYER->dragged_item = ITEM_INSTANCE_EMPTY;
       } else {
-        ItemInstance dragged_item = CLIENT_GAME.player->dragged_item;
-        CLIENT_GAME.player->dragged_item = *component.item;
+        ItemInstance dragged_item = CLIENT_PLAYER->dragged_item;
+        CLIENT_PLAYER->dragged_item = *component.item;
         *component.item = dragged_item;
       }
     }

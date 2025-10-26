@@ -1,5 +1,6 @@
 #include "../../include/config.h"
 #include "../../include/game.h"
+#include "../../include/log.h"
 #include <raylib.h>
 
 static void game_world_tick(Game *game);
@@ -78,7 +79,7 @@ static void game_world_tick(Game *game) {
   }
 
   if (IS_KEY_PRESSED(open_close_debug_menu)) {
-    printf("F3 pressed\n");
+    log_debug("F3 pressed");
     if (game->client_game->cur_menu == MENU_NONE) {
       client_set_menu(game->client_game, MENU_DEBUG);
     } else {

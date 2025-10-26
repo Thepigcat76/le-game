@@ -1,3 +1,4 @@
+#include "../../include/log.h"
 #include "../../include/net/sockets.h"
 #include <complex.h>
 #include <pthread.h>
@@ -59,10 +60,6 @@ static void packet_fmt(Packet packet, int addr, bool serverbound, bool is_client
     sprintf(buf, "%s [PLAYER_JOIN]{player=%d} %s", prefix, packet.var.s2c_player_join.player_id, postfix);
     break;
   }
-  case PACKET_S2C_NEW_PLAYER_JOINED: {
-    sprintf(buf, "%s [NEW_PLAYER_JOINED]{player=%d} %s", prefix, packet.var.s2c_new_player_joined.new_player_id, postfix);
-    break;
-  }
   case PACKET_S2C_SYNC_SPACE: {
     PacketS2CSyncSpace *ss_packet = &packet.var.s2c_sync_space;
     sprintf(buf, "%s [SYNC_SPACE]{space_world_seed=%f,save_name=%s} %s", prefix, ss_packet->space.seed,
@@ -70,9 +67,24 @@ static void packet_fmt(Packet packet, int addr, bool serverbound, bool is_client
             postfix);
     break;
   }
+  case PACKET_S2C_CLIENT_ACCEPTED: {
+    PacketS2CClientAccepted *ca_packet = &packet.var.s2c_client_accepted;
+    sprintf(buf, "%s [CLIENT_ACCEPTED]{player_id=%d} %s", prefix, ca_packet->player_id, postfix);
+    break;
+  }
+  case PACKET_S2C_CLIENT_CONNECTED: {
+    PacketS2CClientConnected *cc_packet = &packet.var.s2c_client_connected;
+    sprintf(buf, "%s [CLIENT_CONNECTED]{player_id=%d,client_name=%s} %s", prefix, cc_packet->new_player_id, cc_packet->client_name,
+            postfix);
+    break;
+  }
+  /* Handled on server */
   case PACKET_C2S_CLIENT_CONNECT: {
     sprintf(buf, "%s [CLIENT_CONNECT]{dev_name=%s} %s", prefix, packet.var.c2s_client_connect.client_name, postfix);
     break;
+  }
+  case PACKET_C2S_CLIENT_DISCONNECT: {
+    sprintf(buf, "%s [CLIENT_DISCONNECT]{player_id=%d} %s", prefix, packet.var.c2s_client_disconnect.player_id, postfix);
   }
   }
 }
@@ -188,13 +200,13 @@ static void packet_encode(Packet packet, ByteBuf *buf) {
     break;
   }
   case PACKET_S2C_PLAYER_JOIN: {
+    PacketS2CPlayerJoin player_join_packet = packet.var.s2c_player_join;
     int player_id = packet.var.s2c_player_join.player_id;
-    byte_buf_write_byte(buf, player_id);
-    break;
-  }
-  case PACKET_S2C_NEW_PLAYER_JOINED: {
-    int player_id = packet.var.s2c_new_player_joined.new_player_id;
-    byte_buf_write_byte(buf, player_id);
+    byte_buf_write_int(buf, player_id);
+    DataMap player_map = data_map_new(200);
+    player_save(&player_join_packet.player, &player_map);
+    Data player_data = data_map(player_map);
+    byte_buf_write_data(buf, &player_data);
     break;
   }
   case PACKET_S2C_SYNC_SPACE: {
@@ -203,8 +215,22 @@ static void packet_encode(Packet packet, ByteBuf *buf) {
     space_encode(&space, buf);
     break;
   }
+  case PACKET_S2C_CLIENT_ACCEPTED: {
+    byte_buf_write_int(buf, packet.var.s2c_client_accepted.player_id);
+    break;
+  }
+  case PACKET_S2C_CLIENT_CONNECTED: {
+    byte_buf_write_int(buf, packet.var.s2c_client_connected.new_player_id);
+    byte_buf_write_string(buf, packet.var.s2c_client_connected.client_name);
+    break;
+  }
   case PACKET_C2S_CLIENT_CONNECT: {
+    byte_buf_write_int(buf, packet.var.c2s_client_connect.player_id);
     byte_buf_write_string(buf, packet.var.c2s_client_connect.client_name);
+    break;
+  }
+  case PACKET_C2S_CLIENT_DISCONNECT: {
+    byte_buf_write_int(buf, packet.var.c2s_client_disconnect.player_id);
     break;
   }
   }
@@ -214,24 +240,40 @@ static Packet packet_decode(ByteBuf *buf) {
   int type = byte_buf_read_byte(buf);
   switch (type) {
   case PACKET_S2C_PLAYER_JOIN: {
-    int player_id = byte_buf_read_byte(buf);
-    return (Packet){.type = type, .var = {.s2c_player_join = {.player_id = player_id}}};
-  }
-  case PACKET_S2C_NEW_PLAYER_JOINED: {
-    int player_id = byte_buf_read_byte(buf);
-    return (Packet){.type = type, .var = {.s2c_new_player_joined = {.new_player_id = player_id}}};
+    int player_id = byte_buf_read_int(buf);
+    DataMap player_map = byte_buf_read_data(buf).var.data_map;
+    Player player = player_new(CLIENT_GAME.game);
+    player_load(&player, &player_map);
+    return PACKET_S2C_PLAYER_JOIN_NEW({.player_id = player_id, .player = player});
   }
   case PACKET_S2C_SYNC_SPACE: {
     Space space;
     space_decode(&space, buf);
-    return (Packet){.type = type, .var = {.s2c_sync_space = {.space = space}}};
+    return PACKET_S2C_SYNC_SPACE_NEW({.space = space});
+  }
+  case PACKET_S2C_CLIENT_ACCEPTED: {
+    int player_id = byte_buf_read_int(buf);
+    return PACKET_S2C_CLIENT_ACCEPTED_NEW({.player_id = player_id});
   }
   case PACKET_C2S_CLIENT_CONNECT: {
+    int player_id = byte_buf_read_int(buf);
     size_t str_len = byte_buf_read_int(buf);
     char *dev_name = malloc(str_len + 1);
     byte_buf_read_string(buf, dev_name, str_len);
 
-    return (Packet){.type = type, .var = {.c2s_client_connect = {.client_name = dev_name}}};
+    return PACKET_C2S_CLIENT_CONNECT_NEW({.client_name = dev_name, .player_id = player_id});
+  }
+  case PACKET_S2C_CLIENT_CONNECTED: {
+    int new_player_id = byte_buf_read_int(buf);
+    size_t str_len = byte_buf_read_int(buf);
+    char *client_name = malloc(str_len + 1);
+    byte_buf_read_string(buf, client_name, str_len);
+
+    return PACKET_S2C_CLIENT_CONNECTED_NEW({.client_name = client_name, .new_player_id = new_player_id});
+  }
+  case PACKET_C2S_CLIENT_DISCONNECT: {
+    int player_id = byte_buf_read_int(buf);
+    return PACKET_C2S_CLIENT_DISCONNECT_NEW({.player_id = player_id});
   }
   default: {
     printf("ERROR DECODING\n");
@@ -253,6 +295,7 @@ static void handle_space_sync(PacketS2CSyncSpace *packet, Game *game) {
   array_add(game->cur_save.players, player);
 
   game->client_world = &game->cur_save.loaded_spaces[0].world;
+  // FIXME: Dangerous, since mem location of first element might change
   game->client_player = &game->cur_save.players[0];
   client_init_loaded_save(&CLIENT_GAME, &game->cur_save);
   client_set_menu(&CLIENT_GAME, MENU_NONE);
@@ -260,25 +303,64 @@ static void handle_space_sync(PacketS2CSyncSpace *packet, Game *game) {
   CLIENT_GAME.paused = false;
 }
 
+// SERVER_GAME/CLIENT_CONNECTIONS are safe to access cuz they are locked
 void packet_handle(Packet *packet, Game *game) {
   switch (packet->type) {
   case PACKET_ERROR: {
     break;
   }
+  /* Handled on client */
   case PACKET_S2C_PLAYER_JOIN: {
-    printf("Welcome from the server\n");
-    break;
-  }
-  case PACKET_S2C_NEW_PLAYER_JOINED: {
+    log_info("Welcome from the server");
+    array_add(game->client_game->players, packet->var.s2c_player_join.player);
     break;
   }
   case PACKET_S2C_SYNC_SPACE: {
     handle_space_sync(&packet->var.s2c_sync_space, game);
     break;
   }
+  case PACKET_S2C_CLIENT_CONNECTED: {
+    PacketS2CClientConnected packet_client_connected = packet->var.s2c_client_connected;
+    log_info("New client connected! Name: %s, Id: %d", packet_client_connected.client_name, packet_client_connected.new_player_id);
+    break;
+  }
+  case PACKET_S2C_CLIENT_ACCEPTED: {
+    game->client_game->player_id = packet->var.s2c_client_accepted.player_id;
+    log_info("Player accepted");
+    break;
+  }
+  /* Handled on server */
+  case PACKET_C2S_CLIENT_DISCONNECT: {
+    int player_id = packet->var.c2s_client_disconnect.player_id;
+    
+    size_t i;
+    for (i = 0; i < array_len(SERVER_GAME.clients); i++) {
+      if (SERVER_GAME.clients[i].player_id == player_id) {
+        break;
+      }
+    }
+
+    array_remove(SERVER_GAME.clients, i);
+
+    break;
+  }
   case PACKET_C2S_CLIENT_CONNECT: {
-    printf("Client connect data\n");
-    array_add(SERVER_GAME.client_names, packet->var.c2s_client_connect.client_name);
+    log_debug("Client connect data");
+    PacketC2SClientConnect cc_packet = packet->var.c2s_client_connect;
+    for (size_t i = 0; i < array_len(SERVER_GAME.clients); i++) {
+      if (SERVER_GAME.clients[i].player_id == cc_packet.player_id) {
+        SERVER_GAME.clients[i].name = cc_packet.client_name;
+        break;
+      }
+    }
+    Client *client = server_client_by_id(&SERVER_GAME, cc_packet.player_id);
+    client->name = cc_packet.client_name;
+    Packet new_packet = PACKET_S2C_CLIENT_CONNECTED_NEW({.client_name = cc_packet.client_name, .new_player_id = cc_packet.player_id});
+
+    size_t clients = array_len(SERVER_GAME.clients);
+    for (size_t i = 0; i < clients; i++) {
+      packet_send(SERVER_GAME.clients[i].address, new_packet, false);
+    }
     break;
   }
   }

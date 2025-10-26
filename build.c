@@ -69,6 +69,8 @@ int main(int argc, char **argv) {
       return 0;
     } else if (STR_CMP_OR(argv[1], "s", "server")) {
       return run(OPTS.out_dir, out_name, 5, (char *[5]) {"gurd", "r", "--server", "127.0.0.1", "12345"});
+    } else if (STR_CMP_OR(argv[1], "sd", "server-debug")) {
+      return compile("gdb %s %s %s %s %s", "--args", "./build/cozy-wrath", "--server", "127.0.0.1", "12345");
     } else {
       fprintf(stderr, "[Error]: Invalid first arg: %s\n", argv[1]);
       return 1;

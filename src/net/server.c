@@ -1,6 +1,7 @@
 #include "../../include/net/server.h"
 #include "../../include/array.h"
 #include "../../include/game.h"
+#include "../../include/log.h"
 #include "../../include/netincludes.h"
 #include "../../include/server_ui.h"
 #include "../../include/ui.h"
@@ -15,14 +16,19 @@ UiRenderer UI_RENDERER;
 static pthread_mutex_t SERVER_MUTEX = PTHREAD_MUTEX_INITIALIZER;
 
 void server_init(ServerGame *game) {
-  game->client_names = array_new(char *, &HEAP_ALLOCATOR);
+  game->clients = array_new(Client, &HEAP_ALLOCATOR);
+  queue_init(&game->packet_queue);
 }
 
 static void calc_server_ui_height(UiRenderer *ui_renderer) {
   if (ui_renderer->ui_height == -1) {
     ui_renderer->cur_y = 0;
     ui_renderer->simulate = true;
-    server_ui_render(ui_renderer, &SERVER_GAME);
+    pthread_mutex_lock(&SERVER_MUTEX);
+    {
+      server_ui_render(ui_renderer, &SERVER_GAME);
+    }
+    pthread_mutex_unlock(&SERVER_MUTEX);
     ui_renderer->ui_height = ui_renderer->cur_y;
 
     ui_renderer->simulate = false;
@@ -54,9 +60,6 @@ static void *server_game(void *args) {
   // init random
   shared_setup();
 
-  // Init server game
-  server_init(&SERVER_GAME);
-
   // Create and init common game
   Game _game = {0};
   Game *game = malloc(sizeof(Game));
@@ -81,13 +84,26 @@ static void *server_game(void *args) {
   calc_server_ui_height(&UI_RENDERER);
 
   while (!WindowShouldClose()) {
+    pthread_mutex_lock(&SERVER_MUTEX);
+    {
+      Packet p;
+      if (queue_pop(&SERVER_GAME.packet_queue, &p)) {
+        packet_handle(&p, game);
+      }
+    }
+    pthread_mutex_unlock(&SERVER_MUTEX);
+
     UI_RENDERER.cur_x = 0;
     UI_RENDERER.cur_y = 0;
 
     BeginDrawing();
     {
       ClearBackground(BLACK);
-      server_ui_render(&UI_RENDERER, &SERVER_GAME);
+      pthread_mutex_lock(&SERVER_MUTEX);
+      {
+        server_ui_render(&UI_RENDERER, &SERVER_GAME);
+      }
+      pthread_mutex_unlock(&SERVER_MUTEX);
     }
     EndDrawing();
   }
@@ -101,16 +117,22 @@ static void *server_game(void *args) {
 }
 
 static void handle_connection(int32_t client_addr) {
+  printf("[Server] Listening for packets\n");
   Packet packet = packet_receive(client_addr, false);
+
   if (packet.type == PACKET_ERROR) {
     fprintf(stderr, "Error or disconnect on fd %d\n", client_addr);
-    // Optionally remove player or close connection here
-    return;
+    exit(1);
   }
 
-  packet_handle(&packet, SERVER_GAME.game);
+  printf("[Server] Received Packet: %d\n", packet.type);
 
-  printf("Received packet: %d from: %d\n", packet.type, client_addr);
+  pthread_mutex_lock(&SERVER_MUTEX);
+  {
+    printf("Adding packet to queue\n");
+    queue_push(&SERVER_GAME.packet_queue, packet);
+  }
+  pthread_mutex_unlock(&SERVER_MUTEX);
 }
 
 static void *server_packet_listener(void *args) {
@@ -119,10 +141,10 @@ static void *server_packet_listener(void *args) {
     size_t client_addresses_amount = 0;
     pthread_mutex_lock(&SERVER_MUTEX);
     {
-      client_addresses_amount = SERVER_GAME.clients_amount;
+      client_addresses_amount = array_len(SERVER_GAME.clients);
 
       for (int i = 0; i < client_addresses_amount; i++) {
-        addr_t s = SERVER_GAME.client_addresses[i];
+        addr_t s = SERVER_GAME.clients[i].address;
         if (s == _INVALID_SOCKET || s == 0) {
           fprintf(stderr, "[DEBUG] Skipping invalid socket at index %d (fd=%lld)\n", i, (long long)s);
           fds[i].fd = _INVALID_SOCKET;
@@ -162,12 +184,13 @@ static void *server_player_listener(void *args) {
 
     pthread_mutex_lock(&SERVER_MUTEX);
     {
-      size_t player_id = SERVER_GAME.clients_amount++;
-      SERVER_GAME.client_addresses[player_id] = client_fd;
-      // TODO: Send packets to clients
-      printf("Player connected!\n");
+      size_t player_id = array_len(SERVER_GAME.clients);
+      array_add(SERVER_GAME.clients, (Client){.player_id = player_id, .address = client_fd, .name = "(null)"});
+      log_debug("Player connected!\n");
 
-      packet_send(client_fd, (Packet){.type = PACKET_S2C_PLAYER_JOIN, .var = {.s2c_player_join = {.player_id = client_fd}}}, false);
+      packet_send(client_fd, PACKET_S2C_CLIENT_ACCEPTED_NEW({.player_id = player_id}), false);
+
+      packet_send(client_fd, PACKET_S2C_PLAYER_JOIN_NEW({.player_id = client_fd, .player = player_new(SERVER_GAME.game)}), false);
     }
     pthread_mutex_unlock(&SERVER_MUTEX);
   }
@@ -175,6 +198,7 @@ static void *server_player_listener(void *args) {
 }
 
 void server_start(const char *ip_addr, uint32_t port) {
+  server_init(&SERVER_GAME);
   // Creates a socket for the server
   addr_t server_addr = sockets_open_server(ip_addr, port);
 
@@ -212,4 +236,13 @@ void server_start(const char *ip_addr, uint32_t port) {
   printf("Server finished\n");
 
   sockets_close(server_addr);
+}
+
+Client *server_client_by_id(ServerGame *game, int32_t player_id) {
+  for (size_t i = 0; i < array_len(game->clients); i++) {
+    if (game->clients[i].player_id == player_id) {
+      return &game->clients[i];
+    }
+  }
+  return NULL;
 }

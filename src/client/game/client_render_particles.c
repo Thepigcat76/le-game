@@ -17,10 +17,10 @@ void client_render_particle(ClientGame *game, ParticleInstance particle, bool be
       break;
     }
     case PARTICLE_INSTANCE_WALKING: {
-      if (game->player->direction == DIRECTION_DOWN && behind_player) {
+      if (CLIENT_PLAYER->direction == DIRECTION_DOWN && behind_player) {
         DrawTextureV(particle.extra.var.walking.texture, (Vector2){particle.position.x, particle.position.y},
                      particle.color);
-      } else if (game->player->direction != DIRECTION_DOWN && !behind_player) {
+      } else if (CLIENT_PLAYER->direction != DIRECTION_DOWN && !behind_player) {
         DrawTextureV(particle.extra.var.walking.texture, (Vector2){particle.position.x, particle.position.y},
                      particle.color);
       }

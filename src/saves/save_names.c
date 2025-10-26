@@ -1,16 +1,17 @@
 #include "../../include/save_names.h"
+#include "../../include/log.h"
 #include "../../include/shared.h"
 #include "../../vendor/cJSON.h"
 #include <raylib.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 typedef struct {
-    char *adjectives[MAX_SAVE_NAMES_AMOUNT];
-    size_t adjectives_amount;
-    char *nouns[MAX_SAVE_NAMES_AMOUNT];
-    size_t nouns_amount;
+  char *adjectives[MAX_SAVE_NAMES_AMOUNT];
+  size_t adjectives_amount;
+  char *nouns[MAX_SAVE_NAMES_AMOUNT];
+  size_t nouns_amount;
 } SaveNames;
 
 static SaveNames SAVE_NAMES = {.adjectives_amount = 0, .nouns_amount = 0};
@@ -67,19 +68,19 @@ void save_names_on_reload(void) {
   free(file_content);
   cJSON_Delete(json);
 
-  printf("Reloaded savenames \n");
+  log_info("Reloaded savenames");
 }
 
 char *save_names_random_name() {
-    int random_adjective = GetRandomValue(0, SAVE_NAMES.adjectives_amount - 1);
-    int random_noun = GetRandomValue(0, SAVE_NAMES.nouns_amount - 1);
+  int random_adjective = GetRandomValue(0, SAVE_NAMES.adjectives_amount - 1);
+  int random_noun = GetRandomValue(0, SAVE_NAMES.nouns_amount - 1);
 
-    char *adjective = SAVE_NAMES.adjectives[random_adjective];
-    char *noun = SAVE_NAMES.nouns[random_noun];
+  char *adjective = SAVE_NAMES.adjectives[random_adjective];
+  char *noun = SAVE_NAMES.nouns[random_noun];
 
-    // Adj len + whitspace + Noun len + Null Term
-    char *random_name = malloc(strlen(adjective) + 1 + strlen(noun) + 1);
-    sprintf(random_name, "%s %s", adjective, noun);
+  // Adj len + whitspace + Noun len + Null Term
+  char *random_name = malloc(strlen(adjective) + 1 + strlen(noun) + 1);
+  sprintf(random_name, "%s %s", adjective, noun);
 
-    return random_name;
+  return random_name;
 }

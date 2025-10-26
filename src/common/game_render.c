@@ -16,11 +16,11 @@ static void game_render_break_progress(ClientGame *client, TilePos break_pos, in
 
 void client_world_render(ClientGame *client, float alpha) {
   Vec2f mouse_pos = GetMousePosition();
-  Vec2f mouse_world_pos = GetScreenToWorld2D(mouse_pos, client->player->cam);
+  Vec2f mouse_world_pos = GetScreenToWorld2D(mouse_pos, CLIENT_PLAYER->cam);
 
   world_render_layer(client->world, TILE_LAYER_GROUND);
 
-  world_render_layer_top_split(client->world, &client->player, true);
+  world_render_layer_top_split(client->world, &CLIENT_PLAYER, true);
 
   for (int i = 0; i < client->world->beings_amount; i++) {
     being_render(&client->world->beings[i]);
@@ -28,25 +28,25 @@ void client_world_render(ClientGame *client, float alpha) {
 
   client_render_particles(client, true);
 
-  player_render(client->player, alpha);
+  player_render(CLIENT_PLAYER, alpha);
 
   bool zoom_in = IS_KEY_DOWN(zoom_in);
   bool zoom_out = IS_KEY_DOWN(zoom_out);
 
-  player_handle_zoom(client->player, zoom_in, zoom_out, alpha);
+  player_handle_zoom(CLIENT_PLAYER, zoom_in, zoom_out, alpha);
 
-  world_render_layer_top_split(client->world, &client->player, false);
+  world_render_layer_top_split(client->world, &CLIENT_PLAYER, false);
 
-  game_render_break_progress(client, client->player->break_tile_pos, client->player->break_tile.type->tile_props.break_time,
-                             client->player->break_progress);
+  game_render_break_progress(client, CLIENT_PLAYER->break_tile_pos, CLIENT_PLAYER->break_tile.type->tile_props.break_time,
+                             CLIENT_PLAYER->break_progress);
 
   int x_index = floor_div(mouse_world_pos.x, TILE_SIZE);
   int y_index = floor_div(mouse_world_pos.y, TILE_SIZE);
   client->hovered_tile = world_highest_tile_at(client->world, vec2i(x_index, y_index));
   Rectangle rec = (Rectangle){.x = x_index * (TILE_SIZE), .y = y_index * (TILE_SIZE), .width = (TILE_SIZE), .height = (TILE_SIZE)};
   bool slot_selected = client->slot_selected;
-  bool interaction_in_range = abs((int)client->player->box.x - x_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE &&
-      abs((int)client->player->box.y - y_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE;
+  bool interaction_in_range = abs((int)CLIENT_PLAYER->box.x - x_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE &&
+      abs((int)CLIENT_PLAYER->box.y - y_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE;
 
   if (!slot_selected && interaction_in_range) {
     rec_draw_outline(rec, BLUE);
@@ -67,7 +67,7 @@ void client_render(ClientGame *client, float alpha) {
 
     Vector2 mousePos = GetMousePosition();
     if (client->world != NULL) {
-      Camera2D *cam = &client->player->cam;
+      Camera2D *cam = &CLIENT_PLAYER->cam;
 
       Vector2 mouse_world_pos = GetScreenToWorld2D(mousePos, *cam);
       Vector2 light_pos = {(mousePos.x / GetScreenWidth()), 1.0 - (mousePos.y / GetScreenHeight())};
@@ -75,8 +75,8 @@ void client_render(ClientGame *client, float alpha) {
       Vector3 light_color = {1.0f, 1.0f, 0.8f}; // warm white
       float light_radius = 0;
 
-      if (CLIENT_GAME.player != NULL) {
-        light_radius = CLIENT_GAME.player->held_item.type.item_props.light_source ? 0.08f * cam->zoom * (1.0f + 0.11f * sin(GetTime())) : 0;
+      if (CLIENT_PLAYER != NULL) {
+        light_radius = CLIENT_PLAYER->held_item.type.item_props.light_source ? 0.08f * cam->zoom * (1.0f + 0.11f * sin(GetTime())) : 0;
       }
 
       ShaderVarLookupLighting lighting_lookup = client->shader_manager.lookups[SHADER_LIGHTING].var.lighting;

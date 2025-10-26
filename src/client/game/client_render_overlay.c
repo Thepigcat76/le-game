@@ -10,7 +10,7 @@
 void client_render_overlay(ClientGame *client) {
   Vec2i pos = vec2i(GetScreenWidth() - (3.5 * 16) - 30, (GetScreenHeight() / 2.0f) - (3.5 * 8));
   DrawTextureEx(MAIN_HAND_SLOT_TEXTURE, (Vector2){pos.x, pos.y}, 0, 4.5, WHITE);
-  item_render(&client->player->held_item, pos.x + 2 * 3.5, pos.y + 2 * 3.5);
+  item_render(&CLIENT_PLAYER->held_item, pos.x + 2 * 3.5, pos.y + 2 * 3.5);
 
 #ifdef DEBUG_BUILD
   debug_render_overlay(&client->game->debug);
@@ -33,13 +33,13 @@ void client_render_overlay(ClientGame *client) {
     EndShaderMode();
 
     int y_offset = 15;
-    char *name = item_type_to_string(&client->player->held_item.type);
+    char *name = item_type_to_string(&CLIENT_PLAYER->held_item.type);
     DrawText(name,
              mouse_pos.x +
                  ((float)client->texture_manager.textures[TEXTURE_TOOLTIP].width * 5 - MeasureText(name, CONFIG.default_font_size)) / 2,
              mouse_pos.y + y_offset, CONFIG.default_font_size, WHITE);
     char tooltip[256];
-    item_tooltip(&client->player->held_item, tooltip, 256);
+    item_tooltip(&CLIENT_PLAYER->held_item, tooltip, 256);
     int count;
     const char **tooltip_lines = TextSplit(tooltip, '\n', &count);
     for (int i = 0; i < count; i++) {
@@ -52,7 +52,7 @@ void client_render_overlay(ClientGame *client) {
     }
   }
 
-  item_render(&client->player->dragged_item, mouse_pos.x - 16, mouse_pos.y - 16);
+  item_render(&CLIENT_PLAYER->dragged_item, mouse_pos.x - 16, mouse_pos.y - 16);
 
 }
 

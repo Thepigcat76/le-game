@@ -1,4 +1,5 @@
 #include "menu_includes.h"
+#include <pthread.h>
 #include <raylib.h>
 
 static void save_menu_back_to_game_button_clicked() {
@@ -11,6 +12,14 @@ static void save_menu_general_settings_button_clicked() { TraceLog(LOG_DEBUG, "B
 static void save_menu_gameplay_settings_button_clicked() { TraceLog(LOG_DEBUG, "Button clicked"); }
 
 static void save_menu_save_game_button_clicked() {
+  addr_t server_addr;
+  pthread_mutex_lock(&CLIENT_MUTEX);
+  {
+    server_addr = CLIENT_CONNECTION.server_addr;
+  }
+  pthread_mutex_unlock(&CLIENT_MUTEX);
+  packet_send(server_addr, PACKET_C2S_CLIENT_DISCONNECT_NEW({.player_id = CLIENT_GAME.player_id}), true);
+
   client_set_menu(&CLIENT_GAME, MENU_START);
 
   game_unload_save(CLIENT_GAME.game);
@@ -24,8 +33,8 @@ static Texture2D DECLARE_BUTTON_TEXTURE(LEAVE_GAME_BUTTON_TEXTURE);
 void save_menu_init() {
   INIT_TEXTURE(BACK_TO_GAME_BUTTON_TEXTURE, "back_to_game_button");
   INIT_TEXTURE(VISUAL_SETTINGS_BUTTON_TEXTURE, "visual_settings_button");
-  INIT_TEXTURE(GAME_SETTINGS_BUTTON_TEXTURE, "back_to_game_button");
-  INIT_TEXTURE(LEAVE_GAME_BUTTON_TEXTURE, "back_to_game_button");
+  INIT_TEXTURE(GAME_SETTINGS_BUTTON_TEXTURE, "game_settings_button");
+  INIT_TEXTURE(LEAVE_GAME_BUTTON_TEXTURE, "leave_game_button");
 }
 
 void save_menu_render(UiRenderer *renderer, const ClientGame *game) {
