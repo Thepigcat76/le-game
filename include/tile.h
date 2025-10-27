@@ -10,9 +10,6 @@
 #include "tile/tile_props.h"
 #include "tile/adv_tile.h"
 
-// Extern structs
-struct _game;
-
 #define DEFAULT_TILE_DIMENSIONS dimf(16, 16)
 
 extern AdvTileInstance *ADV_TILES;

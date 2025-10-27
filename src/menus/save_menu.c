@@ -22,7 +22,7 @@ static void save_menu_save_game_button_clicked() {
 
   client_set_menu(&CLIENT_GAME, MENU_START);
 
-  game_unload_save(CLIENT_GAME.game);
+  game_unload_save(&CLIENT_GAME.game);
 }
 
 static Texture2D DECLARE_BUTTON_TEXTURE(BACK_TO_GAME_BUTTON_TEXTURE);

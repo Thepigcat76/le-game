@@ -8,9 +8,7 @@
 #include <stdint.h>
 #include <raylib.h>
 
-struct _game;
-
-typedef struct {
+typedef struct _player {
   Camera2D cam;
   Vec2f cur_cam_pos;
   Vec2f prev_cam_pos;

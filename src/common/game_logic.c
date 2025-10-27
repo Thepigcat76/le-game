@@ -1,5 +1,6 @@
 #include "../../include/config.h"
 #include "../../include/game.h"
+#include "../../include/net/client.h"
 #include "../../include/log.h"
 #include <raylib.h>
 

@@ -1,6 +1,6 @@
 #pragma once
 
-//#include "../game.h"
+#include "../game.h"
 //#include <pthread.h>
 #include "queue.h"
 #include "sockets.h"
@@ -19,9 +19,9 @@ typedef struct {
   addr_t address;
 } Client;
 
-typedef struct {
+typedef struct _server_game {
   addr_t server_addr;
-  struct _game *game;
+  Game game;
   SaveDescriptor server_save;
   Client *clients;
   PacketQueue packet_queue;

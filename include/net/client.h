@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../game.h"
 #include "../keys.h"
 #include "../menu.h"
 #include "../particle.h"
@@ -12,15 +13,15 @@
 #include "../window.h"
 #include "../world.h"
 #include "common.h"
-#include "sockets.h"
 #include "packet.h"
 #include "queue.h"
+#include "sockets.h"
 
 typedef struct {
   PlayerDescriptor *server_players;
 } ServerData;
 
-typedef struct {
+typedef struct _client_game {
   MenuId cur_menu;
   bool paused;
   // Managers
@@ -42,13 +43,12 @@ typedef struct {
   // a save on the server
   Save *cur_save;
   // Pointer to the game (heap-allocated)
-  struct _game *game;
+  Game game;
   // World, Player - points to the
   // world and player usually stored
   // in CLIENT_GAME.cur_save
   World *world;
   Player *players;
-  Player *player;
   Player cur_player;
   int player_id;
   addr_t server_addr;
@@ -66,7 +66,7 @@ extern NetworkConnection CLIENT_CONNECTION;
 extern pthread_mutex_t CLIENT_MUTEX;
 extern pthread_cond_t CLIENT_COND;
 
-#define CLIENT_PLAYER (CLIENT_GAME.players)
+#define CLIENT_PLAYER (&CLIENT_GAME.cur_player)
 
 void client_start(void);
 
@@ -117,8 +117,7 @@ void client_render_particles(ClientGame *game, bool behind_player);
 
 ParticleInstance *client_emit_particle_ex(ClientGame *game, ParticleInstance particle_instance);
 
-ParticleInstance *client_emit_particle(ClientGame *game, int x, int y, ParticleId particle_id,
-                                     ParticleInstanceEx particle_extra);
+ParticleInstance *client_emit_particle(ClientGame *game, int x, int y, ParticleId particle_id, ParticleInstanceEx particle_extra);
 
 // Networking
 

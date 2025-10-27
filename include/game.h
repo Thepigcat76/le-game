@@ -14,8 +14,6 @@
 #include "space_desc.h"
 #include "tile.h"
 #include "ui.h"
-#include "net/client.h"
-#include "net/server.h"
 
 #define MAX_TICKS_PER_FRAME 20
 
@@ -35,8 +33,8 @@ typedef struct _game {
   // Client/Server - depending on
   // the side we are on either one
   // of these is not NULL
-  ClientGame *client_game;
-  ServerGame *server_game;
+  struct _client_game *client_game;
+  struct _server_game *server_game;
   bool save_loaded;
 } Game;
 

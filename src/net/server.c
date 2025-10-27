@@ -61,12 +61,11 @@ static void *server_game(void *args) {
   shared_setup();
 
   // Create and init common game
-  Game _game = {0};
-  Game *game = malloc(sizeof(Game));
-  memcpy(game, &_game, sizeof(Game));
-  game_init(game);
-  game->server_game = &SERVER_GAME;
-  SERVER_GAME.game = game;
+  SERVER_GAME.game = (Game){0};
+  game_init(&SERVER_GAME.game);
+  SERVER_GAME.game.server_game = &SERVER_GAME;
+
+  Game *game = &SERVER_GAME.game;
 
   // Create ui renderer for server ui
   // And load button default textures
@@ -74,6 +73,9 @@ static void *server_game(void *args) {
 
   // setup registries
   game_registry_setup();
+
+  game->debug.options.selected_tile_to_place_instance = tile_new(&TILES[TILE_DIRT]);
+  game->debug.options.selectable_tiles = array_new_capacity(TileInstance, 256, &HEAP_ALLOCATOR);
 
   // setup tile_categories
   tile_categories_setup(game);
@@ -108,7 +110,7 @@ static void *server_game(void *args) {
     EndDrawing();
   }
 
-  save_save_data(&SERVER_GAME.game->cur_save);
+  save_save_data(&SERVER_GAME.game.cur_save);
 
   CloseWindow();
   exit(0);
@@ -190,7 +192,7 @@ static void *server_player_listener(void *args) {
 
       packet_send(client_fd, PACKET_S2C_CLIENT_ACCEPTED_NEW({.player_id = player_id}), false);
 
-      packet_send(client_fd, PACKET_S2C_PLAYER_JOIN_NEW({.player_id = client_fd, .player = player_new(SERVER_GAME.game)}), false);
+      packet_send(client_fd, PACKET_S2C_PLAYER_JOIN_NEW({.player_id = client_fd, .player = player_new(&SERVER_GAME.game)}), false);
     }
     pthread_mutex_unlock(&SERVER_MUTEX);
   }

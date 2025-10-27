@@ -2,6 +2,7 @@
 #include "../../include/array.h"
 #include "../../include/game.h"
 #include "../../include/shared.h"
+#include "../../include/net/client.h"
 #include <dirent.h>
 #include <limits.h>
 #include <raylib.h>
@@ -65,7 +66,7 @@ void tile_types_init() {
   ERR_TEXTURE = adv_texture_load("res/assets/err_texture.png");
 }
 
-void tile_categories_setup(Game *game) {
+void tile_categories_setup(struct _game *game) {
   TILE_REGISTER_CATEGORY(game, TILE_WORKSTATION, {.categories = {TILE_CATEGORY_WOOD}, .categories_amount = 1});
   TILE_REGISTER_CATEGORY(game, TILE_TREE, {.categories = {TILE_CATEGORY_WOOD}, .categories_amount = 1});
   TILE_REGISTER_CATEGORY(game, TILE_OVEN, {.categories = {TILE_CATEGORY_STONE}, .categories_amount = 1});
@@ -244,7 +245,7 @@ void tile_render_scaled(TileInstance *tile, int x, int y, float scale) {
       DrawTextureRecEx(texture, sprite_rect, vec2f(x - offset_x, y - offset_y), 0, scale, WHITE);
 #ifdef DEBUG_BUILD
 #include "../../include/game.h"
-      if (CLIENT_GAME.game->debug.options.hitboxes_shown && tile->type->layer == TILE_LAYER_TOP) {
+      if (CLIENT_GAME.game.debug.options.hitboxes_shown && tile->type->layer == TILE_LAYER_TOP) {
         rec_draw_outline(tile_collision_box_at(tile, x, y), GREEN);
       }
 #endif
@@ -271,7 +272,7 @@ void tile_render(TileInstance *tile, int x, int y, bool dbg) {
       DrawTextureRec(texture, sprite_rect, vec2f(x - offset_x, y - offset_y), WHITE);
 #ifdef DEBUG_BUILD
 #include "../../include/game.h"
-      if (CLIENT_GAME.game->debug.options.hitboxes_shown && tile->type->layer == TILE_LAYER_TOP) {
+      if (CLIENT_GAME.game.debug.options.hitboxes_shown && tile->type->layer == TILE_LAYER_TOP) {
         rec_draw_outline(tile_collision_box_at(tile, x, y), GREEN);
       }
 #endif

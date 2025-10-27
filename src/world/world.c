@@ -1,6 +1,7 @@
 #include "../../include/world.h"
 #include "../../include/array.h"
 #include "../../include/being.h"
+#include "../../include/player.h"
 #include "../../include/data/data_reader.h"
 #include "../../include/game.h"
 #include "../../include/item.h"
@@ -341,10 +342,9 @@ void world_render_layer(World *world, TileLayer layer) {
   }
 }
 
-void world_render_layer_top_split(World *world, void *_player, bool draw_before_player) {
+void world_render_layer_top_split(World *world, Rectangle player_box, bool draw_before_player) {
   bool correct_tile = false;
-  Player *player = (Player *)_player;
-  float player_feet_y = player->box.y + player->box.height;
+  float player_feet_y = player_box.y + player_box.height;
 
   size_t len = array_len(world->chunks);
   for (int i = 0; i < len; i++) {
@@ -373,8 +373,8 @@ void world_render_layer_top_split(World *world, void *_player, bool draw_before_
 }
 
 void world_on_reload(ClientGame *game) {
-  if (game->game->client_world != NULL) {
-    world_prepare_rendering(game->game->client_world);
+  if (game->game.client_world != NULL) {
+    world_prepare_rendering(game->game.client_world);
   }
 }
 

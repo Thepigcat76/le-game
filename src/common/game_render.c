@@ -1,5 +1,6 @@
 #include "../../include/config.h"
 #include "../../include/game.h"
+#include "../../include/net/client.h"
 #include "../../include/log.h"
 #include <math.h>
 #include <raylib.h>
@@ -21,7 +22,7 @@ void client_world_render(ClientGame *client, float alpha) {
 
   world_render_layer(client->world, TILE_LAYER_GROUND);
 
-  world_render_layer_top_split(client->world, &CLIENT_PLAYER, true);
+  world_render_layer_top_split(client->world, CLIENT_PLAYER->box, true);
 
   for (int i = 0; i < client->world->beings_amount; i++) {
     being_render(&client->world->beings[i]);
@@ -36,7 +37,7 @@ void client_world_render(ClientGame *client, float alpha) {
 
   player_handle_zoom(CLIENT_PLAYER, zoom_in, zoom_out, alpha);
 
-  world_render_layer_top_split(client->world, &CLIENT_PLAYER, false);
+  world_render_layer_top_split(client->world, CLIENT_PLAYER->box, false);
 
   log_debug("Player: %p, tile: %p", CLIENT_PLAYER, CLIENT_PLAYER->break_tile);
   if (CLIENT_PLAYER != NULL) {
@@ -61,7 +62,7 @@ void client_world_render(ClientGame *client, float alpha) {
   }
 
 #ifdef DEBUG_BUILD
-  debug_render(&client->game->debug);
+  debug_render(&client->game.debug);
 #endif
 }
 

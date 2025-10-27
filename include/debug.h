@@ -26,8 +26,6 @@ typedef struct {
     bool print_tile_debug_info;
 } DebugOptions;
 
-struct _game;
-
 typedef struct {
     DebugOptions options;
     struct _game *game;

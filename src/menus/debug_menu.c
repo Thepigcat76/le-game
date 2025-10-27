@@ -4,38 +4,38 @@ static char text_buf[256];
 static TextInputBuffer text_input_buffer = {.buf = text_buf, .len = 0, .max_len = 256};
 
 static void debug_menu_items_button_clicked() {
-  DebugOptions *opts = &CLIENT_GAME.game->debug.options;
+  DebugOptions *opts = &CLIENT_GAME.game.debug.options;
   opts->game_object_display = (opts->game_object_display == DEBUG_DISPLAY_ALL_ITEMS)
       ? DEBUG_DISPLAY_NONE
       : DEBUG_DISPLAY_ALL_ITEMS;
 }
 
 static void debug_menu_tiles_button_clicked() {
-  DebugOptions *opts = &CLIENT_GAME.game->debug.options;
+  DebugOptions *opts = &CLIENT_GAME.game.debug.options;
   opts->game_object_display = (opts->game_object_display == DEBUG_DISPLAY_ALL_TILES)
       ? DEBUG_DISPLAY_NONE
       : DEBUG_DISPLAY_ALL_TILES;
 }
 
 static void debug_menu_beings_button_clicked() {
-  DebugOptions *opts = &CLIENT_GAME.game->debug.options;
+  DebugOptions *opts = &CLIENT_GAME.game.debug.options;
   opts->game_object_display = (opts->game_object_display == DEBUG_DISPLAY_ALL_BEINGS)
       ? DEBUG_DISPLAY_NONE
       : DEBUG_DISPLAY_ALL_BEINGS;
 }
 
 static void debug_menu_collisions_button_clicked() {
-  DebugOptions *opts = &CLIENT_GAME.game->debug.options;
+  DebugOptions *opts = &CLIENT_GAME.game.debug.options;
   opts->collisions_enabled = !opts->collisions_enabled;
 }
 
 static void debug_menu_hitboxes_button_clicked() {
-  DebugOptions *opts = &CLIENT_GAME.game->debug.options;
+  DebugOptions *opts = &CLIENT_GAME.game.debug.options;
   opts->hitboxes_shown = !opts->hitboxes_shown;
 }
 
 static void debug_menu_tile_info_button_clicked() {
-  DebugOptions *opts = &CLIENT_GAME.game->debug.options;
+  DebugOptions *opts = &CLIENT_GAME.game.debug.options;
   opts->print_tile_debug_info = !opts->print_tile_debug_info;
 }
 
@@ -51,7 +51,7 @@ void debug_menu_render(UiRenderer *renderer, const ClientGame *game) {
   int x_offset = 0;
   int y_offset = 0;//4 + 1 * ui_scale(renderer);
 
-  DebugOptions *opts = &CLIENT_GAME.game->debug.options;
+  DebugOptions *opts = &CLIENT_GAME.game.debug.options;
 
   RENDER_BUTTON({.message = "Items",
                  .texture = OPT_TEX(DEBUG_BUTTON_TEXTURE),

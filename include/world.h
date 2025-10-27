@@ -1,13 +1,13 @@
 #pragma once
 
 #include "being.h"
-#include "save_desc.h"
-#include "space_desc.h"
-#include "world_type.h"
 #include "chunk.h"
 #include "data.h"
+#include "save_desc.h"
 #include "shared.h"
+#include "space_desc.h"
 #include "tile.h"
+#include "world_type.h"
 #include <stddef.h>
 #include <unistd.h>
 
@@ -16,7 +16,7 @@ typedef struct {
   size_t *indices;
 } ChunkLookup;
 
-typedef struct {
+typedef struct _world {
   const WorldType *type;
   const SaveDescriptor *save_desc;
   Chunk *chunks;
@@ -71,7 +71,7 @@ void world_set_tile_texture_data(World *world, TileInstance *tile, int x, int y)
 
 void world_render_layer(World *world, TileLayer layer);
 
-void world_render_layer_top_split(World *world, void *player, bool draw_before_player);
+void world_render_layer_top_split(World *world, Rectangle player_box, bool draw_before_player);
 
 void world_add_being(World *world, BeingInstance being);
 

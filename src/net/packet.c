@@ -1,5 +1,7 @@
 #include "../../include/log.h"
 #include "../../include/net/sockets.h"
+#include "../../include/net/server.h"
+#include "../../include/net/client.h"
 #include <complex.h>
 #include <pthread.h>
 #include <stdlib.h>
@@ -242,7 +244,7 @@ static Packet packet_decode(ByteBuf *buf) {
   case PACKET_S2C_PLAYER_JOIN: {
     int player_id = byte_buf_read_int(buf);
     DataMap player_map = byte_buf_read_data(buf).var.data_map;
-    Player player = player_new(CLIENT_GAME.game);
+    Player player = player_new(&CLIENT_GAME.game);
     player_load(&player, &player_map);
     return PACKET_S2C_PLAYER_JOIN_NEW({.player_id = player_id, .player = player});
   }
@@ -299,7 +301,7 @@ static void handle_space_sync(PacketS2CSyncSpace *packet, Game *game) {
   game->client_player = &game->cur_save.players[0];
   client_init_loaded_save(&CLIENT_GAME, &game->cur_save);
   client_set_menu(&CLIENT_GAME, MENU_NONE);
-  CLIENT_GAME.game->save_loaded = true;
+  CLIENT_GAME.game.save_loaded = true;
   CLIENT_GAME.paused = false;
 }
 

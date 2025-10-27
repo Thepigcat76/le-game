@@ -1,5 +1,6 @@
 #include "../../include/array.h"
 #include "../../include/game.h"
+#include "../../include/net/client.h"
 #include "../../vendor/cJSON.h"
 #include <dirent.h>
 #include <raylib.h>
@@ -58,7 +59,6 @@ void game_load_saves(Game *game) {
 static void game_load_cur_save(Game *game, SaveDescriptor desc) {
   game_load_save_data(game, desc);
   game->client_game->world = &game->cur_save.loaded_spaces[0].world;
-  game->client_game->player = &game->cur_save.players[0];
 }
 
 void game_load_save(Game *game, SaveDescriptor desc) {
@@ -134,7 +134,8 @@ void game_create_save(Game *game, SaveDescriptor save_desc) {
   array_add(game->client_game->local_saves, desc);
   game->cur_save = save_new(desc);
   Player player = player_new(game);
-  array_add(game->cur_save.players, player);
+  game->client_game->cur_player = player;
+  //array_add(game->cur_save.players, player);
   array_add(game->cur_save.spaces, (SpaceDescriptor){.type = &SPACES[SPACE_BASE], .id = 0});
   Space default_space;
   printf("Save Seed: %f\n", save_desc.config.seed);

@@ -14,6 +14,7 @@
 NetworkConnection CLIENT_CONNECTION = {.connected = false, .server_addr = -1};
 pthread_mutex_t CLIENT_MUTEX = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t CLIENT_COND = PTHREAD_COND_INITIALIZER;
+
 ClientGame CLIENT_GAME = {0};
 
 static Music MUSIC;
@@ -22,8 +23,8 @@ static Bump SOUND_BUMP;
 BUMP_ALLOCATOR(SOUND_BUMP_ALLOCATOR, &SOUND_BUMP);
 
 // Uses null at the end to terminate
-static const char *TEXTURE_MANAGER_TEXTURE_PATHS[TEXTURE_MANAGER_MAX_TEXTURES + 1] = {"cursor", "gui/tool_tip", "breaking_overlay", "gui/slot",
-                                                                                      NULL};
+static const char *TEXTURE_MANAGER_TEXTURE_PATHS[TEXTURE_MANAGER_MAX_TEXTURES + 1] = {"cursor", "gui/tool_tip", "breaking_overlay",
+                                                                                      "gui/slot", NULL};
 
 static void client_game_start(void);
 
@@ -49,14 +50,13 @@ static void *client_game(void *args) {
   client_init(&CLIENT_GAME);
 
   // Create and init common game
-  Game _game = {0};
-  Game *game = malloc(sizeof(Game));
-  memcpy(game, &_game, sizeof(Game));
-  game_init(game);
-  game->client_game = &CLIENT_GAME;
-  CLIENT_GAME.game = game;
-  CLIENT_GAME.cur_save = &game->cur_save;
-  CLIENT_GAME.world = game->client_world;
+  CLIENT_GAME.game = (Game){0};
+  game_init(&CLIENT_GAME.game);
+  CLIENT_GAME.game.client_game = &CLIENT_GAME;
+  CLIENT_GAME.cur_save = &CLIENT_GAME.game.cur_save;
+  CLIENT_GAME.world = CLIENT_GAME.game.client_world;
+
+  Game *game = &CLIENT_GAME.game;
 
   // init registries
   game_registry_setup();

@@ -6,10 +6,10 @@ static int scroll_y_offset = 0;
 
 static void load_save_menu_load_save(void *args) {
   SaveDescriptor save_desc = *(SaveDescriptor *)args;
-  game_load_save(CLIENT_GAME.game, save_desc);
-  client_init_loaded_save(&CLIENT_GAME, &CLIENT_GAME.game->cur_save);
+  game_load_save(&CLIENT_GAME.game, save_desc);
+  client_init_loaded_save(&CLIENT_GAME, &CLIENT_GAME.game.cur_save);
   client_set_menu(&CLIENT_GAME, MENU_NONE);
-  CLIENT_GAME.game->save_loaded = true;
+  CLIENT_GAME.game.save_loaded = true;
   CLIENT_GAME.paused = false;
 }
 

@@ -1,6 +1,7 @@
 #include "../include/player.h"
 #include "../include/camera.h"
 #include "../include/config.h"
+#include "../include/net/client.h"
 #include "../include/game.h"
 #include "../include/log.h"
 #include "../include/shared.h"
@@ -271,6 +272,8 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
     if (w || s)
       player_pos_copy.y = player_pos(player).y + player_move.y;
   }
+
+  if (player->game == NULL) PANIC_FMT("Game is null");
 
   if (player->game->debug.options.collisions_enabled) {
     check_collisions(player, &player_pos_copy, player_move, player_tile_pos, true);

@@ -1,5 +1,6 @@
 #include "../../include/array.h"
 #include "../../include/game.h"
+#include "../../include/log.h"
 #include <raylib.h>
 
 void client_setup_raylib(void) {
@@ -19,7 +20,8 @@ void client_deinit_raylib(void) {
   CloseWindow();
 }
 void game_init(Game *game) {
-  game->debug = (Debug){.options = {.game_object_display = DEBUG_DISPLAY_NONE, .collisions_enabled = true, .hitboxes_shown = false}};
+  log_debug("debug stuffs :3");
+  game->debug = (Debug){.options = {.game_object_display = DEBUG_DISPLAY_NONE, .collisions_enabled = true, .hitboxes_shown = false}, .game = game};
 #ifdef DEBUG_BUILD
   debug_init(&game->debug, game);
 #endif
