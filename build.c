@@ -35,7 +35,7 @@ static BuildOptions OPTS = {.compiler = "clang",
                             .libraries = ARRAY("raylib", "GL", "m", "pthread", "dl", "rt", "X11", "cjson"),
                             .win_libraries = ARRAY("winraylib", "opengl32", "gdi32", "winmm", "wincjson", "ws2_32"),
                             .define_flags = ARRAY("DEBUG_BUILD", "TARGET"),
-                            .extra_flags = ARRAY("-rdynamic", "-w"),
+                            .extra_flags = ARRAY("-rdynamic", "-Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion"),
                           .win_extra_flags = ARRAY("-static-libgcc", "-static-libstdc++", "-static")};
 
 int main(int argc, char **argv) {

@@ -1,5 +1,6 @@
 #include "../../include/config.h"
 #include "../../include/game.h"
+#include "../../include/log.h"
 #include <math.h>
 #include <raylib.h>
 
@@ -37,8 +38,15 @@ void client_world_render(ClientGame *client, float alpha) {
 
   world_render_layer_top_split(client->world, &CLIENT_PLAYER, false);
 
-  game_render_break_progress(client, CLIENT_PLAYER->break_tile_pos, CLIENT_PLAYER->break_tile.type->tile_props.break_time,
-                             CLIENT_PLAYER->break_progress);
+  log_debug("Player: %p, tile: %p", CLIENT_PLAYER, CLIENT_PLAYER->break_tile);
+  if (CLIENT_PLAYER != NULL) {
+    //log_debug("Slay");
+    if (CLIENT_PLAYER->break_tile != NULL) {
+      log_debug("rendering break progress");
+      game_render_break_progress(client, CLIENT_PLAYER->break_tile_pos, CLIENT_PLAYER->break_tile->type->tile_props.break_time,
+                                 CLIENT_PLAYER->break_progress);
+    }
+  }
 
   int x_index = floor_div(mouse_world_pos.x, TILE_SIZE);
   int y_index = floor_div(mouse_world_pos.y, TILE_SIZE);

@@ -36,7 +36,7 @@ static void debug_category_lookup(TileCategoryLookup lookup) {
 
 TileType *TILES = NULL;
 size_t TILES_AMOUNT = 0;
-TileInstance TILE_INSTANCE_EMPTY;
+TileInstance TILE_INSTANCE_EMPTY = {0};
 
 AdvTexture ERR_TEXTURE;
 
@@ -74,7 +74,7 @@ void tile_categories_setup(Game *game) {
   // DEBUG
   TILE_REGISTER_CATEGORY(game, TILE_GRASS, {.categories = {TILE_CATEGORY_STONE}, .categories_amount = 1});
 
-  debug_category_lookup(game->tile_category_lookup);
+  //debug_category_lookup(game->tile_category_lookup);
 }
 
 char *tile_type_to_string(const TileType *type) {

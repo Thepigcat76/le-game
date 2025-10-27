@@ -1,6 +1,7 @@
 #include "../../include/net/client.h"
 #include "../../include/shared.h"
 #include "../../include/tile.h"
+#include "../../include/log.h"
 #include "../../vendor/cJSON.h"
 #include <dirent.h>
 #include <raylib.h>
@@ -206,7 +207,7 @@ static Rectangle select_tile(bool *same_tile) {
     }
   }
 
-  TraceLog(LOG_ERROR, "Failed to select tile box");
+  //log_error("Failed to select tile box");
   return sprite_rect(CONNECTED_INFO.default_sprite_pos.x, CONNECTED_INFO.default_sprite_pos.y);
 }
 
@@ -352,8 +353,6 @@ static void init_tile_variants() {
       continue;
     }
 
-    TraceLog(LOG_DEBUG, "File name: %s", entry->d_name);
-
     int count;
     const char **string_parts = TextSplit(entry->d_name, '.', &count);
     char meta_file_name[256];
@@ -361,13 +360,11 @@ static void init_tile_variants() {
     char meta_file_path[256];
     snprintf(meta_file_path, 256, "%s%s", ASSETS_DIR, meta_file_name);
     if (FileExists(meta_file_path)) {
-      TraceLog(LOG_DEBUG, "Meta file name: %s", meta_file_path);
       char *meta_file_content = read_file_to_string(meta_file_path);
       cJSON *meta_json = cJSON_Parse(meta_file_content);
       {
         char texture_path[512];
         snprintf(texture_path, 512, "%s%s", ASSETS_DIR, entry->d_name);
-        TraceLog(LOG_DEBUG, "Variant texture path: %s", texture_path);
         init_variant_info(meta_json, texture_path);
       }
       free(meta_file_content);
@@ -386,7 +383,7 @@ static void on_tile_variants_reload() {
 
   debug_variant_info();
 
-  TraceLog(LOG_DEBUG, "Variants: %d", VARIANT_INFO.tiles_amount);
+  //log_debug("Variants: %d", VARIANT_INFO.tiles_amount);
 }
 
 AdvTexture *tile_variants_for_tile(const TileType *type, int x, int y) {
@@ -424,10 +421,9 @@ void tile_type_init(TileType *type) {
   }
   type->variant_index = -1;
   // type->texture_props.has_variants = false;
-  TraceLog(LOG_DEBUG, "Tile: %s, var index: %d", tile_type_to_string(type), type->variant_index);
   if (type->id == TILE_STONE) {
     char buf[512];
     tile_type_debug_print(type, buf);
-    puts(buf);
+    //puts(buf);
   }
 }

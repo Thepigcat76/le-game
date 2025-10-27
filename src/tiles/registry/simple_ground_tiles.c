@@ -1,8 +1,10 @@
 #include "../../../include/tile.h"
 #include "../../../include/tile/tile_init_helper.h"
+#include "../../../include/log.h"
 #include <raylib.h>
 
 void empty_tile_init() {
+  log_debug("Empty :3");
   array_add(TILES,
             (TileType){
                 .id = TILE_EMPTY,

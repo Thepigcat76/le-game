@@ -2,21 +2,34 @@
 #include "../include/camera.h"
 #include "../include/config.h"
 #include "../include/game.h"
+#include "../include/log.h"
 #include "../include/shared.h"
 #include "math.h"
 #include <raylib.h>
 
+static Texture2D player_textures[DIRECTIONS_AMOUNT];
+static Texture2D player_walking_textures[DIRECTIONS_AMOUNT];
+static bool player_textures_loaded;
 Texture2D particle_texture0;
 
 Player player_new(struct _game *game) {
+  player_textures[DIRECTION_UP] = LoadTexture("res/assets/player_back.png");
+  player_textures[DIRECTION_DOWN] = LoadTexture("res/assets/player_front.png");
+  player_textures[DIRECTION_LEFT] = LoadTexture("res/assets/player_left.png");
+  player_textures[DIRECTION_RIGHT] = LoadTexture("res/assets/player_right.png");
+
+  player_walking_textures[DIRECTION_UP] = LoadTexture("res/assets/player_back_walk.png");
+  player_walking_textures[DIRECTION_DOWN] = LoadTexture("res/assets/player_front_walk.png");
+  player_walking_textures[DIRECTION_LEFT] = LoadTexture("res/assets/player_left_walk.png");
+  player_walking_textures[DIRECTION_RIGHT] = LoadTexture("res/assets/player_right_walk.png");
+
   particle_texture0 = LoadTexture("res/assets/walk_particles.png");
+
+  log_debug("tile instance empty: %d", TILE_INSTANCE_EMPTY.type->id);
+
   return (Player){.cam = camera_new(SCREEN_WIDTH, SCREEN_HEIGHT),
-                  .animated_textures = {LoadTexture("res/assets/player_front_walk.png"), LoadTexture("res/assets/player_back_walk.png"),
-                                        LoadTexture("res/assets/player_left_walk.png"), LoadTexture("res/assets/player_right_walk.png")},
-                  .textures = {LoadTexture("res/assets/player_front.png"), LoadTexture("res/assets/player_back.png"),
-                               LoadTexture("res/assets/player_left.png"), LoadTexture("res/assets/player_right.png")},
                   .direction = DIRECTION_DOWN,
-                  .last_broken_tile = TILE_INSTANCE_EMPTY,
+                  .last_broken_tile = &TILE_INSTANCE_EMPTY,
                   .essence = 0,
                   .animation_frame = 0,
                   .frame_timer = 0,
@@ -26,7 +39,7 @@ Player player_new(struct _game *game) {
                   .chunk_pos = vec2i(0, 0),
                   .tile_pos = vec2i(0, 0),
                   .break_progress = -1,
-                  .break_tile = TILE_INSTANCE_EMPTY,
+                  .break_tile = &TILE_INSTANCE_EMPTY,
                   .break_tile_pos = vec2i(0, 0),
                   .game = game,
                   .inv_container = item_container_new(9)};
@@ -35,20 +48,12 @@ Player player_new(struct _game *game) {
 static Texture2D player_get_texture(Player *player) {
   Texture2D *textures;
   if (player->walking) {
-    textures = player->animated_textures;
+    textures = player_walking_textures;
   } else {
-    textures = player->textures;
+    textures = player_textures;
   }
-  switch (player->direction) {
-  case DIRECTION_DOWN:
-    return textures[0];
-  case DIRECTION_UP:
-    return textures[1];
-  case DIRECTION_LEFT:
-    return textures[2];
-  case DIRECTION_RIGHT:
-    return textures[3];
-  }
+
+  return textures[player->direction];
 }
 
 Vector2 player_pos(const Player *player) { return (Vector2){.x = player->box.x, .y = player->box.y}; }
@@ -71,6 +76,7 @@ void player_tick(Player *player) {
 }
 
 void player_render(Player *player, float alpha) {
+  // TODO: This is a bit sus, ngl
   float draw_x = lerpf(player->prev_box_pos.x, player->cur_box_pos.x, alpha);
   float draw_y = lerpf(player->prev_box_pos.y, player->cur_box_pos.y, alpha);
 
@@ -82,6 +88,8 @@ void player_render(Player *player, float alpha) {
 
   player->cam.target.x = cam_x;
   player->cam.target.y = cam_y;
+
+  DrawTexture(BUTTON_TEXTURE, player->box.x, player->box.y, WHITE);
 
   double scale = 1;
   Texture2D player_texture = player_get_texture(player);
@@ -231,6 +239,7 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
   Vec2f player_pos_copy = player_pos(player);
 
   if (w) {
+    log_debug("Walking up");
     player->direction = DIRECTION_UP;
 
     player_move.y = -distance;

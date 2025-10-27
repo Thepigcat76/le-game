@@ -49,6 +49,7 @@ typedef struct {
   World *world;
   Player *players;
   Player *player;
+  Player cur_player;
   int player_id;
   addr_t server_addr;
   bool connected_to_server;

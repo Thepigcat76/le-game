@@ -22,7 +22,7 @@ static Bump SOUND_BUMP;
 BUMP_ALLOCATOR(SOUND_BUMP_ALLOCATOR, &SOUND_BUMP);
 
 // Uses null at the end to terminate
-static const char *TEXTURE_MANAGER_TEXTURE_PATHS[TEXTURE_MANAGER_MAX_TEXTURES + 1] = {"cursor", "gui/tool_tip", "breaking_overlay", "slot",
+static const char *TEXTURE_MANAGER_TEXTURE_PATHS[TEXTURE_MANAGER_MAX_TEXTURES + 1] = {"cursor", "gui/tool_tip", "breaking_overlay", "gui/slot",
                                                                                       NULL};
 
 static void client_game_start(void);
@@ -265,6 +265,7 @@ void client_tick(ClientGame *client) {
     client->world_texture = LoadRenderTexture(client->window.width, client->window.height);
 
     if (CLIENT_PLAYER != NULL) {
+      log_debug("Focusing camera");
       camera_focus(&CLIENT_PLAYER->cam);
     }
   }

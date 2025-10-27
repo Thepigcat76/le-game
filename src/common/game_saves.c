@@ -142,5 +142,5 @@ void game_create_save(Game *game, SaveDescriptor save_desc) {
   array_add(game->cur_save.loaded_spaces, default_space);
   // game->cur_save.cur_space = &game->cur_save.loaded_spaces[0];
   game->client_world = &game->cur_save.loaded_spaces[0].world;
-  game->client_player = &game->cur_save.players[0];
+  game->client_player = game->cur_save.players;
 }

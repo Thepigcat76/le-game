@@ -18,19 +18,17 @@ typedef struct {
   Vec2f prev_box_pos;
   uint32_t cur_zoom;
   uint32_t prev_zoom;
-  Texture2D animated_textures[DIRECTIONS_AMOUNT];
-  Texture2D textures[DIRECTIONS_AMOUNT];
   Direction direction;
   int animation_frame;
   int frame_timer;
   bool walking;
   bool in_water;
   struct _game *game;
-  TileInstance last_broken_tile;
+  TileInstance *last_broken_tile;
   // 0 - 64 ( / 16 for anim frames)
   int break_progress;
   // Tile player is currently breaking
-  TileInstance break_tile;
+  TileInstance *break_tile;
   TilePos break_tile_pos;
 
   // PLAYER DATA

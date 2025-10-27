@@ -13,7 +13,7 @@ void game_tick(Game *game) {
   if (game->client_game != NULL) {
     client_tick(game->client_game);
   } else {
-    // server_tick(game->server_game);
+    //server_tick(game->server_game);
   }
 
   if (!game->client_game->paused && game->client_world != NULL) {
@@ -131,11 +131,9 @@ static void game_handle_tile_interaction(Game *game) {
       return;
     }
 
-    if (game->client_player->last_broken_tile.type->layer == selected_tile->type->layer || game->client_player->last_broken_tile.type->id == TILE_EMPTY) {
-
-      TileInstance tile = *selected_tile;
+    if (game->client_player->last_broken_tile->type->layer == selected_tile->type->layer || game->client_player->last_broken_tile->type->id == TILE_EMPTY) {
       TraceLog(LOG_DEBUG, "Break x: %d, y: %d, break progress: %d, tile: %s", x_index * TILE_SIZE, y_index * TILE_SIZE,
-               game->client_player->break_progress, tile_type_to_string(tile.type));
+               game->client_player->break_progress, tile_type_to_string(selected_tile->type));
       if (CheckCollisionPointRec(mouse_world_pos, rectf_from_dimf(x_index * TILE_SIZE, y_index * TILE_SIZE, selected_tile->box))) {
         if (game->client_player->break_tile_pos.x != x_index || game->client_player->break_tile_pos.y != y_index) {
           game->client_player->break_tile_pos = vec2i(x_index, y_index);
@@ -145,8 +143,9 @@ static void game_handle_tile_interaction(Game *game) {
 
         game->client_player->break_progress += game->client_player->held_item.type.item_props.tool_props.break_speed + 1;
         game->client_player->break_tile_pos = vec2i(x_index, y_index);
-        game->client_player->break_tile = tile;
-        if (game->client_player->break_progress >= tile.type->tile_props.break_time) {
+        log_debug("sleected tile: %p", selected_tile);
+        game->client_player->break_tile = selected_tile;
+        if (game->client_player->break_progress >= selected_tile->type->tile_props.break_time) {
           if (game->client_player->held_item.type.id == ITEM_HAMMER) {
             for (int y = -1; y <= 1; y++) {
               for (int x = -1; x <= 1; x++) {
@@ -173,7 +172,7 @@ static void game_handle_tile_interaction(Game *game) {
             world_set_tile_on_layer(game->client_game->world, tile_pos, remainder, remainder.type->layer);
           }
           game->client_player->break_progress = -1;
-          game->client_player->last_broken_tile = tile;
+          game->client_player->last_broken_tile = selected_tile;
         }
       }
     }
@@ -183,7 +182,7 @@ static void game_handle_tile_interaction(Game *game) {
 
   // Reset last broken tile, which allows you to break any tile again
   if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
-    game->client_player->last_broken_tile = TILE_INSTANCE_EMPTY;
+    game->client_player->last_broken_tile = &TILE_INSTANCE_EMPTY;
   }
 
   // Debug - set target position for npc to go to
