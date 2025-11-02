@@ -23,8 +23,8 @@ static Bump SOUND_BUMP;
 BUMP_ALLOCATOR(SOUND_BUMP_ALLOCATOR, &SOUND_BUMP);
 
 // Uses null at the end to terminate
-static const char *TEXTURE_MANAGER_TEXTURE_PATHS[TEXTURE_MANAGER_MAX_TEXTURES + 1] = {"cursor", "gui/tool_tip", "breaking_overlay",
-                                                                                      "gui/slot", NULL};
+static const char *TEXTURE_MANAGER_TEXTURE_PATHS[TEXTURE_MANAGER_TEXTURES_AMOUNT + 1] = {
+    "cursor", "gui/tool_tip", "breaking_overlay", "gui/slot", "gui/ok", "gui/err", NULL};
 
 static void client_game_start(void);
 
@@ -63,8 +63,11 @@ static void *client_game(void *args) {
 
   game->debug.options.selected_tile_to_place_instance = tile_new(&TILES[TILE_DIRT]);
   game->debug.options.selectable_tiles = array_new_capacity(TileInstance, 256, &HEAP_ALLOCATOR);
+  for (size_t i = 0; i < TILES_AMOUNT; i++) {
+    array_add(game->debug.options.selectable_tiles, tile_new(&TILES[i]));
+  }
 
-  tile_categories_setup(game);
+  tile_categories_setup(&game->tile_category_lookup);
 
   // Reload client resources (initializes them)
   client_reload(&CLIENT_GAME);

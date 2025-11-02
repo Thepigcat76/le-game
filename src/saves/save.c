@@ -6,7 +6,7 @@
 // TODO: create bumps for both of these possibly
 Save save_new(SaveDescriptor desc) {
   return (Save){.descriptor = desc,
-                .players = array_new(Player, &HEAP_ALLOCATOR),
+                //.players = array_new(Player, &HEAP_ALLOCATOR),
                 .spaces = array_new_capacity(SpaceDescriptor, 16, &HEAP_ALLOCATOR),
                 .loaded_spaces = array_new_capacity(Space, 16, &HEAP_ALLOCATOR),
                 .space_id_lookup = {.entries = array_new_capacity(SpaceIdLookupEntry, 16, &HEAP_ALLOCATOR)}};

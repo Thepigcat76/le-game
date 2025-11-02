@@ -99,10 +99,10 @@ static void game_create_save_config_file(Game *game, SaveConfig config) {
 }
 
 void game_create_save_world(Game *game) {
-  for (size_t i = 0; i < array_len(game->cur_save.players); i++) {
+  for (size_t i = 0; i < 1; i++) {
     float x = TILE_SIZE * ((float)CHUNK_SIZE / 2);
     float y = TILE_SIZE * ((float)CHUNK_SIZE / 2);
-    player_set_pos_ex(&game->cur_save.players[i], x, y, false, false, false);
+    player_set_pos_ex(&game->client_game->cur_player, x, y, false, false, false);
   }
 }
 
@@ -133,7 +133,7 @@ void game_create_save(Game *game, SaveDescriptor save_desc) {
 
   array_add(game->client_game->local_saves, desc);
   game->cur_save = save_new(desc);
-  Player player = player_new(game);
+  Player player = player_new();
   game->client_game->cur_player = player;
   //array_add(game->cur_save.players, player);
   array_add(game->cur_save.spaces, (SpaceDescriptor){.type = &SPACES[SPACE_BASE], .id = 0});
@@ -142,6 +142,7 @@ void game_create_save(Game *game, SaveDescriptor save_desc) {
   space_create_default(save_desc.config.seed, &default_space);
   array_add(game->cur_save.loaded_spaces, default_space);
   // game->cur_save.cur_space = &game->cur_save.loaded_spaces[0];
+  // FIXME: Highly sus
   game->client_world = &game->cur_save.loaded_spaces[0].world;
-  game->client_player = game->cur_save.players;
+  game->client_player = &game->client_game->cur_player;
 }

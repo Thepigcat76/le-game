@@ -244,7 +244,7 @@ static Packet packet_decode(ByteBuf *buf) {
   case PACKET_S2C_PLAYER_JOIN: {
     int player_id = byte_buf_read_int(buf);
     DataMap player_map = byte_buf_read_data(buf).var.data_map;
-    Player player = player_new(&CLIENT_GAME.game);
+    Player player = player_new();
     player_load(&player, &player_map);
     return PACKET_S2C_PLAYER_JOIN_NEW({.player_id = player_id, .player = player});
   }
@@ -284,6 +284,7 @@ static Packet packet_decode(ByteBuf *buf) {
   }
 }
 
+// FIXME: Reimplement
 static void handle_space_sync(PacketS2CSyncSpace *packet, Game *game) {
   world_initialize(&packet->space.world);
   // Create save
@@ -293,12 +294,12 @@ static void handle_space_sync(PacketS2CSyncSpace *packet, Game *game) {
   // Assign save to cur_save
   game->cur_save = save;
   // Create player
-  Player player = player_new(game);
-  array_add(game->cur_save.players, player);
+  Player player = player_new();
+  //array_add(game->cur_save.players, player);
 
   game->client_world = &game->cur_save.loaded_spaces[0].world;
   // FIXME: Dangerous, since mem location of first element might change
-  game->client_player = &game->cur_save.players[0];
+  //game->client_player = &game->cur_save.players[0];
   client_init_loaded_save(&CLIENT_GAME, &game->cur_save);
   client_set_menu(&CLIENT_GAME, MENU_NONE);
   CLIENT_GAME.game.save_loaded = true;

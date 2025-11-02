@@ -94,7 +94,26 @@ static void game_world_tick(Game *game) {
 #endif
 }
 
-static TileIdCategories item_tile_categories(ItemInstance *item) { return item->type.item_props.tool_props.break_categories; }
+TileIdCategories item_tile_categories(const ItemInstance *item) { return item->type.item_props.tool_props.break_categories; }
+
+bool item_tool_correct_for_tile(const ItemInstance *item, const TileInstance *tile, const TileCategoryLookup *lookup) {
+  TileIdCategories tool_break_categories = item_tile_categories(item);
+  // Check if tool has break categories
+  if (tool_break_categories.categories_amount > 0) {
+    TileIdCategories selected_tile_categories = tile_categories(lookup, tile->type);
+    if (selected_tile_categories.categories_amount > 0) {
+      // Check if tool has correct tile category as the tile that should be broken
+      for (int i = 0; i < tool_break_categories.categories_amount; i++) {
+        for (int j = 0; j < selected_tile_categories.categories_amount; j++) {
+          if (tool_break_categories.categories[i] == selected_tile_categories.categories[j]) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
 
 static void game_handle_tile_interaction(Game *game) {
   Vec2f mouse_pos = GetMousePosition();
@@ -108,24 +127,7 @@ static void game_handle_tile_interaction(Game *game) {
   // Break tile
   if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && true /*!slot_selected*/ && interaction_in_range) {
     TileInstance *selected_tile = world_highest_tile_at(game->client_world, vec2i(x_index, y_index));
-    bool correct_tool = false;
-    ItemInstance *player_held_item = &game->client_player->held_item;
-    TileIdCategories tool_break_categories = item_tile_categories(player_held_item);
-    // Check if tool has break categories
-    if (tool_break_categories.categories_amount > 0) {
-      TileIdCategories selected_tile_categories = tile_categories(game, selected_tile->type);
-      if (selected_tile_categories.categories_amount > 0) {
-        // Check if tool has correct tile category as the tile that should be broken
-        for (int i = 0; i < tool_break_categories.categories_amount; i++) {
-          for (int j = 0; j < selected_tile_categories.categories_amount; j++) {
-            if (tool_break_categories.categories[i] == selected_tile_categories.categories[j]) {
-              correct_tool = true;
-              break;
-            }
-          }
-        }
-      }
-    }
+    bool correct_tool = item_tool_correct_for_tile(&game->client_player->held_item, selected_tile, &game->tile_category_lookup);
 
     if (selected_tile->type->id == TILE_EMPTY || selected_tile->type->tile_props.break_time < 0 || !correct_tool) {
       game->client_player->break_progress = -1;

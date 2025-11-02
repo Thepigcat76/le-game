@@ -9,7 +9,7 @@
 #ifdef CTX_SERVER
 #define UI_RENDERER_PTR server_ui_renderer
 #else
-#define UI_RENDERER_PTR &CLIENT_GAME.ui_renderer
+#define UI_RENDERER_PTR (&CLIENT_GAME.ui_renderer)
 #endif
 
 extern Texture2D BUTTON_TEXTURE_DEFAULT;

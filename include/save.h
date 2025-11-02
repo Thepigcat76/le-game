@@ -10,7 +10,6 @@ typedef struct {
   SaveDescriptor descriptor;
   Space *loaded_spaces;
   SpaceDescriptor *spaces;
-  Player *players;
   GameFeatureStore feature_store;
   SpaceIdLookup space_id_lookup;
 } Save;

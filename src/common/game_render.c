@@ -39,11 +39,9 @@ void client_world_render(ClientGame *client, float alpha) {
 
   world_render_layer_top_split(client->world, CLIENT_PLAYER->box, false);
 
-  log_debug("Player: %p, tile: %p", CLIENT_PLAYER, CLIENT_PLAYER->break_tile);
   if (CLIENT_PLAYER != NULL) {
     //log_debug("Slay");
     if (CLIENT_PLAYER->break_tile != NULL) {
-      log_debug("rendering break progress");
       game_render_break_progress(client, CLIENT_PLAYER->break_tile_pos, CLIENT_PLAYER->break_tile->type->tile_props.break_time,
                                  CLIENT_PLAYER->break_progress);
     }
@@ -59,6 +57,8 @@ void client_world_render(ClientGame *client, float alpha) {
 
   if (!slot_selected && interaction_in_range) {
     rec_draw_outline(rec, BLUE);
+    bool can_break = item_tool_correct_for_tile(&client->cur_player.held_item, client->hovered_tile, &client->game.tile_category_lookup);
+    DrawTexture(client->texture_manager.textures[can_break ? TEXTURE_OK : TEXTURE_ERR], rec.x + 4, rec.y - 8, WHITE);
   }
 
 #ifdef DEBUG_BUILD

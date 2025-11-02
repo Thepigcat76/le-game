@@ -78,7 +78,7 @@ static void *server_game(void *args) {
   game->debug.options.selectable_tiles = array_new_capacity(TileInstance, 256, &HEAP_ALLOCATOR);
 
   // setup tile_categories
-  tile_categories_setup(game);
+  tile_categories_setup(&game->tile_category_lookup);
 
   // Reload common resources (creates them)
   game_reload(game);
@@ -192,7 +192,7 @@ static void *server_player_listener(void *args) {
 
       packet_send(client_fd, PACKET_S2C_CLIENT_ACCEPTED_NEW({.player_id = player_id}), false);
 
-      packet_send(client_fd, PACKET_S2C_PLAYER_JOIN_NEW({.player_id = client_fd, .player = player_new(&SERVER_GAME.game)}), false);
+      packet_send(client_fd, PACKET_S2C_PLAYER_JOIN_NEW({.player_id = client_fd, .player = player_new()}), false);
     }
     pthread_mutex_unlock(&SERVER_MUTEX);
   }

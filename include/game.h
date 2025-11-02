@@ -78,6 +78,12 @@ void game_reload(Game *game);
 
 void game_tick(Game *game);
 
+// Tile category/breaking
+
+TileIdCategories item_tile_categories(const ItemInstance *item);
+
+bool item_tool_correct_for_tile(const ItemInstance *item, const TileInstance *tile, const TileCategoryLookup *lookup);
+
 // GAME SPACES
 
 void game_enter_space(Game *game, SpaceDescriptor desc);

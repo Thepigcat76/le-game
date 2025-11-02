@@ -13,7 +13,7 @@ static Texture2D player_walking_textures[DIRECTIONS_AMOUNT];
 static bool player_textures_loaded;
 Texture2D particle_texture0;
 
-Player player_new(struct _game *game) {
+Player player_new(void) {
   player_textures[DIRECTION_UP] = LoadTexture("res/assets/player_back.png");
   player_textures[DIRECTION_DOWN] = LoadTexture("res/assets/player_front.png");
   player_textures[DIRECTION_LEFT] = LoadTexture("res/assets/player_left.png");
@@ -34,7 +34,7 @@ Player player_new(struct _game *game) {
                   .essence = 0,
                   .animation_frame = 0,
                   .frame_timer = 0,
-                  .held_item = {.type = ITEMS[ITEM_PICKAXE]},
+                  .held_item = {.type = ITEMS[ITEM_SHOVEL]},
                   .dragged_item = {.type = ITEMS[ITEM_DIRT]},
                   .box = {.x = 0, .y = 20, .width = 16, .height = 8},
                   .chunk_pos = vec2i(0, 0),
@@ -42,7 +42,6 @@ Player player_new(struct _game *game) {
                   .break_progress = -1,
                   .break_tile = &TILE_INSTANCE_EMPTY,
                   .break_tile_pos = vec2i(0, 0),
-                  .game = game,
                   .inv_container = item_container_new(9)};
 }
 
@@ -90,8 +89,6 @@ void player_render(Player *player, float alpha) {
   player->cam.target.x = cam_x;
   player->cam.target.y = cam_y;
 
-  DrawTexture(BUTTON_TEXTURE, player->box.x, player->box.y, WHITE);
-
   double scale = 1;
   Texture2D player_texture = player_get_texture(player);
   DrawTexturePro(player_texture, (Rectangle){0, player->walking ? 32 * player->animation_frame : 32, 16, player->in_water ? 24 : 32},
@@ -107,8 +104,10 @@ void player_render(Player *player, float alpha) {
 }
 
 void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool walking_particles, bool check_for_water) {
+  log_debug("setting position, x: %f, y: %f", x, y);
+
   if (check_for_water) {
-    player->in_water = world_ground_tile_at(player->game->client_world, player->tile_pos)->type->id == TILE_WATER;
+    player->in_water = world_ground_tile_at(CLIENT_GAME.game.client_world, player->tile_pos)->type->id == TILE_WATER;
     if (player->in_water) {
       x -= (x - player->box.x) / 2;
       y -= (y - player->box.y) / 2;
@@ -127,7 +126,7 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool
   player->chunk_pos.x = floor_div(x, CHUNK_SIZE * TILE_SIZE);
   player->chunk_pos.y = floor_div(y, CHUNK_SIZE * TILE_SIZE);
 
-  World *world = player->game->client_world;
+  World *world = CLIENT_GAME.game.client_world;
   if (update_chunk && !world_has_chunk_at(world, player->chunk_pos)) {
     world_gen_chunk_at(world, player->chunk_pos);
 
@@ -138,7 +137,7 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool
   }
 
   if (walking_particles && GetRandomValue(0, 4) == 0) {
-    TileInstance *tile = world_ground_tile_at(player->game->client_world, player->tile_pos);
+    TileInstance *tile = world_ground_tile_at(CLIENT_GAME.game.client_world, player->tile_pos);
     ParticleInstance *particle = client_emit_particle(
         &CLIENT_GAME, x + GetRandomValue(-5, 7), y + GetRandomValue(-5, 7) + 27, PARTICLE_WALKING,
         (ParticleInstanceEx){.type = PARTICLE_INSTANCE_WALKING,
@@ -198,7 +197,7 @@ static void check_collisions(const Player *player, Vec2f *player_pos, Vec2f play
   for (int y = -1; y <= 1; y++) {
     for (int x = -1; x <= 1; x++) {
       TilePos tile_pos = vec2i(player_tile_pos.x + x, player_tile_pos.y + y);
-      TileInstance *tile = world_tile_at(player->game->client_world, tile_pos, TILE_LAYER_TOP);
+      TileInstance *tile = world_tile_at(CLIENT_GAME.game.client_world, tile_pos, TILE_LAYER_TOP);
       if (tile->type->id != TILE_EMPTY) {
         Rectf tile_box = tile_collision_box_at(tile, tile_pos.x * TILE_SIZE, tile_pos.y * TILE_SIZE);
 
@@ -240,7 +239,6 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
   Vec2f player_pos_copy = player_pos(player);
 
   if (w) {
-    log_debug("Walking up");
     player->direction = DIRECTION_UP;
 
     player_move.y = -distance;
@@ -253,6 +251,7 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
     walking = true;
   }
   if (a) {
+    log_debug("Setting direction to left");
     player->direction = DIRECTION_LEFT;
 
     player_move.x = -distance;
@@ -273,9 +272,7 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
       player_pos_copy.y = player_pos(player).y + player_move.y;
   }
 
-  if (player->game == NULL) PANIC_FMT("Game is null");
-
-  if (player->game->debug.options.collisions_enabled) {
+  if (CLIENT_GAME.game.debug.options.collisions_enabled) {
     check_collisions(player, &player_pos_copy, player_move, player_tile_pos, true);
     check_collisions(player, &player_pos_copy, player_move, player_tile_pos, false);
   }

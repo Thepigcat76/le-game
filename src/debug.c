@@ -81,7 +81,9 @@ void debug_render_overlay(Debug *debug) {
     TileInstance *hovered_tile = debug->game->client_game->hovered_tile;
     if (hovered_tile != NULL) {
       char *tile_name = tile_type_to_string(hovered_tile->type);
-      DrawText(tile_name, 0, 32, CONFIG.default_font_size / 1.5, WHITE);
+      int font_size = CONFIG.default_font_size / 1.5;
+      DrawText(tile_name, 0, 32, font_size, WHITE);
+      DrawText(TextFormat("Sprite: %d, %d", (int) hovered_tile->cur_sprite_box.x, (int) hovered_tile->cur_sprite_box.y), 0, 32 + font_size, font_size, WHITE);
     }
   }
 }

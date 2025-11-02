@@ -1,8 +1,8 @@
 #include "../../include/tile.h"
 #include "../../include/array.h"
 #include "../../include/game.h"
-#include "../../include/shared.h"
 #include "../../include/net/client.h"
+#include "../../include/shared.h"
 #include <dirent.h>
 #include <limits.h>
 #include <raylib.h>
@@ -19,11 +19,11 @@ AdvTileInstance *ADV_TILES;
   extern void src_file_name##_tile_init();                                                                                                 \
   src_file_name##_tile_init();
 
-#define TILE_REGISTER_CATEGORY(game_ptr, tile_id, ...)                                                                                     \
+#define TILE_REGISTER_CATEGORY(lookup_ptr, tile_id, ...)                                                                                   \
   {                                                                                                                                        \
-    (game_ptr)->tile_category_lookup.tiles[(game_ptr)->tile_category_lookup.tiles_amount] = tile_id;                                       \
-    (game_ptr)->tile_category_lookup.tile_categories[(game_ptr)->tile_category_lookup.tiles_amount] = (TileIdCategories)__VA_ARGS__;       \
-    (game_ptr)->tile_category_lookup.tiles_amount++;                                                                                       \
+    (lookup_ptr)->tiles[(lookup_ptr)->tiles_amount] = tile_id;                                                            \
+    (lookup_ptr)->tile_categories[(lookup_ptr)->tiles_amount] = (TileIdCategories)__VA_ARGS__;                            \
+    (lookup_ptr)->tiles_amount++;                                                                                                            \
   }
 
 static void debug_category_lookup(TileCategoryLookup lookup) {
@@ -66,16 +66,17 @@ void tile_types_init() {
   ERR_TEXTURE = adv_texture_load("res/assets/err_texture.png");
 }
 
-void tile_categories_setup(struct _game *game) {
-  TILE_REGISTER_CATEGORY(game, TILE_WORKSTATION, {.categories = {TILE_CATEGORY_WOOD}, .categories_amount = 1});
-  TILE_REGISTER_CATEGORY(game, TILE_TREE, {.categories = {TILE_CATEGORY_WOOD}, .categories_amount = 1});
-  TILE_REGISTER_CATEGORY(game, TILE_OVEN, {.categories = {TILE_CATEGORY_STONE}, .categories_amount = 1});
-  TILE_REGISTER_CATEGORY(game, TILE_STONE, {.categories = {TILE_CATEGORY_STONE}, .categories_amount = 1});
-  TILE_REGISTER_CATEGORY(game, TILE_DUNGEON_FLOOR, {.categories = {TILE_CATEGORY_STONE}, .categories_amount = 1});
+void tile_categories_setup(TileCategoryLookup *lookup) {
+  TILE_REGISTER_CATEGORY(lookup, TILE_WORKSTATION, {.categories = {TILE_CATEGORY_WOOD}, .categories_amount = 1});
+  TILE_REGISTER_CATEGORY(lookup, TILE_TREE, {.categories = {TILE_CATEGORY_WOOD}, .categories_amount = 1});
+  TILE_REGISTER_CATEGORY(lookup, TILE_OVEN, {.categories = {TILE_CATEGORY_STONE}, .categories_amount = 1});
+  TILE_REGISTER_CATEGORY(lookup, TILE_STONE, {.categories = {TILE_CATEGORY_STONE}, .categories_amount = 1});
+  TILE_REGISTER_CATEGORY(lookup, TILE_DUNGEON_FLOOR, {.categories = {TILE_CATEGORY_STONE}, .categories_amount = 1});
   // DEBUG
-  TILE_REGISTER_CATEGORY(game, TILE_GRASS, {.categories = {TILE_CATEGORY_STONE}, .categories_amount = 1});
+  TILE_REGISTER_CATEGORY(lookup, TILE_DIRT, {.categories = {TILE_CATEGORY_DIRT}, .categories_amount = 1});
+  TILE_REGISTER_CATEGORY(lookup, TILE_GRASS, {.categories = {TILE_CATEGORY_DIRT}, .categories_amount = 1});
 
-  //debug_category_lookup(game->tile_category_lookup);
+  // debug_category_lookup(game->tile_category_lookup);
 }
 
 char *tile_type_to_string(const TileType *type) {
@@ -174,7 +175,7 @@ TileInstance tile_new(const TileType *type) {
 }
 
 void tile_instance_debug(const TileInstance *tile, char *buf) {
-  char tex_data_buf[256];
+  char tex_data_buf[256] = "";
   strcat(tex_data_buf, "Surrounding tiles: [");
   for (int i = 0; i < 8; i++) {
     strcat(tex_data_buf, tile_type_to_string(&TILES[tile->texture_data.surrounding_tiles[i]]));
@@ -280,11 +281,11 @@ void tile_render(TileInstance *tile, int x, int y, bool dbg) {
   }
 }
 
-TileIdCategories tile_categories(const struct _game *game, const TileType *tile) {
-  for (int i = 0; i < game->tile_category_lookup.tiles_amount; i++) {
-    TileId tile_id = game->tile_category_lookup.tiles[i];
+TileIdCategories tile_categories(const TileCategoryLookup *lookup, const TileType *tile) {
+  for (int i = 0; i < lookup->tiles_amount; i++) {
+    TileId tile_id = lookup->tiles[i];
     if (tile->id == tile_id) {
-      return game->tile_category_lookup.tile_categories[i];
+      return lookup->tile_categories[i];
     }
   }
   return (TileIdCategories){};

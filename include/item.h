@@ -16,6 +16,7 @@ typedef enum {
   ITEM_MAP,
   ITEM_AXE,
   ITEM_PICKAXE,
+  ITEM_SHOVEL,
   // TILE ITEMS
   ITEM_GRASS,
   ITEM_STONE,

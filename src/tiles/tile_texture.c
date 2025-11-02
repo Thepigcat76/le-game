@@ -1,7 +1,7 @@
+#include "../../include/log.h"
 #include "../../include/net/client.h"
 #include "../../include/shared.h"
 #include "../../include/tile.h"
-#include "../../include/log.h"
 #include "../../vendor/cJSON.h"
 #include <dirent.h>
 #include <raylib.h>
@@ -45,10 +45,10 @@ typedef struct {
   int connections_amount;
 } ConnectedInfo;
 
-static ConnectedInfo CONNECTED_INFO;
+static ConnectedInfo CONNECTED_INFO = {0};
 
 static void init_connected_info() {
-  ConnectedInfo info;
+  ConnectedInfo info = {0};
   char *file = read_file_to_string("res/connected.json");
   cJSON *json = cJSON_Parse(file);
   if (json == NULL) {
@@ -77,8 +77,17 @@ static void init_connected_info() {
 
   if (cJSON_IsArray(values)) {
     int size = cJSON_GetArraySize(values);
-    for (int i = 0; i < size; i++) {
+    size_t index = 0;
+    for (int i = 0; i < size; i++) {    
       cJSON *entry = cJSON_GetArrayItem(values, i);
+      if (cJSON_IsString(entry)) {
+        if (strncmp(entry->valuestring, "_comment", 8) == 0) {
+          continue;
+        } else {
+          log_error("Invalid json element in connected.json: %s", entry->valuestring);
+          exit(1);
+        }
+      }
       cJSON *tiles = cJSON_GetObjectItemCaseSensitive(entry, "tiles");
       cJSON *value = cJSON_GetObjectItemCaseSensitive(entry, "value");
       if (cJSON_HasObjectItem(entry, "ignored_tiles")) {
@@ -87,11 +96,11 @@ static void init_connected_info() {
         cJSON *elem;
         cJSON_ArrayForEach(elem, ignored) {
           if (cJSON_IsNumber(elem)) {
-            info.connections[i].ignored_tiles[j] = elem->valueint;
+            info.connections[index].ignored_tiles[j] = elem->valueint;
             j++;
           }
         }
-        info.connections[i].ignored_tiles_amount = j;
+        info.connections[index].ignored_tiles_amount = j;
       }
 
       if (cJSON_IsArray(tiles)) {
@@ -100,10 +109,10 @@ static void init_connected_info() {
           cJSON *entry = cJSON_GetArrayItem(tiles, j);
 
           if (cJSON_IsNumber(entry)) {
-            info.connections[i].predicates[j] = entry->valueint;
+            info.connections[index].predicates[j] = entry->valueint;
           } else {
           }
-          info.connections[i].predicates_amount = size;
+          info.connections[index].predicates_amount = size;
         }
       }
 
@@ -120,13 +129,14 @@ static void init_connected_info() {
         }
       }
 
-      info.connections[i].sprite_pos = value_pos;
+      info.connections[index].sprite_pos = value_pos;
+      index++;
     }
     info.connections_amount = size;
   }
 
   // DEBUG ignored tiles
-  //for (int i = 0; i < info.connections_amount; i++) {
+  // for (int i = 0; i < info.connections_amount; i++) {
   //  Connection *connection = &info.connections[i];
   //  if (connection->ignored_tiles_amount > 0) {
   //    TraceLog(LOG_DEBUG, "!!Ignored tiles for %d %d!!", connection->sprite_pos.x, connection->sprite_pos.y);
@@ -152,15 +162,19 @@ static bool tile_is_ignored(int *ignored_tiles, int ignored_tiles_amount, int ig
   return false;
 }
 
-static void indices_arr_to_bool_arr(int *indices, int indices_amount, bool *arr) {
+static void indices_arr_to_bool_arr(int *indices, int indices_amount, bool *arr, int arr_size) {
   for (int i = 0; i < indices_amount; i++) {
-    arr[indices[i]] = true;
+    int idx = indices[i];
+    if (idx >= 0 && idx < arr_size) {
+      arr[idx] = true;
+    }
   }
 }
 
 static bool cmp_same_tiles(bool *expected_same_tiles, bool *physical_same_tiles, int *ignored_tiles, int ignored_tiles_amount) {
   for (int i = 0; i < 8; i++) {
-    if (tile_is_ignored(ignored_tiles, ignored_tiles_amount, i)) continue;
+    if (tile_is_ignored(ignored_tiles, ignored_tiles_amount, i))
+      continue;
 
     if (expected_same_tiles[i] != physical_same_tiles[i]) {
       return false;
@@ -169,31 +183,12 @@ static bool cmp_same_tiles(bool *expected_same_tiles, bool *physical_same_tiles,
   return true;
 }
 
-static bool indices_true_and_other_false(bool *physical_same_tiles, int *indices, int indices_amount, int *ignored, int ignored_amount, int size) {
+static bool indices_true_and_other_false(bool *physical_same_tiles, int *indices, int indices_amount, int *ignored, int ignored_amount,
+                                         int size) {
   bool expected_same_tiles[8] = {false};
-  indices_arr_to_bool_arr(indices, indices_amount, expected_same_tiles);
+  indices_arr_to_bool_arr(indices, indices_amount, expected_same_tiles, 8);
   bool same_tiles = cmp_same_tiles(expected_same_tiles, physical_same_tiles, ignored, ignored_amount);
   return same_tiles;
-  //// iterate through surrounding tiles (size=8)
-  //for (int i = 0; i < size; i++) {
-  //  bool is_selected = false;
-  //  // iterate through the connections indices array
-  //  for (int j = 0; j < indices_amount; j++) {
-  //    // Check if iteration index equals the current index
-  //    if (i == indices[j]) {
-  //      is_selected = true;
-  //      break;
-  //    }
-  //  }
-  //  if (is_selected) {
-  //    if (!phys_surrounding_tiles[i])
-  //      return false; // selected index must be true
-  //  } else {
-  //    if (phys_surrounding_tiles[i] && !tile_is_ignored(ignored, ignored_amount, i))
-  //      return false; // non-selected index must be false
-  //  }
-  //}
-  //return true;
 }
 
 static Rectangle sprite_rect(int x, int y) { return (Rectangle){.x = x, .y = y, .width = 16, .height = 16}; }
@@ -207,7 +202,7 @@ static Rectangle select_tile(bool *same_tile) {
     }
   }
 
-  //log_error("Failed to select tile box");
+  log_error("Failed to select tile box");
   return sprite_rect(CONNECTED_INFO.default_sprite_pos.x, CONNECTED_INFO.default_sprite_pos.y);
 }
 
@@ -225,7 +220,9 @@ void tile_calc_sprite_box(TileInstance *tile) {
     same_tile[6] = texture_data[6] == self_id;
     same_tile[7] = texture_data[7] == self_id;
     tile->cur_sprite_box = select_tile(same_tile);
-    // printf("tile: %s, selected rect: x: %f, y: %f, w: %f, h: %f\n", tile_type_to_string(tile->type), tile->cur_sprite_box.x, tile->cur_sprite_box.y, tile->cur_sprite_box.width, tile->cur_sprite_box.height);
+    log_debug("tile: %s, selected rect: x: %f, y: %f, w: %f, h: %f, top right corner same: %s", tile_type_to_string(tile->type),
+              tile->cur_sprite_box.x, tile->cur_sprite_box.y, tile->cur_sprite_box.width, tile->cur_sprite_box.height,
+              btos(texture_data[2] == self_id));
   }
 }
 
@@ -383,7 +380,7 @@ static void on_tile_variants_reload() {
 
   debug_variant_info();
 
-  //log_debug("Variants: %d", VARIANT_INFO.tiles_amount);
+  // log_debug("Variants: %d", VARIANT_INFO.tiles_amount);
 }
 
 AdvTexture *tile_variants_for_tile(const TileType *type, int x, int y) {
@@ -424,6 +421,6 @@ void tile_type_init(TileType *type) {
   if (type->id == TILE_STONE) {
     char buf[512];
     tile_type_debug_print(type, buf);
-    //puts(buf);
+    // puts(buf);
   }
 }
