@@ -4,6 +4,7 @@
 #include "lilc/bump.h"
 #include "lilc/numbers.h"
 #include "shared.h"
+#include "textures.h"
 #include <raylib.h>
 
 #define ASSETS_DIR "res/assets/"
@@ -12,8 +13,6 @@
 #define MUSIC_DIR "music"
 #define SHADERS_DIR "shaders"
 #define SOUNDS_DIR "sounds"
-
-typedef u64 AssetId;
 
 typedef struct {
   enum {
@@ -66,6 +65,16 @@ typedef struct {
 void assets_load(AssetManager *asset_manager);
 
 void assets_unload(AssetManager *asset_manager);
+
+// Getters
+
+cw_Texture cw_tex_by_id(AssetManager *asset_manager, AssetId id);
+
+cw_Texture cw_tex_by_handle(AssetManager *asset_manager, TextureHandle handle);
+
+Texture2D tex_by_id(AssetManager *asset_manager, AssetId id);
+
+Texture2D tex_by_handle(AssetManager *asset_manager, TextureHandle handle);
 
 // Load asset files
 

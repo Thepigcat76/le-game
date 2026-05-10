@@ -7,6 +7,26 @@
 #include "dirent.h"
 #include <stdio.h>
 
+cw_Texture cw_tex_by_id(AssetManager *asset_manager, AssetId id) {
+  return asset_manager->textures[id];
+}
+
+inline cw_Texture cw_tex_by_handle(AssetManager *asset_manager, TextureHandle handle) {
+  return cw_tex_by_id(asset_manager, TEX_IDS[handle]);
+}
+
+Texture2D tex_by_id(AssetManager *asset_manager, AssetId id) {
+  cw_Texture tex = cw_tex_by_id(asset_manager, id);
+  if (tex.kind == TEXTURE_STATIC) {
+    return tex.var.texture_static;
+  }
+  return tex.var.texture_animated.texture;
+}
+
+inline Texture2D tex_by_handle(AssetManager *asset_manager, TextureHandle handle) {
+  return tex_by_id(asset_manager, TEX_IDS[handle]);
+}
+
 static void asset_manager_init(AssetManager *asset_manager) {
   bump_init(&asset_manager->asset_bump, sizeof(cw_Texture) * 8192);
   bump_allocator_init(&asset_manager->asset_bump_allocator, &asset_manager->asset_bump);

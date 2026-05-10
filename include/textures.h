@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdlib.h>
-#include "assets.h"
+#include "shared.h"
 #include "raylib.h"
 
 typedef enum {
@@ -37,6 +37,11 @@ typedef enum {
   TEX_STONE_INV,
   // Ui textures
   TEX_MAP_SPRITE,
+  TEX_BUTTON,
+  TEX_BUTTON_SELECTED,
+  TEX_SAVE_SLOT_BUTTTON,
+  TEX_SAVE_SLOT_BUTTON_SELECTED,
+  TEX_TEXT_INPUT,
   // Map textures
   TEX_MAP_ICON_HOUSE,
   TEX_MAP_ICON_TREE,

@@ -30,24 +30,23 @@ void host_menu_render(UiRenderer *renderer, const ClientGame *game) {
   RENDER_SPACING({.height = 40});
   RENDER_TEXT_INPUT({
       .text_input = &IP_ADDR,
-      .texture = TEXT_INPUT_TEXTURE,
       .selected = &ip_addr_input_selected,
       .width = 128,
   });
-  RENDER_BUTTON({
-      .message = "Host",
-      .texture = OPT_TEX(BUTTON_TEXTURE),
-      .selected_texture = OPT_TEX(BUTTON_SELECTED_TEXTURE),
-      .on_click_func = button_click_simple(host_menu_host),
-      .x_offset = x_offset,
-      .y_offset = y_offset,
-  });
-  RENDER_BUTTON({
-      .message = "Back",
-      .texture = OPT_TEX(BUTTON_TEXTURE),
-      .selected_texture = OPT_TEX(BUTTON_SELECTED_TEXTURE),
-      .on_click_func = button_click_simple(host_menu_back),
-      .x_offset = x_offset,
-      .y_offset = y_offset,
-  });
+  //RENDER_BUTTON({
+  //    .message = "Host",
+  //    .texture = OPT_TEX(BUTTON_TEXTURE),
+  //    .selected_texture = OPT_TEX(BUTTON_SELECTED_TEXTURE),
+  //    .on_click_func = button_click_simple(host_menu_host),
+  //    .x_offset = x_offset,
+  //    .y_offset = y_offset,
+  //});
+  //RENDER_BUTTON({
+  //    .message = "Back",
+  //    .texture = OPT_TEX(BUTTON_TEXTURE),
+  //    .selected_texture = OPT_TEX(BUTTON_SELECTED_TEXTURE),
+  //    .on_click_func = button_click_simple(host_menu_back),
+  //    .x_offset = x_offset,
+  //    .y_offset = y_offset,
+  //});
 }

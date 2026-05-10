@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "lilc/alloc.h"
+#include "lilc/numbers.h"
 #include "lilc/str.h"
 
 #define SCREEN_WIDTH 800
@@ -74,6 +75,8 @@
 
 #define TICK_RATE 20                     // ticks per second
 #define TICK_INTERVAL (1.0f / TICK_RATE) // seconds per tick
+
+typedef u64 AssetId;
 
 extern Texture2D DEBUG_BUTTON_TEXTURE;
 extern Texture2D DEBUG_BUTTON_SELECTED_TEXTURE;

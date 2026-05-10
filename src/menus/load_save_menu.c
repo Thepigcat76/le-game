@@ -31,24 +31,29 @@ void load_save_menu_render(UiRenderer *renderer, const ClientGame *game) {
   RENDER_SPACING({.height = 100});
   RENDER_TEXT({.text = TextFormat("Loaded Saves: %d", array_len(game->local_saves))});
   // Create the group for displaying the saves
-  UI_GROUP_CREATE(
-      {.group_style = renderer->cur_style, .has_scrollbar = true, .width = 400, .height = 300, .scroll_y_offset = &scroll_y_offset});
+  UI_GROUP_CREATE({
+      .group_style = renderer->cur_style,
+      .has_scrollbar = true,
+      .width = 400,
+      .height = 300,
+      .scroll_y_offset = &scroll_y_offset,
+  });
   {
     size_t saves = array_len(game->local_saves);
     for (int i = 0; i < saves; i++) {
-      RENDER_BUTTON({.message = game->local_saves[i].config.save_name,
-                     .texture = OPT_TEX(SAVE_SLOT_TEXTURE),
-                     .selected_texture = OPT_TEX(SAVE_SLOT_SELECTED_TEXTURE),
-                     .on_click_func = button_click_args(load_save_menu_load_save, &game->local_saves[i]),
-                     .x_offset = x_offset,
-                     .y_offset = y_offset});
+      RENDER_BUTTON({
+          .message = game->local_saves[i].config.save_name,
+          .texture = OPT_TEX(TEX_SAVE_SLOT_BUTTTON),
+          .selected_texture = OPT_TEX(TEX_SAVE_SLOT_BUTTON_SELECTED),
+          .on_click_func = button_click_args(load_save_menu_load_save, &game->local_saves[i]),
+          .x_offset = x_offset,
+          .y_offset = y_offset,
+      });
     }
   }
   UI_GROUP_DESTROY();
   // End the group for displaying the saves
   RENDER_BUTTON({.message = "Back",
-                 .texture = OPT_TEX(BUTTON_TEXTURE),
-                 .selected_texture = OPT_TEX(BUTTON_SELECTED_TEXTURE),
                  .on_click_func = button_click_simple(load_save_menu_back),
                  .x_offset = x_offset,
                  .y_offset = y_offset});

@@ -48,7 +48,7 @@ void save_menu_render(UiRenderer *renderer, const ClientGame *game) {
 
   int x_offset = 8 * (CONFIG.default_font_size / 10);
   int y_offset = -2;
-
+/*
   RENDER_TEXT({.text = "Game Paused"});
   RENDER_BUTTON({.message = "Back To Game",
                  .texture = OPT_TEX(BACK_TO_GAME_BUTTON_TEXTURE),
@@ -74,4 +74,5 @@ void save_menu_render(UiRenderer *renderer, const ClientGame *game) {
                  .on_click_func = button_click_simple(save_menu_save_game_button_clicked),
                  .text_x_offset = x_offset,
                  .text_y_offset = y_offset});
+                 */
 }

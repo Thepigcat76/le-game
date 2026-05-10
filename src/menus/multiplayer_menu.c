@@ -24,6 +24,7 @@ void multiplayer_menu_render(UiRenderer *renderer, const ClientGame *game) {
 
   RENDER_TEXT({.text = "Multiplayer"});
   RENDER_SPACING({.height = 40});
+  /*
   RENDER_BUTTON({
       .message = "Join",
       .texture = OPT_TEX(BUTTON_TEXTURE),
@@ -48,4 +49,5 @@ void multiplayer_menu_render(UiRenderer *renderer, const ClientGame *game) {
       .x_offset = x_offset,
       .y_offset = y_offset,
   });
+  */
 }

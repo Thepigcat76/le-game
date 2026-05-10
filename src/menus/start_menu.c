@@ -41,40 +41,30 @@ void start_menu_render(UiRenderer *renderer, const ClientGame *game) {
   RENDER_SPACING({.height = 100});
   RENDER_BUTTON({
       .message = "New Save",
-      .texture = OPT_TEX(BUTTON_TEXTURE),
-      .selected_texture = OPT_TEX(BUTTON_SELECTED_TEXTURE),
       .on_click_func = button_click_simple(start_menu_new_save),
       .x_offset = x_offset,
       .y_offset = y_offset,
   });
   RENDER_BUTTON({
       .message = "Load Save",
-      .texture = OPT_TEX(BUTTON_TEXTURE),
-      .selected_texture = OPT_TEX(BUTTON_SELECTED_TEXTURE),
       .on_click_func = button_click_simple(start_menu_load_save),
       .x_offset = x_offset,
       .y_offset = y_offset,
   });
   RENDER_BUTTON({
       .message = "Multiplayer",
-      .texture = OPT_TEX(BUTTON_TEXTURE),
-      .selected_texture = OPT_TEX(BUTTON_SELECTED_TEXTURE),
       .on_click_func = button_click_simple(start_menu_multiplayer),
       .x_offset = x_offset,
       .y_offset = y_offset,
   });
   RENDER_BUTTON({
       .message = "Settings",
-      .texture = OPT_TEX(BUTTON_TEXTURE),
-      .selected_texture = OPT_TEX(BUTTON_SELECTED_TEXTURE),
       .on_click_func = button_click_simple(start_menu_settings),
       .x_offset = x_offset,
       .y_offset = y_offset,
   });
   RENDER_BUTTON({
       .message = "Leave Game",
-      .texture = OPT_TEX(BUTTON_TEXTURE),
-      .selected_texture = OPT_TEX(BUTTON_SELECTED_TEXTURE),
       .on_click_func = button_click_simple(start_menu_leave_game),
       .x_offset = x_offset,
       .y_offset = y_offset,

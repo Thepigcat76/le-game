@@ -2,6 +2,7 @@
 
 #include "raylib.h"
 #include "ui_style.h"
+#include "../textures.h"
 #include "../item.h"
 #include <stdlib.h>
 
@@ -18,10 +19,10 @@ ButtonClickFunction button_click_simple(void (*on_click_func)());
 
 ButtonClickFunction button_click_args(void (*on_click_func)(void *), void *args);
 
-#define OPT_TEX(tex) (struct _optional_texture){.texture = tex, .present = true}
+#define OPT_TEX(tex) (struct _optional_texture){.texture_handle = tex, .present = true}
 
 struct _optional_texture {
-  Texture2D texture;
+  TextureHandle texture_handle;
   bool present;
 };
 
@@ -71,7 +72,7 @@ typedef struct {
 } TextInputBuffer;
 
 typedef struct {
-  Texture2D texture;
+  struct _optional_texture texture;
   TextInputBuffer *text_input;
   bool *selected;
   int width;

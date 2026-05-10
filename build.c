@@ -28,27 +28,48 @@
 static Cmd cmd = {0};
 
 static void visit_entry(struct file_entry entry) {
-  if (strcmp(entry.file_ext, "c") == 0)
-    cmd_appendf(&cmd, "%s", entry.path);
+  if (entry.file_ext == NULL || strcmp(entry.file_ext, "c") != 0) return;
+
+  Cmd compile_cmd = {0};
+
+  cmd_appendf(&compile_cmd, "ccache");
+  cmd_appendf(&compile_cmd, COMPILER);
+
+  cmd_appendf(&compile_cmd, "-c");
+  cmd_appendf(&compile_cmd, "%s", entry.path);
+
+  cmd_appendf(&compile_cmd, "-o");
+  cmd_appendf(&compile_cmd, "./build/%s.o", entry.path + 4);
+  // Flags
+  cmd_appendf(&compile_cmd, "-g");
+  cmd_appendf(&compile_cmd, "-std=%s", STANDARD);
+  // Define Flags
+  cmd_appendf(&compile_cmd, "-DTARGET=" TARGET_LINUX);
+  cmd_appendf(&compile_cmd, "-DCOZY_WRATH_VERSION=" COZY_WRATH_VERSION);
+  cmd_appendf(&compile_cmd, "-DCOZY_WRATH_VERSION_RELEASE_DATE=" COZY_WRATH_VERSION_RELEASE_DATE);
+
+  char build_path[512];
+  sprintf(build_path, "./build/%s.o", entry.path + 4);
+  ensure_parent_dirs(build_path, 0755);
+
+  printf("Compiling: %s\n", entry.path);
+
+  cmd_execute(&compile_cmd);
+}
+
+static void visit_obj_entry(struct file_entry entry) {
+  if (entry.file_ext == NULL || strcmp(entry.file_ext, "o") != 0) return;
+
+  cmd_appendf(&cmd, "%s", entry.path);
 }
 
 int main(int argc, char **argv) {
-  // The compiler to use
-  cmd_appendf(&cmd, COMPILER);
-  // Flags
-  cmd_appendf(&cmd, "-g");
-  cmd_appendf(&cmd, "-rdynamic");
-  cmd_appendf(&cmd, "-std=%s", STANDARD);
-  // Define Flags
-  cmd_appendf(&cmd, "-DTARGET=" TARGET_LINUX);
-  cmd_appendf(&cmd, "-DCOZY_WRATH_VERSION=" COZY_WRATH_VERSION);
-  cmd_appendf(&cmd, "-DCOZY_WRATH_VERSION_RELEASE_DATE=" COZY_WRATH_VERSION_RELEASE_DATE);
-  // Output location
-  cmd_appendf(&cmd, "-o");
-  cmd_appendf(&cmd, OUT_NAME);
-
   // Adding src files
   walk_dir("src", visit_entry);
+
+  cmd_appendf(&cmd, COMPILER);
+
+  walk_dir("build", visit_obj_entry);
 
   // Libraries
   cmd_appendf(&cmd, "-l%s", LIB_LILC);
@@ -60,9 +81,14 @@ int main(int argc, char **argv) {
   cmd_appendf(&cmd, "-l%s", LIB_PTHREAD);
   cmd_appendf(&cmd, "-l%s", LIB_CJSON);
 
-  cmd_fprint(&cmd, stdout);
-  putchar('\n');
-  fflush(stdout);
+  cmd_appendf(&cmd, "-o");
+  cmd_appendf(&cmd, OUT_NAME);
+
+  cmd_appendf(&cmd, "-rdynamic");
+
+  //cmd_fprint(&cmd, stdout);
+  //putchar('\n');
+  //fflush(stdout);
 
   // Run the command
   cmd_execute(&cmd);

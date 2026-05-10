@@ -22,6 +22,7 @@ static AssetId tex_asset_id(AssetManager *m, char *filename) {
 
 void texture_handles_assign_id(AssetManager *m) {
   TEX_IDS[TEX_ERR] = tex_asset_id(m, "err_texture");
+
   TEX_IDS[TEX_BRICKS] = tex_asset_id(m, "bricks");
   TEX_IDS[TEX_BUSH] = tex_asset_id(m, "bush");
   TEX_IDS[TEX_CHEST] = tex_asset_id(m, "chest");
@@ -74,7 +75,13 @@ void texture_handles_assign_id(AssetManager *m) {
   
   TEX_IDS[TEX_BREAKING_OVERLAY] = tex_asset_id(m, "breaking_overlay");
   TEX_IDS[TEX_CURSOR_FIST] = tex_asset_id(m, "cursor_fist");
-  TEX_IDS[TEX_CURSOR_FIST] = tex_asset_id(m, "cursor");
+  TEX_IDS[TEX_CURSOR] = tex_asset_id(m, "cursor");
+
+  TEX_IDS[TEX_BUTTON] = tex_asset_id(m, "ui/button");
+  TEX_IDS[TEX_BUTTON_SELECTED] = tex_asset_id(m, "ui/button_selected");
+  TEX_IDS[TEX_SAVE_SLOT_BUTTTON] = tex_asset_id(m, "ui/save_slot");
+  TEX_IDS[TEX_SAVE_SLOT_BUTTON_SELECTED] = tex_asset_id(m, "ui/save_slot_selected");
+  TEX_IDS[TEX_TEXT_INPUT] = tex_asset_id(m, "ui/text_input");
 }
 
 i32 cw_texture_load(cw_Texture *texture, AssetManager *manager, FileEntry file_entry) {

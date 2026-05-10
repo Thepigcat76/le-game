@@ -1,5 +1,5 @@
-#include "lilc/array.h"
 #include "../../include/save_desc.h"
+#include "lilc/array.h"
 #include "menu_includes.h"
 #include <lilc/alloc.h>
 #include <string.h>
@@ -17,9 +17,9 @@ static void new_save_create_world() {
   client_set_menu(&CLIENT_GAME, MENU_NONE);
   CLIENT_GAME.paused = false;
 
-  SaveDescriptor desc = {.id = array_len(CLIENT_GAME.local_saves),
-                         .config = {.save_name = save_name_text_input_buffer.buf,
-                                    .seed = string_to_world_seed(seed_text_input_buffer.buf)}};
+  SaveDescriptor desc = {
+      .id = array_len(CLIENT_GAME.local_saves),
+      .config = {.save_name = save_name_text_input_buffer.buf, .seed = string_to_world_seed(seed_text_input_buffer.buf)}};
   game_create_save(&CLIENT_GAME.game, desc);
   game_create_save_world(&CLIENT_GAME.game);
   client_init_loaded_save(&CLIENT_GAME, &CLIENT_GAME.game.cur_save);
@@ -51,25 +51,27 @@ void new_save_menu_render(UiRenderer *renderer, const ClientGame *game) {
   RENDER_TEXT({.text = "Create new save"});
   RENDER_SPACING({.height = 40});
   RENDER_TEXT({.text = "Save Name:"});
-  RENDER_TEXT_INPUT({.texture = TEXT_INPUT_TEXTURE,
-                     .text_input = &save_name_text_input_buffer,
-                     .selected = &save_name_input_selected,
-                     .width = 200});
+  RENDER_TEXT_INPUT({
+      .text_input = &save_name_text_input_buffer,
+      .selected = &save_name_input_selected,
+      .width = 200,
+  });
   RENDER_TEXT({.text = "Seed:"});
-  RENDER_TEXT_INPUT({.texture = TEXT_INPUT_TEXTURE,
-                     .text_input = &seed_text_input_buffer,
-                     .selected = &seed_input_selected,
-                     .width = 200});
-  RENDER_BUTTON({.message = "Create World",
-                 .texture = OPT_TEX(BUTTON_TEXTURE),
-                 .selected_texture = OPT_TEX(BUTTON_SELECTED_TEXTURE),
-                 .on_click_func = button_click_simple(new_save_create_world),
-                 .x_offset = x_offset,
-                 .y_offset = y_offset});
-  RENDER_BUTTON({.message = "Back",
-                 .texture = OPT_TEX(BUTTON_TEXTURE),
-                 .selected_texture = OPT_TEX(BUTTON_SELECTED_TEXTURE),
-                 .on_click_func = button_click_simple(new_save_back_to_start_menu),
-                 .x_offset = x_offset,
-                 .y_offset = y_offset});
+  RENDER_TEXT_INPUT({
+      .text_input = &seed_text_input_buffer,
+      .selected = &seed_input_selected,
+      .width = 200,
+  });
+  RENDER_BUTTON({
+      .message = "Create World",
+      .on_click_func = button_click_simple(new_save_create_world),
+      .x_offset = x_offset,
+      .y_offset = y_offset,
+  });
+  RENDER_BUTTON({
+      .message = "Back",
+      .on_click_func = button_click_simple(new_save_back_to_start_menu),
+      .x_offset = x_offset,
+      .y_offset = y_offset,
+  });
 }
