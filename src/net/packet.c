@@ -1,4 +1,4 @@
-#include "../../include/log.h"
+#include "lilc/log.h"
 #include "../../include/net/client.h"
 #include "../../include/net/server.h"
 #include "../../include/net/sockets.h"
@@ -27,7 +27,7 @@
 #else
 #include <sys/socket.h>
 #endif
-#include "../../include/array.h"
+#include "lilc/array.h"
 #include "../../include/bytebuf.h"
 #include "../../include/data/data_reader.h"
 #include "../../include/game.h"
@@ -244,7 +244,9 @@ static Packet packet_decode(ByteBuf *buf) {
   case PACKET_S2C_PLAYER_JOIN: {
     int player_id = byte_buf_read_int(buf);
     DataMap player_map = byte_buf_read_data(buf).var.data_map;
-    Player player = player_new();
+    Player player = {0};
+    player_init(&player);
+
     player_load(&player, &player_map);
     return PACKET_S2C_PLAYER_JOIN_NEW({.player_id = player_id, .player = player});
   }
@@ -294,7 +296,8 @@ static void handle_space_sync(PacketS2CSyncSpace *packet, Game *game) {
   // Assign save to cur_save
   game->cur_save = save;
   // Create player
-  Player player = player_new();
+  Player player = {0};
+  player_init(&player);
   // array_add(game->cur_save.players, player);
 
   // FIXME: Dangerous, since mem location of first element might change

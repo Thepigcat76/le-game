@@ -1,61 +1,70 @@
 #pragma once
 
 #include <stdlib.h>
+#include "assets.h"
 #include "raylib.h"
 
-#define ANIMATED_TEXTURES_AMOUNT 4
-
 typedef enum {
-  TEXTURE_CURSOR,
-  TEXTURE_CURSOR_FIST,
-  TEXTURE_TOOLTIP,
-  TEXTURE_BREAK,
-  TEXTURE_SLOT,
-  TEXTURE_OK,
-  TEXTURE_ERR,
-  // Last since its only the length
-  TEXTURE_MANAGER_TEXTURES_AMOUNT,
-} TextureManagerTexture;
+  // Tile textures
+  TEX_BRICKS,
+  TEX_BUSH,
+  TEX_CHEST,
+  TEX_DIRT,
+  TEX_DUNGEON_FLOOR,
+  TEX_DUNGEON_PORTAL,
+  TEX_GRASS_TILES,
+  TEX_STONE_TILES,
+  TEX_LIGHTER_DIRT_TILES,
+  TEX_GRASS,
+  TEX_OVEN,
+  TEX_TALL_OVEN,
+  TEX_STONE,
+  TEX_TREE,
+  TEX_TORCH,
+  TEX_WATER,
+  TEX_WORKSTATION,
+  // Item textures
+  TEX_AXE,
+  TEX_PICKAXE,
+  TEX_SHOVEL,
+  TEX_HAMMER,
+  TEX_BACKPACK,
+  TEX_HEAL_POTION,
+  TEX_MAP,
+  TEX_STICK,
+  // Inv textures
+  TEX_GRASS_INV,
+  TEX_STONE_INV,
+  // Ui textures
+  TEX_MAP_SPRITE,
+  // Map textures
+  TEX_MAP_ICON_HOUSE,
+  TEX_MAP_ICON_TREE,
+  // Particle
+  TEX_PARTICLE,
+  TEX_WALK_PARTICLES,
+  // Player textures
+  TEX_PLAYER_BACK_WALK,
+  TEX_PLAYER_FRONT_WALK,
+  TEX_PLAYER_LEFT_WALK,
+  TEX_PLAYER_RIGHT_WALK,
+  
+  TEX_PLAYER_BACK,  
+  TEX_PLAYER_FRONT,  
+  TEX_PLAYER_LEFT,  
+  TEX_PLAYER_RIGHT,
 
-typedef struct {
-  Texture2D textures[TEXTURE_MANAGER_TEXTURES_AMOUNT];
-} TextureManager;
+  TEX_WATER_OVERLAY,
+  // Building textures
+  TEX_BUILDING_SHOP,
 
-typedef struct {
-  enum {
-    TEXTURE_STATIC,
-    TEXTURE_ANIMATED,
-  } type;
-  union {
-    Texture2D texture_static;
-    struct {
-      int animated_texture_id;
-      Texture2D texture;
-      int frames;
-      int frame_time;
-    } texture_animated;
-  } var;
-  int width;
-  int height;
-  const char *path;
-} AdvTexture;
+  // Misc textures
+  TEX_BREAKING_OVERLAY,
+  TEX_CURSOR_FIST,
+  TEX_CURSOR,
 
-typedef struct {
-  AdvTexture texture;
-  int animated_texture_id;
-  int cur_frame;
-  float frame_timer;
-} AnimatedTexture;
+  TEX_ERR,
+  _amount_texture_handles,
+} TextureHandle;
 
-extern AnimatedTexture ANIMATED_TEXTURES[ANIMATED_TEXTURES_AMOUNT];
-extern size_t ANIMATED_TEXTURES_LEN;
-
-AdvTexture adv_texture_load(const char *path);
-
-void adv_texture_unload(AdvTexture texture);
-
-int adv_texture_cur_frame(const AdvTexture *texture);
-
-int adv_texture_frame_height(const AdvTexture *texture);
-
-Texture2D adv_texture_to_texture(const AdvTexture *texture);
+extern AssetId TEX_IDS[_amount_texture_handles];

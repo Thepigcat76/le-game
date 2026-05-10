@@ -5,11 +5,10 @@
 #include "item/item_container.h"
 #include "shared.h"
 #include "tile.h"
-#include <stdint.h>
+#include "lilc/numbers.h"
 #include <raylib.h>
 
 typedef struct _player {
-  Camera2D cam;
   Vec2f cur_cam_pos;
   Vec2f prev_cam_pos;
   Vec2f cur_box_pos;
@@ -17,13 +16,14 @@ typedef struct _player {
   uint32_t cur_zoom;
   uint32_t prev_zoom;
   Direction direction;
-  int animation_frame;
-  int frame_timer;
+  i32 animation_frame;
+  i32 frame_timer;
   bool walking;
   bool in_water;
+  // TODO: Migrate away from pointer
   TileInstance *last_broken_tile;
   // 0 - 64 ( / 16 for anim frames)
-  int break_progress;
+  i32 break_progress;
   // Tile player is currently breaking
   TileInstance *break_tile;
   TilePos break_tile_pos;
@@ -47,7 +47,7 @@ typedef struct {
   bool in_water;
 } PlayerRenderDescriptor;
 
-Player player_new(void);
+void player_init(Player *player);
 
 Rectf player_collision_box(const Player *player);
 

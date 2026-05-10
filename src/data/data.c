@@ -1,5 +1,5 @@
 #include "../../include/data.h"
-#include "../../include/array.h"
+#include "lilc/array.h"
 #include "../../include/data/data_reader.h"
 #include <raylib.h>
 #include <stdbool.h>

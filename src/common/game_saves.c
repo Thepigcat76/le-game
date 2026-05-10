@@ -1,8 +1,9 @@
-#include "../../include/array.h"
+#include "lilc/array.h"
 #include "../../include/game.h"
 #include "../../include/net/client.h"
 #include "../../vendor/cJSON.h"
 #include <dirent.h>
+#include <lilc/alloc.h>
 #include <raylib.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,8 +12,8 @@
 static SaveConfig game_load_save_config(const char *path) {
   const char *file_path = TextFormat("%s/game.json", path);
   TraceLog(LOG_DEBUG, "Save config path: %s", file_path);
-  char *file_content = read_file_to_string(file_path);
-  cJSON *json = cJSON_Parse(file_content);
+  dyn_string_t file_content = read_file_to_string(file_path, &HEAP_ALLOCATOR);
+  cJSON *json = cJSON_Parse(file_content.string);
   cJSON *save_name_json = cJSON_GetObjectItemCaseSensitive(json, "name");
   char *save_name;
   if (cJSON_IsString(save_name_json)) {
@@ -27,7 +28,7 @@ static SaveConfig game_load_save_config(const char *path) {
       .save_name = save_name,
       .seed = (float)seed_json->valuedouble,
   };
-  free(file_content);
+  dyn_string_free(&file_content);
   cJSON_Delete(json);
   return config;
 }
@@ -132,7 +133,8 @@ void game_create_save(Game *game, SaveDescriptor save_desc) {
 
   array_add(game->client_game->local_saves, desc);
   game->cur_save = save_new(desc);
-  Player player = player_new();
+  Player player = {0};
+  player_init(&player);
   game->client_game->cur_player = player;
   //array_add(game->cur_save.players, player);
   array_add(game->cur_save.spaces, (SpaceDescriptor){.type = &SPACES[SPACE_BASE], .id = 0});

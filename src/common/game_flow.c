@@ -1,6 +1,6 @@
-#include "../../include/array.h"
+#include "lilc/array.h"
 #include "../../include/game.h"
-#include "../../include/log.h"
+#include "lilc/log.h"
 #include "../../include/net/client.h"
 #include <raylib.h>
 
@@ -36,11 +36,10 @@ void game_deinit(Game *game) {
   array_free(ADV_TILES);
 
   // free(SOUND_BUMP.buffer);
-  free(GLOBAL_BUMP.buffer);
 
   if (game->save_loaded) {
     array_free(CLIENT_WORLD->chunks);
   }
   
-  free(ITEM_CONTAINER_BUMP.buffer);
+  bump_free(&ITEM_CONTAINER_BUMP);
 }

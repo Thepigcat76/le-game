@@ -1,4 +1,4 @@
-#include "../../include/array.h"
+#include "lilc/array.h"
 #include "menu_includes.h"
 #include <raylib.h>
 

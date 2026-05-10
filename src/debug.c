@@ -2,7 +2,7 @@
 #include "../include/config.h"
 #include "../include/game.h"
 #include "../include/keys.h"
-#include "../include/array.h"
+#include "lilc/array.h"
 #include "../include/net/client.h"
 #include "raylib.h"
 #include "rlgl.h"

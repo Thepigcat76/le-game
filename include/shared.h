@@ -6,8 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Only project include
-#include "../include/alloc.h"
+#include "lilc/alloc.h"
+#include "lilc/str.h"
 
 #define SCREEN_WIDTH 800
 #define SCREEN_HEIGHT 800
@@ -114,6 +114,18 @@ typedef struct {
   int height;
 } Dimensionsf;
 
+typedef struct {
+  // PARTS
+  // Directory the file is in
+  const char *dir;
+  // Name of the file without file extension
+  const char *name;
+  // File extension without the dot
+  const char *file_ext;
+
+  const char *full_path;
+} FileEntry;
+
 // RAYLIB Typedefs
 typedef Vector2 Vec2f;
 typedef Rectangle Rectf;
@@ -125,7 +137,7 @@ void shared_client_setup(void);
 
 void shared_setup();
 
-char *read_file_to_string(const char *filename);
+dyn_string_t read_file_to_string(const char *filename, Allocator *allocator);
 
 bool string_starts_with(const char *str, const char *prefix);
 
@@ -191,9 +203,11 @@ char *str_cpy_heap(const char *in);
 #define ANSI_RED "\033[1;31m"
 #define ANSI_RESET "\033[0m"
 
-#define ASSERT(cond, fmt, ...) do {\
-  if (!(cond)) PANIC_FMT(fmt, __VA_ARGS__);\
-} while (0)
+#define ASSERT(cond, fmt, ...)                                                                                                             \
+  do {                                                                                                                                     \
+    if (!(cond))                                                                                                                           \
+      PANIC_FMT(fmt, __VA_ARGS__);                                                                                                         \
+  } while (0)
 
 #define PANIC(...)                                                                                                                         \
   do {                                                                                                                                     \
@@ -204,11 +218,11 @@ char *str_cpy_heap(const char *in);
     exit(1);                                                                                                                               \
   } while (0)
 
-#define PANIC_FMT(...)                                                                                                                \
+#define PANIC_FMT(...)                                                                                                                     \
   do {                                                                                                                                     \
     /* We allocate a huge buffer cuz this is gonna crash the program anyways lol */                                                        \
     char buf[4096 + 2];                                                                                                                    \
-    __VA_OPT__(snprintf(buf, 4096 + 2, __VA_ARGS__);)                                                                               \
+    __VA_OPT__(snprintf(buf, 4096 + 2, __VA_ARGS__);)                                                                                      \
     buf[4096] = '\n';                                                                                                                      \
     buf[4096 + 1] = '\0';                                                                                                                  \
     PANIC(buf);                                                                                                                            \

@@ -1,8 +1,8 @@
 #include "../../include/config.h"
 #include "../../include/game.h"
 #include "../../include/net/client.h"
-#include "../../include/log.h"
-#include "../../include/array.h"
+#include "lilc/log.h"
+#include "lilc/array.h"
 #include <raylib.h>
 
 static void game_world_tick(Game *game);
@@ -118,7 +118,7 @@ bool item_tool_correct_for_tile(const ItemInstance *item, const TileInstance *ti
 
 static void game_handle_tile_interaction(Game *game) {
   Vec2f mouse_pos = GetMousePosition();
-  Vec2f mouse_world_pos = GetScreenToWorld2D(mouse_pos, CLIENT_PLAYER->cam);
+  Vec2f mouse_world_pos = GetScreenToWorld2D(mouse_pos, game->client_game->cam);
   int x_index = floor_div(mouse_world_pos.x, TILE_SIZE);
   int y_index = floor_div(mouse_world_pos.y, TILE_SIZE);
 
@@ -229,7 +229,7 @@ static void game_handle_mouse_interaction(Game *game) {
   if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
     for (int i = 0; i < array_len(CLIENT_WORLD->beings); i++) {
       BeingInstance being = CLIENT_WORLD->beings[i];
-      if (being.id == BEING_NPC && CheckCollisionPointRec(GetScreenToWorld2D(GetMousePosition(), CLIENT_PLAYER->cam), being.context.box)) {
+      if (being.id == BEING_NPC && CheckCollisionPointRec(GetScreenToWorld2D(GetMousePosition(), game->client_game->cam), being.context.box)) {
         // game_set_menu(game, MENU_DIALOG);
         TraceLog(LOG_DEBUG, "Clicked being");
         being_clicked = true;

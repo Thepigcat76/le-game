@@ -1,9 +1,10 @@
 #include "../../include/net/client.h"
-#include "../../include/array.h"
+#include "lilc/array.h"
 #include "../../include/camera.h"
 #include "../../include/game.h"
-#include "../../include/log.h"
+#include "lilc/log.h"
 #include "../../include/net/packet.h"
+#include <lilc/alloc.h>
 #include <pthread.h>
 #include <raylib.h>
 
@@ -20,11 +21,10 @@ ClientGame CLIENT_GAME = {0};
 static Music MUSIC;
 
 static Bump SOUND_BUMP;
-BUMP_ALLOCATOR(SOUND_BUMP_ALLOCATOR, &SOUND_BUMP);
 
 // Uses null at the end to terminate
-static const char *TEXTURE_MANAGER_TEXTURE_PATHS[TEXTURE_MANAGER_TEXTURES_AMOUNT + 1] = {
-    "cursor", "cursor_fist", "gui/tool_tip", "breaking_overlay", "gui/slot", "gui/ok", "gui/err", NULL};
+//static const char *TEXTURE_MANAGER_TEXTURE_PATHS[TEXTURE_MANAGER_TEXTURES_AMOUNT + 1] = {
+//    "cursor", "cursor_fist", "gui/tool_tip", "breaking_overlay", "gui/slot", "gui/ok", "gui/err", NULL};
 
 static void client_game_start(void);
 
@@ -186,6 +186,8 @@ void client_init(ClientGame *client) {
 
   int window_width = GetScreenWidth();
   int window_height = GetScreenHeight();
+
+  client->cam = camera_new(SCREEN_WIDTH, SCREEN_HEIGHT);
   client->cur_menu = MENU_START;
   client->paused = false;
   client->world_texture = LoadRenderTexture(window_width, window_height);
@@ -193,29 +195,36 @@ void client_init(ClientGame *client) {
   client->window = (Window){.prev_width = window_height, .prev_height = window_height, .width = window_width, .height = window_height};
   client->ui_renderer = ui_renderer_new();
   client->players = NULL;
+  client->asset_manager = (AssetManager){0};
 
   client_init_menu(client);
 
-  bump_init(&SOUND_BUMP, malloc(sizeof(Sound) * 1000), sizeof(Sound) * 1000);
+  bump_init(&SOUND_BUMP, sizeof(Sound) * 1024);
 
   client->sound_manager.sound_buffers[SOUND_PLACE].base_sound = LoadSound("res/sounds/place_sound.wav");
-  client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf = array_new_capacity(Sound, SOUND_BUFFER_LIMIT, &SOUND_BUMP_ALLOCATOR);
+  client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf = array_new_capacity(Sound, SOUND_BUFFER_LIMIT, &HEAP_ALLOCATOR); //SOUND_BUMP_ALLOCATOR);
 
-  for (int i = 0; i < SOUND_BUFFER_LIMIT; i++) {
-    client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf[i] =
-        LoadSoundAlias(client->sound_manager.sound_buffers[SOUND_PLACE].base_sound);
-    SetSoundPitch(client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf[i], 0.5);
-    SetSoundVolume(client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf[i], 0.25);
-  }
+  //for (int i = 0; i < SOUND_BUFFER_LIMIT; i++) {
+  //  client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf[i] =
+  //      LoadSoundAlias(client->sound_manager.sound_buffers[SOUND_PLACE].base_sound);
+  //  SetSoundPitch(client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf[i], 0.5);
+  //  SetSoundVolume(client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf[i], 0.25);
+  //}
 
-  MUSIC = LoadMusicStream("res/music/main_menu_music.ogg");
-  SetMusicVolume(MUSIC, 0.15);
-  SetMusicPitch(MUSIC, 0.85);
+  //MUSIC = LoadMusicStream("res/music/main_menu_music.ogg");
+  //SetMusicVolume(MUSIC, 0.15);
+  //SetMusicPitch(MUSIC, 0.85);
   // PlayMusicStream(MUSIC);
 
-  for (int i = 0; TEXTURE_MANAGER_TEXTURE_PATHS[i] != NULL; i++) {
-    client->texture_manager.textures[i] = LoadTexture(TextFormat("res/assets/%s.png", TEXTURE_MANAGER_TEXTURE_PATHS[i]));
-  }
+  assets_load(&client->asset_manager);
+
+  AssetId texture_axe = TEX_IDS[TEX_AXE];
+  const char *path = client->asset_manager.textures[texture_axe].path;
+  log_debug("Axe path: %s", path);
+
+  //for (int i = 0; TEXTURE_MANAGER_TEXTURE_PATHS[i] != NULL; i++) {
+  //  client->texture_manager.textures[i] = LoadTexture(TextFormat("res/assets/%s.png", TEXTURE_MANAGER_TEXTURE_PATHS[i]));
+  //}
 }
 
 void client_deinit(ClientGame *client) {
@@ -223,7 +232,7 @@ void client_deinit(ClientGame *client) {
 
   array_free(client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf);
 
-  shaders_unload(&client->shader_manager);
+  //shaders_unload(&client->shader_manager);
 }
 
 void client_reload(ClientGame *game) {
@@ -234,16 +243,16 @@ void client_reload(ClientGame *game) {
 }
 
 static void client_update_animations(ClientGame *client) {
-  for (int i = 0; i < ANIMATED_TEXTURES_LEN; i++) {
-    AnimatedTexture *texture = &ANIMATED_TEXTURES[i];
-    texture->frame_timer += TICK_INTERVAL * 1000.0f;
-    float delay = texture->texture.var.texture_animated.frame_time;
-    if (texture->frame_timer >= delay) {
-      int frames = texture->texture.var.texture_animated.frames;
-      texture->cur_frame = (texture->cur_frame + 1) % frames;
-      texture->frame_timer = 0;
-    }
-  }
+  //for (int i = 0; i < ANIMATED_TEXTURES_LEN; i++) {
+  //  AnimatedTexture *texture = &ANIMATED_TEXTURES[i];
+  //  texture->frame_timer += TICK_INTERVAL * 1000.0f;
+  //  float delay = texture->texture.var.texture_animated.frame_time;
+  //  if (texture->frame_timer >= delay) {
+  //    int frames = texture->texture.var.texture_animated.frames;
+  //    texture->cur_frame = (texture->cur_frame + 1) % frames;
+  //    texture->frame_timer = 0;
+  //  }
+  //}
 }
 
 static bool inv_slot_selected();
@@ -269,7 +278,7 @@ void client_tick(ClientGame *client) {
 
     if (CLIENT_PLAYER != NULL) {
       log_debug("Focusing camera");
-      camera_focus(&CLIENT_PLAYER->cam);
+      camera_focus(&client->cam);
     }
   }
 

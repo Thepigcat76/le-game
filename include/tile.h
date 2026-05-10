@@ -1,5 +1,6 @@
 #pragma once
 
+#include "assets.h"
 #include "data.h"
 #include "game_feature.h"
 #include "item.h"
@@ -45,21 +46,23 @@ typedef struct {
   char *id_literal;
   char *name;
   TileLayer layer;
-  AdvTexture texture;
+
+  AssetId texture;
   bool has_texture;
+  
   Dimensionsf tile_dimensions;
   ItemType *tile_item;
   TileProperties tile_props;
 
   // TEXTURES
   TileTextureProperties texture_props;
-  int variant_index;
+  i32 variant_index;
 } TileType;
 
 extern TileType *TILES;
 extern size_t TILES_AMOUNT;
 
-extern AdvTexture ERR_TEXTURE;
+//extern AdvTexture ERR_TEXTURE;
 
 void tile_type_init(TileType *type);
 
@@ -78,8 +81,8 @@ typedef struct {
   // TEXTURES
   TileTextureData texture_data;
   Rectf cur_sprite_box;
-  AdvTexture variant_texture;
-  int animation_frame;
+  //AdvTexture variant_texture;
+  i32 animation_frame;
 } TileInstance;
 
 extern TileInstance TILE_INSTANCE_EMPTY;
@@ -88,15 +91,15 @@ TileInstance tile_new(const TileType *type);
 
 void tile_instance_debug(const TileInstance *tile, char *buf);
 
-Rectf tile_collision_box_at(const TileInstance *tile, int x, int y);
+Rectf tile_collision_box_at(const TileInstance *tile, i32 x, i32 y);
 
 Dimensionsf tile_collision_dimensions_at(const TileInstance *tile);
 
 Vec2f tile_collision_offset_at(const TileInstance *tile);
 
-void tile_render(TileInstance *tile, int x, int y, bool dbg);
+void tile_render(TileInstance *tile, i32 x, i32 y, bool dbg);
 
-void tile_render_scaled(TileInstance *tile, int x, int y, float scale);
+void tile_render_scaled(TileInstance *tile, i32 x, i32 y, float scale);
 
 void tile_right_click(TileInstance *tile);
 
@@ -108,7 +111,7 @@ void tile_tick(TileInstance *tile);
 
 Vec2i tile_default_sprite_pos();
 
-int tile_default_sprite_resolution();
+i32 tile_default_sprite_resolution();
 
 void tile_calc_sprite_box(TileInstance *tile);
 
@@ -116,15 +119,15 @@ void tile_calc_sprite_box(TileInstance *tile);
 
 // X and Y params are only nessecary in tile sheets, otherwise you can just pass
 // in 0
-AdvTexture *tile_variants_for_tile(const TileType *type, int x, int y);
+cw_Texture *tile_variants_for_tile(const TileType *type, i32 x, i32 y);
 
-int tile_variants_index_for_name(const char *texture_name, int x, int y);
+i32 tile_variants_index_for_name(const char *texture_name, i32 x, i32 y);
 
-int tile_variants_amount_for_tile(const TileType *type, int x, int y);
+i32 tile_variants_amount_for_tile(const TileType *type, i32 x, i32 y);
 
-AdvTexture *tile_variants_by_index(int i, int x, int y);
+cw_Texture *tile_variants_by_index(i32 i, i32 x, i32 y);
 
-int tile_variants_amount_by_index(int index, int x, int y);
+i32 tile_variants_amount_by_index(i32 index, i32 x, i32 y);
 
 void tile_variants_free();
 

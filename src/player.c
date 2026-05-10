@@ -1,11 +1,8 @@
-#include "../include/player.h"
-#include "../include/camera.h"
 #include "../include/config.h"
-#include "../include/game.h"
-#include "../include/log.h"
 #include "../include/net/client.h"
 #include "../include/shared.h"
-#include "math.h"
+#include "lilc/log.h"
+#include <math.h>
 #include <raylib.h>
 
 static Texture2D player_textures[DIRECTIONS_AMOUNT];
@@ -14,6 +11,7 @@ static bool player_textures_loaded;
 Texture2D particle_texture0;
 
 Player player_new(void) {
+  // TODO: Use Resource manager to load this
   player_textures[DIRECTION_UP] = LoadTexture("res/assets/player_back.png");
   player_textures[DIRECTION_DOWN] = LoadTexture("res/assets/player_front.png");
   player_textures[DIRECTION_LEFT] = LoadTexture("res/assets/player_left.png");
@@ -28,21 +26,38 @@ Player player_new(void) {
 
   log_debug("tile instance empty: %d", TILE_INSTANCE_EMPTY.type->id);
 
-  return (Player){.cam = camera_new(SCREEN_WIDTH, SCREEN_HEIGHT),
-                  .direction = DIRECTION_DOWN,
-                  .last_broken_tile = &TILE_INSTANCE_EMPTY,
-                  .essence = 0,
-                  .animation_frame = 0,
-                  .frame_timer = 0,
-                  .held_item = {.type = ITEMS[ITEM_SHOVEL]},
-                  .dragged_item = ITEM_INSTANCE_EMPTY,
-                  .box = {.x = 0, .y = 20, .width = 16, .height = 8},
-                  .chunk_pos = vec2i(0, 0),
-                  .tile_pos = vec2i(0, 0),
-                  .break_progress = -1,
-                  .break_tile = &TILE_INSTANCE_EMPTY,
-                  .break_tile_pos = vec2i(0, 0),
-                  .inv_container = item_container_new(9)};
+  return (Player){
+      .direction = DIRECTION_DOWN,
+      .last_broken_tile = &TILE_INSTANCE_EMPTY,
+      .essence = 0,
+      .animation_frame = 0,
+      .frame_timer = 0,
+      .held_item = {.type = ITEMS[ITEM_SHOVEL]},
+      .dragged_item = ITEM_INSTANCE_EMPTY,
+      .box = {.x = 0, .y = 20, .width = 16, .height = 8},
+      .chunk_pos = vec2i(0, 0),
+      .tile_pos = vec2i(0, 0),
+      .break_progress = -1,
+      .break_tile = &TILE_INSTANCE_EMPTY,
+      .break_tile_pos = vec2i(0, 0),
+  };
+}
+
+void player_init(Player *player) {
+  player->direction = DIRECTION_DOWN;
+  player->last_broken_tile = &TILE_INSTANCE_EMPTY;
+  player->animation_frame = 0;
+  player->frame_timer = 0;
+  player->held_item = (ItemInstance){.type = ITEMS[ITEM_SHOVEL]};
+  player->dragged_item = ITEM_INSTANCE_EMPTY;
+  player->box = (Rectf){.x = 0, .y = 20, .width = 16, .height = 8};
+  player->chunk_pos = vec2i(0, 0);
+  player->tile_pos = vec2i(0, 0);
+  player->break_progress = -1;
+  player->break_tile = &TILE_INSTANCE_EMPTY;
+  player->break_tile_pos = vec2i(0, 0);
+
+  item_container_init(&player->inv_container, 9);
 }
 
 static Texture2D player_get_texture(PlayerRenderDescriptor *player) {
@@ -88,7 +103,7 @@ static void player_render_texture(PlayerRenderDescriptor *player) {
 
 void player_render_from_desc(PlayerRenderDescriptor *player, float delta) {
   player_render_texture(player);
-  
+
   if (player->walking) {
     update_animation(player, delta);
   }
@@ -112,8 +127,8 @@ void player_render(Player *player, float delta) {
   float cam_x = lerpf(player->prev_cam_pos.x, player->cur_cam_pos.x, delta);
   float cam_y = lerpf(player->prev_cam_pos.y, player->cur_cam_pos.y, delta);
 
-  player->cam.target.x = cam_x;
-  player->cam.target.y = cam_y;
+  CLIENT_GAME.cam.target.x = cam_x;
+  CLIENT_GAME.cam.target.y = cam_y;
 
   player_render_texture(&render_descriptor);
 
@@ -169,7 +184,7 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool
 void player_set_pos(Player *player, float x, float y) { player_set_pos_ex(player, x, y, true, true, true); }
 
 void player_handle_zoom(Player *player, bool zoom_in, bool zoom_out, float alpha) {
-  Camera2D *cam = &player->cam;
+  Camera2D *cam = &CLIENT_GAME.cam;
 
   const float zoom_speed = 0.045f; // zoom units per second
   const float zoom_min = 1.0f;
@@ -247,7 +262,7 @@ static void check_collisions(const Player *player, Vec2f *player_pos, Vec2f play
 }
 
 void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
-  Camera2D *cam = &player->cam;
+  Camera2D *cam = &CLIENT_GAME.cam;
   float distance = 2 * CONFIG.player_speed;
 
   bool walking = false;
@@ -312,8 +327,8 @@ void player_load(Player *player, DataMap *map) {
   int y = data_map_get_or_default(map, "pos_y", data_int(0)).var.data_int;
   player->box.x = x;
   player->box.y = y;
-  player->cam.target.x = x;
-  player->cam.target.y = y;
+  CLIENT_GAME.cam.target.x = x;
+  CLIENT_GAME.cam.target.y = y;
 
   if (data_map_contains(map, "held_item")) {
     DataMap held_item_map = data_map_get(map, "held_item").var.data_map;

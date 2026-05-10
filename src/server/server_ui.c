@@ -1,13 +1,14 @@
+#include <lilc/alloc.h>
 #include <raylib.h>
 #define CTX_SERVER
 #include "../../include/ui.h"
 #undef CTX_SERVER
-#include "../../include/array.h"
+#include "lilc/array.h"
 #include "../../include/game.h"
 #include "../../include/net/packet.h"
 #include "../../include/net/server.h"
 #include "../../include/save_desc.h"
-#include "../../include/save_names.h"
+#include "../../include/save_desc.h"
 #include "../../include/server_ui.h"
 #include "../../include/shared.h"
 #include "../../vendor/cJSON.h"
@@ -17,7 +18,7 @@ static void on_click(void) {
   if (!DirectoryExists("server-save")) {
     dir_create("server-save");
   }
-  SaveConfig config = {.save_name = save_names_random_name(), .seed = string_to_world_seed("")};
+  SaveConfig config = {.save_name = generate_save_name(&HEAP_ALLOCATOR).string, .seed = string_to_world_seed("")};
   SaveDescriptor desc = {.id = 0, .config = config, .is_server_save = true};
   cJSON *json = save_config_to_json(&config);
   char *file_content = cJSON_Print(json);

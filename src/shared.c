@@ -1,4 +1,6 @@
 #include "../include/shared.h"
+#include <lilc/alloc.h>
+#include <lilc/str.h>
 #ifndef TARGET_WIN
 #include <arpa/inet.h>
 #include <ifaddrs.h>
@@ -99,12 +101,14 @@ bool dir_exists(const char *path) {
 
 bool string_starts_with(const char *str, const char *prefix) { return strncmp(str, prefix, strlen(prefix)) == 0; }
 
-char *read_file_to_string(const char *filename) {
+dyn_string_t read_file_to_string(const char *filename, Allocator *allocator) {
+  dyn_string_t str = {0};
+  
   FILE *file = fopen(filename, "rb");
   if (file == NULL) {
     fprintf(stderr, "Error opening file %s - ", filename);
     perror("");
-    return NULL;
+    return str;
   }
 
   // Seek to the end of the file to get the file size
@@ -115,31 +119,38 @@ char *read_file_to_string(const char *filename) {
   if (file_size < 0) {
     perror("Error determining file size");
     fclose(file);
-    return NULL;
+    return str;
   }
 
   // Allocate memory for the file content + null terminator
-  char *buffer = (char *)malloc(file_size + 1);
+  char *buffer = (char *)allocator->alloc(allocator, file_size + 1);
   if (buffer == NULL) {
     perror("Error allocating memory");
     fclose(file);
-    return NULL;
+    return str;
   }
 
   // Read the file content into the buffer
   size_t read_size = fread(buffer, 1, file_size, file);
   if (read_size != file_size) {
     perror("Error reading file");
-    free(buffer);
+    allocator->dealloc(allocator, buffer);
     fclose(file);
-    return NULL;
+    return str;
   }
 
   // Null-terminate the string
   buffer[file_size] = '\0';
 
   fclose(file);
-  return buffer;
+
+  str.allocator = allocator;
+  str.capacity = file_size + 1;
+  str.len = file_size;
+  str.string = buffer;
+  str.term_len = file_size + 1;
+
+  return str;
 }
 
 int string_contains(const char *string, char c) {
@@ -299,12 +310,12 @@ char *str_cpy_heap(const char *input) {
 
 char *str_cpy(const char *input, Allocator *allocator) {
   size_t len = strlen(input) + 1;
-  char *buf = allocator->alloc(len);
+  char *buf = allocator->alloc(allocator, len);
   strncpy(buf, input, len);
   return buf;
 }
 
-char *btos(bool b) {
+inline char *btos(bool b) {
   return b ? "true" : "false";
 }
 

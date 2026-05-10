@@ -1,4 +1,4 @@
-#include "../include/array.h"
+#include "lilc/array.h"
 #include "../include/game.h"
 #include "../include/net/client.h"
 #include <dirent.h>

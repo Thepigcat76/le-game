@@ -1,9 +1,10 @@
-#include "../../include/log.h"
+#include "lilc/log.h"
 #include "../../include/net/client.h"
 #include "../../include/shared.h"
 #include "../../include/tile.h"
 #include "../../vendor/cJSON.h"
 #include <dirent.h>
+#include <lilc/alloc.h>
 #include <raylib.h>
 #include <stdio.h>
 #include <string.h>
@@ -49,8 +50,8 @@ static ConnectedInfo CONNECTED_INFO = {0};
 
 static void init_connected_info() {
   ConnectedInfo info = {0};
-  char *file = read_file_to_string("res/connected.json");
-  cJSON *json = cJSON_Parse(file);
+  dyn_string_t file = read_file_to_string("res/connected.json", &HEAP_ALLOCATOR);
+  cJSON *json = cJSON_Parse(file.string);
   if (json == NULL) {
     printf("Error parsing JSON\n");
     exit(1);
@@ -150,7 +151,7 @@ static void init_connected_info() {
   CONNECTED_INFO = info;
 
   cJSON_Delete(json);
-  free(file);
+  dyn_string_free(&file);
 }
 
 static bool tile_is_ignored(int *ignored_tiles, int ignored_tiles_amount, int ignored_index) {
@@ -230,7 +231,7 @@ int tile_default_sprite_resolution() { return CONNECTED_INFO.res; }
 // -- TEXTURE VARIANTS --
 
 typedef struct {
-  AdvTexture *variants;
+  //AdvTexture *variants;
   int variants_amount;
 } SingleTileVariant;
 
@@ -274,7 +275,7 @@ static void init_variant_info(cJSON *meta_json, char *texture_file_name) {
     if (cJSON_IsArray(variants)) {
       TraceLog(LOG_DEBUG, "Loaded variants");
       int len = cJSON_GetArraySize(variants);
-      variant.var.single_tile_variant.variants = malloc(len * sizeof(AdvTexture));
+      //variant.var.single_tile_variant.variants = malloc(len * sizeof(AdvTexture));
       variant.type = TILE_VARIANT_SINGLE;
       for (int i = 0; i < len; i++) {
         cJSON *element = cJSON_GetArrayItem(variants, i);
@@ -282,7 +283,7 @@ static void init_variant_info(cJSON *meta_json, char *texture_file_name) {
           int path_max_len = sizeof(ASSETS_DIR) + strlen(element->valuestring) + 1;
           char path[path_max_len];
           snprintf(path, path_max_len, "%s%s", ASSETS_DIR, element->valuestring);
-          variant.var.single_tile_variant.variants[i] = adv_texture_load(path);
+          //variant.var.single_tile_variant.variants[i] = adv_texture_load(path);
         }
       }
       variant.var.single_tile_variant.variants_amount = len;
@@ -318,9 +319,9 @@ void tile_variants_free() {
     switch (VARIANT_INFO.variants[i].type) {
     case TILE_VARIANT_SINGLE:
       for (int j = 0; j < VARIANT_INFO.variants[i].var.single_tile_variant.variants_amount; j++) {
-        adv_texture_unload(VARIANT_INFO.variants[i].var.single_tile_variant.variants[j]);
+//        adv_texture_unload(VARIANT_INFO.variants[i].var.single_tile_variant.variants[j]);
       }
-      free(VARIANT_INFO.variants[i].var.single_tile_variant.variants);
+      //free(VARIANT_INFO.variants[i].var.single_tile_variant.variants);
       break;
     case TILE_VARIANT_CONNECTED:
       break;
@@ -348,20 +349,20 @@ static void init_tile_variants() {
     }
 
     int count;
-    const char **string_parts = TextSplit(entry->d_name, '.', &count);
+    char **string_parts = TextSplit(entry->d_name, '.', &count);
     char meta_file_name[256];
     snprintf(meta_file_name, 256, "%s_meta.json", string_parts[0]);
     char meta_file_path[256];
     snprintf(meta_file_path, 256, "%s%s", ASSETS_DIR, meta_file_name);
     if (FileExists(meta_file_path)) {
-      char *meta_file_content = read_file_to_string(meta_file_path);
-      cJSON *meta_json = cJSON_Parse(meta_file_content);
+      dyn_string_t meta_file_content = read_file_to_string(meta_file_path, &HEAP_ALLOCATOR);
+      cJSON *meta_json = cJSON_Parse(meta_file_content.string);
       {
         char texture_path[512];
         snprintf(texture_path, 512, "%s%s", ASSETS_DIR, entry->d_name);
         init_variant_info(meta_json, texture_path);
       }
-      free(meta_file_content);
+      dyn_string_free(&meta_file_content);
       cJSON_Delete(meta_json);
     }
   }
@@ -380,9 +381,9 @@ static void on_tile_variants_reload() {
   // log_debug("Variants: %d", VARIANT_INFO.tiles_amount);
 }
 
-AdvTexture *tile_variants_for_tile(const TileType *type, int x, int y) {
-  return VARIANT_INFO.variants[type->variant_index].var.single_tile_variant.variants;
-}
+//AdvTexture *tile_variants_for_tile(const TileType *type, int x, int y) {
+//  return VARIANT_INFO.variants[type->variant_index].var.single_tile_variant.variants;
+//}
 
 int tile_variants_index_for_name(const char *texture_path, int x, int y) {
   int amount = VARIANT_INFO.tiles_amount;
@@ -394,7 +395,7 @@ int tile_variants_index_for_name(const char *texture_path, int x, int y) {
   return -1;
 }
 
-AdvTexture *tile_variants_by_index(int index, int x, int y) { return VARIANT_INFO.variants[index].var.single_tile_variant.variants; }
+//AdvTexture *tile_variants_by_index(int index, int x, int y) { return VARIANT_INFO.variants[index].var.single_tile_variant.variants; }
 
 int tile_variants_amount_for_tile(const TileType *type, int x, int y) {
   return VARIANT_INFO.variants[type->variant_index].var.single_tile_variant.variants_amount;
@@ -407,11 +408,11 @@ int tile_variants_amount_by_index(int index, int x, int y) { return VARIANT_INFO
 void tile_type_init(TileType *type) {
   int amount = VARIANT_INFO.tiles_amount;
   for (int i = 0; i < amount; i++) {
-    if (strcmp(VARIANT_INFO.tile_texture_names[i], type->texture.path) == 0) {
+    //if (strcmp(VARIANT_INFO.tile_texture_names[i], type->texture.path) == 0) {
       type->variant_index = i;
       // type->texture_props.has_variants = true;
       return;
-    }
+    //}
   }
   type->variant_index = -1;
   // type->texture_props.has_variants = false;

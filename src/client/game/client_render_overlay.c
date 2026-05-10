@@ -18,37 +18,39 @@ void client_render_overlay(ClientGame *client) {
 
   Vec2f mouse_pos = GetMousePosition();
   if (client->slot_selected) {
-    if (mouse_pos.x + client->texture_manager.textures[TEXTURE_TOOLTIP].width * 5 > GetScreenWidth()) {
-      mouse_pos.x -= client->texture_manager.textures[TEXTURE_TOOLTIP].width * 5;
-    }
-    BeginShaderMode(client->shader_manager.shaders[SHADER_TOOLTIP_OUTLINE]);
-    {
-      SetShaderValue(
-          client->shader_manager.shaders[SHADER_TOOLTIP_OUTLINE],
-          GetShaderLocation(client->shader_manager.shaders[SHADER_TOOLTIP_OUTLINE], "resolution"),
-          (float[2]){client->texture_manager.textures[TEXTURE_TOOLTIP].width, client->texture_manager.textures[TEXTURE_TOOLTIP].height},
-          SHADER_UNIFORM_VEC2);
-      DrawTextureEx(client->texture_manager.textures[TEXTURE_TOOLTIP], mouse_pos, 0, 5, WHITE);
-    }
-    EndShaderMode();
+    //TODO: Reenable
+    
+    //if (mouse_pos.x + client->texture_manager.textures[TEXTURE_TOOLTIP].width * 5 > GetScreenWidth()) {
+    //  mouse_pos.x -= client->texture_manager.textures[TEXTURE_TOOLTIP].width * 5;
+    //}
+    //BeginShaderMode(client->shader_manager.shaders[SHADER_TOOLTIP_OUTLINE]);
+    //{
+    //  SetShaderValue(
+    //      client->shader_manager.shaders[SHADER_TOOLTIP_OUTLINE],
+    //      GetShaderLocation(client->shader_manager.shaders[SHADER_TOOLTIP_OUTLINE], "resolution"),
+    //      (float[2]){client->texture_manager.textures[TEXTURE_TOOLTIP].width, client->texture_manager.textures[TEXTURE_TOOLTIP].height},
+    //      SHADER_UNIFORM_VEC2);
+    //  DrawTextureEx(client->texture_manager.textures[TEXTURE_TOOLTIP], mouse_pos, 0, 5, WHITE);
+    //}
+    //EndShaderMode();
 
     int y_offset = 15;
     char *name = item_type_to_string(&CLIENT_PLAYER->held_item.type);
-    DrawText(name,
-             mouse_pos.x +
-                 ((float)client->texture_manager.textures[TEXTURE_TOOLTIP].width * 5 - MeasureText(name, CONFIG.default_font_size)) / 2,
-             mouse_pos.y + y_offset, CONFIG.default_font_size, WHITE);
+    //DrawText(name,
+    //         mouse_pos.x +
+    //             ((float)client->texture_manager.textures[TEXTURE_TOOLTIP].width * 5 - MeasureText(name, CONFIG.default_font_size)) / 2,
+    //         mouse_pos.y + y_offset, CONFIG.default_font_size, WHITE);
     char tooltip[256];
     item_tooltip(&CLIENT_PLAYER->held_item, tooltip, 256);
     int count;
-    const char **tooltip_lines = TextSplit(tooltip, '\n', &count);
+    char **tooltip_lines = TextSplit(tooltip, '\n', &count);
     for (int i = 0; i < count; i++) {
-      DrawText(tooltip_lines[i],
-               mouse_pos.x +
-                   ((float)client->texture_manager.textures[TEXTURE_TOOLTIP].width * 5 -
-                    MeasureText(tooltip_lines[i], CONFIG.default_font_size)) /
-                       2,
-               mouse_pos.y + y_offset + (CONFIG.default_font_size * (i + 1)), CONFIG.default_font_size, WHITE);
+      //DrawText(tooltip_lines[i],
+      //         mouse_pos.x +
+      //             ((float)client->texture_manager.textures[TEXTURE_TOOLTIP].width * 5 -
+      //              MeasureText(tooltip_lines[i], CONFIG.default_font_size)) /
+      //                 2,
+      //         mouse_pos.y + y_offset + (CONFIG.default_font_size * (i + 1)), CONFIG.default_font_size, WHITE);
     }
   }
 }

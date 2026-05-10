@@ -1,7 +1,10 @@
-#include "../../include/save_names.h"
-#include "../../include/log.h"
+#include "../../include/save_desc.h"
 #include "../../include/shared.h"
 #include "../../vendor/cJSON.h"
+#include "lilc/log.h"
+#include "lilc/numbers.h"
+#include <lilc/alloc.h>
+#include <lilc/str.h>
 #include <raylib.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,8 +30,8 @@ void save_names_on_reload(void) {
     free(SAVE_NAMES.nouns[i]);
   }
 
-  char *file_content = read_file_to_string("res/data/save_names.json");
-  cJSON *json = cJSON_Parse(file_content);
+  dyn_string_t file_content = read_file_to_string("res/data/save_names.json", &HEAP_ALLOCATOR);
+  cJSON *json = cJSON_Parse(file_content.string);
   cJSON *adjectives_json = cJSON_GetObjectItemCaseSensitive(json, "adjectives");
   cJSON *nouns_json = cJSON_GetObjectItemCaseSensitive(json, "nouns");
   if (cJSON_IsArray(adjectives_json)) {
@@ -65,22 +68,23 @@ void save_names_on_reload(void) {
     }
   }
 
-  free(file_content);
+  dyn_string_free(&file_content);
   cJSON_Delete(json);
 
   log_info("Reloaded savenames");
 }
 
-char *save_names_random_name() {
-  int random_adjective = GetRandomValue(0, SAVE_NAMES.adjectives_amount - 1);
-  int random_noun = GetRandomValue(0, SAVE_NAMES.nouns_amount - 1);
+dyn_string_t generate_save_name(Allocator *allocator) {
+  u32 random_adjective = GetRandomValue(0, SAVE_NAMES.adjectives_amount - 1);
+  u32 random_noun = GetRandomValue(0, SAVE_NAMES.nouns_amount - 1);
 
   char *adjective = SAVE_NAMES.adjectives[random_adjective];
   char *noun = SAVE_NAMES.nouns[random_noun];
 
-  // Adj len + whitspace + Noun len + Null Term
-  char *random_name = malloc(strlen(adjective) + 1 + strlen(noun) + 1);
-  sprintf(random_name, "%s %s", adjective, noun);
+  dyn_string_t random_name = {0};
+  dyn_string_init(&random_name, allocator);
+
+  dyn_string_printf(&random_name, "%s %s", adjective, noun);
 
   return random_name;
 }

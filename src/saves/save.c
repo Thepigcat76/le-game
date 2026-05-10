@@ -1,6 +1,5 @@
 #include "../../include/save.h"
-#include "../../include/array.h"
-#include "../../include/game.h"
+#include "lilc/array.h"
 #include <raylib.h>
 
 // TODO: create bumps for both of these possibly
@@ -58,12 +57,13 @@ void save_load_spaces(Save *save) {
     array_add(save->spaces, desc);
     TraceLog(LOG_INFO, "Found save: Type: %s with index: %zu", space_id_to_name(space_id), desc.id);
     ssize_t space_id_index = -1;
-    array_foreach(save->space_id_lookup.entries, SpaceIdLookupEntry, entry, {
-      if (entry.space_id == space_id) {
-        space_id_index = _arr_foreach_index;
+    SpaceIdLookupEntry *entry;
+    array_foreach(save->space_id_lookup.entries, entry) {
+      if (entry->space_id == space_id) {
+        space_id_index = _arr_foreach_idx;
         break;
       }
-    });
+    };
 
     if (space_id_index == -1) {
       size_t *disk_ids = array_new_capacity(size_t, 8, &HEAP_ALLOCATOR);

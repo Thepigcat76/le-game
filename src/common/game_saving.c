@@ -1,4 +1,4 @@
-#include "../../include/array.h"
+#include "lilc/array.h"
 #include "../../include/game.h"
 #include "../../include/net/client.h"
 
@@ -64,7 +64,9 @@ void game_load_save_data(Game *game, SaveDescriptor save_desc) {
   LOAD_DATA(save_desc, "player", sizeof(Player), byte_buf, {
     Data data_map = byte_buf_read_data(&byte_buf);
     DataMap *player_map = &data_map.var.data_map;
-    Player player = player_new();
+    Player player = {0};
+    player_init(&player);
+    
     player_load(&player, player_map);
     game->client_game->cur_player = player;
     data_free(&data_map);

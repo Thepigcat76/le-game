@@ -50,8 +50,8 @@ void shaders_on_reload(ClientGame *game) {
   if (initial_load) {
     initial_load = false;
   } else {
-    shaders_unload(&game->shader_manager);
+    //shaders_unload(&game->shader_manager);
   }
 
-  shaders_load(&game->shader_manager);
+  //shaders_load(&game->shader_manager);
 }

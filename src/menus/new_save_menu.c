@@ -1,6 +1,7 @@
-#include "../../include/array.h"
-#include "../../include/save_names.h"
+#include "lilc/array.h"
+#include "../../include/save_desc.h"
 #include "menu_includes.h"
+#include <lilc/alloc.h>
 #include <string.h>
 
 static bool save_name_input_selected = true;
@@ -27,11 +28,11 @@ static void new_save_create_world() {
 static void new_save_back_to_start_menu() { client_set_menu(&CLIENT_GAME, MENU_START); }
 
 void new_save_menu_open(UiRenderer *renderer, const ClientGame *game) {
-  char *random_save_name = save_names_random_name();
-  int len = strlen(random_save_name);
-  strcpy(save_name_text_input_buffer.buf, random_save_name);
+  dyn_string_t random_save_name = generate_save_name(&HEAP_ALLOCATOR);
+  int len = random_save_name.len;
+  strcpy(save_name_text_input_buffer.buf, random_save_name.string);
   save_name_text_input_buffer.len = len;
-  free(random_save_name);
+  dyn_string_free(&random_save_name);
 }
 
 void new_save_menu_render(UiRenderer *renderer, const ClientGame *game) {

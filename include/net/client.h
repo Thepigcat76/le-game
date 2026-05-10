@@ -15,13 +15,16 @@
 #include "packet.h"
 #include "queue.h"
 #include "sockets.h"
+#include "../assets.h"
 
 typedef struct _client_game {
+  Camera2D cam;
   MenuId cur_menu;
   bool paused;
+  
   // Managers
-  TextureManager texture_manager;
-  ShaderManager shader_manager;
+  AssetManager asset_manager;
+
   SoundManager sound_manager;
   ParticleManager particle_manager;
   UiRenderer ui_renderer;

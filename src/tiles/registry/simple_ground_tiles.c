@@ -1,6 +1,6 @@
 #include "../../../include/tile.h"
 #include "../../../include/tile/tile_init_helper.h"
-#include "../../../include/log.h"
+#include "lilc/log.h"
 #include <raylib.h>
 
 void empty_tile_init() {
@@ -8,7 +8,7 @@ void empty_tile_init() {
   array_add(TILES,
             (TileType){
                 .id = TILE_EMPTY,
-                .texture = {},
+                //.texture = {},
                 .has_texture = false,
                 .layer = TILE_LAYER_GROUND,
                 .tile_dimensions = dimf(0, 0),

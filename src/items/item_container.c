@@ -1,25 +1,24 @@
 #include "../../include/item/item_container.h"
-#include "../../include/array.h"
+#include "lilc/array.h"
+#include <lilc/alloc.h>
 
-Bump ITEM_CONTAINER_BUMP;
-BUMP_ALLOCATOR(ITEM_CONTAINER_BUMP_ALLOCATOR, &ITEM_CONTAINER_BUMP);
+Bump ITEM_CONTAINER_BUMP = {0};
+static Allocator ITEM_CONTAINER_BUMP_ALLOCATOR = {0};
 
 void _internal_item_container_init(void) {
-  bump_init(&ITEM_CONTAINER_BUMP, malloc(1024 * sizeof(ItemInstance)), 1024 * sizeof(ItemInstance));
+  bump_init(&ITEM_CONTAINER_BUMP, 1024 * sizeof(ItemInstance));
+  bump_allocator_init(&ITEM_CONTAINER_BUMP_ALLOCATOR, &ITEM_CONTAINER_BUMP);
 }
 
-ItemContainer item_container_new(size_t slots) {
-  ItemContainer item_container = {.items = array_new_capacity(ItemInstance, slots, &ITEM_CONTAINER_BUMP_ALLOCATOR),
-                                  .slots = slots};
+void item_container_init(ItemContainer *item_container, size_t slots) {
+  item_container->items = array_new_capacity(ItemInstance, slots, &ITEM_CONTAINER_BUMP_ALLOCATOR);
+  item_container->slots = slots;
   for (int i = 0; i < slots; i++) {
-    array_add(item_container.items, ITEM_INSTANCE_EMPTY);
+    array_add(item_container->items, ITEM_INSTANCE_EMPTY);
   }
-  return item_container;
 }
 
-void item_container_set_item_in_slot(ItemContainer *container, ItemInstance item, size_t slot) {
-  container->items[slot] = item;
-}
+void item_container_set_item_in_slot(ItemContainer *container, ItemInstance item, size_t slot) { container->items[slot] = item; }
 
 void item_container_insert(ItemContainer *container, ItemInstance item) {
   for (size_t i = 0; i < array_len(container->items); i++) {

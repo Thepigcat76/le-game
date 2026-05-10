@@ -7,7 +7,7 @@
 #define COMPILER "clang"
 #define STANDARD "gnu23"
 #define DEBUG true
-#define OUT_NAME "build/goo"
+#define OUT_NAME "build/cozy-wrath"
 
 #define LIB_LILC "lilc"
 #define LIB_RAYLIB "raylib"
@@ -81,6 +81,7 @@ int main(int argc, char **argv) {
       } else {
         systemf("./%s", OUT_NAME);
       }
+    } else if (strcmp(argv[1], "server") == 0) {
     }
   }
 }

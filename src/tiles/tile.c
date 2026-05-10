@@ -1,5 +1,5 @@
 #include "../../include/tile.h"
-#include "../../include/array.h"
+#include "lilc/array.h"
 #include "../../include/game.h"
 #include "../../include/net/client.h"
 #include "../../include/shared.h"
@@ -12,7 +12,6 @@
 // TILE TYPE
 
 static Bump ADV_TILE_BUMP;
-BUMP_ALLOCATOR(ADV_TILE_BUMP_ALLOCATOR, &ADV_TILE_BUMP);
 AdvTileInstance *ADV_TILES;
 
 #define INIT_TILE(src_file_name)                                                                                                           \
@@ -39,7 +38,7 @@ TileType *TILES = NULL;
 size_t TILES_AMOUNT = 0;
 TileInstance TILE_INSTANCE_EMPTY = {0};
 
-AdvTexture ERR_TEXTURE;
+//AdvTexture ERR_TEXTURE;
 
 void tile_types_init() {
   if (TILES == NULL) {
@@ -60,10 +59,10 @@ void tile_types_init() {
 
   TILE_INSTANCE_EMPTY = tile_new(&TILES[TILE_EMPTY]);
 
-  bump_init(&ADV_TILE_BUMP, malloc(256 * sizeof(AdvTileInstance)), 256);
+  bump_init(&ADV_TILE_BUMP, 256 * sizeof(AdvTileInstance));
   ADV_TILES = array_new_capacity(AdvTileInstance, 256, &HEAP_ALLOCATOR);
 
-  ERR_TEXTURE = adv_texture_load("res/assets/err_texture.png");
+//  ERR_TEXTURE = adv_texture_load("res/assets/err_texture.png");
 }
 
 void tile_categories_setup(TileCategoryLookup *lookup) {
@@ -151,17 +150,17 @@ TileInstance tile_new(const TileType *type) {
     Vec2i default_pos = tile_default_sprite_pos();
     int default_sprite_res = tile_default_sprite_resolution();
 
-    tile.cur_sprite_box = type->texture_props.uses_tileset ? rectf(default_pos.x, default_pos.y, default_sprite_res, default_sprite_res)
-                                                           : rectf(0, 0, type->texture.width, type->texture.height);
+    //tile.cur_sprite_box = type->texture_props.uses_tileset ? rectf(default_pos.x, default_pos.y, default_sprite_res, default_sprite_res)
+    //                                                       : rectf(0, 0, type->texture.width, type->texture.height);
     tile.animation_frame = 0;
     if (type->texture_props.has_variants) {
       int max = tile_variants_amount_for_tile(type, 0, 0) - 1;
       if (max >= 0) {
         int r = GetRandomValue(0, max);
-        tile.variant_texture = tile_variants_for_tile(type, 0, 0)[r];
+        //tile.variant_texture = tile_variants_for_tile(type, 0, 0)[r];
       } else {
         // TODO: Properly fix this
-        tile.variant_texture = type->texture;
+        //tile.variant_texture = type->texture;
       }
     }
 
@@ -182,12 +181,12 @@ void tile_instance_debug(const TileInstance *tile, char *buf) {
     strcat(tex_data_buf, ",");
   }
   strcat(tex_data_buf, "]");
-  sprintf(buf,
-          "-- %s --\n  box: {w: %d, h: %d}\n  adv_tile: %p\n  texture_data: %s\n  sprite box: {x: %f, y: %f, w: %f, h: %f}\n  var_texture: "
-          "%s\n  var_index: %d\n  anim_frame: %d",
-          tile_type_to_string(tile->type), tile->box.width, tile->box.height, tile->adv_tile_instance, tex_data_buf, tile->cur_sprite_box.x,
-          tile->cur_sprite_box.y, tile->cur_sprite_box.width, tile->cur_sprite_box.height, tile->variant_texture.path,
-          tile->type->variant_index, tile->animation_frame);
+  //sprintf(buf,
+  //        "-- %s --\n  box: {w: %d, h: %d}\n  adv_tile: %p\n  texture_data: %s\n  sprite box: {x: %f, y: %f, w: %f, h: %f}\n  var_texture: "
+  //        "%s\n  var_index: %d\n  anim_frame: %d",
+  //        tile_type_to_string(tile->type), tile->box.width, tile->box.height, tile->adv_tile_instance, tex_data_buf, tile->cur_sprite_box.x,
+  //        tile->cur_sprite_box.y, tile->cur_sprite_box.width, tile->cur_sprite_box.height, tile->variant_texture.path,
+  //        tile->type->variant_index, tile->animation_frame);
 }
 
 Rectf tile_collision_box_at(const TileInstance *tile, int x, int y) {
@@ -231,19 +230,19 @@ TileInstance tile_break_remainder(const TileInstance *tile, TilePos pos) {
 void tile_render_scaled(TileInstance *tile, int x, int y, float scale) {
   if (tile->type->has_texture) {
     if (tile->type->texture_props.has_variants) {
-      DrawTextureRecEx(adv_texture_to_texture(&tile->variant_texture), tile->cur_sprite_box, vec2f(x, y), 0, scale, WHITE);
+//      DrawTextureRecEx(adv_texture_to_texture(&tile->variant_texture), tile->cur_sprite_box, vec2f(x, y), 0, scale, WHITE);
     } else {
-      Texture2D texture = adv_texture_to_texture(&tile->type->texture);
-      int cur_frame = adv_texture_cur_frame(&tile->type->texture);
-      int frame_height = adv_texture_frame_height(&tile->type->texture);
+//      Texture2D texture = adv_texture_to_texture(&tile->type->texture);
+//      int cur_frame = adv_texture_cur_frame(&tile->type->texture);
+//      int frame_height = adv_texture_frame_height(&tile->type->texture);
       Rectangle sprite_rect = tile->cur_sprite_box;
-      sprite_rect.y += frame_height * cur_frame;
+//      sprite_rect.y += frame_height * cur_frame;
       int offset_x = (tile->type->tile_dimensions.width - TILE_SIZE) / 2;
       int offset_y = tile->type->tile_dimensions.height - TILE_SIZE;
-      if (tile->type->texture.type == TEXTURE_ANIMATED) {
+      //if (tile->type->texture.type == TEXTURE_ANIMATED) {
         // TraceLog(LOG_DEBUG, "height: %d, cur_frame: %d", frame_height, cur_frame);
-      }
-      DrawTextureRecEx(texture, sprite_rect, vec2f(x - offset_x, y - offset_y), 0, scale, WHITE);
+      //}
+//      DrawTextureRecEx(texture, sprite_rect, vec2f(x - offset_x, y - offset_y), 0, scale, WHITE);
 #ifdef DEBUG_BUILD
 #include "../../include/game.h"
       if (CLIENT_GAME.game.debug.options.hitboxes_shown && tile->type->layer == TILE_LAYER_TOP) {
@@ -257,12 +256,12 @@ void tile_render_scaled(TileInstance *tile, int x, int y, float scale) {
 void tile_render(TileInstance *tile, int x, int y, bool dbg) {
   if (tile->type->has_texture) {
     if (tile->type->texture_props.has_variants) {
-      ASSERT(tile->variant_texture.path != NULL, "Tile %s doesnt have variant texture", tile_type_to_string(tile->type));
-      DrawTextureRec(adv_texture_to_texture(&tile->variant_texture), tile->cur_sprite_box, vec2f(x, y), WHITE);
+      //ASSERT(tile->variant_texture.path != NULL, "Tile %s doesnt have variant texture", tile_type_to_string(tile->type));
+      //DrawTextureRec(adv_texture_to_texture(&tile->variant_texture), tile->cur_sprite_box, vec2f(x, y), WHITE);
     } else {
-      Texture2D texture = adv_texture_to_texture(&tile->type->texture);
-      int cur_frame = adv_texture_cur_frame(&tile->type->texture);
-      int frame_height = adv_texture_frame_height(&tile->type->texture);
+      Texture2D texture = {0};//adv_texture_to_texture(&tile->type->texture);
+      int cur_frame = 0; //adv_texture_cur_frame(&tile->type->texture);
+      int frame_height = 0;// adv_texture_frame_height(&tile->type->texture);
       Rectangle sprite_rect = tile->cur_sprite_box;
       sprite_rect.y += frame_height * cur_frame;
       int offset_x = (tile->type->tile_dimensions.width - TILE_SIZE) / 2;
