@@ -21,8 +21,6 @@ typedef struct _game {
   // SAVE SPECIFIC
   Save cur_save;
   // pointers to the fields in the current save
-  Player *client_player;
-  World *client_world;
   // TILE CATEGORIES
   TileCategoryLookup tile_category_lookup;
   // DEBUGGING

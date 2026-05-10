@@ -1,7 +1,7 @@
 #include "../../include/log.h"
-#include "../../include/net/sockets.h"
-#include "../../include/net/server.h"
 #include "../../include/net/client.h"
+#include "../../include/net/server.h"
+#include "../../include/net/sockets.h"
 #include <complex.h>
 #include <pthread.h>
 #include <stdlib.h>
@@ -295,11 +295,10 @@ static void handle_space_sync(PacketS2CSyncSpace *packet, Game *game) {
   game->cur_save = save;
   // Create player
   Player player = player_new();
-  //array_add(game->cur_save.players, player);
+  // array_add(game->cur_save.players, player);
 
-  game->client_world = &game->cur_save.loaded_spaces[0].world;
   // FIXME: Dangerous, since mem location of first element might change
-  //game->client_player = &game->cur_save.players[0];
+  // game->client_player = &game->cur_save.players[0];
   client_init_loaded_save(&CLIENT_GAME, &game->cur_save);
   client_set_menu(&CLIENT_GAME, MENU_NONE);
   CLIENT_GAME.game.save_loaded = true;
@@ -314,8 +313,18 @@ void packet_handle(Packet *packet, Game *game) {
   }
   /* Handled on client */
   case PACKET_S2C_PLAYER_JOIN: {
-    log_info("Welcome from the server");
-    array_add(game->client_game->players, packet->var.s2c_player_join.player);
+    if (packet->var.s2c_player_join.player_id != CLIENT_GAME.player_id) {
+      Player *player = &packet->var.s2c_player_join.player;
+      PlayerRenderDescriptor desc = {.animation_frame = player->animation_frame,
+                                     .frame_timer = player->frame_timer,
+                                     .box = player->box,
+                                     .direction = player->direction,
+                                     .in_water = player->in_water,
+                                     .walking = player->walking};
+      array_add(game->client_game->players, desc);
+    } else {
+      log_info("Welcome from the server");
+    }
     break;
   }
   case PACKET_S2C_SYNC_SPACE: {
@@ -329,13 +338,14 @@ void packet_handle(Packet *packet, Game *game) {
   }
   case PACKET_S2C_CLIENT_ACCEPTED: {
     game->client_game->player_id = packet->var.s2c_client_accepted.player_id;
+    game->client_game->players = array_new_capacity(PlayerRenderDescriptor, 8, &HEAP_ALLOCATOR);
     log_info("Player accepted");
     break;
   }
   /* Handled on server */
   case PACKET_C2S_CLIENT_DISCONNECT: {
     int player_id = packet->var.c2s_client_disconnect.player_id;
-    
+
     size_t i;
     for (i = 0; i < array_len(SERVER_GAME.clients); i++) {
       if (SERVER_GAME.clients[i].player_id == player_id) {

@@ -220,9 +220,6 @@ void tile_calc_sprite_box(TileInstance *tile) {
     same_tile[6] = texture_data[6] == self_id;
     same_tile[7] = texture_data[7] == self_id;
     tile->cur_sprite_box = select_tile(same_tile);
-    log_debug("tile: %s, selected rect: x: %f, y: %f, w: %f, h: %f, top right corner same: %s", tile_type_to_string(tile->type),
-              tile->cur_sprite_box.x, tile->cur_sprite_box.y, tile->cur_sprite_box.width, tile->cur_sprite_box.height,
-              btos(texture_data[2] == self_id));
   }
 }
 

@@ -1,6 +1,7 @@
 #include "../../include/world.h"
 #include "../../include/array.h"
 #include "../../include/being.h"
+#include "../../include/log.h"
 #include "../../include/player.h"
 #include "../../include/data/data_reader.h"
 #include "../../include/game.h"
@@ -232,6 +233,7 @@ bool world_remove_tile(World *world, TilePos tile_pos) {
   Color color = tile->type->tile_props.tile_color;
   ItemType *item_type = tile->type->tile_item;
   if (world_set_tile_on_layer(world, tile_pos, empty_instance, tile->type->layer)) {
+    log_debug("setting tile");
     if (item_type != NULL) {
       world_add_being(world,
                       being_item_new((ItemInstance){.type = *item_type}, (tile_pos.x * TILE_SIZE) + GetRandomValue(-7, 9),
@@ -257,16 +259,14 @@ void world_add_being(World *world, BeingInstance being) {
 }
 
 void world_remove_being(World *world, BeingInstance *being) {
-  for (int i = 0; i < world->beings_amount; i++) {
+  int index = 0;
+  for (size_t i = 0; i < array_len(world->beings); i++) {
     if (world->beings[i].being_instance_id == being->being_instance_id) {
-      // Shift everything after i left by one
-      for (int j = i; j < world->beings_amount - 1; j++) {
-        world->beings[j] = world->beings[j + 1];
-      }
-      world->beings_amount--;
-      return;
+      index = i;
+      break;
     }
   }
+  array_remove(world->beings, index);
 }
 
 void world_prepare_chunk_rendering(World *world, Chunk *chunk) {
@@ -373,8 +373,8 @@ void world_render_layer_top_split(World *world, Rectangle player_box, bool draw_
 }
 
 void world_on_reload(ClientGame *game) {
-  if (game->game.client_world != NULL) {
-    world_prepare_rendering(game->game.client_world);
+  if (CLIENT_WORLD != NULL) {
+    world_prepare_rendering(CLIENT_WORLD);
   }
 }
 
@@ -402,12 +402,12 @@ void world_load(World *world, const DataMap *data) {
   }
   TraceLog(LOG_DEBUG, "Total loaded chunks: %u", chunks);
   world_load_beings(world, data);
-  TraceLog(LOG_DEBUG, "Total loaded beings: %d", world->beings_amount);
+  TraceLog(LOG_DEBUG, "Total loaded beings: %d", array_len(world->beings));
 }
 
 static void world_save_beings(const World *world, DataMap *data) {
-  DataList list = data_list_new(world->beings_amount);
-  for (int i = 0; i < world->beings_amount; i++) {
+  DataList list = data_list_new(array_len(world->beings));
+  for (int i = 0; i < array_len(world->beings); i++) {
     const BeingInstance *instance = &world->beings[i];
     DataMap being_data = data_map_new(10);
     data_map_insert(&being_data, "id", data_int(instance->id));
@@ -430,5 +430,5 @@ void world_save(const World *world, DataMap *data) {
   data_map_insert(data, "chunks", data_list(chunks_list));
   TraceLog(LOG_DEBUG, "Total saved chunks: %zu", array_len(world->chunks));
   world_save_beings(world, data);
-  TraceLog(LOG_DEBUG, "Total saved beings: %d", world->beings_amount);
+  TraceLog(LOG_DEBUG, "Total saved beings: %d", array_len(world->beings));
 }

@@ -40,53 +40,54 @@
 void game_load_save_data(Game *game, SaveDescriptor save_desc) {
   Save save = save_new(save_desc);
 
-  if (save_desc.is_server_save) {
-    size_t saved_players = 0;
-    DIR_ITER("server-save/players", entry, {
-      if (strncmp(entry->d_name, "player-", strlen("player-")) == 0) {
-        saved_players++;
-      }
-    });
+  //  if (save_desc.is_server_save) {
+  //    size_t saved_players = 0;
+  //    DIR_ITER("server-save/players", entry, {
+  //      if (strncmp(entry->d_name, "player-", strlen("player-")) == 0) {
+  //        saved_players++;
+  //      }
+  //    });
+  //
+  //    game->client_game->cur_player;
+  //
+  //    for (size_t i = 0; i < saved_players; i++) {
+  //      char dir_buf[256];
+  //      sprintf(dir_buf, "players/player-%zu", i);
+  //      LOAD_DATA(save_desc, dir_buf, sizeof(Player), byte_buf, {
+  //        Data data_map = byte_buf_read_data(&byte_buf);
+  //        DataMap *player_map = &data_map.var.data_map;
+  //        player_load(&save.players[i], player_map);
+  //        data_free(&data_map);
+  //      });
+  //    }
+  //  } else {
+  LOAD_DATA(save_desc, "player", sizeof(Player), byte_buf, {
+    Data data_map = byte_buf_read_data(&byte_buf);
+    DataMap *player_map = &data_map.var.data_map;
+    Player player = player_new();
+    player_load(&player, player_map);
+    game->client_game->cur_player = player;
+    data_free(&data_map);
+  });
+  //  }
 
-    // array_fill(save.players, saved_players, (Player){});
+  // Load the save's spaces
+  save_load_spaces(&save);
 
-    //    for (size_t i = 0; i < saved_players; i++) {
-    //      char dir_buf[256];
-    //      sprintf(dir_buf, "players/player-%zu", i);
-    //      LOAD_DATA(save_desc, dir_buf, sizeof(Player), byte_buf, {
-    //        Data data_map = byte_buf_read_data(&byte_buf);
-    //        DataMap *player_map = &data_map.var.data_map;
-    //        player_load(&save.players[i], player_map);
-    //        data_free(&data_map);
-    //      });
-    //    }
-    //  } else {
-    //    LOAD_DATA(save_desc, "player", sizeof(Player), byte_buf, {
-    //      Data data_map = byte_buf_read_data(&byte_buf);
-    //      DataMap *player_map = &data_map.var.data_map;
-    //      Player player;
-    //      player_load(&player, player_map);
-    //      array_add(save.players, player);
-    //      data_free(&data_map);
-    //    });
-    //  }
+  if (array_len(save.spaces) == 0)
+    PANIC_FMT("Failed to get spaces, non exist :(");
 
-    // Load the save's spaces
-    save_load_spaces(&save);
+  // TODO: Load into the space that the player last played
+  Space space;
+  space_create(save.spaces[0], save_desc.config.seed, &space);
+  space_load(save_desc, space.desc, &space);
+  array_add(save.loaded_spaces, space);
 
-    if (array_len(save.spaces) == 0)
-      PANIC_FMT("Failed to get spaces, non exist :(");
-
-    // TODO: Load into the space that the player last played
-    Space space;
-    space_create(save.spaces[0], save_desc.config.seed, &space);
-    space_load(save_desc, space.desc, &space);
-    array_add(save.loaded_spaces, space);
-
-    game->cur_save = save;
-    // game->cur_save.cur_space = &game->cur_save.loaded_spaces[0];
-  }
+  game->cur_save = save;
+  game->client_game->world = &game->cur_save.loaded_spaces[0].world;
+  // game->cur_save.cur_space = &game->cur_save.loaded_spaces[0];
 }
+
 
 // UNLOAD
 

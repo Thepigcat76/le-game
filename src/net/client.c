@@ -24,7 +24,7 @@ BUMP_ALLOCATOR(SOUND_BUMP_ALLOCATOR, &SOUND_BUMP);
 
 // Uses null at the end to terminate
 static const char *TEXTURE_MANAGER_TEXTURE_PATHS[TEXTURE_MANAGER_TEXTURES_AMOUNT + 1] = {
-    "cursor", "gui/tool_tip", "breaking_overlay", "gui/slot", "gui/ok", "gui/err", NULL};
+    "cursor", "cursor_fist", "gui/tool_tip", "breaking_overlay", "gui/slot", "gui/ok", "gui/err", NULL};
 
 static void client_game_start(void);
 
@@ -54,7 +54,6 @@ static void *client_game(void *args) {
   game_init(&CLIENT_GAME.game);
   CLIENT_GAME.game.client_game = &CLIENT_GAME;
   CLIENT_GAME.cur_save = &CLIENT_GAME.game.cur_save;
-  CLIENT_GAME.world = CLIENT_GAME.game.client_world;
 
   Game *game = &CLIENT_GAME.game;
 
@@ -106,7 +105,7 @@ static void *client_game(void *args) {
         }
       }
       pthread_mutex_unlock(&CLIENT_MUTEX);
-      if (game->client_world != NULL) {
+      if (CLIENT_WORLD != NULL) {
         // printf("Placing tile\n");
         // GAME.world->chunks[0].tiles[0][0][TILE_LAYER_GROUND] = tile_new(&TILES[TILE_GRASS]);
         // world_place_tile(GAME.world, vec2i(0, 0), tile_new(&TILES[TILE_GRASS]));
@@ -178,7 +177,7 @@ void client_start(void) {
   pthread_join(packet_listener_thread, NULL);
 }
 
-void client_init(ClientGame *game) {
+void client_init(ClientGame *client) {
   pthread_mutex_lock(&CLIENT_MUTEX);
   {
     queue_init(&CLIENT_CONNECTION.queue);
@@ -187,25 +186,26 @@ void client_init(ClientGame *game) {
 
   int window_width = GetScreenWidth();
   int window_height = GetScreenHeight();
-  game->cur_menu = MENU_START;
-  game->paused = false;
-  game->world_texture = LoadRenderTexture(window_width, window_height);
-  game->local_saves = array_new_capacity(SaveDescriptor, 64, &HEAP_ALLOCATOR);
-  game->window = (Window){.prev_width = window_height, .prev_height = window_height, .width = window_width, .height = window_height};
-  game->ui_renderer = ui_renderer_new();
-  game->players = array_new_capacity(Player, 12, &HEAP_ALLOCATOR);
+  client->cur_menu = MENU_START;
+  client->paused = false;
+  client->world_texture = LoadRenderTexture(window_width, window_height);
+  client->local_saves = array_new_capacity(SaveDescriptor, 64, &HEAP_ALLOCATOR);
+  client->window = (Window){.prev_width = window_height, .prev_height = window_height, .width = window_width, .height = window_height};
+  client->ui_renderer = ui_renderer_new();
+  client->players = NULL;
 
-  client_init_menu(game);
+  client_init_menu(client);
 
   bump_init(&SOUND_BUMP, malloc(sizeof(Sound) * 1000), sizeof(Sound) * 1000);
 
-  game->sound_manager.sound_buffers[SOUND_PLACE].base_sound = LoadSound("res/sounds/place_sound.wav");
-  game->sound_manager.sound_buffers[SOUND_PLACE].sound_buf = array_new_capacity(Sound, SOUND_BUFFER_LIMIT, &SOUND_BUMP_ALLOCATOR);
+  client->sound_manager.sound_buffers[SOUND_PLACE].base_sound = LoadSound("res/sounds/place_sound.wav");
+  client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf = array_new_capacity(Sound, SOUND_BUFFER_LIMIT, &SOUND_BUMP_ALLOCATOR);
 
   for (int i = 0; i < SOUND_BUFFER_LIMIT; i++) {
-    game->sound_manager.sound_buffers[SOUND_PLACE].sound_buf[i] = LoadSoundAlias(game->sound_manager.sound_buffers[SOUND_PLACE].base_sound);
-    SetSoundPitch(game->sound_manager.sound_buffers[SOUND_PLACE].sound_buf[i], 0.5);
-    SetSoundVolume(game->sound_manager.sound_buffers[SOUND_PLACE].sound_buf[i], 0.25);
+    client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf[i] =
+        LoadSoundAlias(client->sound_manager.sound_buffers[SOUND_PLACE].base_sound);
+    SetSoundPitch(client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf[i], 0.5);
+    SetSoundVolume(client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf[i], 0.25);
   }
 
   MUSIC = LoadMusicStream("res/music/main_menu_music.ogg");
@@ -214,7 +214,7 @@ void client_init(ClientGame *game) {
   // PlayMusicStream(MUSIC);
 
   for (int i = 0; TEXTURE_MANAGER_TEXTURE_PATHS[i] != NULL; i++) {
-    game->texture_manager.textures[i] = LoadTexture(TextFormat("res/assets/%s.png", TEXTURE_MANAGER_TEXTURE_PATHS[i]));
+    client->texture_manager.textures[i] = LoadTexture(TextFormat("res/assets/%s.png", TEXTURE_MANAGER_TEXTURE_PATHS[i]));
   }
 }
 
@@ -328,10 +328,11 @@ void client_set_menu(ClientGame *game, MenuId menu_id) {
   client_open_menu(game, menu_id);
 }
 
-bool client_cur_menu_hides_game(ClientGame *game) {
-  return game->cur_menu == MENU_START || game->cur_menu == MENU_NEW_SAVE || game->cur_menu == MENU_LOAD_SAVE ||
-      game->cur_menu == MENU_MULTIPLAYER || game->cur_menu == MENU_HOST_SERVER;
+bool client_menu_hides_game(ClientGame *game, MenuId menu) {
+  return menu == MENU_START || menu == MENU_NEW_SAVE || menu == MENU_LOAD_SAVE || menu == MENU_MULTIPLAYER || menu == MENU_HOST_SERVER;
 }
+
+bool client_menu_is_container(ClientGame *game, MenuId menu) { return menu == MENU_INVENTORY || menu == MENU_BACKPACK; }
 
 static bool inv_slot_selected() {
   Rectangle slot_rect = {
@@ -360,7 +361,20 @@ static void client_poll_keybinds(ClientGame *client) {
   KEY_DOWN(open_close_inventory_key);
 }
 
-static void start_packet_listener() {}
+bool cursor_can_interact_with_tile(ClientGame *game, TileInstance *tile) {
+  if (tile == NULL || tile->type == TILE_INSTANCE_EMPTY.type)
+    return false;
+
+  Player *p = &game->cur_player;
+  bool correct_tool_for_tile = item_tool_correct_for_tile(&p->held_item, tile, &game->game.tile_category_lookup);
+  return correct_tool_for_tile;
+}
+
+bool cursor_can_interact_with_being(ClientGame *game, BeingInstance *being) {
+  if (being == NULL)
+    return false;
+  return false;
+}
 
 addr_t client_join_server(ClientGame *game, const char *ip_addr, uint32_t port) {
   if (!game->connected_to_server) {

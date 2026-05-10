@@ -1,15 +1,9 @@
-#include "../include/alloc.h"
 #include "../include/net/client.h"
 #include "../include/net/server.h"
-#include "../include/game.h"
 #include "../include/shared.h"
-#include "rlgl.h"
 #include <stdbool.h>
 
 int main(int argc, char **argv) {
-  // TODO: Make allocators multithreaded
-  alloc_init();
-
   bool server = argc > 1 && str_eq(argv[1], "--server");
 
   GAME_SIDE = server ? SIDE_SERVER : SIDE_CLIENT;
@@ -27,5 +21,4 @@ int main(int argc, char **argv) {
   } else {
     client_start();
   }
-  
 }

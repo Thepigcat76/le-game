@@ -23,7 +23,6 @@ typedef struct _world {
   ChunkLookup chunk_lookup;
   // TODO: Use dynamic array for beings
   struct _being_instance *beings;
-  int beings_amount;
   bool initialized;
   bool clientside;
   float seed;

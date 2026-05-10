@@ -2,6 +2,7 @@
 #include "../include/config.h"
 #include "../include/game.h"
 #include "../include/keys.h"
+#include "../include/array.h"
 #include "../include/net/client.h"
 #include "raylib.h"
 #include "rlgl.h"
@@ -29,7 +30,7 @@ static void debug_render_game_object_overlay(Debug *debug) {
       Rectf item_box = rectf(x, y, item.type.texture.width * scale, item.type.texture.height * scale);
       rec_draw_outline(item_box, WHITE);
       if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && CheckCollisionPointRec(GetMousePosition(), item_box)) {
-        debug->game->client_player->held_item = item;
+        CLIENT_PLAYER->held_item = item;
       }
     }
     break;
@@ -90,19 +91,19 @@ void debug_render_overlay(Debug *debug) {
 
 void debug_render(Debug *debug) {
   if (debug->game->debug.options.hitboxes_shown) {
-    Rectangle player_hitbox = player_collision_box(debug->game->client_player);
+    Rectangle player_hitbox = player_collision_box(CLIENT_PLAYER);
     rec_draw_outline(player_hitbox, BLUE);
-    rec_draw_outline(rectf(debug->game->client_player->tile_pos.x * TILE_SIZE, debug->game->client_player->tile_pos.y * TILE_SIZE, 16, 16),
+    rec_draw_outline(rectf(CLIENT_PLAYER->tile_pos.x * TILE_SIZE, CLIENT_PLAYER->tile_pos.y * TILE_SIZE, 16, 16),
                      RED);
 
-    for (int i = 0; i < debug->game->client_world->beings_amount; i++) {
-      rec_draw_outline(debug->game->client_world->beings[i].context.box, WHITE);
+    for (int i = 0; i < array_len(CLIENT_WORLD->beings); i++) {
+      rec_draw_outline(CLIENT_WORLD->beings[i].context.box, WHITE);
     }
   }
 
   if (debug->game->client_game->cur_menu == MENU_DEBUG) {
     int id = debug->debug_controlled_being_id;
-    BeingBrain brain = debug->game->client_world->beings[id].brain;
+    BeingBrain brain = CLIENT_WORLD->beings[id].brain;
     // if (brain.activities_amount > 0) {
     //   BeingActivityWalkAround wa_activity = brain.activities[0].var.activity_walk_around;
     //   DrawCircleV(wa_activity.cur_target_pos, 8, WHITE);
@@ -121,7 +122,7 @@ void debug_tick(Debug *debug) {
   }
 
   if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON) && debug->game->client_game->cur_menu == MENU_DEBUG) {
-    BeingInstance *being = &debug->game->client_world->beings[debug->debug_controlled_being_id];
+    BeingInstance *being = &CLIENT_WORLD->beings[debug->debug_controlled_being_id];
     being_brain_reset(being);
     being_activities_add_walk_around(being, debug->debug_go_to_pos);
     TraceLog(LOG_DEBUG, "Added activity");

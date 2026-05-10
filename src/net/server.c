@@ -192,7 +192,9 @@ static void *server_player_listener(void *args) {
 
       packet_send(client_fd, PACKET_S2C_CLIENT_ACCEPTED_NEW({.player_id = player_id}), false);
 
-      packet_send(client_fd, PACKET_S2C_PLAYER_JOIN_NEW({.player_id = client_fd, .player = player_new()}), false);
+      for (size_t i = 0; i < array_len(SERVER_GAME.clients); i++) {
+        packet_send(SERVER_GAME.clients[i].address, PACKET_S2C_PLAYER_JOIN_NEW({.player_id = player_id, .player = player_new()}), false);
+      }
     }
     pthread_mutex_unlock(&SERVER_MUTEX);
   }

@@ -1,6 +1,7 @@
 #include "../../include/array.h"
 #include "../../include/game.h"
 #include "../../include/log.h"
+#include "../../include/net/client.h"
 #include <raylib.h>
 
 void client_setup_raylib(void) {
@@ -38,7 +39,7 @@ void game_deinit(Game *game) {
   free(GLOBAL_BUMP.buffer);
 
   if (game->save_loaded) {
-    array_free(game->client_world->chunks);
+    array_free(CLIENT_WORLD->chunks);
   }
   
   free(ITEM_CONTAINER_BUMP.buffer);

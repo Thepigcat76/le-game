@@ -51,9 +51,6 @@ void client_render_overlay(ClientGame *client) {
                mouse_pos.y + y_offset + (CONFIG.default_font_size * (i + 1)), CONFIG.default_font_size, WHITE);
     }
   }
-
-  item_render(&CLIENT_PLAYER->dragged_item, mouse_pos.x - 16, mouse_pos.y - 16);
-
 }
 
 void client_render_menu(ClientGame *client) {

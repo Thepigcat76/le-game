@@ -1,5 +1,6 @@
-#include "../include/game.h"
 #include "../include/array.h"
+#include "../include/game.h"
+#include "../include/net/client.h"
 #include <dirent.h>
 #include <raylib.h>
 #include <stdint.h>
@@ -36,5 +37,5 @@ void game_enter_space(Game *game, SpaceDescriptor desc) {
   array_add(game->cur_save.spaces, desc);
   array_add(game->cur_save.loaded_spaces, space);
   Space *new_space = &game->cur_save.loaded_spaces[array_len(game->cur_save.loaded_spaces) - 1];
-  game->client_world = &new_space->world;
+  CLIENT_GAME.world = &new_space->world;
 }

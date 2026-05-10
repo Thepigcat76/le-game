@@ -12,14 +12,9 @@
 #include "../ui.h"
 #include "../window.h"
 #include "../world.h"
-#include "common.h"
 #include "packet.h"
 #include "queue.h"
 #include "sockets.h"
-
-typedef struct {
-  PlayerDescriptor *server_players;
-} ServerData;
 
 typedef struct _client_game {
   MenuId cur_menu;
@@ -35,6 +30,7 @@ typedef struct _client_game {
   bool slot_selected;
   PressedKeys pressed_keys;
   TileInstance *hovered_tile;
+  BeingInstance *hovered_being;
   bool singleplayer;
   // Saves
   // These are saves that are actually stored on disk
@@ -48,7 +44,7 @@ typedef struct _client_game {
   // world and player usually stored
   // in CLIENT_GAME.cur_save
   World *world;
-  Player *players;
+  PlayerRenderDescriptor *players;
   Player cur_player;
   int player_id;
   addr_t server_addr;
@@ -67,6 +63,8 @@ extern pthread_mutex_t CLIENT_MUTEX;
 extern pthread_cond_t CLIENT_COND;
 
 #define CLIENT_PLAYER (&CLIENT_GAME.cur_player)
+
+#define CLIENT_WORLD (CLIENT_GAME.world)
 
 void client_start(void);
 
@@ -97,7 +95,9 @@ void client_reload(ClientGame *game);
 
 void client_init_menu(ClientGame *game);
 
-bool client_cur_menu_hides_game(ClientGame *game);
+bool client_menu_hides_game(ClientGame *game, MenuId menu);
+
+bool client_menu_is_container(ClientGame *game, MenuId menu);
 
 void client_render_menu(ClientGame *game);
 
@@ -108,6 +108,12 @@ void client_set_menu(ClientGame *game, MenuId menu_id);
 void client_render(ClientGame *game, float alpha);
 
 void client_render_overlay(ClientGame *game);
+
+// CURSOR
+
+bool cursor_can_interact_with_tile(ClientGame *game, TileInstance *tile);
+
+bool cursor_can_interact_with_being(ClientGame *game, BeingInstance *being);
 
 // PARTICLES
 

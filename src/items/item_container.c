@@ -21,6 +21,15 @@ void item_container_set_item_in_slot(ItemContainer *container, ItemInstance item
   container->items[slot] = item;
 }
 
+void item_container_insert(ItemContainer *container, ItemInstance item) {
+  for (size_t i = 0; i < array_len(container->items); i++) {
+    if (item_is_empty(&container->items[i])) {
+      item_container_set_item_in_slot(container, item, i);
+      break;
+    }
+  }
+}
+
 // TODO: Might want to just write a data list
 void item_container_save(const ItemContainer *item_container, DataMap *data) {
   DataList data_list_items = data_list_new(item_container->slots);

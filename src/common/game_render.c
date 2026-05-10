@@ -1,7 +1,8 @@
+#include "../../include/array.h"
 #include "../../include/config.h"
 #include "../../include/game.h"
-#include "../../include/net/client.h"
 #include "../../include/log.h"
+#include "../../include/net/client.h"
 #include <math.h>
 #include <raylib.h>
 
@@ -16,6 +17,15 @@ static void game_render_break_progress(ClientGame *client, TilePos break_pos, in
   }
 }
 
+static void client_render_beings(ClientGame *client) {
+  for (int i = 0; i < array_len(client->world->beings); i++) {
+    if (CheckCollisionPointRec(GetMousePosition(), client->world->beings[i].context.box)) {
+      client->hovered_being = &client->world->beings[i];
+    }
+    being_render(&client->world->beings[i]);
+  }
+}
+
 void client_world_render(ClientGame *client, float alpha) {
   Vec2f mouse_pos = GetMousePosition();
   Vec2f mouse_world_pos = GetScreenToWorld2D(mouse_pos, CLIENT_PLAYER->cam);
@@ -24,9 +34,7 @@ void client_world_render(ClientGame *client, float alpha) {
 
   world_render_layer_top_split(client->world, CLIENT_PLAYER->box, true);
 
-  for (int i = 0; i < client->world->beings_amount; i++) {
-    being_render(&client->world->beings[i]);
-  }
+  client_render_beings(client);
 
   client_render_particles(client, true);
 
@@ -40,7 +48,7 @@ void client_world_render(ClientGame *client, float alpha) {
   world_render_layer_top_split(client->world, CLIENT_PLAYER->box, false);
 
   if (CLIENT_PLAYER != NULL) {
-    //log_debug("Slay");
+    // log_debug("Slay");
     if (CLIENT_PLAYER->break_tile != NULL) {
       game_render_break_progress(client, CLIENT_PLAYER->break_tile_pos, CLIENT_PLAYER->break_tile->type->tile_props.break_time,
                                  CLIENT_PLAYER->break_progress);
@@ -74,12 +82,12 @@ void client_render(ClientGame *client, float alpha) {
   {
     ClearBackground(DARKGRAY);
 
-    Vector2 mousePos = GetMousePosition();
+    Vec2f mouse_pos = GetMousePosition();
     if (client->world != NULL) {
       Camera2D *cam = &CLIENT_PLAYER->cam;
 
-      Vector2 mouse_world_pos = GetScreenToWorld2D(mousePos, *cam);
-      Vector2 light_pos = {(mousePos.x / GetScreenWidth()), 1.0 - (mousePos.y / GetScreenHeight())};
+      Vector2 mouse_world_pos = GetScreenToWorld2D(mouse_pos, *cam);
+      Vector2 light_pos = {(mouse_pos.x / GetScreenWidth()), 1.0 - (mouse_pos.y / GetScreenHeight())};
 
       Vector3 light_color = {1.0f, 1.0f, 0.8f}; // warm white
       float light_radius = 0;
@@ -100,8 +108,8 @@ void client_render(ClientGame *client, float alpha) {
         BeginMode2D(*cam);
         {
           ClearBackground(DARKGRAY);
-
-          if (!client_cur_menu_hides_game(client)) {
+          if (!client_menu_hides_game(client, client->cur_menu)) {
+            log_debug("Rendering client world");
             client_world_render(client, alpha);
 
             // TODO: MOVE TO GAME RENDER FUNCTION
@@ -119,7 +127,7 @@ void client_render(ClientGame *client, float alpha) {
       }
       EndTextureMode();
 
-      if (!client_cur_menu_hides_game(client)) {
+      if (!client_menu_hides_game(client, client->cur_menu)) {
         // RENDER WORLD
         BeginShaderMode(lighting_shader);
         {
@@ -130,7 +138,7 @@ void client_render(ClientGame *client, float alpha) {
         EndShaderMode();
       }
 
-      if (!client_cur_menu_hides_game(client)) {
+      if (!client_menu_hides_game(client, client->cur_menu)) {
         client_render_overlay(client);
       }
     }
@@ -139,8 +147,19 @@ void client_render(ClientGame *client, float alpha) {
 
     client_render_menu(client);
 
+    bool can_cursor_interact_with_tile = cursor_can_interact_with_tile(client, client->hovered_tile);
+    bool can_cursor_interact_with_being = cursor_can_interact_with_being(client, client->hovered_being);
+
     float scale = 3;
-    DrawTextureEx(client->texture_manager.textures[TEXTURE_CURSOR], (Vector2){.x = mousePos.x, .y = mousePos.y}, 0, scale, WHITE);
+    DrawTextureEx(client->texture_manager
+                      .textures[can_cursor_interact_with_tile || can_cursor_interact_with_being ? TEXTURE_CURSOR_FIST : TEXTURE_CURSOR],
+                  (Vector2){.x = mouse_pos.x, .y = mouse_pos.y}, 0, scale, WHITE);
+
+    if (client_menu_is_container(client, client->cur_menu) && !item_is_empty(&CLIENT_PLAYER->dragged_item)) {
+      item_render(&CLIENT_PLAYER->dragged_item, mouse_pos.x - 22, mouse_pos.y - 22);
+    } else if (can_cursor_interact_with_tile) {
+      item_render(&CLIENT_PLAYER->held_item, mouse_pos.x - 22, mouse_pos.y - 22);
+    }
   }
 
   EndDrawing();

@@ -1,9 +1,9 @@
 #include "../include/player.h"
 #include "../include/camera.h"
 #include "../include/config.h"
-#include "../include/net/client.h"
 #include "../include/game.h"
 #include "../include/log.h"
+#include "../include/net/client.h"
 #include "../include/shared.h"
 #include "math.h"
 #include <raylib.h>
@@ -35,7 +35,7 @@ Player player_new(void) {
                   .animation_frame = 0,
                   .frame_timer = 0,
                   .held_item = {.type = ITEMS[ITEM_SHOVEL]},
-                  .dragged_item = {.type = ITEMS[ITEM_DIRT]},
+                  .dragged_item = ITEM_INSTANCE_EMPTY,
                   .box = {.x = 0, .y = 20, .width = 16, .height = 8},
                   .chunk_pos = vec2i(0, 0),
                   .tile_pos = vec2i(0, 0),
@@ -45,7 +45,7 @@ Player player_new(void) {
                   .inv_container = item_container_new(9)};
 }
 
-static Texture2D player_get_texture(Player *player) {
+static Texture2D player_get_texture(PlayerRenderDescriptor *player) {
   Texture2D *textures;
   if (player->walking) {
     textures = player_walking_textures;
@@ -58,7 +58,7 @@ static Texture2D player_get_texture(Player *player) {
 
 Vector2 player_pos(const Player *player) { return (Vector2){.x = player->box.x, .y = player->box.y}; }
 
-static void update_animation(Player *player, float deltaTime) {
+static void update_animation(PlayerRenderDescriptor *player, float deltaTime) {
   player->frame_timer += deltaTime * 1000.0f; // to ms
   float delay = 125;
   if (player->frame_timer >= delay) {
@@ -75,20 +75,7 @@ void player_tick(Player *player) {
   player->prev_cam_pos.y = player->cur_cam_pos.y;
 }
 
-void player_render(Player *player, float alpha) {
-  // TODO: This is a bit sus, ngl
-  float draw_x = lerpf(player->prev_box_pos.x, player->cur_box_pos.x, alpha);
-  float draw_y = lerpf(player->prev_box_pos.y, player->cur_box_pos.y, alpha);
-
-  player->box.x = draw_x;
-  player->box.y = draw_y;
-
-  float cam_x = lerpf(player->prev_cam_pos.x, player->cur_cam_pos.x, alpha);
-  float cam_y = lerpf(player->prev_cam_pos.y, player->cur_cam_pos.y, alpha);
-
-  player->cam.target.x = cam_x;
-  player->cam.target.y = cam_y;
-
+static void player_render_texture(PlayerRenderDescriptor *player) {
   double scale = 1;
   Texture2D player_texture = player_get_texture(player);
   DrawTexturePro(player_texture, (Rectangle){0, player->walking ? 32 * player->animation_frame : 32, 16, player->in_water ? 24 : 32},
@@ -97,9 +84,41 @@ void player_render(Player *player, float alpha) {
                              .width = 16 * scale,
                              .height = (player->in_water ? 24 : 32) * scale},
                  (Vector2){.x = 8 * scale, .y = 16 * scale}, 0, WHITE);
+}
+
+void player_render_from_desc(PlayerRenderDescriptor *player, float delta) {
+  player_render_texture(player);
+  
+  if (player->walking) {
+    update_animation(player, delta);
+  }
+}
+
+void player_render(Player *player, float delta) {
+  PlayerRenderDescriptor render_descriptor = {.animation_frame = player->animation_frame,
+                                              .frame_timer = player->frame_timer,
+                                              .box = player->box,
+                                              .direction = player->direction,
+                                              .in_water = player->in_water,
+                                              .walking = player->walking};
+
+  // TODO: This is a bit sus, ngl
+  float draw_x = lerpf(player->prev_box_pos.x, player->cur_box_pos.x, delta);
+  float draw_y = lerpf(player->prev_box_pos.y, player->cur_box_pos.y, delta);
+
+  player->box.x = draw_x;
+  player->box.y = draw_y;
+
+  float cam_x = lerpf(player->prev_cam_pos.x, player->cur_cam_pos.x, delta);
+  float cam_y = lerpf(player->prev_cam_pos.y, player->cur_cam_pos.y, delta);
+
+  player->cam.target.x = cam_x;
+  player->cam.target.y = cam_y;
+
+  player_render_texture(&render_descriptor);
 
   if (player->walking) {
-    update_animation(player, GetFrameTime());
+    update_animation(&render_descriptor, GetFrameTime());
   }
 }
 
@@ -107,7 +126,7 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool
   log_debug("setting position, x: %f, y: %f", x, y);
 
   if (check_for_water) {
-    player->in_water = world_ground_tile_at(CLIENT_GAME.game.client_world, player->tile_pos)->type->id == TILE_WATER;
+    player->in_water = world_ground_tile_at(CLIENT_WORLD, player->tile_pos)->type->id == TILE_WATER;
     if (player->in_water) {
       x -= (x - player->box.x) / 2;
       y -= (y - player->box.y) / 2;
@@ -126,7 +145,7 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool
   player->chunk_pos.x = floor_div(x, CHUNK_SIZE * TILE_SIZE);
   player->chunk_pos.y = floor_div(y, CHUNK_SIZE * TILE_SIZE);
 
-  World *world = CLIENT_GAME.game.client_world;
+  World *world = CLIENT_WORLD;
   if (update_chunk && !world_has_chunk_at(world, player->chunk_pos)) {
     world_gen_chunk_at(world, player->chunk_pos);
 
@@ -137,7 +156,7 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool
   }
 
   if (walking_particles && GetRandomValue(0, 4) == 0) {
-    TileInstance *tile = world_ground_tile_at(CLIENT_GAME.game.client_world, player->tile_pos);
+    TileInstance *tile = world_ground_tile_at(CLIENT_WORLD, player->tile_pos);
     ParticleInstance *particle = client_emit_particle(
         &CLIENT_GAME, x + GetRandomValue(-5, 7), y + GetRandomValue(-5, 7) + 27, PARTICLE_WALKING,
         (ParticleInstanceEx){.type = PARTICLE_INSTANCE_WALKING,
@@ -197,7 +216,7 @@ static void check_collisions(const Player *player, Vec2f *player_pos, Vec2f play
   for (int y = -1; y <= 1; y++) {
     for (int x = -1; x <= 1; x++) {
       TilePos tile_pos = vec2i(player_tile_pos.x + x, player_tile_pos.y + y);
-      TileInstance *tile = world_tile_at(CLIENT_GAME.game.client_world, tile_pos, TILE_LAYER_TOP);
+      TileInstance *tile = world_tile_at(CLIENT_WORLD, tile_pos, TILE_LAYER_TOP);
       if (tile->type->id != TILE_EMPTY) {
         Rectf tile_box = tile_collision_box_at(tile, tile_pos.x * TILE_SIZE, tile_pos.y * TILE_SIZE);
 

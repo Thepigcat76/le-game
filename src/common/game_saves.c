@@ -77,8 +77,7 @@ void game_unload_save(Game *game) {
   }
 
   bump_reset(&ITEM_CONTAINER_BUMP);
-  game->client_world = NULL;
-  game->client_player = NULL;
+  game->client_game->world = NULL;
 }
 
 static void game_create_save_config_file(Game *game, SaveConfig config) {
@@ -143,6 +142,5 @@ void game_create_save(Game *game, SaveDescriptor save_desc) {
   array_add(game->cur_save.loaded_spaces, default_space);
   // game->cur_save.cur_space = &game->cur_save.loaded_spaces[0];
   // FIXME: Highly sus
-  game->client_world = &game->cur_save.loaded_spaces[0].world;
-  game->client_player = &game->client_game->cur_player;
+  game->client_game->world = &game->cur_save.loaded_spaces[0].world;
 }

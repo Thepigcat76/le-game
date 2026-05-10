@@ -16,6 +16,8 @@ ItemContainer item_container_new(size_t slots);
 
 void item_container_set_item_in_slot(ItemContainer *container, ItemInstance item, size_t slot);
 
+void item_container_insert(ItemContainer *container, ItemInstance item);
+
 void item_container_save(const ItemContainer *item_container, DataMap *data);
 
 void item_container_load(ItemContainer *item_container, const DataMap *data);

@@ -38,6 +38,15 @@ typedef struct _player {
   ItemContainer inv_container;
 } Player;
 
+typedef struct {
+  Rectf box;
+  Direction direction;
+  int animation_frame;
+  int frame_timer;
+  bool walking;
+  bool in_water;
+} PlayerRenderDescriptor;
+
 Player player_new(void);
 
 Rectf player_collision_box(const Player *player);
@@ -45,6 +54,8 @@ Rectf player_collision_box(const Player *player);
 void player_tick(Player *player);
 
 void player_render(Player *player, float alpha);
+
+void player_render_from_desc(PlayerRenderDescriptor *player, float delta);
 
 void player_set_pos(Player *player, float x, float y);
 
