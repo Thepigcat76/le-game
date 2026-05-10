@@ -1,4 +1,6 @@
 #include "../../include/item.h"
+#include "../../include/assets.h"
+#include "../../include/net/client.h"
 #include "../../include/data.h"
 #include <raylib.h>
 #include <stdio.h>
@@ -22,7 +24,7 @@ void item_types_init() {
   ITEM_INSTANCE_EMPTY = (ItemInstance){.type = ITEMS[ITEM_EMPTY]};
 }
 
-void item_render(const ItemInstance *item, int x, int y) { DrawTextureEx(item->type.texture, (Vector2){.x = x, .y = y}, 0, 3.5, WHITE); }
+void item_render(const ItemInstance *item, int x, int y) { DrawTextureEx(tex_by_id(&CLIENT_GAME.asset_manager, item->type.texture), (Vector2){.x = x, .y = y}, 0, 3.5, WHITE); }
 
 char *item_type_to_string(const ItemType *type) {
   if (type == NULL) return "ITEM TYPE IS NULL";

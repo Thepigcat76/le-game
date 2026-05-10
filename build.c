@@ -26,6 +26,7 @@
 #define TARGET_WINDOWS "TARGET_WIN"
 
 static Cmd cmd = {0};
+static bool compile_error = false;
 
 static void visit_entry(struct file_entry entry) {
   if (entry.file_ext == NULL || strcmp(entry.file_ext, "c") != 0) return;
@@ -52,9 +53,11 @@ static void visit_entry(struct file_entry entry) {
   sprintf(build_path, "./build/%s.o", entry.path + 4);
   ensure_parent_dirs(build_path, 0755);
 
-  printf("Compiling: %s\n", entry.path);
+  //printf("Compiling: %s\n", entry.path);
 
-  cmd_execute(&compile_cmd);
+  if (cmd_execute(&compile_cmd) != 0) {
+    compile_error = true;
+  }
 }
 
 static void visit_obj_entry(struct file_entry entry) {
@@ -64,8 +67,12 @@ static void visit_obj_entry(struct file_entry entry) {
 }
 
 int main(int argc, char **argv) {
+  remove(OUT_NAME);
+
   // Adding src files
   walk_dir("src", visit_entry);
+
+  if (compile_error) return 1;
 
   cmd_appendf(&cmd, COMPILER);
 

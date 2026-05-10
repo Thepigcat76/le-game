@@ -27,7 +27,8 @@ static void debug_render_game_object_overlay(Debug *debug) {
       float x = ((float)SCREEN_WIDTH / 2) - (ITEMS_AMOUNT * 16 * scale) / 2 + (i * 20 * scale);
       float y = ((float)SCREEN_HEIGHT / 2) - 8 * scale;
       item_render(&item, x, y);
-      Rectf item_box = rectf(x, y, item.type.texture.width * scale, item.type.texture.height * scale);
+      cw_Texture tex = cw_tex_by_id(&CLIENT_GAME.asset_manager, item.type.texture);
+      Rectf item_box = rectf(x, y, tex.width * scale, tex.height * scale);
       rec_draw_outline(item_box, WHITE);
       if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && CheckCollisionPointRec(GetMousePosition(), item_box)) {
         CLIENT_PLAYER->held_item = item;

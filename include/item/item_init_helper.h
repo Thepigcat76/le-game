@@ -4,10 +4,10 @@
 #include "../tile/tile_category.h"
 #include "raylib.h"
 
-#define ITEM_TYPE_INIT(item_id, texture_path, ...)                                                                     \
+#define ITEM_TYPE_INIT(item_id, name, asset_id, ...)                                                                     \
   {                                                                                                                    \
     ITEMS[item_id] = (ItemType){.id = item_id,                                                                         \
-                                .texture = LoadTexture("res/assets/" texture_path ".png"),                             \
+                                .texture = asset_id,                             \
                                 .item_props = (ItemProperties)__VA_ARGS__};                                            \
     ITEMS_AMOUNT++;                                                                                                    \
   }

@@ -50,9 +50,9 @@ typedef struct {
   float seed;
 } Space;
 
-void space_create(SpaceDescriptor desc, float seed, Space *space);
+void space_init(Space *space, SpaceDescriptor desc, float seed);
 
-void space_create_default(float seed, Space *space);
+void space_init_default(Space *space, float seed);
 
 void space_load(SaveDescriptor save_desc, SpaceDescriptor space_desc, Space *space);
 

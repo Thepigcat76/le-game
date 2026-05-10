@@ -33,7 +33,7 @@ void game_reload(Game *game) {
 
 void game_enter_space(Game *game, SpaceDescriptor desc) {
   Space space;
-  space_create(desc, game->cur_save.descriptor.config.seed, &space);
+  space_init(&space, desc, game->cur_save.descriptor.config.seed);
   array_add(game->cur_save.spaces, desc);
   array_add(game->cur_save.loaded_spaces, space);
   Space *new_space = &game->cur_save.loaded_spaces[array_len(game->cur_save.loaded_spaces) - 1];

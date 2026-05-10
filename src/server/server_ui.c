@@ -33,7 +33,7 @@ static void on_click(void) {
   Save save = save_new(desc);
   Space default_space;
   printf("Seed: %f\n", config.seed);
-  space_create_default(config.seed, &default_space);
+  space_init_default(&default_space, config.seed);
   array_add(save.loaded_spaces, default_space);
   SERVER_GAME.game.cur_save = save;
   for (size_t i = 0; i < array_len(SERVER_GAME.clients); i++) {

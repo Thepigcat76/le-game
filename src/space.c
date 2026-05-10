@@ -16,7 +16,7 @@ void space_types_init(void) {
                                            .world_type = &WORLD_TYPES[WORLD_DUNGEON_TEST]};
 }
 
-void space_create(SpaceDescriptor desc, float seed, Space *space) {
+void space_init(Space *space, SpaceDescriptor desc, float seed) {
   space->desc = desc;
   printf("Creating space - Seed: %f, type: %p\n", seed, desc.type);
   space->world = world_new(desc.type->world_type, seed);
@@ -25,7 +25,7 @@ void space_create(SpaceDescriptor desc, float seed, Space *space) {
   }
 }
 
-void space_create_default(float seed, Space *space) { space_create((SpaceDescriptor){.type = &SPACES[SPACE_BASE], .id = 0}, seed, space); }
+void space_init_default(Space *space, float seed) { space_init(space, (SpaceDescriptor){.type = &SPACES[SPACE_BASE], .id = 0}, seed); }
 
 // Load/Save
 

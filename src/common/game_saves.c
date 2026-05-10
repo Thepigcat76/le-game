@@ -140,7 +140,7 @@ void game_create_save(Game *game, SaveDescriptor save_desc) {
   array_add(game->cur_save.spaces, (SpaceDescriptor){.type = &SPACES[SPACE_BASE], .id = 0});
   Space default_space;
   printf("Save Seed: %f\n", save_desc.config.seed);
-  space_create_default(save_desc.config.seed, &default_space);
+  space_init_default(&default_space, save_desc.config.seed);
   array_add(game->cur_save.loaded_spaces, default_space);
   // game->cur_save.cur_space = &game->cur_save.loaded_spaces[0];
   // FIXME: Highly sus

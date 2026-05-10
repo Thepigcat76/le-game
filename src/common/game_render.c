@@ -109,7 +109,6 @@ void client_render(ClientGame *client, float alpha) {
         {
           ClearBackground(DARKGRAY);
           if (!client_menu_hides_game(client, client->cur_menu)) {
-            log_debug("Rendering client world");
             client_world_render(client, alpha);
 
             // TODO: MOVE TO GAME RENDER FUNCTION

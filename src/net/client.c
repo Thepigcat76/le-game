@@ -50,8 +50,8 @@ static void *client_game(void *args) {
   client_init(&CLIENT_GAME);
 
   // Create and init common game
-  CLIENT_GAME.game = (Game){0};
   game_init(&CLIENT_GAME.game);
+  
   CLIENT_GAME.game.client_game = &CLIENT_GAME;
   CLIENT_GAME.cur_save = &CLIENT_GAME.game.cur_save;
 

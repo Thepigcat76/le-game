@@ -81,7 +81,7 @@ void game_load_save_data(Game *game, SaveDescriptor save_desc) {
 
   // TODO: Load into the space that the player last played
   Space space;
-  space_create(save.spaces[0], save_desc.config.seed, &space);
+  space_init(&space, save.spaces[0], save_desc.config.seed);
   space_load(save_desc, space.desc, &space);
   array_add(save.loaded_spaces, space);
 

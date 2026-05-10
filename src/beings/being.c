@@ -1,5 +1,6 @@
 #include "../../include/being.h"
 #include "../../include/data.h"
+#include "../../include/net/client.h"
 #include "../../include/data/data_ex.h"
 #include <math.h>
 #include <raylib.h>
@@ -202,7 +203,7 @@ void being_render(BeingInstance *being) {
       hover_offset = sinf(t) * fabs(sinf(t)); // sin^2 with sign
       hover_offset *= amplitude;
     }
-    DrawTexture(being->extra.var.item_instance.item.type.texture, being->context.box.x,
+    DrawTexture(tex_by_id(&CLIENT_GAME.asset_manager, being->extra.var.item_instance.item.type.texture), being->context.box.x,
                 being->context.box.y + hover_offset, WHITE);
     break;
   }

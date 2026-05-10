@@ -25,7 +25,7 @@ typedef enum {
 
 typedef struct {
   ItemId id;
-  Texture2D texture;
+  AssetId texture;
   ItemProperties item_props;
 } ItemType;
 

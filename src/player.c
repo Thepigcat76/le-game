@@ -5,44 +5,6 @@
 #include <math.h>
 #include <raylib.h>
 
-static Texture2D player_textures[DIRECTIONS_AMOUNT];
-static Texture2D player_walking_textures[DIRECTIONS_AMOUNT];
-static bool player_textures_loaded;
-Texture2D particle_texture0;
-
-Player player_new(void) {
-  // TODO: Use Resource manager to load this
-  player_textures[DIRECTION_UP] = LoadTexture("res/assets/player_back.png");
-  player_textures[DIRECTION_DOWN] = LoadTexture("res/assets/player_front.png");
-  player_textures[DIRECTION_LEFT] = LoadTexture("res/assets/player_left.png");
-  player_textures[DIRECTION_RIGHT] = LoadTexture("res/assets/player_right.png");
-
-  player_walking_textures[DIRECTION_UP] = LoadTexture("res/assets/player_back_walk.png");
-  player_walking_textures[DIRECTION_DOWN] = LoadTexture("res/assets/player_front_walk.png");
-  player_walking_textures[DIRECTION_LEFT] = LoadTexture("res/assets/player_left_walk.png");
-  player_walking_textures[DIRECTION_RIGHT] = LoadTexture("res/assets/player_right_walk.png");
-
-  particle_texture0 = LoadTexture("res/assets/walk_particles.png");
-
-  log_debug("tile instance empty: %d", TILE_INSTANCE_EMPTY.type->id);
-
-  return (Player){
-      .direction = DIRECTION_DOWN,
-      .last_broken_tile = &TILE_INSTANCE_EMPTY,
-      .essence = 0,
-      .animation_frame = 0,
-      .frame_timer = 0,
-      .held_item = {.type = ITEMS[ITEM_SHOVEL]},
-      .dragged_item = ITEM_INSTANCE_EMPTY,
-      .box = {.x = 0, .y = 20, .width = 16, .height = 8},
-      .chunk_pos = vec2i(0, 0),
-      .tile_pos = vec2i(0, 0),
-      .break_progress = -1,
-      .break_tile = &TILE_INSTANCE_EMPTY,
-      .break_tile_pos = vec2i(0, 0),
-  };
-}
-
 void player_init(Player *player) {
   player->direction = DIRECTION_DOWN;
   player->last_broken_tile = &TILE_INSTANCE_EMPTY;
@@ -60,15 +22,19 @@ void player_init(Player *player) {
   item_container_init(&player->inv_container, 9);
 }
 
+static const TextureHandle PLAYER_WALKING_TEXTURES[] = {TEX_PLAYER_BACK_WALK, TEX_PLAYER_FRONT_WALK, TEX_PLAYER_LEFT_WALK, TEX_PLAYER_RIGHT_WALK};
+static const TextureHandle PLAYER_TEXTURES[] = {TEX_PLAYER_BACK, TEX_PLAYER_FRONT, TEX_PLAYER_LEFT, TEX_PLAYER_RIGHT};
+
 static Texture2D player_get_texture(PlayerRenderDescriptor *player) {
-  Texture2D *textures;
+  TextureHandle handle;
+  
   if (player->walking) {
-    textures = player_walking_textures;
+    handle = PLAYER_WALKING_TEXTURES[player->direction];
   } else {
-    textures = player_textures;
+    handle = PLAYER_TEXTURES[player->direction];
   }
 
-  return textures[player->direction];
+  return tex_by_handle(&CLIENT_GAME.asset_manager, handle);
 }
 
 Vector2 player_pos(const Player *player) { return (Vector2){.x = player->box.x, .y = player->box.y}; }
@@ -175,7 +141,7 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool
     ParticleInstance *particle = client_emit_particle(
         &CLIENT_GAME, x + GetRandomValue(-5, 7), y + GetRandomValue(-5, 7) + 27, PARTICLE_WALKING,
         (ParticleInstanceEx){.type = PARTICLE_INSTANCE_WALKING,
-                             .var = {.tile_break = {.texture = particle_texture0, .tint = tile->type->tile_props.tile_color}}});
+                             .var = {.tile_break = {.texture = tex_by_handle(&CLIENT_GAME.asset_manager, TEX_WALK_PARTICLES), .tint = tile->type->tile_props.tile_color}}});
     particle->lifetime /= 1.5;
     particle->velocity = vec2f(0, 0);
   }

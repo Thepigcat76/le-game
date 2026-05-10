@@ -154,7 +154,7 @@ static void space_decode(Space *space, ByteBuf *buf) {
 
   float seed = atof(seed_buf);
   printf("Seed: %f, space: %p, desc: %p\n", seed, space, desc);
-  space_create(*desc, seed, space);
+  space_init(space, *desc, seed);
   space->seed = seed;
 
   printf("Reader index, before world: %zu", buf->reader_index);

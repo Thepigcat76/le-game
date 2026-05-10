@@ -147,7 +147,7 @@ static void game_handle_tile_interaction(Game *game) {
 
         CLIENT_PLAYER->break_progress += CLIENT_PLAYER->held_item.type.item_props.tool_props.break_speed + 1;
         CLIENT_PLAYER->break_tile_pos = vec2i(x_index, y_index);
-        log_debug("sleected tile: %p", selected_tile);
+        log_debug("sleected tile: %d", selected_tile->type->id);
         CLIENT_PLAYER->break_tile = selected_tile;
         if (CLIENT_PLAYER->break_progress >= selected_tile->type->tile_props.break_time) {
           if (CLIENT_PLAYER->held_item.type.id == ITEM_HAMMER) {
