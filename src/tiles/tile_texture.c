@@ -9,13 +9,13 @@
 #include <stdio.h>
 #include <string.h>
 
-static void init_connected_info();
+static void init_connected_info(void);
 
-static void init_tile_variants();
+static void init_tile_variants(void);
 
-static void debug_variant_info();
+static void debug_variant_info(void);
 
-static void on_tile_variants_reload();
+static void on_tile_variants_reload(void);
 
 void tile_on_reload(ClientGame *game) {
   init_connected_info();
@@ -48,7 +48,7 @@ typedef struct {
 
 static ConnectedInfo CONNECTED_INFO = {0};
 
-static void init_connected_info() {
+static void init_connected_info(void) {
   ConnectedInfo info = {0};
   dyn_string_t file = read_file_to_string("res/connected.json", &HEAP_ALLOCATOR);
   cJSON *json = cJSON_Parse(file.string);
@@ -231,7 +231,7 @@ int tile_default_sprite_resolution() { return CONNECTED_INFO.res; }
 // -- TEXTURE VARIANTS --
 
 typedef struct {
-  //AdvTexture *variants;
+  AssetId *variants;
   int variants_amount;
 } SingleTileVariant;
 
@@ -275,15 +275,15 @@ static void init_variant_info(cJSON *meta_json, char *texture_file_name) {
     if (cJSON_IsArray(variants)) {
       TraceLog(LOG_DEBUG, "Loaded variants");
       int len = cJSON_GetArraySize(variants);
-      //variant.var.single_tile_variant.variants = malloc(len * sizeof(AdvTexture));
+      variant.var.single_tile_variant.variants = malloc(len * sizeof(AssetId));
       variant.type = TILE_VARIANT_SINGLE;
       for (int i = 0; i < len; i++) {
         cJSON *element = cJSON_GetArrayItem(variants, i);
         if (cJSON_IsString(element)) {
-          int path_max_len = sizeof(ASSETS_DIR) + strlen(element->valuestring) + 1;
+          int path_max_len = sizeof(ASSETS_DIR) + sizeof(TEXTURES_DIR) + strlen(element->valuestring) + 1;
           char path[path_max_len];
-          snprintf(path, path_max_len, "%s%s", ASSETS_DIR, element->valuestring);
-          //variant.var.single_tile_variant.variants[i] = adv_texture_load(path);
+          snprintf(path, path_max_len, ASSETS_DIR TEXTURES_DIR "/%s", element->valuestring);
+          variant.var.single_tile_variant.variants[i] = cw_tex_by_tex_path(&CLIENT_GAME.asset_manager, element->valuestring).id;
         }
       }
       variant.var.single_tile_variant.variants_amount = len;
@@ -311,6 +311,7 @@ static void init_variant_info(cJSON *meta_json, char *texture_file_name) {
   } else {
     VARIANT_INFO.variants[variant_index] = variant;
   }
+
 }
 
 void tile_variants_free() {
@@ -332,7 +333,7 @@ void tile_variants_free() {
 
 static void init_tile_variants() {
   struct dirent *entry;
-  DIR *dir = opendir(ASSETS_DIR);
+  DIR *dir = opendir(ASSETS_DIR TEXTURES_DIR);
   if (dir == NULL) {
     perror("opendir");
     exit(1);
@@ -342,6 +343,8 @@ static void init_tile_variants() {
     if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
       continue;
     }
+
+    log_debug("FILE NAME: %s", entry->d_name);
 
     const char *file_ext = GetFileExtension(entry->d_name);
     if (file_ext == NULL || strcmp(file_ext, ".png") != 0) {
@@ -353,13 +356,14 @@ static void init_tile_variants() {
     char meta_file_name[256];
     snprintf(meta_file_name, 256, "%s_meta.json", string_parts[0]);
     char meta_file_path[256];
-    snprintf(meta_file_path, 256, "%s%s", ASSETS_DIR, meta_file_name);
+    snprintf(meta_file_path, 256, ASSETS_DIR TEXTURES_DIR "/%s", meta_file_name);
+      log_debug("META FILE PATH: %s", meta_file_path);
     if (FileExists(meta_file_path)) {
       dyn_string_t meta_file_content = read_file_to_string(meta_file_path, &HEAP_ALLOCATOR);
       cJSON *meta_json = cJSON_Parse(meta_file_content.string);
       {
         char texture_path[512];
-        snprintf(texture_path, 512, "%s%s", ASSETS_DIR, entry->d_name);
+        snprintf(texture_path, 512, ASSETS_DIR TEXTURES_DIR  "/%s", entry->d_name);
         init_variant_info(meta_json, texture_path);
       }
       dyn_string_free(&meta_file_content);
@@ -381,11 +385,11 @@ static void on_tile_variants_reload() {
   // log_debug("Variants: %d", VARIANT_INFO.tiles_amount);
 }
 
-//AdvTexture *tile_variants_for_tile(const TileType *type, int x, int y) {
-//  return VARIANT_INFO.variants[type->variant_index].var.single_tile_variant.variants;
-//}
+AssetId *tile_variants_for_tile(const TileType *type, int x, int y) {
+  return VARIANT_INFO.variants[type->variant_index].var.single_tile_variant.variants;
+}
 
-int tile_variants_index_for_name(const char *texture_path, int x, int y) {
+i32 tile_variants_index_for_name(const char *texture_path, int x, int y) {
   int amount = VARIANT_INFO.tiles_amount;
   for (int i = 0; i < amount; i++) {
     if (strcmp(VARIANT_INFO.tile_texture_names[i], texture_path) == 0) {
@@ -395,7 +399,7 @@ int tile_variants_index_for_name(const char *texture_path, int x, int y) {
   return -1;
 }
 
-//AdvTexture *tile_variants_by_index(int index, int x, int y) { return VARIANT_INFO.variants[index].var.single_tile_variant.variants; }
+AssetId *tile_variants_by_index(int index, int x, int y) { return VARIANT_INFO.variants[index].var.single_tile_variant.variants; }
 
 int tile_variants_amount_for_tile(const TileType *type, int x, int y) {
   return VARIANT_INFO.variants[type->variant_index].var.single_tile_variant.variants_amount;
@@ -408,14 +412,15 @@ int tile_variants_amount_by_index(int index, int x, int y) { return VARIANT_INFO
 void tile_type_init(TileType *type) {
   int amount = VARIANT_INFO.tiles_amount;
   for (int i = 0; i < amount; i++) {
-    //if (strcmp(VARIANT_INFO.tile_texture_names[i], type->texture.path) == 0) {
+    cw_Texture tex = cw_tex_by_id(&CLIENT_GAME.asset_manager, type->texture);
+    if (strcmp(VARIANT_INFO.tile_texture_names[i], tex.path) == 0) {
       type->variant_index = i;
-      // type->texture_props.has_variants = true;
+      type->texture_props.has_variants = true;
       return;
-    //}
+    }
   }
   type->variant_index = -1;
-  // type->texture_props.has_variants = false;
+  type->texture_props.has_variants = false;
   if (type->id == TILE_STONE) {
     char buf[512];
     tile_type_debug_print(type, buf);

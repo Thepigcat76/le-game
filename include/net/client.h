@@ -22,8 +22,10 @@ typedef struct _client_game {
   MenuId cur_menu;
   bool paused;
   
-  // Managers
+  /* Managers */
   AssetManager asset_manager;
+  // Textures like animated textures
+  TextureManager tex_manager;
 
   SoundManager sound_manager;
   ParticleManager particle_manager;

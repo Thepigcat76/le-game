@@ -1,10 +1,12 @@
 #include "../include/assets.h"
 #include "../include/shared.h"
+#include "../include/net/client.h"
 #include "lilc/alloc.h"
 #include "lilc/log.h"
 #include "lilc/array.h"
 #include "lilc/bump.h"
 #include "dirent.h"
+#include <raylib.h>
 #include <stdio.h>
 
 cw_Texture cw_tex_by_id(AssetManager *asset_manager, AssetId id) {
@@ -25,6 +27,28 @@ Texture2D tex_by_id(AssetManager *asset_manager, AssetId id) {
 
 inline Texture2D tex_by_handle(AssetManager *asset_manager, TextureHandle handle) {
   return tex_by_id(asset_manager, TEX_IDS[handle]);
+}
+
+cw_Texture cw_tex_by_tex_path(AssetManager *asset_manager, const char *tex_path) {
+  cw_Texture *tex;
+  array_foreach(asset_manager->textures, tex) {
+    if (strcmp(tex->path, TextFormat(ASSETS_DIR TEXTURES_DIR "/%s.png", tex_path)) == 0) {
+      return *tex;
+    }
+  }
+  return (cw_Texture){0};
+}
+
+i32 cw_tex_cur_frame(const cw_Texture *texture) {
+  if (texture->kind != TEXTURE_ANIMATED)
+    return 0;
+  return CLIENT_GAME.tex_manager.textures[texture->var.texture_animated.animated_texture_id].cur_frame;
+}
+
+i32 cw_tex_frame_height(const cw_Texture *texture) {
+  if (texture->kind == TEXTURE_STATIC)
+    return texture->var.texture_static.height;
+  return texture->var.texture_animated.texture.height / texture->var.texture_animated.frames;
 }
 
 static void asset_manager_init(AssetManager *asset_manager) {

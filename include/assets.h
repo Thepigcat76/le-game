@@ -4,7 +4,7 @@
 #include "lilc/bump.h"
 #include "lilc/numbers.h"
 #include "shared.h"
-#include "textures.h"
+#include "assets/textures.h"
 #include <raylib.h>
 
 #define ASSETS_DIR "res/assets/"
@@ -33,13 +33,6 @@ typedef struct {
   int height;
   const char *path;
 } cw_Texture;
-
-typedef struct {
-  cw_Texture texture;
-  int animated_texture_id;
-  int cur_frame;
-  float frame_timer;
-} AnimatedTexture;
 
 typedef struct {
   AssetId id;
@@ -71,6 +64,9 @@ void assets_unload(AssetManager *asset_manager);
 cw_Texture cw_tex_by_id(AssetManager *asset_manager, AssetId id);
 
 cw_Texture cw_tex_by_handle(AssetManager *asset_manager, TextureHandle handle);
+
+// Uses a texture path, which drops res/assets/tes/ and .png
+cw_Texture cw_tex_by_tex_path(AssetManager *asset_manager, const char *tex_path);
 
 Texture2D tex_by_id(AssetManager *asset_manager, AssetId id);
 

@@ -1,5 +1,5 @@
 //! An array of bytes used for saving and loading data to and from
-//! binary#include <stdint.h>
+//! binary
 
 #pragma once
 

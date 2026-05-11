@@ -13,7 +13,10 @@ extern ResourceFile *get_resource_files(size_t *amount);
 
 void resource_files_write(const char *dir_path) {
   size_t amount = 0;
-  ResourceFile *files = get_resource_files(&amount);
+  ResourceFile *files;
+#ifdef PACKED_RESOURCES
+  files = get_resource_files(&amount);
+#endif
 
   for (size_t i = 0; i < amount; i++) {
     ResourceFile file = files[i];

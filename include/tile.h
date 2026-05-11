@@ -62,8 +62,6 @@ typedef struct {
 extern TileType *TILES;
 extern size_t TILES_AMOUNT;
 
-//extern AdvTexture ERR_TEXTURE;
-
 void tile_type_init(TileType *type);
 
 void tile_types_init();
@@ -81,7 +79,7 @@ typedef struct {
   // TEXTURES
   TileTextureData texture_data;
   Rectf cur_sprite_box;
-  //AdvTexture variant_texture;
+  AssetId variant_texture;
   i32 animation_frame;
 } TileInstance;
 
@@ -119,13 +117,13 @@ void tile_calc_sprite_box(TileInstance *tile);
 
 // X and Y params are only nessecary in tile sheets, otherwise you can just pass
 // in 0
-cw_Texture *tile_variants_for_tile(const TileType *type, i32 x, i32 y);
+AssetId *tile_variants_for_tile(const TileType *type, i32 x, i32 y);
 
 i32 tile_variants_index_for_name(const char *texture_name, i32 x, i32 y);
 
 i32 tile_variants_amount_for_tile(const TileType *type, i32 x, i32 y);
 
-cw_Texture *tile_variants_by_index(i32 i, i32 x, i32 y);
+AssetId *tile_variants_by_index(i32 i, i32 x, i32 y);
 
 i32 tile_variants_amount_by_index(i32 index, i32 x, i32 y);
 

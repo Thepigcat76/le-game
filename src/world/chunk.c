@@ -1,5 +1,6 @@
 #include "../../include/chunk.h"
 #include "../../include/game.h"
+#include "../../include/net/client.h"
 #ifndef _WIN32
 #define STB_PERLIN_IMPLEMENTATION
 #endif
@@ -8,8 +9,15 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+/*
+
+  cw_Texture tex = cw_tex_by_handle(&CLIENT_GAME.asset_manager, TEX_DIRT);
+  chunk->variant_index = tile_variants_index_for_name(tex.path, 0, 0);
+*/
+
 static void chunk_assign_dirt_variants(Chunk *chunk) {
-  chunk->variant_index = tile_variants_index_for_name("res/assets/dirt.png", 0, 0);
+  cw_Texture tex = cw_tex_by_handle(&CLIENT_GAME.asset_manager, TEX_DIRT);
+  chunk->variant_index = tile_variants_index_for_name("res/assets/tex/dirt.png", 0, 0);
   for (int y = 0; y < CHUNK_SIZE; y++) {
     for (int x = 0; x < CHUNK_SIZE; x++) {
       chunk->background_texture_variants[y][x] = GetRandomValue(0, tile_variants_amount_by_index(chunk->variant_index, 0, 0) - 1);

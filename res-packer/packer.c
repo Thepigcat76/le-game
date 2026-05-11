@@ -51,9 +51,15 @@ static void packer_walk_dir(ResourcePacker *packer, const char *path, ResourceFi
   closedir(dp);
 }
 
-static void visit_resource_file(ResourcePacker *packer, FileEntry entry) { array_add(packer->file_paths, strdup(entry.full_path)); }
+static void visit_resource_file(ResourcePacker *packer, FileEntry entry) {
+  if (strcmp(entry.file_ext, "aseprite") != 0) {
+    array_add(packer->file_paths, strdup(entry.full_path));
+  }
+}
 
-inline void packer_collect_files(ResourcePacker *packer, const CliArgs *args) { packer_walk_dir(packer, args->input_path, visit_resource_file); }
+inline void packer_collect_files(ResourcePacker *packer, const CliArgs *args) {
+  packer_walk_dir(packer, args->input_path, visit_resource_file);
+}
 
 constexpr char RESOURCES_FILE_HEADER[] =
     "#include <stdlib.h>\n"
@@ -111,12 +117,12 @@ constexpr char RESOURCES_FILE_HEADER[] =
 constexpr char RESOURCES_FILE_FOOTER[] = "}\n";
 
 constexpr char RESOURCES_FILE_RESOURCE_HEADER[] = "  {\n"
-                                            "    size_t offset = 0;\n"
-                                            "    struct resource_file file = {0};\n"
-                                            "    resource_file_init(&file, \"%s\", %zu);\n";
+                                                  "    size_t offset = 0;\n"
+                                                  "    struct resource_file file = {0};\n"
+                                                  "    resource_file_init(&file, \"%s\", %zu);\n";
 
 constexpr char RESOURCES_FILE_RESOURCE_FOOTER[] = "    resource_files[%zu] = file;\n"
-                                            "  }\n";
+                                                  "  }\n";
 
 size_t resource_write_bytes(u8 *bytes, size_t length, size_t offset, FILE *f) {
   u8 *offset_bytes = bytes + offset;
@@ -159,9 +165,7 @@ void packer_write_resources(const ResourcePacker *packer, FILE *f) {
   fprintf(f, RESOURCES_FILE_HEADER, len, len);
 
   char **file_path;
-  array_foreach(packer->file_paths, file_path) {
-    packer_write_resource(*file_path, _arr_foreach_idx, f);
-  }
+  array_foreach(packer->file_paths, file_path) { packer_write_resource(*file_path, _arr_foreach_idx, f); }
 
   fprintf(f, "%s", RESOURCES_FILE_FOOTER);
 }

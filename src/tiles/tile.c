@@ -1,5 +1,6 @@
 #include "../../include/tile.h"
 #include "../../include/game.h"
+#include "../../include/textures.h"
 #include "../../include/net/client.h"
 #include "../../include/shared.h"
 #include "lilc/array.h"
@@ -160,10 +161,10 @@ TileInstance tile_new(const TileType *type) {
       int max = tile_variants_amount_for_tile(type, 0, 0) - 1;
       if (max >= 0) {
         int r = GetRandomValue(0, max);
-        // tile.variant_texture = tile_variants_for_tile(type, 0, 0)[r];
+        tile.variant_texture = tile_variants_for_tile(type, 0, 0)[r];
       } else {
         // TODO: Properly fix this
-        // tile.variant_texture = type->texture;
+        tile.variant_texture = type->texture;
       }
     }
 
@@ -234,18 +235,20 @@ TileInstance tile_break_remainder(const TileInstance *tile, TilePos pos) {
 void tile_render_scaled(TileInstance *tile, int x, int y, float scale) {
   if (tile->type->has_texture) {
     if (tile->type->texture_props.has_variants) {
-      //      DrawTextureRecEx(adv_texture_to_texture(&tile->variant_texture), tile->cur_sprite_box, vec2f(x, y), 0, scale, WHITE);
+      AssetId variant_tex_id = tile->variant_texture;
+      Texture2D variant_tex = tex_by_id(&CLIENT_GAME.asset_manager, variant_tex_id);
+      DrawTextureRecEx(variant_tex, tile->cur_sprite_box, vec2f(x, y), 0, scale, WHITE);
     } else {
-            cw_Texture texture = cw_tex_by_id(&CLIENT_GAME.asset_manager, tile->type->texture);
-            Texture2D final_texture = tex_by_id(&CLIENT_GAME.asset_manager, tile->type->texture);
-            //int cur_frame = adv_texture_cur_frame(&tile->type->texture);
-            //int frame_height = adv_texture_frame_height(&tile->type->texture);
+      cw_Texture texture = cw_tex_by_id(&CLIENT_GAME.asset_manager, tile->type->texture);
+      Texture2D final_texture = tex_by_id(&CLIENT_GAME.asset_manager, tile->type->texture);
+      i32 cur_frame = cw_tex_cur_frame(&texture);
+      i32 frame_height = cw_tex_frame_height(&texture);
       Rectangle sprite_rect = tile->cur_sprite_box;
-            //sprite_rect.y += frame_height * cur_frame;
+      sprite_rect.y += frame_height * cur_frame;
       int offset_x = (tile->type->tile_dimensions.width - TILE_SIZE) / 2;
       int offset_y = tile->type->tile_dimensions.height - TILE_SIZE;
-       if (texture.kind == TEXTURE_ANIMATED) {
-        //TraceLog(LOG_DEBUG, "height: %d, cur_frame: %d", frame_height, cur_frame);
+      if (texture.kind == TEXTURE_ANIMATED) {
+        // TraceLog(LOG_DEBUG, "height: %d, cur_frame: %d", frame_height, cur_frame);
       }
       DrawTextureRecEx(final_texture, sprite_rect, vec2f(x - offset_x, y - offset_y), 0, scale, WHITE);
 #ifdef DEBUG_BUILD
@@ -265,8 +268,8 @@ void tile_render(TileInstance *tile, int x, int y, bool dbg) {
       // DrawTextureRec(adv_texture_to_texture(&tile->variant_texture), tile->cur_sprite_box, vec2f(x, y), WHITE);
     } else {
       Texture2D texture = tex_by_id(&CLIENT_GAME.asset_manager, tile->type->texture);
-      int cur_frame = 0;       // adv_texture_cur_frame(&tile->type->texture);
-      int frame_height = 0;    // adv_texture_frame_height(&tile->type->texture);
+      int cur_frame = 0;    // adv_texture_cur_frame(&tile->type->texture);
+      int frame_height = 0; // adv_texture_frame_height(&tile->type->texture);
       Rectangle sprite_rect = tile->cur_sprite_box;
       sprite_rect.y += frame_height * cur_frame;
       int offset_x = (tile->type->tile_dimensions.width - TILE_SIZE) / 2;

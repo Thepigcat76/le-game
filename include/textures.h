@@ -1,84 +1,18 @@
 #pragma once
 
-#include <stdlib.h>
-#include "shared.h"
-#include "raylib.h"
+#include "assets.h"
 
-typedef enum {
-  // Tile textures
-  TEX_BRICKS,
-  TEX_BUSH,
-  TEX_CHEST,
-  TEX_DIRT,
-  TEX_DUNGEON_FLOOR,
-  TEX_DUNGEON_PORTAL,
-  TEX_GRASS_TILES,
-  TEX_STONE_TILES,
-  TEX_LIGHTER_DIRT_TILES,
-  TEX_GRASS,
-  TEX_OVEN,
-  TEX_TALL_OVEN,
-  TEX_STONE,
-  TEX_TREE,
-  TEX_TORCH,
-  TEX_WATER,
-  TEX_WORKSTATION,
-  // Item textures
-  TEX_AXE,
-  TEX_PICKAXE,
-  TEX_SHOVEL,
-  TEX_HAMMER,
-  TEX_BACKPACK,
-  TEX_HEAL_POTION,
-  TEX_MAP,
-  TEX_STICK,
-  // Inv textures
-  TEX_GRASS_INV,
-  TEX_STONE_INV,
-  // Ui textures
-  TEX_MAP_SPRITE,
-  TEX_BUTTON,
-  TEX_BUTTON_SELECTED,
-  TEX_SAVE_SLOT_BUTTTON,
-  TEX_SAVE_SLOT_BUTTON_SELECTED,
-  TEX_TEXT_INPUT,
+typedef struct {
+  cw_Texture texture;
+  int animated_texture_id;
+  int cur_frame;
+  float frame_timer;
+} AnimatedTexture;
 
-  TEX_BUTTON_BACK_TO_GAME,
-  TEX_BUTTON_SELECTED_BACK_TO_GAME,
-  TEX_BUTTON_GAME_SETTINGS,
-  TEX_BUTTON_SELECTED_GAME_SETTINGS,
-  TEX_BUTTON_CLIENT_SETTINGS,
-  TEX_BUTTON_SELECTED_CLIENT_SETTINGS,
-  TEX_BUTTON_LEAVE_GAME,
-  TEX_BUTTON_SELECTED_LEAVE_GAME,
-  // Map textures
-  TEX_MAP_ICON_HOUSE,
-  TEX_MAP_ICON_TREE,
-  // Particle
-  TEX_PARTICLE,
-  TEX_WALK_PARTICLES,
-  // Player textures
-  TEX_PLAYER_BACK_WALK,
-  TEX_PLAYER_FRONT_WALK,
-  TEX_PLAYER_LEFT_WALK,
-  TEX_PLAYER_RIGHT_WALK,
-  
-  TEX_PLAYER_BACK,  
-  TEX_PLAYER_FRONT,  
-  TEX_PLAYER_LEFT,  
-  TEX_PLAYER_RIGHT,
+typedef struct{
+  AnimatedTexture *textures;
+} TextureManager;
 
-  TEX_WATER_OVERLAY,
-  // Building textures
-  TEX_BUILDING_SHOP,
+i32 cw_tex_cur_frame(const cw_Texture *texture);
 
-  // Misc textures
-  TEX_BREAKING_OVERLAY,
-  TEX_CURSOR_FIST,
-  TEX_CURSOR,
-
-  TEX_ERR,
-  _amount_texture_handles,
-} TextureHandle;
-
-extern AssetId TEX_IDS[_amount_texture_handles];
+i32 cw_tex_frame_height(const cw_Texture *texture);

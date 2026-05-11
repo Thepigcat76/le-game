@@ -1,6 +1,5 @@
 #include "../include/net/client.h"
 #include "../include/net/server.h"
-#include "../include/packed_res_helper.h"
 #include "../include/shared.h"
 #include <stdbool.h>
 
@@ -20,8 +19,7 @@ int main(int argc, char **argv) {
       return 1;
     }
   } else {
-    resource_files_write("res0");
-    return 0;
+    //resource_files_write("res0");
     client_start();
   }
 }

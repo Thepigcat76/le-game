@@ -9,6 +9,7 @@ typedef struct {
   const WorldType *world_type;
   ChunkPos chunk_pos;
   TileInstance tiles[CHUNK_SIZE][CHUNK_SIZE][TILE_LAYERS_AMOUNT];
+  // REPLACE WITH PERLIN NOISE
   int variant_index;
   int background_texture_variants[CHUNK_SIZE][CHUNK_SIZE];
 } Chunk;

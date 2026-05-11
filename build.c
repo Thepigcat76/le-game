@@ -27,6 +27,7 @@
 
 static Cmd cmd = {0};
 static bool compile_error = false;
+static bool packed_resources = false;
 
 static Cmd pack_cmd = {0};
 
@@ -55,20 +56,24 @@ static void visit_entry(struct file_entry entry) {
   cmd_appendf(&compile_cmd, "-DCOZY_WRATH_VERSION=" COZY_WRATH_VERSION);
   cmd_appendf(&compile_cmd, "-DCOZY_WRATH_VERSION_RELEASE_DATE=" COZY_WRATH_VERSION_RELEASE_DATE);
 
+  if (packed_resources) {
+    cmd_appendf(&compile_cmd, "-DPACKED_RESOURCES");
+  }
+
   char build_path[512];
   sprintf(build_path, "./build/%s.o", src_path);
   ensure_parent_dirs(build_path, 0755);
 
-  printf("Compiling: %s\n", entry.path);
-
   if (cmd_execute(&compile_cmd) != 0) {
     compile_error = true;
   }
-
 }
 
 static void visit_obj_entry(struct file_entry entry) {
   if (entry.file_ext == NULL || strcmp(entry.file_ext, "o") != 0)
+    return;
+
+  if (!packed_resources && strcmp(entry.name, "out.c.o") == 0)
     return;
 
   cmd_appendf(&cmd, "%s", entry.path);
@@ -100,20 +105,23 @@ int main(int argc, char **argv) {
   remove_dir_recursive("build", false);
 
   if (argc >= 3 && strcmp(argv[2], "--pack-res") == 0) {
-    pack_resources();
-  }
+    packed_resources = true;
 
-  visit_entry((struct file_entry){
-    .name = "out.c",
-    .file_ext = "c",
-    .path = "packed-res/out.c"
-  });
+    pack_resources();
+
+    visit_entry((struct file_entry){
+        .name = "out.c",
+        .file_ext = "c",
+        .path = "packed-res/out.c",
+    });
+  }
 
   // Adding src files
   walk_dir("src", visit_entry);
 
-  if (compile_error)
+  if (compile_error) {
     return 1;
+  }
 
   cmd_appendf(&cmd, COMPILER);
 
