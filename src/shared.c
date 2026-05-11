@@ -8,6 +8,8 @@
 #endif
 #include "dirent.h"
 #include <math.h>
+#include <errno.h>
+#include <sys/stat.h>
 #include <raylib.h>
 #include <stdio.h>
 #include <string.h>
@@ -321,4 +323,46 @@ inline char *btos(bool b) {
 
 inline bool str_eq(const char *a, const char *b) {
   return strcmp(a, b) == 0;
+}
+
+i32 ensure_parent_dirs(const char *filepath, mode_t mode) {
+  char dir[PATH_MAX];
+  if (snprintf(dir, sizeof dir, "%s", filepath) >= (int)sizeof dir) {
+    errno = ENAMETOOLONG;
+    return -1;
+  }
+
+  char *slash = strrchr(dir, '/');
+  if (!slash)
+    return 0; // no directory component
+  if (slash == dir)
+    return 0; // parent is "/"
+
+  *slash = '\0'; // keep just the directory part
+  if (!*dir) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  char tmp[PATH_MAX];
+  if (snprintf(tmp, sizeof tmp, "%s", dir) >= (int)sizeof tmp) {
+    errno = ENAMETOOLONG;
+    return -1;
+  }
+
+  size_t len = strlen(tmp);
+  if (len > 1 && tmp[len - 1] == '/')
+    tmp[len - 1] = '\0';
+
+  for (char *p = tmp + 1; *p; p++) {
+    if (*p == '/') {
+      *p = '\0';
+      if (mkdir(tmp, mode) != 0 && errno != EEXIST)
+        return -1;
+      *p = '/';
+    }
+  }
+  if (mkdir(tmp, mode) != 0 && errno != EEXIST)
+    return -1;
+  return 0;
 }

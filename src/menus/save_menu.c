@@ -48,31 +48,38 @@ void save_menu_render(UiRenderer *renderer, const ClientGame *game) {
 
   int x_offset = 8 * (CONFIG.default_font_size / 10);
   int y_offset = -2;
-/*
+
   RENDER_TEXT({.text = "Game Paused"});
-  RENDER_BUTTON({.message = "Back To Game",
-                 .texture = OPT_TEX(BACK_TO_GAME_BUTTON_TEXTURE),
-                 .selected_texture = OPT_TEX(BACK_TO_GAME_BUTTON_TEXTURE_SELECTED),
-                 .on_click_func = button_click_simple(save_menu_back_to_game_button_clicked),
-                 .text_x_offset = x_offset,
-                 .text_y_offset = y_offset});
-  RENDER_BUTTON({.message = "General Settings",
-                 .texture = OPT_TEX(VISUAL_SETTINGS_BUTTON_TEXTURE),
-                 .selected_texture = OPT_TEX(VISUAL_SETTINGS_BUTTON_TEXTURE_SELECTED),
-                 .on_click_func = button_click_simple(save_menu_general_settings_button_clicked),
-                 .text_x_offset = x_offset,
-                 .text_y_offset = y_offset});
-  RENDER_BUTTON({.message = "Game Settings",
-                 .texture = OPT_TEX(GAME_SETTINGS_BUTTON_TEXTURE),
-                 .selected_texture = OPT_TEX(GAME_SETTINGS_BUTTON_TEXTURE_SELECTED),
-                 .on_click_func = button_click_simple(save_menu_gameplay_settings_button_clicked),
-                 .text_x_offset = x_offset,
-                 .text_y_offset = y_offset});
-  RENDER_BUTTON({.message = "Save Game",
-                 .texture = OPT_TEX(LEAVE_GAME_BUTTON_TEXTURE),
-                 .selected_texture = OPT_TEX(LEAVE_GAME_BUTTON_TEXTURE_SELECTED),
-                 .on_click_func = button_click_simple(save_menu_save_game_button_clicked),
-                 .text_x_offset = x_offset,
-                 .text_y_offset = y_offset});
-                 */
+  RENDER_BUTTON({
+      .message = "Back To Game",
+      .texture = OPT_TEX(TEX_BUTTON_BACK_TO_GAME),
+      .selected_texture = OPT_TEX(TEX_BUTTON_SELECTED_BACK_TO_GAME),
+      .on_click_func = button_click_simple(save_menu_back_to_game_button_clicked),
+      .text_x_offset = x_offset,
+      .text_y_offset = y_offset,
+  });
+  RENDER_BUTTON({
+      .message = "Client Settings",
+      .texture = OPT_TEX(TEX_BUTTON_CLIENT_SETTINGS),
+      .selected_texture = OPT_TEX(TEX_BUTTON_SELECTED_CLIENT_SETTINGS),
+      .on_click_func = button_click_simple(save_menu_gameplay_settings_button_clicked),
+      .text_x_offset = x_offset,
+      .text_y_offset = y_offset,
+  });
+  RENDER_BUTTON({
+      .message = "Game Settings",
+      .texture = OPT_TEX(TEX_BUTTON_GAME_SETTINGS),
+      .selected_texture = OPT_TEX(TEX_BUTTON_SELECTED_GAME_SETTINGS),
+      .on_click_func = button_click_simple(save_menu_general_settings_button_clicked),
+      .text_x_offset = x_offset,
+      .text_y_offset = y_offset,
+  });
+  RENDER_BUTTON({
+      .message = "Save Game",
+      .texture = OPT_TEX(TEX_BUTTON_LEAVE_GAME),
+      .selected_texture = OPT_TEX(TEX_BUTTON_SELECTED_LEAVE_GAME),
+      .on_click_func = button_click_simple(save_menu_save_game_button_clicked),
+      .text_x_offset = x_offset,
+      .text_y_offset = y_offset,
+  });
 }

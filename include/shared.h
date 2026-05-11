@@ -254,3 +254,5 @@ char *str_cpy_heap(const char *in);
 char *btos(bool b);
 
 bool str_eq(const char *a, const char *b);
+
+i32 ensure_parent_dirs(const char *filepath, mode_t mode);

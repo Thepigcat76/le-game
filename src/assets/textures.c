@@ -82,6 +82,15 @@ void texture_handles_assign_id(AssetManager *m) {
   TEX_IDS[TEX_SAVE_SLOT_BUTTTON] = tex_asset_id(m, "ui/save_slot");
   TEX_IDS[TEX_SAVE_SLOT_BUTTON_SELECTED] = tex_asset_id(m, "ui/save_slot_selected");
   TEX_IDS[TEX_TEXT_INPUT] = tex_asset_id(m, "ui/text_input");
+
+  TEX_IDS[TEX_BUTTON_BACK_TO_GAME] = tex_asset_id(m, "ui/buttons/back_to_game");
+  TEX_IDS[TEX_BUTTON_SELECTED_BACK_TO_GAME] = tex_asset_id(m, "ui/buttons/selected_back_to_game");
+  TEX_IDS[TEX_BUTTON_GAME_SETTINGS] = tex_asset_id(m, "ui/buttons/game_settings");
+  TEX_IDS[TEX_BUTTON_SELECTED_GAME_SETTINGS] = tex_asset_id(m, "ui/buttons/selected_game_settings");
+  TEX_IDS[TEX_BUTTON_CLIENT_SETTINGS] = tex_asset_id(m, "ui/buttons/client_settings");
+  TEX_IDS[TEX_BUTTON_SELECTED_CLIENT_SETTINGS] = tex_asset_id(m, "ui/buttons/selected_client_settings");
+  TEX_IDS[TEX_BUTTON_LEAVE_GAME] = tex_asset_id(m, "ui/buttons/leave_game");
+  TEX_IDS[TEX_BUTTON_SELECTED_LEAVE_GAME] = tex_asset_id(m, "ui/buttons/selected_leave_game");
 }
 
 i32 cw_texture_load(cw_Texture *texture, AssetManager *manager, FileEntry file_entry) {
