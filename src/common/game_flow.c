@@ -1,6 +1,5 @@
 #include "lilc/array.h"
 #include "../../include/game.h"
-#include "lilc/log.h"
 #include "../../include/net/client.h"
 #include <raylib.h>
 
@@ -21,7 +20,9 @@ void client_deinit_raylib(void) {
   CloseWindow();
 }
 void game_init(Game *game) {
-  log_debug("debug stuffs :3");
+  category_init(&game->tile_categories, "Tiles");
+  category_init(&game->item_categories, "Items");
+
   game->debug = (Debug){.options = {.game_object_display = DEBUG_DISPLAY_NONE, .collisions_enabled = true, .hitboxes_shown = false}, .game = game};
 #ifdef DEBUG_BUILD
   debug_init(&game->debug, game);

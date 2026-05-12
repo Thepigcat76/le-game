@@ -17,7 +17,7 @@ void client_render_overlay(ClientGame *client) {
 #endif
 
   Vec2f mouse_pos = GetMousePosition();
-  if (client->slot_selected) {
+  if (client->state.slot_selected) {
     //TODO: Reenable
     
     //if (mouse_pos.x + client->texture_manager.textures[TEXTURE_TOOLTIP].width * 5 > GetScreenWidth()) {
@@ -57,7 +57,7 @@ void client_render_overlay(ClientGame *client) {
 
 void client_render_menu(ClientGame *client) {
   UiRenderer *ui_renderer = &client->ui_renderer;
-  switch (client->cur_menu) {
+  switch (client->state.cur_menu) {
   case MENU_SAVE: {
     RENDER_MENU(ui_renderer, save_menu);
     break;

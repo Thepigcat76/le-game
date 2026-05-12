@@ -3,7 +3,7 @@
 #include "shared.h"
 #include "raylib.h"
 #include "item/item_props.h"
-#include "tile/tile_category.h"
+#include "category.h"
 #include "data.h"
 #include <stdlib.h>
 

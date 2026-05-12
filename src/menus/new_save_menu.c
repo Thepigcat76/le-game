@@ -15,7 +15,7 @@ static TextInputBuffer seed_text_input_buffer = {.buf = _text_buf_1, .len = 0, .
 
 static void new_save_create_world() {
   client_set_menu(&CLIENT_GAME, MENU_NONE);
-  CLIENT_GAME.paused = false;
+  CLIENT_GAME.state.paused = false;
 
   SaveDescriptor desc = {
       .id = array_len(CLIENT_GAME.local_saves),

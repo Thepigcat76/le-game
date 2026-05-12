@@ -17,10 +17,23 @@
 #include "sockets.h"
 #include "../assets.h"
 
+typedef struct {
+  bool paused;
+  MenuId cur_menu;
+
+  bool slot_selected;
+  TileInstance *hovered_tile;
+  BeingInstance *hovered_being;
+
+  PressedKeys pressed_keys;
+} ClientState;
+
 typedef struct _client_game {
   Camera2D cam;
-  MenuId cur_menu;
-  bool paused;
+
+  ClientState state;
+
+  bool singleplayer;
   
   /* Managers */
   AssetManager asset_manager;
@@ -29,21 +42,17 @@ typedef struct _client_game {
 
   SoundManager sound_manager;
   ParticleManager particle_manager;
+
   UiRenderer ui_renderer;
   Window window;
   RenderTexture2D world_texture;
-  bool slot_selected;
-  PressedKeys pressed_keys;
-  TileInstance *hovered_tile;
-  BeingInstance *hovered_being;
-  bool singleplayer;
   // Saves
   // These are saves that are actually stored on disk
   SaveDescriptor *local_saves;
   // A save - this can either be a local save or
   // a save on the server
   Save *cur_save;
-  // Pointer to the game (heap-allocated)
+  // Main game
   Game game;
   // World, Player - points to the
   // world and player usually stored
@@ -51,7 +60,7 @@ typedef struct _client_game {
   World *world;
   PlayerRenderDescriptor *players;
   Player cur_player;
-  int player_id;
+  i32 player_id;
   addr_t server_addr;
   bool connected_to_server;
 } ClientGame;

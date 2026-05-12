@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../tile/tile_category.h"
+#include "../category.h"
 
 typedef struct {
   int attack_damage;
   int break_speed;
-  TileIdCategories break_categories;
+  TileCategories break_categories;
 } ToolProperties;
 
 typedef struct {

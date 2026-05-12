@@ -7,7 +7,7 @@
 #include "raylib.h"
 #include "shared.h"
 #include "textures.h"
-#include "tile/tile_category.h"
+#include "category.h"
 #include "tile/tile_props.h"
 #include "tile/adv_tile.h"
 
@@ -127,16 +127,4 @@ AssetId *tile_variants_by_index(i32 i, i32 x, i32 y);
 
 i32 tile_variants_amount_by_index(i32 index, i32 x, i32 y);
 
-void tile_variants_free();
-
-// TILE CATEGORIES
-
-typedef struct {
-  TileId tiles[MAX_TILE_TYPES];
-  TileIdCategories tile_categories[MAX_TILE_TYPES];
-  size_t tiles_amount;
-} TileCategoryLookup;
-
-void tile_categories_setup(TileCategoryLookup *lookup);
-
-TileIdCategories tile_categories(const TileCategoryLookup *lookup, const TileType *tile);
+void tile_variants_free(void);

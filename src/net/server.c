@@ -74,11 +74,10 @@ static void *server_game(void *args) {
   // setup registries
   game_registry_setup();
 
+  game_categories_setup(game);
+
   game->debug.options.selected_tile_to_place_instance = tile_new(&TILES[TILE_DIRT]);
   game->debug.options.selectable_tiles = array_new_capacity(TileInstance, 256, &HEAP_ALLOCATOR);
-
-  // setup tile_categories
-  tile_categories_setup(&game->tile_category_lookup);
 
   // Reload common resources (creates them)
   game_reload(game);

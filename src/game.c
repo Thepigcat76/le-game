@@ -20,6 +20,12 @@ void game_registry_setup(void) {
   space_types_init();
 }
 
+void game_categories_setup(Game *game) {
+  category_add(&game->tile_categories, CATEGORY_STONE, TILE_STONE);
+  category_add(&game->tile_categories, CATEGORY_DIRT, TILE_DIRT);
+  category_add(&game->tile_categories, CATEGORY_DIRT, TILE_GRASS);
+}
+
 void game_feature_add(Game *game, GameFeature game_feature) {
   if (game->cur_save.feature_store.game_features_amount < game->cur_save.feature_store.game_features_capacity) {
     game->cur_save.feature_store.game_features[game->cur_save.feature_store.game_features_amount++] = game_feature;

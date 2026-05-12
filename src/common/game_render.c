@@ -20,7 +20,7 @@ static void game_render_break_progress(ClientGame *client, TilePos break_pos, in
 static void client_render_beings(ClientGame *client) {
   for (int i = 0; i < array_len(client->world->beings); i++) {
     if (CheckCollisionPointRec(GetMousePosition(), client->world->beings[i].context.box)) {
-      client->hovered_being = &client->world->beings[i];
+      client->state.hovered_being = &client->world->beings[i];
     }
     being_render(&client->world->beings[i]);
   }
@@ -57,15 +57,15 @@ void client_world_render(ClientGame *client, float alpha) {
 
   int x_index = floor_div(mouse_world_pos.x, TILE_SIZE);
   int y_index = floor_div(mouse_world_pos.y, TILE_SIZE);
-  client->hovered_tile = world_highest_tile_at(client->world, vec2i(x_index, y_index));
+  client->state.hovered_tile = world_highest_tile_at(client->world, vec2i(x_index, y_index));
   Rectangle rec = (Rectangle){.x = x_index * (TILE_SIZE), .y = y_index * (TILE_SIZE), .width = (TILE_SIZE), .height = (TILE_SIZE)};
-  bool slot_selected = client->slot_selected;
+  bool slot_selected = client->state.slot_selected;
   bool interaction_in_range = abs((int)CLIENT_PLAYER->box.x - x_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE &&
       abs((int)CLIENT_PLAYER->box.y - y_index * TILE_SIZE) < CONFIG.interaction_range * TILE_SIZE;
 
   if (!slot_selected && interaction_in_range) {
     rec_draw_outline(rec, BLUE);
-    bool can_break = item_tool_correct_for_tile(&client->cur_player.held_item, client->hovered_tile, &client->game.tile_category_lookup);
+    bool can_break = item_tool_correct_for_tile(&client->cur_player.held_item, client->state.hovered_tile, &client->game.tile_categories);
     // DrawTexture(client->texture_manager.textures[can_break ? TEXTURE_OK : TEXTURE_ERR], rec.x + 4, rec.y - 8, WHITE);
   }
 
@@ -108,7 +108,7 @@ void client_render(ClientGame *client, float alpha) {
         BeginMode2D(*cam);
         {
           ClearBackground(DARKGRAY);
-          if (!client_menu_hides_game(client, client->cur_menu)) {
+          if (!client_menu_hides_game(client, client->state.cur_menu)) {
             client_world_render(client, alpha);
 
             // TODO: MOVE TO GAME RENDER FUNCTION
@@ -126,7 +126,7 @@ void client_render(ClientGame *client, float alpha) {
       }
       EndTextureMode();
 
-      if (!client_menu_hides_game(client, client->cur_menu)) {
+      if (!client_menu_hides_game(client, client->state.cur_menu)) {
         // RENDER WORLD
         // BeginShaderMode(lighting_shader);
         {
@@ -137,7 +137,7 @@ void client_render(ClientGame *client, float alpha) {
         // EndShaderMode();
       }
 
-      if (!client_menu_hides_game(client, client->cur_menu)) {
+      if (!client_menu_hides_game(client, client->state.cur_menu)) {
         client_render_overlay(client);
       }
     }
@@ -146,15 +146,15 @@ void client_render(ClientGame *client, float alpha) {
 
     client_render_menu(client);
 
-    bool can_cursor_interact_with_tile = cursor_can_interact_with_tile(client, client->hovered_tile);
-    bool can_cursor_interact_with_being = cursor_can_interact_with_being(client, client->hovered_being);
+    bool can_cursor_interact_with_tile = cursor_can_interact_with_tile(client, client->state.hovered_tile);
+    bool can_cursor_interact_with_being = cursor_can_interact_with_being(client, client->state.hovered_being);
 
     float scale = 3;
     Texture2D tex = tex_by_handle(&CLIENT_GAME.asset_manager,
                                   can_cursor_interact_with_tile || can_cursor_interact_with_being ? TEX_CURSOR_FIST : TEX_CURSOR);
     DrawTextureEx(tex, (Vector2){.x = mouse_pos.x, .y = mouse_pos.y}, 0, scale, WHITE);
 
-    if (client_menu_is_container(client, client->cur_menu) && !item_is_empty(&CLIENT_PLAYER->dragged_item)) {
+    if (client_menu_is_container(client, client->state.cur_menu) && !item_is_empty(&CLIENT_PLAYER->dragged_item)) {
       item_render(&CLIENT_PLAYER->dragged_item, mouse_pos.x - 22, mouse_pos.y - 22);
     } else if (can_cursor_interact_with_tile) {
       item_render(&CLIENT_PLAYER->held_item, mouse_pos.x - 22, mouse_pos.y - 22);

@@ -3,8 +3,8 @@
 #include <raylib.h>
 
 static void save_menu_back_to_game_button_clicked() {
-  CLIENT_GAME.cur_menu = MENU_NONE;
-  CLIENT_GAME.paused = false;
+  CLIENT_GAME.state.cur_menu = MENU_NONE;
+  CLIENT_GAME.state.paused = false;
 }
 
 static void save_menu_general_settings_button_clicked() { TraceLog(LOG_DEBUG, "Button clicked"); }

@@ -305,7 +305,7 @@ static void handle_space_sync(PacketS2CSyncSpace *packet, Game *game) {
   client_init_loaded_save(&CLIENT_GAME, &game->cur_save);
   client_set_menu(&CLIENT_GAME, MENU_NONE);
   CLIENT_GAME.game.save_loaded = true;
-  CLIENT_GAME.paused = false;
+  CLIENT_GAME.state.paused = false;
 }
 
 // SERVER_GAME/CLIENT_CONNECTIONS are safe to access cuz they are locked

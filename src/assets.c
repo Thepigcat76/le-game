@@ -55,9 +55,9 @@ static void asset_manager_init(AssetManager *asset_manager) {
   bump_init(&asset_manager->asset_bump, sizeof(cw_Texture) * 8192);
   bump_allocator_init(&asset_manager->asset_bump_allocator, &asset_manager->asset_bump);
 
-  asset_manager->textures = array_new_capacity(cw_Texture, 1024, &asset_manager->asset_bump_allocator);
-  asset_manager->shaders = array_new_capacity(cw_Shader, 1024, &asset_manager->asset_bump_allocator);
-  asset_manager->sounds = array_new_capacity(cw_Sound, 1024, &asset_manager->asset_bump_allocator);
+  asset_manager->textures = array_new_capacity(cw_Texture, 1024, &HEAP_ALLOCATOR);
+  asset_manager->shaders = array_new_capacity(cw_Shader, 1024, &HEAP_ALLOCATOR);
+  asset_manager->sounds = array_new_capacity(cw_Sound, 1024, &HEAP_ALLOCATOR);
 }
 
 typedef void (*AssetFileVisitFunc)(AssetManager *asset_manager, FileEntry file_entry);
@@ -126,5 +126,10 @@ void assets_load(AssetManager *asset_manager) {
 }
 
 void assets_unload(AssetManager *asset_manager) {
+  cw_Texture *tex;
+  array_foreach(asset_manager->textures, tex) {
+    cw_texture_unload(tex);
+  }
 
+  bump_reset(&asset_manager->asset_bump);
 }

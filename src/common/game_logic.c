@@ -18,21 +18,21 @@ void game_tick(Game *game) {
     //server_tick(game->server_game);
   }
 
-  if (!game->client_game->paused && CLIENT_WORLD != NULL) {
+  if (!game->client_game->state.paused && CLIENT_WORLD != NULL) {
     game_world_tick(game);
   }
 
   if (IS_KEY_PRESSED(open_close_save_menu)) {
-    if (game->client_game->cur_menu == MENU_SAVE) {
+    if (game->client_game->state.cur_menu == MENU_SAVE) {
       client_set_menu(game->client_game, MENU_NONE);
-      game->client_game->paused = false;
-    } else if (game->client_game->cur_menu == MENU_NONE) {
+      game->client_game->state.paused = false;
+    } else if (game->client_game->state.cur_menu == MENU_NONE) {
       client_set_menu(game->client_game, MENU_SAVE);
-      game->client_game->paused = true;
+      game->client_game->state.paused = true;
     }
   }
 
-  if (IS_KEY_PRESSED(close_cur_menu) && game->client_game->cur_menu != MENU_NONE && game->client_game->cur_menu != MENU_SAVE) {
+  if (IS_KEY_PRESSED(close_cur_menu) && game->client_game->state.cur_menu != MENU_NONE && game->client_game->state.cur_menu != MENU_SAVE) {
     // game_set_menu(game, MENU_NONE);
   }
 
@@ -43,6 +43,8 @@ void game_tick(Game *game) {
   if (IS_KEY_PRESSED(reload)) {
     client_reload(game->client_game);
     game_reload(game);
+
+    log_info("CLIENT RELOADED");
   }
 }
 
@@ -67,7 +69,7 @@ static void game_world_tick(Game *game) {
   // game->sound_manager.sound_timer += GetFrameTime();
 
   if (IS_KEY_PRESSED(open_close_inventory)) {
-    if (game->client_game->cur_menu == MENU_NONE) {
+    if (game->client_game->state.cur_menu == MENU_NONE) {
       client_set_menu(game->client_game, MENU_INVENTORY);
     } else {
       client_set_menu(game->client_game, MENU_NONE);
@@ -82,7 +84,7 @@ static void game_world_tick(Game *game) {
 
   if (IS_KEY_PRESSED(open_close_debug_menu)) {
     log_debug("F3 pressed");
-    if (game->client_game->cur_menu == MENU_NONE) {
+    if (game->client_game->state.cur_menu == MENU_NONE) {
       client_set_menu(game->client_game, MENU_DEBUG);
     } else {
       client_set_menu(game->client_game, MENU_NONE);
@@ -95,24 +97,20 @@ static void game_world_tick(Game *game) {
 #endif
 }
 
-TileIdCategories item_tile_categories(const ItemInstance *item) { return item->type.item_props.tool_props.break_categories; }
+TileCategories item_tile_categories(const ItemInstance *item) { return item->type.item_props.tool_props.break_categories; }
 
-bool item_tool_correct_for_tile(const ItemInstance *item, const TileInstance *tile, const TileCategoryLookup *lookup) {
-  TileIdCategories tool_break_categories = item_tile_categories(item);
+bool item_tool_correct_for_tile(const ItemInstance *item, const TileInstance *tile, Category *lookup) {
+  TileCategories tool_break_categories = item_tile_categories(item);
   // Check if tool has break categories
-  if (tool_break_categories.categories_amount > 0) {
-    TileIdCategories selected_tile_categories = tile_categories(lookup, tile->type);
-    if (selected_tile_categories.categories_amount > 0) {
-      // Check if tool has correct tile category as the tile that should be broken
-      for (int i = 0; i < tool_break_categories.categories_amount; i++) {
-        for (int j = 0; j < selected_tile_categories.categories_amount; j++) {
-          if (tool_break_categories.categories[i] == selected_tile_categories.categories[j]) {
-            return true;
-          }
-        }
+  if (array_len(tool_break_categories) > 0) {
+    char **category_name;
+    array_foreach(tool_break_categories, category_name) {
+      if (is_category_of_elem_id(lookup, tile->type->id, *category_name)) {
+        return true;
       }
     }
   }
+  
   return false;
 }
 
@@ -128,7 +126,7 @@ static void game_handle_tile_interaction(Game *game) {
   // Break tile
   if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && true /*!slot_selected*/ && interaction_in_range) {
     TileInstance *selected_tile = world_highest_tile_at(CLIENT_WORLD, vec2i(x_index, y_index));
-    bool correct_tool = item_tool_correct_for_tile(&CLIENT_PLAYER->held_item, selected_tile, &game->tile_category_lookup);
+    bool correct_tool = item_tool_correct_for_tile(&CLIENT_PLAYER->held_item, selected_tile, &game->tile_categories);
 
     if (selected_tile->type->id == TILE_EMPTY || selected_tile->type->tile_props.break_time < 0 || !correct_tool) {
       CLIENT_PLAYER->break_progress = -1;
@@ -191,7 +189,7 @@ static void game_handle_tile_interaction(Game *game) {
 
   // Debug - set target position for npc to go to
   if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON)) {
-    if (game->client_game->cur_menu == MENU_DEBUG) {
+    if (game->client_game->state.cur_menu == MENU_DEBUG) {
       game->debug.debug_go_to_pos = vec2f(x_index * TILE_SIZE, y_index * TILE_SIZE);
       TraceLog(LOG_DEBUG, "Set target position");
     }

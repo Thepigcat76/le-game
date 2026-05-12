@@ -248,8 +248,9 @@ char *str_cpy_heap(const char *in);
   } while (0)
 
 // The assignment consumes the key
-#define IS_KEY_PRESSED(id) CLIENT_GAME.pressed_keys.id##_key_pressed && !(CLIENT_GAME.pressed_keys.id##_key_pressed = false)
-#define IS_KEY_DOWN(id) CLIENT_GAME.pressed_keys.id##_key_down && !(CLIENT_GAME.pressed_keys.id##_key_down = false)
+// FIXME: Why are we assigning to false
+#define IS_KEY_PRESSED(id) CLIENT_GAME.state.pressed_keys.id##_key_pressed && !(CLIENT_GAME.state.pressed_keys.id##_key_pressed = false)
+#define IS_KEY_DOWN(id) CLIENT_GAME.state.pressed_keys.id##_key_down && !(CLIENT_GAME.state.pressed_keys.id##_key_down = false)
 
 char *btos(bool b);
 

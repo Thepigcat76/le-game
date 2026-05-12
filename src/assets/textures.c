@@ -6,6 +6,7 @@
 #include "lilc/array.h"
 #include "lilc/log.h"
 #include "lilc/str.h"
+#include <lilc/bump.h>
 #include <raylib.h>
 
 AssetId TEX_IDS[_amount_texture_handles];
@@ -176,4 +177,15 @@ i32 cw_texture_load(cw_Texture *texture, AssetManager *manager, FileEntry file_e
   dyn_string_free(&meta_file_name);
 
   return 1;
+}
+
+void cw_texture_unload(cw_Texture *texture) {
+  switch (texture->kind) {
+  case TEXTURE_STATIC: {
+    UnloadTexture(texture->var.texture_static);
+  } break;
+  case TEXTURE_ANIMATED: {
+    UnloadTexture(texture->var.texture_animated.texture);
+  } break;
+  }
 }

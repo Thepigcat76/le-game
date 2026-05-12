@@ -76,6 +76,8 @@ Texture2D tex_by_handle(AssetManager *asset_manager, TextureHandle handle);
 
 i32 cw_texture_load(cw_Texture *texture, AssetManager *manager, FileEntry file_entry);
 
+void cw_texture_unload(cw_Texture *texture);
+
 // Assign ids to handles
 
 void texture_handles_assign_id(AssetManager *m);

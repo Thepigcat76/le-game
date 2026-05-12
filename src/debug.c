@@ -20,7 +20,7 @@ void debug_init(Debug *debug, struct _game *game) {
 static void debug_render_game_object_overlay(Debug *debug) {
   switch (debug->game->debug.options.game_object_display) {
   case DEBUG_DISPLAY_ALL_ITEMS: {
-    debug->game->client_game->paused = true;
+    debug->game->client_game->state.paused = true;
     for (int i = 0; i < ITEMS_AMOUNT; i++) {
       ItemInstance item = (ItemInstance){.type = ITEMS[i]};
       float scale = 3.5;
@@ -37,7 +37,7 @@ static void debug_render_game_object_overlay(Debug *debug) {
     break;
   }
   case DEBUG_DISPLAY_ALL_TILES: {
-    debug->game->client_game->paused = true;
+    debug->game->client_game->state.paused = true;
     for (int i = 0; i < TILES_AMOUNT; i++) {
       double x = ((float)SCREEN_WIDTH / 2) - (ITEMS_AMOUNT * 16 * 3.5) / 2 + (i * 32 * 3.5);
       double y = ((float)SCREEN_HEIGHT / 2) - 8 * 3.5;
@@ -51,7 +51,7 @@ static void debug_render_game_object_overlay(Debug *debug) {
     break;
   }
   case DEBUG_DISPLAY_ALL_BEINGS: {
-    debug->game->client_game->paused = true;
+    debug->game->client_game->state.paused = true;
     float scale = 3;
     for (int i = 0; i < BEINGS_AMOUNT; i++) {
       int start_x = 0;
@@ -68,7 +68,7 @@ static void debug_render_game_object_overlay(Debug *debug) {
     break;
   }
   case DEBUG_DISPLAY_NONE: {
-    debug->game->client_game->paused = false;
+    debug->game->client_game->state.paused = false;
     break;
   }
   }
@@ -77,10 +77,10 @@ static void debug_render_game_object_overlay(Debug *debug) {
 void debug_render_overlay(Debug *debug) {
   Vec2i selected_tile_render_pos = SELECTED_TILE_RENDER_POS(GetScreenWidth(), GetScreenHeight());
   tile_render_scaled(&debug->options.selected_tile_to_place_instance, selected_tile_render_pos.x + 35, selected_tile_render_pos.y - 60, 4);
-  if (debug->game->client_game->cur_menu == MENU_DEBUG) {
+  if (debug->game->client_game->state.cur_menu == MENU_DEBUG) {
     debug_render_game_object_overlay(debug);
 
-    TileInstance *hovered_tile = debug->game->client_game->hovered_tile;
+    TileInstance *hovered_tile = debug->game->client_game->state.hovered_tile;
     if (hovered_tile != NULL) {
       char *tile_name = tile_type_to_string(hovered_tile->type);
       int font_size = CONFIG.default_font_size / 1.5;
@@ -102,7 +102,7 @@ void debug_render(Debug *debug) {
     }
   }
 
-  if (debug->game->client_game->cur_menu == MENU_DEBUG) {
+  if (debug->game->client_game->state.cur_menu == MENU_DEBUG) {
     int id = debug->debug_controlled_being_id;
     BeingBrain brain = CLIENT_WORLD->beings[id].brain;
     // if (brain.activities_amount > 0) {
@@ -122,14 +122,14 @@ void debug_tick(Debug *debug) {
     }
   }
 
-  if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON) && debug->game->client_game->cur_menu == MENU_DEBUG) {
+  if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON) && debug->game->client_game->state.cur_menu == MENU_DEBUG) {
     BeingInstance *being = &CLIENT_WORLD->beings[debug->debug_controlled_being_id];
     being_brain_reset(being);
     being_activities_add_walk_around(being, debug->debug_go_to_pos);
     TraceLog(LOG_DEBUG, "Added activity");
   }
 
-  if (IsKeyReleased(KEYBINDS.close_cur_menu_key) && debug->game->client_game->cur_menu == MENU_DEBUG) {
+  if (IsKeyReleased(KEYBINDS.close_cur_menu_key) && debug->game->client_game->state.cur_menu == MENU_DEBUG) {
     if (debug->options.game_object_display != DEBUG_DISPLAY_NONE) {
       debug->options.game_object_display = DEBUG_DISPLAY_NONE;
     } else {

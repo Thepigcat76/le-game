@@ -14,6 +14,7 @@
 #include "space_desc.h"
 #include "tile.h"
 #include "ui.h"
+#include "category.h"
 
 #define MAX_TICKS_PER_FRAME 20
 
@@ -21,13 +22,11 @@ typedef struct _game {
   // SAVE SPECIFIC
   Save cur_save;
   // pointers to the fields in the current save
-  // TILE CATEGORIES
-  TileCategoryLookup tile_category_lookup;
+  // CATEGORIES
+  Category tile_categories;
+  Category item_categories;
   // DEBUGGING
   Debug debug;
-  // KEYS PRESSED
-  PressedKeys pressed_keys;
-  bool slot_selected;
   // Client/Server - depending on
   // the side we are on either one
   // of these is not NULL
@@ -45,6 +44,8 @@ extern GameSide GAME_SIDE;
 
 // Initialize registries
 void game_registry_setup(void);
+
+void game_categories_setup(Game *game);
 
 // GAME CREATION
 
@@ -78,9 +79,9 @@ void game_tick(Game *game);
 
 // Tile category/breaking
 
-TileIdCategories item_tile_categories(const ItemInstance *item);
+TileCategories item_tile_categories(const ItemInstance *item);
 
-bool item_tool_correct_for_tile(const ItemInstance *item, const TileInstance *tile, const TileCategoryLookup *lookup);
+bool item_tool_correct_for_tile(const ItemInstance *item, const TileInstance *tile, Category *tile_categories);
 
 // GAME SPACES
 

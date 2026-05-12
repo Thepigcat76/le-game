@@ -1,9 +1,9 @@
 #include "../../include/net/client.h"
-#include "lilc/array.h"
 #include "../../include/camera.h"
 #include "../../include/game.h"
-#include "lilc/log.h"
 #include "../../include/net/packet.h"
+#include "lilc/array.h"
+#include "lilc/log.h"
 #include <lilc/alloc.h>
 #include <pthread.h>
 #include <raylib.h>
@@ -23,7 +23,7 @@ static Music MUSIC;
 static Bump SOUND_BUMP;
 
 // Uses null at the end to terminate
-//static const char *TEXTURE_MANAGER_TEXTURE_PATHS[TEXTURE_MANAGER_TEXTURES_AMOUNT + 1] = {
+// static const char *TEXTURE_MANAGER_TEXTURE_PATHS[TEXTURE_MANAGER_TEXTURES_AMOUNT + 1] = {
 //    "cursor", "cursor_fist", "gui/tool_tip", "breaking_overlay", "gui/slot", "gui/ok", "gui/err", NULL};
 
 static void client_game_start(void);
@@ -51,7 +51,7 @@ static void *client_game(void *args) {
 
   // Create and init common game
   game_init(&CLIENT_GAME.game);
-  
+
   CLIENT_GAME.game.client_game = &CLIENT_GAME;
   CLIENT_GAME.cur_save = &CLIENT_GAME.game.cur_save;
 
@@ -60,16 +60,16 @@ static void *client_game(void *args) {
   // init registries
   game_registry_setup();
 
+  game_categories_setup(game);
+
   game->debug.options.selected_tile_to_place_instance = tile_new(&TILES[TILE_DIRT]);
   game->debug.options.selectable_tiles = array_new_capacity(TileInstance, 256, &HEAP_ALLOCATOR);
   for (size_t i = 0; i < TILES_AMOUNT; i++) {
     array_add(game->debug.options.selectable_tiles, tile_new(&TILES[i]));
   }
 
-  tile_categories_setup(&game->tile_category_lookup);
-
   // Reload client resources (initializes them)
-  client_reload(&CLIENT_GAME);
+  //client_reload(&CLIENT_GAME);
   // Reload common resources (initializes them)
   game_reload(game);
 
@@ -188,8 +188,8 @@ void client_init(ClientGame *client) {
   int window_height = GetScreenHeight();
 
   client->cam = camera_new(SCREEN_WIDTH, SCREEN_HEIGHT);
-  client->cur_menu = MENU_START;
-  client->paused = false;
+  client->state.cur_menu = MENU_START;
+  client->state.paused = false;
   client->world_texture = LoadRenderTexture(window_width, window_height);
   client->local_saves = array_new_capacity(SaveDescriptor, 64, &HEAP_ALLOCATOR);
   client->window = (Window){.prev_width = window_height, .prev_height = window_height, .width = window_width, .height = window_height};
@@ -202,29 +202,32 @@ void client_init(ClientGame *client) {
   bump_init(&SOUND_BUMP, sizeof(Sound) * 1024);
 
   client->sound_manager.sound_buffers[SOUND_PLACE].base_sound = LoadSound("res/sounds/place_sound.wav");
-  client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf = array_new_capacity(Sound, SOUND_BUFFER_LIMIT, &HEAP_ALLOCATOR); //SOUND_BUMP_ALLOCATOR);
+  client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf =
+      array_new_capacity(Sound, SOUND_BUFFER_LIMIT, &HEAP_ALLOCATOR); // SOUND_BUMP_ALLOCATOR);
 
-  //for (int i = 0; i < SOUND_BUFFER_LIMIT; i++) {
-  //  client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf[i] =
-  //      LoadSoundAlias(client->sound_manager.sound_buffers[SOUND_PLACE].base_sound);
-  //  SetSoundPitch(client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf[i], 0.5);
-  //  SetSoundVolume(client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf[i], 0.25);
-  //}
+  client_reload(client);
 
-  //MUSIC = LoadMusicStream("res/music/main_menu_music.ogg");
-  //SetMusicVolume(MUSIC, 0.15);
-  //SetMusicPitch(MUSIC, 0.85);
-  // PlayMusicStream(MUSIC);
+  //assets_load(&client->asset_manager);
 
-  assets_load(&client->asset_manager);
+  // for (int i = 0; i < SOUND_BUFFER_LIMIT; i++) {
+  //   client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf[i] =
+  //       LoadSoundAlias(client->sound_manager.sound_buffers[SOUND_PLACE].base_sound);
+  //   SetSoundPitch(client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf[i], 0.5);
+  //   SetSoundVolume(client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf[i], 0.25);
+  // }
+
+  // MUSIC = LoadMusicStream("res/music/main_menu_music.ogg");
+  // SetMusicVolume(MUSIC, 0.15);
+  // SetMusicPitch(MUSIC, 0.85);
+  //  PlayMusicStream(MUSIC);
 
   AssetId texture_axe = TEX_IDS[TEX_AXE];
   const char *path = client->asset_manager.textures[texture_axe].path;
   log_debug("Axe path: %s", path);
 
-  //for (int i = 0; TEXTURE_MANAGER_TEXTURE_PATHS[i] != NULL; i++) {
-  //  client->texture_manager.textures[i] = LoadTexture(TextFormat("res/assets/%s.png", TEXTURE_MANAGER_TEXTURE_PATHS[i]));
-  //}
+  // for (int i = 0; TEXTURE_MANAGER_TEXTURE_PATHS[i] != NULL; i++) {
+  //   client->texture_manager.textures[i] = LoadTexture(TextFormat("res/assets/%s.png", TEXTURE_MANAGER_TEXTURE_PATHS[i]));
+  // }
 }
 
 void client_deinit(ClientGame *client) {
@@ -232,33 +235,44 @@ void client_deinit(ClientGame *client) {
 
   array_free(client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf);
 
-  //shaders_unload(&client->shader_manager);
+  // shaders_unload(&client->shader_manager);
 }
 
+static bool initial_reload = true;
+
 void client_reload(ClientGame *game) {
+  if (!initial_reload) {
+    assets_unload(&game->asset_manager);
+  }
+
+  assets_load(&game->asset_manager);
+
   CLIENT_RELOAD(game, tile);
   CLIENT_RELOAD(game, keybinds);
+  // TODO: Move to asset manager
   CLIENT_RELOAD(game, shaders);
   CLIENT_RELOAD(game, world);
+
+  initial_reload = false;
 }
 
 static void client_update_animations(ClientGame *client) {
-  //for (int i = 0; i < ANIMATED_TEXTURES_LEN; i++) {
-  //  AnimatedTexture *texture = &ANIMATED_TEXTURES[i];
-  //  texture->frame_timer += TICK_INTERVAL * 1000.0f;
-  //  float delay = texture->texture.var.texture_animated.frame_time;
-  //  if (texture->frame_timer >= delay) {
-  //    int frames = texture->texture.var.texture_animated.frames;
-  //    texture->cur_frame = (texture->cur_frame + 1) % frames;
-  //    texture->frame_timer = 0;
-  //  }
-  //}
+  // for (int i = 0; i < ANIMATED_TEXTURES_LEN; i++) {
+  //   AnimatedTexture *texture = &ANIMATED_TEXTURES[i];
+  //   texture->frame_timer += TICK_INTERVAL * 1000.0f;
+  //   float delay = texture->texture.var.texture_animated.frame_time;
+  //   if (texture->frame_timer >= delay) {
+  //     int frames = texture->texture.var.texture_animated.frames;
+  //     texture->cur_frame = (texture->cur_frame + 1) % frames;
+  //     texture->frame_timer = 0;
+  //   }
+  // }
 }
 
 static bool inv_slot_selected();
 
 void client_tick(ClientGame *client) {
-  client->slot_selected = inv_slot_selected();
+  client->state.slot_selected = inv_slot_selected();
   UpdateMusicStream(MUSIC);
 
   client->window.width = GetScreenWidth();
@@ -332,7 +346,7 @@ static void client_calc_ui_height(UiRenderer *ui_renderer) {
 }
 
 void client_set_menu(ClientGame *game, MenuId menu_id) {
-  game->cur_menu = menu_id;
+  game->state.cur_menu = menu_id;
   client_calc_ui_height(&game->ui_renderer);
   client_open_menu(game, menu_id);
 }
@@ -350,8 +364,8 @@ static bool inv_slot_selected() {
 }
 
 #define KEY_DOWN(key_name)                                                                                                                 \
-  client->pressed_keys.key_name##_down |= IsKeyDown(KEYBINDS.key_name);                                                                    \
-  client->pressed_keys.key_name##_pressed |= IsKeyPressed(KEYBINDS.key_name);
+  client->state.pressed_keys.key_name##_down |= IsKeyDown(KEYBINDS.key_name);                                                                    \
+  client->state.pressed_keys.key_name##_pressed |= IsKeyPressed(KEYBINDS.key_name);
 
 static void client_poll_keybinds(ClientGame *client) {
   KEY_DOWN(move_foreward_key);
@@ -370,12 +384,12 @@ static void client_poll_keybinds(ClientGame *client) {
   KEY_DOWN(open_close_inventory_key);
 }
 
-bool cursor_can_interact_with_tile(ClientGame *game, TileInstance *tile) {
+bool cursor_can_interact_with_tile(ClientGame *client, TileInstance *tile) {
   if (tile == NULL || tile->type == TILE_INSTANCE_EMPTY.type)
     return false;
 
-  Player *p = &game->cur_player;
-  bool correct_tool_for_tile = item_tool_correct_for_tile(&p->held_item, tile, &game->game.tile_category_lookup);
+  Player *p = &client->cur_player;
+  bool correct_tool_for_tile = item_tool_correct_for_tile(&p->held_item, tile, &client->game.tile_categories);
   return correct_tool_for_tile;
 }
 

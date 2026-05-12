@@ -1,21 +1,18 @@
 #pragma once
 
+#include "../category.h"
 #include "../item.h"
-#include "../tile/tile_category.h"
 #include "raylib.h"
 
-#define ITEM_TYPE_INIT(item_id, name, asset_id, ...)                                                                     \
-  {                                                                                                                    \
-    ITEMS[item_id] = (ItemType){.id = item_id,                                                                         \
-                                .texture = asset_id,                             \
-                                .item_props = (ItemProperties)__VA_ARGS__};                                            \
-    ITEMS_AMOUNT++;                                                                                                    \
+#define ITEM_TYPE_INIT(item_id, name, asset_id, ...)                                                                                       \
+  {                                                                                                                                        \
+    ITEMS[item_id] = (ItemType){.id = item_id, .texture = asset_id, .item_props = (ItemProperties)__VA_ARGS__};                            \
+    ITEMS_AMOUNT++;                                                                                                                        \
   }
 
-#define TOOL_ITEM_PROPS(...)                                                                                           \
+#define TOOL_ITEM_PROPS(...)                                                                                                               \
   (ItemProperties) { .light_source = false, .tool_props = (ToolProperties)__VA_ARGS__ }
 
-#define TOOL_PROPS_BREAK_CATEGORIES(...)                                                                               \
-  (TileIdCategories) {                                                                                                 \
-    .categories = {__VA_ARGS__}, .categories_amount = sizeof((TileCategory[]){__VA_ARGS__}) / sizeof(TileCategory)     \
-  }
+TileCategories tile_categories_make(char *categories[]);
+
+#define TOOL_PROPS_BREAK_CATEGORIES(...) tile_categories_make((char *[]){__VA_ARGS__ __VA_OPT__(,) NULL})
