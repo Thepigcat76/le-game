@@ -5,10 +5,6 @@
 #include <raylib.h>
 #include <stdint.h>
 
-#define COMMON_RELOAD(game_ptr, src_file_prefix)                                                                                           \
-  extern void src_file_prefix##_on_reload(Game *game);                                                                                     \
-  src_file_prefix##_on_reload(game_ptr)
-
 GameSide GAME_SIDE;
 
 void game_registry_setup(void) {
@@ -30,11 +26,6 @@ void game_feature_add(Game *game, GameFeature game_feature) {
   if (game->cur_save.feature_store.game_features_amount < game->cur_save.feature_store.game_features_capacity) {
     game->cur_save.feature_store.game_features[game->cur_save.feature_store.game_features_amount++] = game_feature;
   }
-}
-
-void game_reload(Game *game) {
-  COMMON_RELOAD(game, config);
-  COMMON_RELOAD(game, save_names);
 }
 
 void game_enter_space(Game *game, SpaceDescriptor desc) {

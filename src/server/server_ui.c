@@ -1,4 +1,5 @@
 #include <lilc/alloc.h>
+#include <lilc/dir.h>
 #include <raylib.h>
 #define CTX_SERVER
 #include "../../include/ui.h"
@@ -12,6 +13,14 @@
 #include "../../include/server_ui.h"
 #include "../../include/shared.h"
 #include "../../vendor/cJSON.h"
+
+static AssetManager asset_manager = {0}; 
+
+void server_ui_setup(UiRenderer *renderer) {
+  renderer->asset_manager = &asset_manager;
+  
+  assets_load(&asset_manager);
+}
 
 static void on_click(void) {
   printf("Button pressed\n");

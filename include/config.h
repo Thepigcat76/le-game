@@ -1,9 +1,10 @@
 #pragma once
 
 #include <stdio.h>
+#include "lilc/file.h"
 
 #define CONFIG_READ(file_name, json_object_name, block)                                                                \
-  dyn_string_t file = read_file_to_string("config/" file_name ".json", &HEAP_ALLOCATOR);                                                       \
+  dyn_string_t file = file_read_to_string("config/" file_name ".json", &HEAP_ALLOCATOR);                                                       \
   cJSON *json_object_name = cJSON_Parse(file.string);                                                                         \
   if (json_object_name == NULL) {                                                                                      \
     printf("Error parsing JSON\n");                                                                                    \

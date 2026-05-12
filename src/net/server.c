@@ -79,8 +79,7 @@ static void *server_game(void *args) {
   game->debug.options.selected_tile_to_place_instance = tile_new(&TILES[TILE_DIRT]);
   game->debug.options.selectable_tiles = array_new_capacity(TileInstance, 256, &HEAP_ALLOCATOR);
 
-  // Reload common resources (creates them)
-  game_reload(game);
+  server_ui_setup(&UI_RENDERER);
 
   calc_server_ui_height(&UI_RENDERER);
 

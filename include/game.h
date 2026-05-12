@@ -73,8 +73,6 @@ char **game_save_name_random(Game *game);
 
 void game_feature_create(Game *game);
 
-void game_reload(Game *game);
-
 void game_tick(Game *game);
 
 // Tile category/breaking

@@ -2,15 +2,12 @@
 #include "../../include/camera.h"
 #include "../../include/game.h"
 #include "../../include/net/packet.h"
+#include "../../include/reload.h"
 #include "lilc/array.h"
 #include "lilc/log.h"
 #include <lilc/alloc.h>
 #include <pthread.h>
 #include <raylib.h>
-
-#define CLIENT_RELOAD(client_game_ptr, src_file_prefix)                                                                                    \
-  extern void src_file_prefix##_on_reload(ClientGame *game);                                                                               \
-  src_file_prefix##_on_reload(client_game_ptr);
 
 NetworkConnection CLIENT_CONNECTION = {.connected = false, .server_addr = -1};
 pthread_mutex_t CLIENT_MUTEX = PTHREAD_MUTEX_INITIALIZER;
@@ -31,24 +28,18 @@ static void client_game_start(void);
 static void client_poll_keybinds(ClientGame *client);
 
 static void *client_game(void *args) {
-#ifdef DEBUG_BUILD
-  SetTraceLogLevel(LOG_DEBUG);
-#endif
+  CLIENT_GAME.initializing = true;
+
   // Setup bump allocator for item containers
   _internal_item_container_init();
 
   // Setup raylib
   // NEEDS TO BE CALLED BEFORE client_init and shared_init, because both load textures
   client_setup_raylib();
-
-  // init random...
+  // init random
   shared_setup();
-  // Load shared textures
-  shared_client_setup();
-
   // Init client game
   client_init(&CLIENT_GAME);
-
   // Create and init common game
   game_init(&CLIENT_GAME.game);
 
@@ -68,11 +59,6 @@ static void *client_game(void *args) {
     array_add(game->debug.options.selectable_tiles, tile_new(&TILES[i]));
   }
 
-  // Reload client resources (initializes them)
-  //client_reload(&CLIENT_GAME);
-  // Reload common resources (initializes them)
-  game_reload(game);
-
   // Setup ticking
   float tick_accumulator = 0.0f;
   float last_frame_time = GetTime();
@@ -84,6 +70,8 @@ static void *client_game(void *args) {
 
   // Use custom cursor
   HideCursor();
+
+  CLIENT_GAME.initializing = false;
 
   while (!WindowShouldClose()) {
     client_poll_keybinds(&CLIENT_GAME);
@@ -196,6 +184,7 @@ void client_init(ClientGame *client) {
   client->ui_renderer = ui_renderer_new();
   client->players = NULL;
   client->asset_manager = (AssetManager){0};
+  client->ui_renderer.asset_manager = &client->asset_manager;
 
   client_init_menu(client);
 
@@ -236,24 +225,6 @@ void client_deinit(ClientGame *client) {
   array_free(client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf);
 
   // shaders_unload(&client->shader_manager);
-}
-
-static bool initial_reload = true;
-
-void client_reload(ClientGame *game) {
-  if (!initial_reload) {
-    assets_unload(&game->asset_manager);
-  }
-
-  assets_load(&game->asset_manager);
-
-  CLIENT_RELOAD(game, tile);
-  CLIENT_RELOAD(game, keybinds);
-  // TODO: Move to asset manager
-  CLIENT_RELOAD(game, shaders);
-  CLIENT_RELOAD(game, world);
-
-  initial_reload = false;
 }
 
 static void client_update_animations(ClientGame *client) {

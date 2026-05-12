@@ -3,6 +3,7 @@
 #include "save_desc.h"
 #include "space_desc.h"
 #include "world.h"
+#include "lilc/dir.h"
 #include <stdbool.h>
 
 #define SAVE_SPACE_DATA(save_desc, space_desc, save_file_name, byte_buf_size, byte_buf_name, ...)                                          \

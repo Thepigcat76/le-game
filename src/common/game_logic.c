@@ -1,5 +1,6 @@
 #include "../../include/config.h"
 #include "../../include/game.h"
+#include "../../include/reload.h"
 #include "../../include/net/client.h"
 #include "lilc/log.h"
 #include "lilc/array.h"
@@ -42,7 +43,7 @@ void game_tick(Game *game) {
 
   if (IS_KEY_PRESSED(reload)) {
     client_reload(game->client_game);
-    game_reload(game);
+    common_reload(game);
 
     log_info("CLIENT RELOADED");
   }

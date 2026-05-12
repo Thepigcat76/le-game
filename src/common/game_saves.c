@@ -4,6 +4,8 @@
 #include "../../vendor/cJSON.h"
 #include <dirent.h>
 #include <lilc/alloc.h>
+#include <lilc/file.h>
+#include <lilc/dir.h>
 #include <raylib.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,7 +14,7 @@
 static SaveConfig game_load_save_config(const char *path) {
   const char *file_path = TextFormat("%s/game.json", path);
   TraceLog(LOG_DEBUG, "Save config path: %s", file_path);
-  dyn_string_t file_content = read_file_to_string(file_path, &HEAP_ALLOCATOR);
+  dyn_string_t file_content = file_read_to_string(file_path, &HEAP_ALLOCATOR);
   cJSON *json = cJSON_Parse(file_content.string);
   cJSON *save_name_json = cJSON_GetObjectItemCaseSensitive(json, "name");
   char *save_name;

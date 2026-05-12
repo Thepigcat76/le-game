@@ -8,6 +8,7 @@
 #define STANDARD "gnu23"
 #define DEBUG true
 #define OUT_NAME "build/cozy-wrath"
+#define SERVER_OUT_NAME "build/cozy-wrath-server"
 
 #define LIB_LILC "lilc"
 #define LIB_RAYLIB "raylib"
@@ -116,6 +117,11 @@ int main(int argc, char **argv) {
     });
   }
 
+  bool server = false;
+  if (argc >= 3) {
+    server = strcmp(argv[1], "r") == 0 && strcmp(argv[2], "--server") == 0;
+  }
+
   // Adding src files
   walk_dir("src", visit_entry);
 
@@ -138,7 +144,7 @@ int main(int argc, char **argv) {
   cmd_appendf(&cmd, "-l%s", LIB_CJSON);
 
   cmd_appendf(&cmd, "-o");
-  cmd_appendf(&cmd, OUT_NAME);
+  cmd_appendf(&cmd, server ? SERVER_OUT_NAME : OUT_NAME);
 
   cmd_appendf(&cmd, "-rdynamic");
 
@@ -152,14 +158,18 @@ int main(int argc, char **argv) {
   if (argc > 1) {
     if (strcmp(argv[1], "r") == 0) {
       if (argc > 2) {
-        char args[1024];
-        for (int i = 2; i < argc; i++) {
-          strcat(args, argv[i]);
-          if (i - 1 == argc) {
-            strcat(args, " ");
+        if (strcmp(argv[2], "--server") == 0) {
+          systemf("./%s --server 127.0.0.1 12345", SERVER_OUT_NAME);
+        } else {
+          char args[1024];
+          for (int i = 2; i < argc; i++) {
+            strcat(args, argv[i]);
+            if (i - 1 == argc) {
+              strcat(args, " ");
+            }
           }
+          systemf("./%s %s", OUT_NAME, args);
         }
-        systemf("./%s %s", OUT_NAME, args);
       } else {
         systemf("./%s", OUT_NAME);
       }

@@ -35,6 +35,8 @@ typedef struct _client_game {
 
   bool singleplayer;
   
+  bool initializing;
+  
   /* Managers */
   AssetManager asset_manager;
   // Textures like animated textures
@@ -100,10 +102,6 @@ void client_init_loaded_save(ClientGame *game, Save *save);
 // TICKING
 
 void client_tick(ClientGame *game);
-
-// RELOADING
-
-void client_reload(ClientGame *game);
 
 // MENUS
 

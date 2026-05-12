@@ -5,7 +5,7 @@
 #include "lilc/alloc.h"
 #include "lilc/array.h"
 #include "lilc/log.h"
-#include "lilc/str.h"
+#include "lilc/file.h"
 #include <lilc/bump.h>
 #include <raylib.h>
 
@@ -111,7 +111,7 @@ i32 cw_texture_load(cw_Texture *texture, AssetManager *manager, FileEntry file_e
   i32 frame_time = 1;
 
   if (FileExists(meta_file_name.string)) {
-    dyn_string_t file_content = read_file_to_string(meta_file_name.string, &HEAP_ALLOCATOR);
+    dyn_string_t file_content = file_read_to_string(meta_file_name.string, &HEAP_ALLOCATOR);
     if (file_content.string == NULL) {
       log_error("Failed to read texture meta file %s", meta_file_name.string);
       return 0;

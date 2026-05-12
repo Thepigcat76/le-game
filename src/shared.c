@@ -19,61 +19,6 @@
 #include <execinfo.h>
 #endif
 
-Texture2D TEXT_INPUT_TEXTURE;
-
-Texture2D DEBUG_BUTTON_TEXTURE;
-Texture2D DEBUG_BUTTON_SELECTED_TEXTURE;
-
-Texture2D BUTTON_TEXTURE;
-Texture2D BUTTON_SELECTED_TEXTURE;
-
-Texture2D BACKPACK_BACK_GROUND;
-
-Texture2D MAIN_HAND_SLOT_TEXTURE;
-Texture2D OFF_HAND_SLOT_TEXTURE;
-
-Texture2D SAVE_SLOT_TEXTURE;
-Texture2D SAVE_SLOT_SELECTED_TEXTURE;
-
-Texture2D NPC_TEXTURES[DIRECTIONS_AMOUNT];
-Texture2D NPC_ANIMATED_TEXTURES[DIRECTIONS_AMOUNT];
-
-Texture NPC_TEXTURE_OLD_MAN;
-
-Texture2D SLOT_TEXTURE;
-
-void shared_client_setup(void) {
-  TEXT_INPUT_TEXTURE = LoadTexture("res/assets/gui/text_input.png");
-
-  DEBUG_BUTTON_TEXTURE = LoadTexture("res/assets/gui/debug_button.png");
-  DEBUG_BUTTON_SELECTED_TEXTURE = LoadTexture("res/assets/gui/debug_button_selected.png");
-
-  BUTTON_TEXTURE = LoadTexture("res/assets/gui/button.png");
-  BUTTON_SELECTED_TEXTURE = LoadTexture("res/assets/gui/button_selected.png");
-
-  BACKPACK_BACK_GROUND = LoadTexture("res/assets/gui/backpack_slots.png");
-
-  MAIN_HAND_SLOT_TEXTURE = LoadTexture("res/assets/gui/main_hand_slot.png");
-  OFF_HAND_SLOT_TEXTURE = LoadTexture("res/assets/gui/off_hand_slot.png");
-
-  SAVE_SLOT_TEXTURE = LoadTexture("res/assets/gui/save_slot.png");
-  SAVE_SLOT_SELECTED_TEXTURE = LoadTexture("res/assets/gui/save_slot_selected.png");
-
-  NPC_TEXTURES[DIRECTION_UP] = LoadTexture("res/assets/beings/npc_back.png");
-  NPC_TEXTURES[DIRECTION_DOWN] = LoadTexture("res/assets/beings/npc_front.png");
-  NPC_TEXTURES[DIRECTION_LEFT] = LoadTexture("res/assets/beings/npc_left.png");
-  NPC_TEXTURES[DIRECTION_RIGHT] = LoadTexture("res/assets/beings/npc_right.png");
-
-  NPC_ANIMATED_TEXTURES[DIRECTION_UP] = LoadTexture("res/assets/beings/npc_back_walking.png");
-  NPC_ANIMATED_TEXTURES[DIRECTION_DOWN] = LoadTexture("res/assets/beings/npc_front_walking.png");
-  NPC_ANIMATED_TEXTURES[DIRECTION_LEFT] = LoadTexture("res/assets/beings/npc_left_walking.png");
-  NPC_ANIMATED_TEXTURES[DIRECTION_RIGHT] = LoadTexture("res/assets/beings/npc_right_walking.png");
-
-  NPC_TEXTURE_OLD_MAN = LoadTexture("res/assets/old_man.png");
-
-  SLOT_TEXTURE = LoadTexture("res/assets/gui/slot.png");
-}
-
 void shared_setup() {
   srand(time(NULL));
 }

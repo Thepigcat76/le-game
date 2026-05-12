@@ -78,28 +78,6 @@
 
 typedef u64 AssetId;
 
-extern Texture2D DEBUG_BUTTON_TEXTURE;
-extern Texture2D DEBUG_BUTTON_SELECTED_TEXTURE;
-extern Texture2D TEXT_INPUT_TEXTURE;
-
-extern Texture2D BUTTON_TEXTURE;
-extern Texture2D BUTTON_SELECTED_TEXTURE;
-
-extern Texture2D BACKPACK_BACK_GROUND;
-
-extern Texture2D MAIN_HAND_SLOT_TEXTURE;
-extern Texture2D OFF_HAND_SLOT_TEXTURE;
-
-extern Texture2D SAVE_SLOT_TEXTURE;
-extern Texture2D SAVE_SLOT_SELECTED_TEXTURE;
-
-extern Texture2D NPC_TEXTURES[DIRECTIONS_AMOUNT];
-extern Texture2D NPC_ANIMATED_TEXTURES[DIRECTIONS_AMOUNT];
-
-extern Texture2D NPC_TEXTURE_OLD_MAN;
-
-extern Texture2D SLOT_TEXTURE;
-
 typedef enum {
   DIRECTION_UP,
   DIRECTION_DOWN,
@@ -136,22 +114,12 @@ typedef Rectangle Rectf;
 typedef Vec2i ChunkPos;
 typedef Vec2i TilePos;
 
-void shared_client_setup(void);
-
-void shared_setup();
-
-dyn_string_t read_file_to_string(const char *filename, Allocator *allocator);
+void shared_setup(void);
 
 bool string_starts_with(const char *str, const char *prefix);
 
 // RETURNS HOW OFTEN THE CHARACTER IS CONTAINED
 int string_contains(const char *string, char c);
-
-// FILE SYSTEM - DIRECTORIES
-
-bool dir_exists(const char *path);
-
-void dir_create(const char *dir_name);
 
 void rec_draw_outline(Rectf rec, Color color);
 

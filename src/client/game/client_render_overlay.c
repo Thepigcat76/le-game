@@ -9,7 +9,7 @@
 
 void client_render_overlay(ClientGame *client) {
   Vec2i pos = vec2i(GetScreenWidth() - (3.5 * 16) - 30, (GetScreenHeight() / 2.0f) - (3.5 * 8));
-  DrawTextureEx(MAIN_HAND_SLOT_TEXTURE, (Vector2){pos.x, pos.y}, 0, 4.5, WHITE);
+  //DrawTextureEx(MAIN_HAND_SLOT_TEXTURE, (Vector2){pos.x, pos.y}, 0, 4.5, WHITE);
   item_render(&CLIENT_PLAYER->held_item, pos.x + 2 * 3.5, pos.y + 2 * 3.5);
 
 #ifdef DEBUG_BUILD

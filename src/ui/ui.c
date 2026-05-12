@@ -1,7 +1,6 @@
 #include "../../include/ui.h"
 #include "../../include/net/client.h"
 #include "../../include/shared.h"
-#include "lilc/log.h"
 #include "raylib.h"
 #include <stdbool.h>
 
@@ -135,8 +134,8 @@ void ui_button_render(UiRenderer *renderer, ButtonUiComponent component) {
     selected_texture = TEX_BUTTON_SELECTED;
   }
 
-  cw_Texture tex = cw_tex_by_handle(&CLIENT_GAME.asset_manager, texture);
-  cw_Texture tex_selected = cw_tex_by_handle(&CLIENT_GAME.asset_manager, selected_texture);
+  cw_Texture tex = cw_tex_by_handle(renderer->asset_manager, texture);
+  cw_Texture tex_selected = cw_tex_by_handle(renderer->asset_manager, selected_texture);
 
   if (component.width == 0) {
     component.width = tex.width;
@@ -156,7 +155,7 @@ void ui_button_render(UiRenderer *renderer, ButtonUiComponent component) {
   bool hovered = CheckCollisionPointRec(
       GetMousePosition(),
       (Rectangle){.x = renderer->cur_x, .y = renderer->cur_y, .width = component.width * scale, .height = component.height * scale});
-  Texture2D final_tex = tex_by_handle(&CLIENT_GAME.asset_manager, hovered ? selected_texture : texture);
+  Texture2D final_tex = tex_by_handle(renderer->asset_manager, hovered ? selected_texture : texture);
   DrawTexturePro(final_tex, (Rectangle){.x = 0, .y = 0, .width = tex.width, .height = tex.height},
                  (Rectangle){.x = renderer->cur_x + (component.width * scale) / 2,
                              .y = renderer->cur_y + (component.height * scale) / 2,
@@ -219,7 +218,7 @@ void ui_text_render(UiRenderer *renderer, TextUiComponent component) {
 
 void ui_text_input_render(UiRenderer *renderer, TextInputUiComponent component) {
   cw_Texture tex =
-      cw_tex_by_handle(&CLIENT_GAME.asset_manager, component.texture.present ? component.texture.texture_handle : TEX_TEXT_INPUT);
+      cw_tex_by_handle(renderer->asset_manager, component.texture.present ? component.texture.texture_handle : TEX_TEXT_INPUT);
 
   if (component.width == 0) {
     component.width = tex.width;
@@ -236,7 +235,7 @@ void ui_text_input_render(UiRenderer *renderer, TextInputUiComponent component) 
   int x = renderer->cur_x + (component.width * scale) / 2;
   int y = renderer->cur_y + (component.height * scale) / 2;
 
-  Texture2D texture = tex_by_id(&CLIENT_GAME.asset_manager, tex.id);
+  Texture2D texture = tex_by_id(renderer->asset_manager, tex.id);
 
   DrawTexturePro(texture, (Rectangle){.x = 0, .y = 0, .width = tex.width, .height = tex.height},
                  (Rectangle){.x = x, .y = y, .width = component.width * scale, .height = component.height * scale},
@@ -322,8 +321,8 @@ void ui_slot_render(UiRenderer *renderer, SlotUiComponent component) {
     item_render(component.item, renderer->cur_x, renderer->cur_y);
   }
 
-  DrawTextureEx(SLOT_TEXTURE, vec2f(renderer->cur_x - 2 * ui_scale(renderer), renderer->cur_y - 2 * ui_scale(renderer)), 0,
-                ui_scale(renderer), WHITE);
+  //DrawTextureEx(SLOT_TEXTURE, vec2f(renderer->cur_x - 2 * ui_scale(renderer), renderer->cur_y - 2 * ui_scale(renderer)), 0,
+  //              ui_scale(renderer), WHITE);
 
   move(renderer, component.width, component.height);
 }

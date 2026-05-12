@@ -1,5 +1,6 @@
 #include "lilc/array.h"
 #include "../../include/game.h"
+#include "../../include/reload.h"
 #include "../../include/net/client.h"
 #include <raylib.h>
 
@@ -20,6 +21,8 @@ void client_deinit_raylib(void) {
   CloseWindow();
 }
 void game_init(Game *game) {
+  common_reload(game);
+
   category_init(&game->tile_categories, "Tiles");
   category_init(&game->item_categories, "Items");
 

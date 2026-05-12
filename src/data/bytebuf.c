@@ -1,5 +1,6 @@
 #include "../../include/bytebuf.h"
-#include <lilc/alloc.h>
+#include "lilc/alloc.h"
+#include "lilc/file.h"
 #include <raylib.h>
 #include <stdio.h>
 #include <string.h>
@@ -82,7 +83,7 @@ void byte_buf_from_bin(ByteBuf *buf, const char *str_buf) {
 }
 
 void byte_buf_from_file(ByteBuf *buf, const char *name) {
-  dyn_string_t file_content = read_file_to_string(name, &HEAP_ALLOCATOR);
+  dyn_string_t file_content = file_read_to_string(name, &HEAP_ALLOCATOR);
 
   byte_buf_from_bin(buf, file_content.string);
   dyn_string_free(&file_content);

@@ -4,6 +4,7 @@
 #include "lilc/log.h"
 #include "lilc/numbers.h"
 #include <lilc/alloc.h>
+#include <lilc/file.h>
 #include <lilc/str.h>
 #include <raylib.h>
 #include <stdio.h>
@@ -30,7 +31,7 @@ void save_names_on_reload(void) {
     free(SAVE_NAMES.nouns[i]);
   }
 
-  dyn_string_t file_content = read_file_to_string("res/data/save_names.json", &HEAP_ALLOCATOR);
+  dyn_string_t file_content = file_read_to_string("res/data/save_names.json", &HEAP_ALLOCATOR);
   cJSON *json = cJSON_Parse(file_content.string);
   cJSON *adjectives_json = cJSON_GetObjectItemCaseSensitive(json, "adjectives");
   cJSON *nouns_json = cJSON_GetObjectItemCaseSensitive(json, "nouns");

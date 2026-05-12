@@ -5,6 +5,7 @@
 #include "../../vendor/cJSON.h"
 #include <dirent.h>
 #include <lilc/alloc.h>
+#include <lilc/file.h>
 #include <raylib.h>
 #include <stdio.h>
 #include <string.h>
@@ -50,7 +51,7 @@ static ConnectedInfo CONNECTED_INFO = {0};
 
 static void init_connected_info(void) {
   ConnectedInfo info = {0};
-  dyn_string_t file = read_file_to_string("res/connected.json", &HEAP_ALLOCATOR);
+  dyn_string_t file = file_read_to_string("res/assets/connected.json", &HEAP_ALLOCATOR);
   cJSON *json = cJSON_Parse(file.string);
   if (json == NULL) {
     printf("Error parsing JSON\n");
@@ -359,7 +360,7 @@ static void init_tile_variants() {
     snprintf(meta_file_path, 256, ASSETS_DIR TEXTURES_DIR "/%s", meta_file_name);
       log_debug("META FILE PATH: %s", meta_file_path);
     if (FileExists(meta_file_path)) {
-      dyn_string_t meta_file_content = read_file_to_string(meta_file_path, &HEAP_ALLOCATOR);
+      dyn_string_t meta_file_content = file_read_to_string(meta_file_path, &HEAP_ALLOCATOR);
       cJSON *meta_json = cJSON_Parse(meta_file_content.string);
       {
         char texture_path[512];

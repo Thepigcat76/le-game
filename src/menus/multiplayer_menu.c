@@ -24,30 +24,22 @@ void multiplayer_menu_render(UiRenderer *renderer, const ClientGame *game) {
 
   RENDER_TEXT({.text = "Multiplayer"});
   RENDER_SPACING({.height = 40});
-  /*
   RENDER_BUTTON({
       .message = "Join",
-      .texture = OPT_TEX(BUTTON_TEXTURE),
-      .selected_texture = OPT_TEX(BUTTON_SELECTED_TEXTURE),
       .on_click_func = button_click_simple(multiplayer_menu_join),
       .x_offset = x_offset,
       .y_offset = y_offset,
   });
   RENDER_BUTTON({
       .message = "Host",
-      .texture = OPT_TEX(BUTTON_TEXTURE),
-      .selected_texture = OPT_TEX(BUTTON_SELECTED_TEXTURE),
       .on_click_func = button_click_simple(multiplayer_menu_host),
       .x_offset = x_offset,
       .y_offset = y_offset,
   });
   RENDER_BUTTON({
       .message = "Back",
-      .texture = OPT_TEX(BUTTON_TEXTURE),
-      .selected_texture = OPT_TEX(BUTTON_SELECTED_TEXTURE),
       .on_click_func = button_click_simple(multiplayer_menu_back),
       .x_offset = x_offset,
       .y_offset = y_offset,
   });
-  */
 }

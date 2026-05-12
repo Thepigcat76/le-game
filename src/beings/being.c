@@ -158,28 +158,28 @@ void being_brain_tick(BeingInstance *being, BeingBrain *brain) {
 }
 
 static Texture2D being_npc_get_texture(BeingInstanceExNpc *being_ex) {
-  if (being_ex->variant == OLD_MAN) {
-    return NPC_TEXTURE_OLD_MAN;
-  }
-
-  Texture2D *textures;
-
-  if (being_ex->walking) {
-    textures = NPC_ANIMATED_TEXTURES;
-  } else {
-    textures = NPC_TEXTURES;
-  }
-
-  switch (being_ex->direction) {
-  case DIRECTION_DOWN:
-    return textures[0];
-  case DIRECTION_UP:
-    return textures[1];
-  case DIRECTION_LEFT:
-    return textures[2];
-  case DIRECTION_RIGHT:
-    return textures[3];
-  }
+  //if (being_ex->variant == OLD_MAN) {
+  //  return NPC_TEXTURE_OLD_MAN;
+  //}
+//
+  //Texture2D *textures;
+//
+  //if (being_ex->walking) {
+  //  textures = NPC_ANIMATED_TEXTURES;
+  //} else {
+  //  textures = NPC_TEXTURES;
+  //}
+//
+  //switch (being_ex->direction) {
+  //case DIRECTION_DOWN:
+  //  return textures[0];
+  //case DIRECTION_UP:
+  //  return textures[1];
+  //case DIRECTION_LEFT:
+  //  return textures[2];
+  //case DIRECTION_RIGHT:
+  //  return textures[3];
+  //}
 }
 
 static void npc_update_animation(BeingInstanceExNpc *npc, float deltaTime) {

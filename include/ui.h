@@ -1,5 +1,6 @@
 #pragma once
 
+#include "assets.h"
 #include "shared.h"
 #include "ui/ui_components.h"
 #include "ui/ui_style.h"
@@ -34,6 +35,7 @@ typedef struct {
     int screen_width;
     int screen_height;
   } context;
+  AssetManager *asset_manager;
 } UiRenderer;
 
 UiRenderer ui_renderer_new(void);
