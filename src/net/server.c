@@ -1,10 +1,11 @@
 #include "../../include/net/server.h"
-#include "lilc/array.h"
 #include "../../include/game.h"
-#include "lilc/log.h"
+#include "../../include/net/payloads.h"
 #include "../../include/netincludes.h"
 #include "../../include/server_ui.h"
 #include "../../include/ui.h"
+#include "lilc/array.h"
+#include "lilc/log.h"
 #include <pthread.h>
 #include <raylib.h>
 #include <stdbool.h>
@@ -88,7 +89,8 @@ static void *server_game(void *args) {
     {
       Packet p;
       if (queue_pop(&SERVER_GAME.packet_queue, &p)) {
-        packet_handle(&p, game);
+        PacketInfo p_info = PACKET_INFOS[p.id];
+        p_info.handle_func(&p);
       }
     }
     pthread_mutex_unlock(&SERVER_MUTEX);
@@ -118,14 +120,15 @@ static void *server_game(void *args) {
 
 static void handle_connection(int32_t client_addr) {
   printf("[Server] Listening for packets\n");
-  Packet packet = packet_receive(client_addr, false);
+  Packet packet = {0};
+  packet_receive(client_addr, &packet);
 
-  if (packet.type == PACKET_ERROR) {
+  if (packet.id == PACKET_ERROR) {
     fprintf(stderr, "Error or disconnect on fd %d\n", client_addr);
     exit(1);
   }
 
-  printf("[Server] Received Packet: %d\n", packet.type);
+  printf("[Server] Received Packet: %d\n", packet.id);
 
   pthread_mutex_lock(&SERVER_MUTEX);
   {
@@ -188,12 +191,15 @@ static void *server_player_listener(void *args) {
       array_add(SERVER_GAME.clients, (Client){.player_id = player_id, .address = client_fd, .name = "(null)"});
       log_debug("Player connected!\n");
 
-      packet_send(client_fd, PACKET_S2C_CLIENT_ACCEPTED_NEW({.player_id = player_id}), false);
+      PayloadClientAccepted payload = {.player_id = player_id};
+      packet_send(client_fd, S2C_CLIENT_ACCEPTED, &payload);
 
       for (size_t i = 0; i < array_len(SERVER_GAME.clients); i++) {
         Player player = {0};
         player_init(&player);
-        packet_send(SERVER_GAME.clients[i].address, PACKET_S2C_PLAYER_JOIN_NEW({.player_id = player_id, .player = player}), false);
+        
+        PayloadPlayerJoin payload = {.player_id = player_id, .player = player};
+        packet_send(client_fd, S2C_PLAYER_JOIN, &payload);
       }
     }
     pthread_mutex_unlock(&SERVER_MUTEX);

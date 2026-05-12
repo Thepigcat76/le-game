@@ -2,6 +2,7 @@
 #include "../../include/camera.h"
 #include "../../include/game.h"
 #include "../../include/net/packet.h"
+#include "../../include/net/payloads.h"
 #include "../../include/reload.h"
 #include "lilc/array.h"
 #include "lilc/log.h"
@@ -44,7 +45,6 @@ static void *client_game(void *args) {
   game_init(&CLIENT_GAME.game);
 
   CLIENT_GAME.game.client_game = &CLIENT_GAME;
-  CLIENT_GAME.cur_save = &CLIENT_GAME.game.cur_save;
 
   Game *game = &CLIENT_GAME.game;
 
@@ -89,7 +89,8 @@ static void *client_game(void *args) {
       {
         Packet p;
         if (queue_pop(&CLIENT_CONNECTION.queue, &p)) {
-          packet_handle(&p, game);
+          PacketInfo p_info = PACKET_INFOS[p.id];
+          p_info.handle_func(&p);
         }
       }
       pthread_mutex_unlock(&CLIENT_MUTEX);
@@ -128,10 +129,11 @@ static void *client_packet_listener(void *args) {
   // Listen for packets
   while (true) {
     log_debug("Listening for packets");
-    Packet packet = packet_receive(server_addr, true);
-    log_debug("Packet: %d", packet.type);
+    Packet packet = {0};
+    packet_receive(server_addr, &packet);
+    log_debug("Packet: %d", packet.id);
 
-    if (packet.type == PACKET_ERROR) {
+    if (packet.id == PACKET_ERROR) {
       perror("Error packet on client");
       exit(1);
     }
@@ -396,7 +398,8 @@ void client_leave_server(ClientGame *game) {
   addr_t server_addr;
   pthread_mutex_lock(&CLIENT_MUTEX);
   {
-    packet_send(CLIENT_CONNECTION.server_addr, PACKET_C2S_CLIENT_DISCONNECT_NEW({.player_id = game->player_id}), true);
+    PayloadClientDisconnect payload = {.player_id = game->player_id};
+    packet_send(CLIENT_CONNECTION.server_addr, C2S_CLIENT_DISCONNECT, &payload);
     CLIENT_CONNECTION.connected = false;
     server_addr = CLIENT_CONNECTION.server_addr;
     CLIENT_CONNECTION.server_addr = -1;

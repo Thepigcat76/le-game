@@ -1,300 +1,91 @@
-#include "lilc/log.h"
+#include "../../include/net/packet.h"
+#include "../../include/data/bytebuf_ex.h"
 #include "../../include/net/client.h"
+#include "../../include/net/payloads.h"
 #include "../../include/net/server.h"
 #include "../../include/net/sockets.h"
-#include <complex.h>
-#include <pthread.h>
-#include <stdlib.h>
-#ifdef TARGET_WIN
-#define Rectangle winapiIsSoOldAndGrossSoMangleIt_Rectangle
-#define CloseWindow winapiIsSoOldAndGrossSoMangleIt_CloseWindow
-#define ShowCursor winapiIsSoOldAndGrossSoMangleIt_ShowCursor
-#define LoadImage winapiIsSoOldAndGrossSoMangleIt_LoadImage
-#define DrawText winapiIsSoOldAndGrossSoMangleIt_DrawText
-#define DrawTextEx winapiIsSoOldAndGrossSoMangleIt_DrawTextEx
-#define PlaySound winapiIsSoOldAndGrossSoMangleIt_PlaySound
+#include "../../include/netincludes.h"
+#include "../../include/player.h"
+#include "../../include/space.h"
+#include "lilc/log.h"
 
-#include <windows.h>
-#include <winsock2.h>
+PacketInfo PACKET_INFOS[_amount_packet_ids];
 
-#undef Rectangle
-#undef CloseWindow
-#undef ShowCursor
-#undef LoadImage
-#undef DrawText
-#undef DrawTextEx
-#undef PlaySound
-#else
-#include <sys/socket.h>
-#endif
-#include "lilc/array.h"
-#include "../../include/bytebuf.h"
-#include "../../include/data/data_reader.h"
-#include "../../include/game.h"
-#include "../../include/net/packet.h"
-#include <stdio.h>
+static void packet_add(PacketId id, PacketEncodeFunc encode_func, PacketDecodeFunc decode_func, PacketHandleFunc handle_func);
 
-static void byte_buf_send(int addr, ByteBuf buf) { sockets_send(addr, (SocketDataBuffer){buf.bytes, buf.writer_index}, 0); }
+/* PACKET IMPLEMENTATIONS */
 
-static void packet_fmt(Packet packet, int addr, bool serverbound, bool is_client, char *buf) {
-  char *prefix = ">>>";
-  char postfix[16];
-  if (serverbound && is_client) {
-    prefix = "<<<";
-    sprintf(postfix, "TO %d", addr);
-  } else if (!serverbound && is_client) {
-    prefix = ">>>";
-    sprintf(postfix, "FROM %d", addr);
-  } else if (serverbound && !is_client) {
-    prefix = ">>>";
-    sprintf(postfix, "FROM %d", addr);
-  } else if (!serverbound && !is_client) {
-    prefix = "<<<";
-    sprintf(postfix, "TO %d", addr);
-  }
+/* PLAYER-JOIN */
 
-  switch (packet.type) {
-  case PACKET_ERROR: {
-    sprintf(buf, "%s [PACKET_ERROR] %s", prefix, postfix);
-    break;
-  }
-  case PACKET_S2C_PLAYER_JOIN: {
-    sprintf(buf, "%s [PLAYER_JOIN]{player=%d} %s", prefix, packet.var.s2c_player_join.player_id, postfix);
-    break;
-  }
-  case PACKET_S2C_SYNC_SPACE: {
-    PacketS2CSyncSpace *ss_packet = &packet.var.s2c_sync_space;
-    sprintf(buf, "%s [SYNC_SPACE]{space_world_seed=%f,save_name=%s} %s", prefix, ss_packet->space.seed,
-            ss_packet->space.world.save_desc != NULL ? ss_packet->space.world.save_desc->config.save_name : "No save desc provided",
-            postfix);
-    break;
-  }
-  case PACKET_S2C_CLIENT_ACCEPTED: {
-    PacketS2CClientAccepted *ca_packet = &packet.var.s2c_client_accepted;
-    sprintf(buf, "%s [CLIENT_ACCEPTED]{player_id=%d} %s", prefix, ca_packet->player_id, postfix);
-    break;
-  }
-  case PACKET_S2C_CLIENT_CONNECTED: {
-    PacketS2CClientConnected *cc_packet = &packet.var.s2c_client_connected;
-    sprintf(buf, "%s [CLIENT_CONNECTED]{player_id=%d,client_name=%s} %s", prefix, cc_packet->new_player_id, cc_packet->client_name,
-            postfix);
-    break;
-  }
-  /* Handled on server */
-  case PACKET_C2S_CLIENT_CONNECT: {
-    sprintf(buf, "%s [CLIENT_CONNECT]{dev_name=%s} %s", prefix, packet.var.c2s_client_connect.client_name, postfix);
-    break;
-  }
-  case PACKET_C2S_CLIENT_DISCONNECT: {
-    sprintf(buf, "%s [CLIENT_DISCONNECT]{player_id=%d} %s", prefix, packet.var.c2s_client_disconnect.player_id, postfix);
-  }
+static void packet_player_join_encode(const Packet *packet, ByteBuf *buf) {
+  PayloadPlayerJoin *payload = packet->payload;
+
+  i32 player_id = payload->player_id;
+  byte_buf_write_int(buf, player_id);
+
+  DataMap player_map = data_map_new(200);
+  player_save(&payload->player, &player_map);
+  Data player_data = data_map(player_map);
+  byte_buf_write_data(buf, &player_data);
+}
+
+static void packet_player_join_decode(Packet *packet, ByteBuf *buf) {
+  PayloadPlayerJoin *payload = packet->payload;
+
+  payload->player_id = byte_buf_read_int(buf);
+
+  DataMap player_map = byte_buf_read_data(buf).var.data_map;
+  player_init(&payload->player);
+  player_load(&payload->player, &player_map);
+}
+
+static void packet_player_join_handle(const Packet *packet) {
+  PayloadPlayerJoin *payload = packet->payload;
+
+  if (payload->player_id != CLIENT_GAME.player_id) {
+    Player *player = &payload->player;
+    // TODO: Maybe we only need to sync RenderDesc?
+    PlayerRenderDescriptor desc = {.animation_frame = player->animation_frame,
+                                   .frame_timer = player->frame_timer,
+                                   .box = player->box,
+                                   .direction = player->direction,
+                                   .in_water = player->in_water,
+                                   .walking = player->walking};
+    array_add(CLIENT_GAME.players, desc);
+  } else {
+    log_info("Welcome from the server");
   }
 }
 
-static void space_encode(const Space *space, ByteBuf *buf) {
-  // Desc
-  SpaceDescriptor desc = space->desc;
-  {
-    // Type
-    byte_buf_write_byte(buf, desc.type->space_id);
-    // Id
-    byte_buf_write_int(buf, desc.id);
-    // Loaded from disk
-    byte_buf_write_byte(buf, desc.external);
-  }
-  // Seed
-  char seed[64];
-  sprintf(seed, "%f", space->seed);
-  byte_buf_write_string(buf, seed);
+/* SYNC-SPACE */
 
-  printf("Writer index, before world: %zu", buf->writer_index);
-  // World
-  const World *world = &space->world;
-  DataMap map = data_map_new(2000);
-  world_save(world, &map);
-  Data data = data_map(map);
-  char *data_string = data_reader_read_data(&data);
-  FILE *f = fopen("space_packet_world.json", "w");
-  fputs(data_string, f);
-  fclose(f);
-  byte_buf_write_data(buf, &data);
-  // Initialized
-  byte_buf_write_byte(buf, world->initialized);
-  // Save desc
-  const SaveDescriptor *save_desc = world->save_desc;
-  // Has save desc
-  bool has_save_desc = save_desc != NULL;
-  byte_buf_write_byte(buf, has_save_desc);
-  if (has_save_desc) {
-    printf("Save desc for encoding: %p\n", save_desc);
-    byte_buf_write_int(buf, save_desc->id);
-    byte_buf_write_byte(buf, save_desc->is_server_save);
-    // Save config
-    SaveConfig config = save_desc->config;
-    {
-      // Save name
-      byte_buf_write_string(buf, config.save_name);
-    }
-  }
+static void packet_sync_space_encode(const Packet *packet, ByteBuf *buf) {
+  PayloadSyncSpace *payload = packet->payload;
+
+  Space space = payload->space;
+  space.desc.external = true;
+  space_encode(&space, buf);
 }
 
-static void space_decode(Space *space, ByteBuf *buf) {
-  // Desc
-  SpaceDescriptor *desc = &space->desc;
-  {
-    desc->type = &SPACES[byte_buf_read_byte(buf)];
-    desc->id = byte_buf_read_int(buf);
-    desc->external = byte_buf_read_byte(buf);
-  }
+static void packet_sync_space_decode(Packet *packet, ByteBuf *buf) {
+  PayloadSyncSpace *payload = packet->payload;
 
-  // Seed
-  int len = byte_buf_read_int(buf);
-  char *seed_buf = malloc(len);
-  byte_buf_read_string(buf, seed_buf, len);
-
-  float seed = atof(seed_buf);
-  printf("Seed: %f, space: %p, desc: %p\n", seed, space, desc);
-  space_init(space, *desc, seed);
-  space->seed = seed;
-
-  printf("Reader index, before world: %zu", buf->reader_index);
-  DataMap map = byte_buf_read_data(buf).var.data_map;
-  Data data = data_map(map);
-  char *map_str = data_reader_read_data(&data);
-  FILE *f = fopen("server-save-world-decoded", "w");
-  fputs(map_str, f);
-  fclose(f);
-
-  world_load(&space->world, &map);
-  // Initialized
-  space->world.initialized = byte_buf_read_byte(buf);
-  space->world.seed = seed;
-  if (GAME_SIDE == SIDE_CLIENT) {
-    world_initialize(&space->world);
-  }
-
-  // Save desc
-  bool has_save_desc = byte_buf_read_byte(buf);
-  if (has_save_desc) {
-    SaveDescriptor save_desc;
-    {
-      save_desc.id = byte_buf_read_int(buf);
-      save_desc.is_server_save = byte_buf_read_byte(buf);
-      // Save config
-      {
-        // Save name
-        size_t len = byte_buf_read_int(buf);
-        char *save_name = malloc(len);
-        byte_buf_read_string(buf, save_name, len);
-        save_desc.config.save_name = save_name;
-      }
-    }
-    SaveDescriptor *save_desc_clone = malloc(sizeof(SaveDescriptor));
-    memcpy(save_desc_clone, &save_desc, sizeof(SaveDescriptor));
-    space->world.save_desc = save_desc_clone;
-  }
+  space_decode(&payload->space, buf);
 }
 
-static void packet_encode(Packet packet, ByteBuf *buf) {
-  byte_buf_write_byte(buf, packet.type);
-  switch (packet.type) {
-  case PACKET_ERROR: {
-    break;
-  }
-  case PACKET_S2C_PLAYER_JOIN: {
-    PacketS2CPlayerJoin player_join_packet = packet.var.s2c_player_join;
-    int player_id = packet.var.s2c_player_join.player_id;
-    byte_buf_write_int(buf, player_id);
-    DataMap player_map = data_map_new(200);
-    player_save(&player_join_packet.player, &player_map);
-    Data player_data = data_map(player_map);
-    byte_buf_write_data(buf, &player_data);
-    break;
-  }
-  case PACKET_S2C_SYNC_SPACE: {
-    Space space = packet.var.s2c_sync_space.space;
-    space.desc.external = true;
-    space_encode(&space, buf);
-    break;
-  }
-  case PACKET_S2C_CLIENT_ACCEPTED: {
-    byte_buf_write_int(buf, packet.var.s2c_client_accepted.player_id);
-    break;
-  }
-  case PACKET_S2C_CLIENT_CONNECTED: {
-    byte_buf_write_int(buf, packet.var.s2c_client_connected.new_player_id);
-    byte_buf_write_string(buf, packet.var.s2c_client_connected.client_name);
-    break;
-  }
-  case PACKET_C2S_CLIENT_CONNECT: {
-    byte_buf_write_int(buf, packet.var.c2s_client_connect.player_id);
-    byte_buf_write_string(buf, packet.var.c2s_client_connect.client_name);
-    break;
-  }
-  case PACKET_C2S_CLIENT_DISCONNECT: {
-    byte_buf_write_int(buf, packet.var.c2s_client_disconnect.player_id);
-    break;
-  }
-  }
-}
+static void packet_sync_space_handle(const Packet *packet) {
+  PayloadSyncSpace *payload = packet->payload;
 
-static Packet packet_decode(ByteBuf *buf) {
-  int type = byte_buf_read_byte(buf);
-  switch (type) {
-  case PACKET_S2C_PLAYER_JOIN: {
-    int player_id = byte_buf_read_int(buf);
-    DataMap player_map = byte_buf_read_data(buf).var.data_map;
-    Player player = {0};
-    player_init(&player);
-
-    player_load(&player, &player_map);
-    return PACKET_S2C_PLAYER_JOIN_NEW({.player_id = player_id, .player = player});
-  }
-  case PACKET_S2C_SYNC_SPACE: {
-    Space space;
-    space_decode(&space, buf);
-    return PACKET_S2C_SYNC_SPACE_NEW({.space = space});
-  }
-  case PACKET_S2C_CLIENT_ACCEPTED: {
-    int player_id = byte_buf_read_int(buf);
-    return PACKET_S2C_CLIENT_ACCEPTED_NEW({.player_id = player_id});
-  }
-  case PACKET_C2S_CLIENT_CONNECT: {
-    int player_id = byte_buf_read_int(buf);
-    size_t str_len = byte_buf_read_int(buf);
-    char *dev_name = malloc(str_len + 1);
-    byte_buf_read_string(buf, dev_name, str_len);
-
-    return PACKET_C2S_CLIENT_CONNECT_NEW({.client_name = dev_name, .player_id = player_id});
-  }
-  case PACKET_S2C_CLIENT_CONNECTED: {
-    int new_player_id = byte_buf_read_int(buf);
-    size_t str_len = byte_buf_read_int(buf);
-    char *client_name = malloc(str_len + 1);
-    byte_buf_read_string(buf, client_name, str_len);
-
-    return PACKET_S2C_CLIENT_CONNECTED_NEW({.client_name = client_name, .new_player_id = new_player_id});
-  }
-  case PACKET_C2S_CLIENT_DISCONNECT: {
-    int player_id = byte_buf_read_int(buf);
-    return PACKET_C2S_CLIENT_DISCONNECT_NEW({.player_id = player_id});
-  }
-  default: {
-    printf("ERROR DECODING\n");
-    return (Packet){.type = PACKET_ERROR};
-  }
-  }
-}
-
-// FIXME: Reimplement
-static void handle_space_sync(PacketS2CSyncSpace *packet, Game *game) {
-  world_initialize(&packet->space.world);
+  world_initialize(&payload->space.world);
   // Create save
-  Save save =
-      save_new((SaveDescriptor){.id = 0, .is_server_save = true, .config = {.seed = packet->space.seed, .save_name = "Server-Save"}});
-  array_add(save.loaded_spaces, packet->space);
+  Save save = save_new((SaveDescriptor){
+      .id = 0,
+      .is_server_save = true,
+      .config = {.seed = payload->space.seed, .save_name = "Server-Save"},
+  });
+  array_add(save.loaded_spaces, payload->space);
   // Assign save to cur_save
-  game->cur_save = save;
+  CLIENT_GAME.game.cur_save = save;
   // Create player
   Player player = {0};
   player_init(&player);
@@ -302,112 +93,190 @@ static void handle_space_sync(PacketS2CSyncSpace *packet, Game *game) {
 
   // FIXME: Dangerous, since mem location of first element might change
   // game->client_player = &game->cur_save.players[0];
-  client_init_loaded_save(&CLIENT_GAME, &game->cur_save);
+  client_init_loaded_save(&CLIENT_GAME, &CLIENT_GAME.game.cur_save);
   client_set_menu(&CLIENT_GAME, MENU_NONE);
   CLIENT_GAME.game.save_loaded = true;
   CLIENT_GAME.state.paused = false;
 }
 
-// SERVER_GAME/CLIENT_CONNECTIONS are safe to access cuz they are locked
-void packet_handle(Packet *packet, Game *game) {
-  switch (packet->type) {
-  case PACKET_ERROR: {
-    break;
-  }
-  /* Handled on client */
-  case PACKET_S2C_PLAYER_JOIN: {
-    if (packet->var.s2c_player_join.player_id != CLIENT_GAME.player_id) {
-      Player *player = &packet->var.s2c_player_join.player;
-      PlayerRenderDescriptor desc = {.animation_frame = player->animation_frame,
-                                     .frame_timer = player->frame_timer,
-                                     .box = player->box,
-                                     .direction = player->direction,
-                                     .in_water = player->in_water,
-                                     .walking = player->walking};
-      array_add(game->client_game->players, desc);
-    } else {
-      log_info("Welcome from the server");
-    }
-    break;
-  }
-  case PACKET_S2C_SYNC_SPACE: {
-    handle_space_sync(&packet->var.s2c_sync_space, game);
-    break;
-  }
-  case PACKET_S2C_CLIENT_CONNECTED: {
-    PacketS2CClientConnected packet_client_connected = packet->var.s2c_client_connected;
-    log_info("New client connected! Name: %s, Id: %d", packet_client_connected.client_name, packet_client_connected.new_player_id);
-    break;
-  }
-  case PACKET_S2C_CLIENT_ACCEPTED: {
-    game->client_game->player_id = packet->var.s2c_client_accepted.player_id;
-    game->client_game->players = array_new_capacity(PlayerRenderDescriptor, 8, &HEAP_ALLOCATOR);
-    log_info("Player accepted");
-    break;
-  }
-  /* Handled on server */
-  case PACKET_C2S_CLIENT_DISCONNECT: {
-    int player_id = packet->var.c2s_client_disconnect.player_id;
+/* CLIENT-ACCEPTED */
 
-    size_t i;
-    for (i = 0; i < array_len(SERVER_GAME.clients); i++) {
-      if (SERVER_GAME.clients[i].player_id == player_id) {
-        break;
-      }
+static void packet_client_accepted_encode(const Packet *packet, ByteBuf *buf) {
+  PayloadClientAccepted *payload = packet->payload;
+
+  i32 player_id = payload->player_id;
+  byte_buf_write_int(buf, player_id);
+}
+
+static void packet_client_accepted_decode(Packet *packet, ByteBuf *buf) {
+  PayloadClientAccepted *payload = packet->payload;
+
+  payload->player_id = byte_buf_read_int(buf);
+}
+
+static void packet_client_accepted_handle(const Packet *packet) {
+  PayloadClientAccepted *payload = packet->payload;
+
+  CLIENT_GAME.player_id = payload->player_id;
+  CLIENT_GAME.players = array_new_capacity(PlayerRenderDescriptor, 8, &HEAP_ALLOCATOR);
+  log_info("Player accepted");
+}
+
+/* CLIENT-CONNECT */
+
+static void packet_client_connect_encode(const Packet *packet, ByteBuf *buf) {
+  PayloadClientConnect *payload = packet->payload;
+
+  i32 player_id = payload->player_id;
+  byte_buf_write_int(buf, player_id);
+
+  char *client_name = payload->client_name;
+  byte_buf_write_string(buf, client_name);
+}
+
+static void packet_client_connect_decode(Packet *packet, ByteBuf *buf) {
+  PayloadClientConnect *payload = packet->payload;
+
+  payload->player_id = byte_buf_read_int(buf);
+
+  size_t str_len = byte_buf_read_int(buf);
+
+  payload->client_name = heap_alloc(str_len + 1);
+  byte_buf_read_string(buf, payload->client_name, str_len);
+}
+
+static void packet_client_connect_handle(const Packet *packet) {
+  PayloadClientConnect *payload = packet->payload;
+
+  log_debug("Client connect data");
+  for (size_t i = 0; i < array_len(SERVER_GAME.clients); i++) {
+    if (SERVER_GAME.clients[i].player_id == payload->player_id) {
+      SERVER_GAME.clients[i].name = payload->client_name;
+      break;
     }
-
-    array_remove(SERVER_GAME.clients, i);
-
-    break;
   }
-  case PACKET_C2S_CLIENT_CONNECT: {
-    log_debug("Client connect data");
-    PacketC2SClientConnect cc_packet = packet->var.c2s_client_connect;
-    for (size_t i = 0; i < array_len(SERVER_GAME.clients); i++) {
-      if (SERVER_GAME.clients[i].player_id == cc_packet.player_id) {
-        SERVER_GAME.clients[i].name = cc_packet.client_name;
-        break;
-      }
-    }
-    Client *client = server_client_by_id(&SERVER_GAME, cc_packet.player_id);
-    client->name = cc_packet.client_name;
-    Packet new_packet = PACKET_S2C_CLIENT_CONNECTED_NEW({.client_name = cc_packet.client_name, .new_player_id = cc_packet.player_id});
+  Client *client = server_client_by_id(&SERVER_GAME, payload->player_id);
+  client->name = payload->client_name;
 
-    size_t clients = array_len(SERVER_GAME.clients);
-    for (size_t i = 0; i < clients; i++) {
-      packet_send(SERVER_GAME.clients[i].address, new_packet, false);
-    }
-    break;
-  }
+  size_t clients = array_len(SERVER_GAME.clients);
+  for (size_t i = 0; i < clients; i++) {
+    PayloadClientConnected client_connected_payload = {.client_name = payload->client_name, .new_player_id = payload->player_id};
+    packet_send(SERVER_GAME.clients[i].address, S2C_CLIENT_CONNECTED, &client_connected_payload);
   }
 }
 
-void packet_send(int addr, Packet packet, bool is_client) {
-  uint8_t bytes[128000];
+/* CLIENT-CONNECTED */
+
+static void packet_client_connected_encode(const Packet *packet, ByteBuf *buf) {
+  PayloadClientConnected *payload = packet->payload;
+
+  i32 player_id = payload->new_player_id;
+  byte_buf_write_int(buf, player_id);
+
+  char *client_name = payload->client_name;
+  byte_buf_write_string(buf, client_name);
+}
+
+static void packet_client_connected_decode(Packet *packet, ByteBuf *buf) {
+  PayloadClientConnected *payload = packet->payload;
+
+  payload->new_player_id = byte_buf_read_int(buf);
+
+  size_t str_len = byte_buf_read_int(buf);
+
+  payload->client_name = heap_alloc(str_len + 1);
+  byte_buf_read_string(buf, payload->client_name, str_len);
+}
+
+static void packet_client_connected_handle(const Packet *packet) {
+  PayloadClientConnected *payload = packet->payload;
+  log_info("New client connected! Name: %s, Id: %d", payload->client_name, payload->new_player_id);
+}
+
+/* CLIENT-DISCONNECT */
+
+static void packet_client_disconnect_encode(const Packet *packet, ByteBuf *buf) {
+  PayloadClientDisconnect *payload = packet->payload;
+
+  i32 player_id = payload->player_id;
+  byte_buf_write_int(buf, player_id);
+}
+
+static void packet_client_disconnect_decode(Packet *packet, ByteBuf *buf) {
+  PayloadClientDisconnect *payload = packet->payload;
+
+  payload->player_id = byte_buf_read_int(buf);
+}
+
+static void packet_client_disconnect_handle(const Packet *packet) {
+  PayloadClientDisconnect *payload = packet->payload;
+
+  i32 player_id = payload->player_id;
+
+  size_t i;
+  for (i = 0; i < array_len(SERVER_GAME.clients); i++) {
+    if (SERVER_GAME.clients[i].player_id == player_id) {
+      break;
+    }
+  }
+
+  array_remove(SERVER_GAME.clients, i);
+}
+
+/* PACKET REGISTRATION */
+
+void packets_setup(void) {
+  packet_add(PACKET_ERROR, NULL, NULL, NULL);
+
+  packet_add(S2C_PLAYER_JOIN, packet_player_join_encode, packet_player_join_decode, packet_player_join_handle);
+  packet_add(S2C_SYNC_SPACE, packet_sync_space_encode, packet_sync_space_decode, packet_sync_space_handle);
+  packet_add(S2C_CLIENT_ACCEPTED, packet_client_accepted_encode, packet_client_accepted_decode, packet_client_accepted_handle);
+  packet_add(C2S_CLIENT_CONNECT, packet_client_connect_encode, packet_client_connect_decode, packet_client_connect_handle);
+  packet_add(S2C_CLIENT_CONNECTED, packet_client_connected_encode, packet_client_connected_decode, packet_client_connected_handle);
+  packet_add(C2S_CLIENT_DISCONNECT, packet_client_disconnect_encode, packet_client_disconnect_decode, packet_client_disconnect_handle);
+}
+
+static void packet_add(PacketId id, PacketEncodeFunc encode_func, PacketDecodeFunc decode_func, PacketHandleFunc handle_func) {
+  PACKET_INFOS[id] = (PacketInfo){
+      .encode_func = encode_func,
+      .decode_func = decode_func,
+      .handle_func = handle_func,
+  };
+}
+
+void packet_send(i32 addr, PacketId id, void *payload) {
+  Packet packet = {.id = id, .payload = payload};
+  PacketInfo info = PACKET_INFOS[id];
+
+  u8 bytes[128000];
   ByteBuf buf = {.writer_index = 0, .reader_index = 0, .capacity = 128000, .bytes = bytes};
-  packet_encode(packet, &buf);
+  byte_buf_write_int(&buf, id);
+  info.encode_func(&packet, &buf);
   // Send: 2-byte length + data
-  uint16_t len = buf.writer_index;
-  uint8_t header[2] = {len >> 8, len & 0xFF};
+  u16 len = buf.writer_index;
+  u8 header[2] = {len >> 8, len & 0xFF};
   sockets_send(addr, (SocketDataBuffer){header, 2}, 0);
   sockets_send(addr, (SocketDataBuffer){buf.bytes, len}, 0);
-  char print_buf[256];
-  packet_fmt(packet, addr, is_client, is_client, print_buf);
-  printf("%s\n", print_buf);
+
+  // char print_buf[256];
+  // packet_fmt(packet, addr, is_client, is_client, print_buf);
+  // printf("%s\n", print_buf);
 }
 
-Packet packet_receive(int addr, bool is_client) {
-  uint8_t len_buf[2];
+void packet_receive(i32 addr, Packet *packet) {
+  u8 len_buf[2];
   ssize_t n = sockets_receive(addr, (SocketDataBuffer){len_buf, 2}, MSG_WAITALL);
   if (n != 2) {
     perror("Failed to read length");
-    return (Packet){.type = PACKET_ERROR};
+    packet->id = PACKET_ERROR;
+    return;
   }
 
   uint16_t len = (len_buf[0] << 8) | len_buf[1];
   if (len > 16000) {
     fprintf(stderr, "Packet too long: %u\n", len);
-    return (Packet){.type = PACKET_ERROR};
+    packet->id = PACKET_ERROR;
+    return;
   }
 
   uint8_t bytes[16000];
@@ -415,16 +284,17 @@ Packet packet_receive(int addr, bool is_client) {
   n = sockets_receive(addr, (SocketDataBuffer){buf.bytes, len}, MSG_WAITALL);
   if (n != len) {
     perror("Failed to read full packet");
-    return (Packet){.type = PACKET_ERROR};
+    packet->id = PACKET_ERROR;
+    return;
   }
 
   buf.writer_index = 0;
 
-  Packet packet = packet_decode(&buf);
+  PacketId id = byte_buf_read_int(&buf);
+  PacketInfo packet_info = PACKET_INFOS[id];
+  packet_info.decode_func(packet, &buf);
 
-  char print_buf[256];
-  packet_fmt(packet, addr, !is_client, is_client, print_buf);
-  printf("%s\n", print_buf);
-
-  return packet;
+  // char print_buf[256];
+  // packet_fmt(packet, addr, !is_client, is_client, print_buf);
+  // printf("%s\n", print_buf);
 }

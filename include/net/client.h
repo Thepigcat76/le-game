@@ -51,9 +51,6 @@ typedef struct _client_game {
   // Saves
   // These are saves that are actually stored on disk
   SaveDescriptor *local_saves;
-  // A save - this can either be a local save or
-  // a save on the server
-  Save *cur_save;
   // Main game
   Game game;
   // World, Player - points to the
@@ -67,7 +64,7 @@ typedef struct _client_game {
   bool connected_to_server;
 } ClientGame;
 
-typedef struct {
+typedef struct network_connection {
   addr_t server_addr;
   bool connected;
   PacketQueue queue;

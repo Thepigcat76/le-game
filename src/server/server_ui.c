@@ -4,21 +4,22 @@
 #define CTX_SERVER
 #include "../../include/ui.h"
 #undef CTX_SERVER
-#include "lilc/array.h"
 #include "../../include/game.h"
 #include "../../include/net/packet.h"
+#include "../../include/net/payloads.h"
 #include "../../include/net/server.h"
-#include "../../include/save_desc.h"
 #include "../../include/save_desc.h"
 #include "../../include/server_ui.h"
 #include "../../include/shared.h"
 #include "../../vendor/cJSON.h"
+#include "lilc/array.h"
+#include "lilc/log.h"
 
-static AssetManager asset_manager = {0}; 
+static AssetManager asset_manager = {0};
 
 void server_ui_setup(UiRenderer *renderer) {
   renderer->asset_manager = &asset_manager;
-  
+
   assets_load(&asset_manager);
 }
 
@@ -47,8 +48,10 @@ static void on_click(void) {
   SERVER_GAME.game.cur_save = save;
   for (size_t i = 0; i < array_len(SERVER_GAME.clients); i++) {
     addr_t addr = SERVER_GAME.clients[i].address;
-    printf("Sending sync space packet to client: %d\n", addr);
-    packet_send(addr, (Packet){.type = PACKET_S2C_SYNC_SPACE, .var = {.s2c_sync_space = {.space = default_space}}}, false);
+    log_debug("Sending sync space packet to client: %d", addr);
+
+    PayloadSyncSpace payload = {.space = default_space};
+    packet_send(addr, S2C_SYNC_SPACE, &payload);
   }
 }
 

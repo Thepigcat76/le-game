@@ -1,9 +1,12 @@
 #include "menu_includes.h"
+#include "../../include/net/payloads.h"
 #include <raylib.h>
 
 static void multiplayer_menu_join() {
   addr_t server_addr = client_join_server(&CLIENT_GAME, "127.0.0.1", 12345);
-  packet_send(server_addr, PACKET_C2S_CLIENT_CONNECT_NEW({.client_name = "Dev"}), true);
+
+  PayloadClientConnect payload = {.client_name = "Dev"};
+  packet_send(server_addr, C2S_CLIENT_CONNECT, &payload);
 }
 
 static void multiplayer_menu_host() { client_set_menu(&CLIENT_GAME, MENU_HOST_SERVER); }
