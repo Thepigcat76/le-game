@@ -105,9 +105,13 @@ static int pack_resources(void) {
 int main(int argc, char **argv) {
   remove_dir_recursive("build", false);
 
-  if (argc >= 3 && strcmp(argv[2], "--pack-res") == 0) {
-    packed_resources = true;
+  bool run = arg_eq(argc, argv, 1, "r");
+  packed_resources = run && (args_contains(argc, argv, "--pack-res") != -1 || args_contains(argc, argv, "-pr") != -1);
 
+  bool server = run && (args_contains(argc, argv, "--server") != -1 || args_contains(argc, argv, "-s") != -1);
+  bool debug = run && (args_contains(argc, argv, "--debug") != -1 || args_contains(argc, argv, "-d") != -1);
+
+  if (packed_resources) {
     pack_resources();
 
     visit_entry((struct file_entry){
@@ -115,11 +119,6 @@ int main(int argc, char **argv) {
         .file_ext = "c",
         .path = "packed-res/out.c",
     });
-  }
-
-  bool server = false;
-  if (argc >= 3) {
-    server = strcmp(argv[1], "r") == 0 && strcmp(argv[2], "--server") == 0;
   }
 
   // Adding src files
@@ -155,25 +154,35 @@ int main(int argc, char **argv) {
   // Run the command
   cmd_execute(&cmd);
 
-  if (argc > 1) {
-    if (strcmp(argv[1], "r") == 0) {
-      if (argc > 2) {
-        if (strcmp(argv[2], "--server") == 0) {
-          systemf("./%s --server 127.0.0.1 12345", SERVER_OUT_NAME);
-        } else {
-          char args[1024];
-          for (int i = 2; i < argc; i++) {
-            strcat(args, argv[i]);
-            if (i - 1 == argc) {
-              strcat(args, " ");
-            }
-          }
-          systemf("./%s %s", OUT_NAME, args);
-        }
-      } else {
-        systemf("./%s", OUT_NAME);
-      }
-    } else if (strcmp(argv[1], "server") == 0) {
+  int args_arg_idx = args_contains(argc, argv, "--args");
+  printf("ARGS ARG IDX: %d\n", args_arg_idx);
+
+  if (run) {
+    char args[1024] = {'\0'};
+
+    if (server) {
+      strcat(args, "--server 127.0.0.1 12345 ");
     }
+
+    if (args_arg_idx != -1 && args_arg_idx + 1 < argc) {
+      for (int i = args_arg_idx + 1; i < argc; i++) {
+        printf("ARG ADDED: %s\n", argv[i]);
+        strcat(args, argv[i]);
+        if (i + 1 < argc) {
+          strcat(args, " ");
+        }
+      }
+    }
+
+    char exec_cmd[256];
+    sprintf(exec_cmd, "./%s", server ? SERVER_OUT_NAME : OUT_NAME);
+    
+    if (debug) {
+      sprintf(exec_cmd, "gdb --args ./%s", server ? SERVER_OUT_NAME : OUT_NAME);
+    }
+
+    systemf("%s %s", exec_cmd, args);
+    printf("%s %s\n", exec_cmd, args);
   }
+
 }

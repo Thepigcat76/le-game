@@ -20,10 +20,6 @@ static Music MUSIC;
 
 static Bump SOUND_BUMP;
 
-// Uses null at the end to terminate
-// static const char *TEXTURE_MANAGER_TEXTURE_PATHS[TEXTURE_MANAGER_TEXTURES_AMOUNT + 1] = {
-//    "cursor", "cursor_fist", "gui/tool_tip", "breaking_overlay", "gui/slot", "gui/ok", "gui/err", NULL};
-
 static void client_game_start(void);
 
 static void client_poll_keybinds(ClientGame *client);
@@ -130,6 +126,7 @@ static void *client_packet_listener(void *args) {
   while (true) {
     log_debug("Listening for packets");
     Packet packet = {0};
+    log_debug("Packet ptr: %p", packet.payload);
     packet_receive(server_addr, &packet);
     log_debug("Packet: %d", packet.id);
 
@@ -171,8 +168,13 @@ void client_init(ClientGame *client) {
   pthread_mutex_lock(&CLIENT_MUTEX);
   {
     queue_init(&CLIENT_CONNECTION.queue);
+
+    bump_init(&CLIENT_CONNECTION.packet_bump, 4096 * sizeof(Packet));
+    bump_allocator_init(&CLIENT_CONNECTION.packet_bump_allocator, &CLIENT_CONNECTION.packet_bump);
   }
   pthread_mutex_unlock(&CLIENT_MUTEX);
+
+  packets_setup();
 
   int window_width = GetScreenWidth();
   int window_height = GetScreenHeight();
@@ -183,7 +185,7 @@ void client_init(ClientGame *client) {
   client->world_texture = LoadRenderTexture(window_width, window_height);
   client->local_saves = array_new_capacity(SaveDescriptor, 64, &HEAP_ALLOCATOR);
   client->window = (Window){.prev_width = window_height, .prev_height = window_height, .width = window_width, .height = window_height};
-  client->ui_renderer = ui_renderer_new();
+  ui_renderer_init(&client->ui_renderer);
   client->players = NULL;
   client->asset_manager = (AssetManager){0};
   client->ui_renderer.asset_manager = &client->asset_manager;
@@ -198,7 +200,7 @@ void client_init(ClientGame *client) {
 
   client_reload(client);
 
-  //assets_load(&client->asset_manager);
+  // assets_load(&client->asset_manager);
 
   // for (int i = 0; i < SOUND_BUFFER_LIMIT; i++) {
   //   client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf[i] =
@@ -306,10 +308,12 @@ static void client_open_menu(ClientGame *game, MenuId menu_id) {
 }
 
 static void client_calc_ui_height(UiRenderer *ui_renderer) {
-  if (ui_renderer->ui_height == -1) {
+  if (ui_renderer->ui_height == -1 || ui_renderer->ui_width == -1) {
+    ui_renderer->cur_x = 0;
     ui_renderer->cur_y = 0;
     ui_renderer->simulate = true;
     client_render_menu(&CLIENT_GAME);
+    ui_renderer->ui_width = ui_renderer->cur_x;
     ui_renderer->ui_height = ui_renderer->cur_y;
 
     ui_renderer->simulate = false;
@@ -337,7 +341,7 @@ static bool inv_slot_selected() {
 }
 
 #define KEY_DOWN(key_name)                                                                                                                 \
-  client->state.pressed_keys.key_name##_down |= IsKeyDown(KEYBINDS.key_name);                                                                    \
+  client->state.pressed_keys.key_name##_down |= IsKeyDown(KEYBINDS.key_name);                                                              \
   client->state.pressed_keys.key_name##_pressed |= IsKeyPressed(KEYBINDS.key_name);
 
 static void client_poll_keybinds(ClientGame *client) {

@@ -6,11 +6,9 @@
 #include "../particle.h"
 #include "../player.h"
 #include "../save.h"
-#include "../shaders.h"
 #include "../sounds.h"
 #include "../textures.h"
 #include "../ui.h"
-#include "../window.h"
 #include "../world.h"
 #include "packet.h"
 #include "queue.h"
@@ -68,6 +66,9 @@ typedef struct network_connection {
   addr_t server_addr;
   bool connected;
   PacketQueue queue;
+
+  Bump packet_bump;
+  Allocator packet_bump_allocator;
 } NetworkConnection;
 
 extern ClientGame CLIENT_GAME;

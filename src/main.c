@@ -2,6 +2,7 @@
 #include "../include/net/server.h"
 #include "../include/shared.h"
 #include <stdbool.h>
+#include <stdio.h>
 
 int main(int argc, char **argv) {
   bool server = argc > 1 && str_eq(argv[1], "--server");

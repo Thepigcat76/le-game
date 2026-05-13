@@ -15,14 +15,13 @@ void client_reload(ClientGame *client) {
 
   assets_load(&client->asset_manager);
 
-  CLIENT_RELOAD(client, tile);
-  CLIENT_RELOAD(client, keybinds);
-  // TODO: Move to asset manager
-  CLIENT_RELOAD(client, shaders);
-  CLIENT_RELOAD(client, world);
+  tiles_reload(client);
+  keybinds_reload(client);
+
+  world_on_reload(client);
 }
 
 void common_reload(Game *game) {
-  COMMON_RELOAD(game, config);
-  COMMON_RELOAD(game, save_names);
+  config_reload(game);
+  save_names_reload(game);
 }

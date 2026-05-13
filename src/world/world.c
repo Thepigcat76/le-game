@@ -373,9 +373,9 @@ void world_render_layer_top_split(World *world, Rectangle player_box, bool draw_
   }
 }
 
-void world_on_reload(ClientGame *game) {
-  if (CLIENT_WORLD != NULL) {
-    world_prepare_rendering(CLIENT_WORLD);
+void world_on_reload(ClientGame *client) {
+  if (client->world != NULL) {
+    world_prepare_rendering(client->world);
   }
 }
 

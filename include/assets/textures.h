@@ -76,6 +76,7 @@ typedef enum {
   TEX_BREAKING_OVERLAY,
   TEX_CURSOR_FIST,
   TEX_CURSOR,
+  TEX_TOOLTIP,
 
   TEX_ERR,
   _amount_texture_handles,

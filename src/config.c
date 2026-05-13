@@ -9,7 +9,7 @@
 
 Config CONFIG;
 
-static void game_config_on_reload() {
+static void game_config_on_reload(void) {
   CONFIG_READ("game", json, {
     cJSON *ambient_light = cJSON_GetObjectItemCaseSensitive(json, "ambient-light");
     cJSON *player_speed = cJSON_GetObjectItemCaseSensitive(json, "player-speed");
@@ -39,6 +39,6 @@ static void game_config_on_reload() {
   });
 }
 
-void config_on_reload(Game *game) {
+void config_reload(Game *game) {
   game_config_on_reload();
 }

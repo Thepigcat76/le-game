@@ -16,13 +16,20 @@ UiRenderer UI_RENDERER;
 
 static pthread_mutex_t SERVER_MUTEX = PTHREAD_MUTEX_INITIALIZER;
 
-void server_init(ServerGame *game) {
-  game->clients = array_new(Client, &HEAP_ALLOCATOR);
-  queue_init(&game->packet_queue);
+void server_init(ServerGame *server) {
+  server->clients = array_new(Client, &HEAP_ALLOCATOR);
+
+  pthread_mutex_lock(&SERVER_MUTEX);
+  {
+    queue_init(&server->packet_queue);
+    bump_init(&server->packet_bump, 1024);
+  }
+  pthread_mutex_unlock(&SERVER_MUTEX);
 }
 
 static void calc_server_ui_height(UiRenderer *ui_renderer) {
-  if (ui_renderer->ui_height == -1) {
+  if (ui_renderer->ui_width == -1 || ui_renderer->ui_height == -1) {
+    ui_renderer->cur_x = 0;
     ui_renderer->cur_y = 0;
     ui_renderer->simulate = true;
     pthread_mutex_lock(&SERVER_MUTEX);
@@ -30,6 +37,14 @@ static void calc_server_ui_height(UiRenderer *ui_renderer) {
       server_ui_render(ui_renderer, &SERVER_GAME);
     }
     pthread_mutex_unlock(&SERVER_MUTEX);
+
+    if (ui_renderer->cur_style.alignment == UI_HORIZONTAL) {
+      ui_renderer->cur_x -= ui_renderer->cur_style.padding;
+    } else if (ui_renderer->cur_style.alignment == UI_VERTICAL) {
+      ui_renderer->cur_y -= ui_renderer->cur_style.padding;
+    }
+
+    ui_renderer->ui_width = ui_renderer->cur_x;
     ui_renderer->ui_height = ui_renderer->cur_y;
 
     ui_renderer->simulate = false;
@@ -39,13 +54,16 @@ static void calc_server_ui_height(UiRenderer *ui_renderer) {
 }
 
 static void save_save_data(const Save *save) {
-  size_t loaded_saves_len = array_len(save->loaded_spaces);
-  for (int i = 0; i < loaded_saves_len; i++) {
-    space_save(save->descriptor, &save->loaded_spaces[i]);
+  if (save->loaded_spaces != NULL) {
+    size_t loaded_saves_len = array_len(save->loaded_spaces);
+    for (int i = 0; i < loaded_saves_len; i++) {
+      space_save(save->descriptor, &save->loaded_spaces[i]);
+    }
   }
 }
 
 static void server_ui_setup_raylib(void) {
+  SetConfigFlags(FLAG_WINDOW_RESIZABLE);
   InitWindow(400, 400, "Server UI");
   SetTargetFPS(60);
 }
@@ -61,6 +79,8 @@ static void *server_game(void *args) {
   // init random
   shared_setup();
 
+  packets_setup();
+
   // Create and init common game
   SERVER_GAME.game = (Game){0};
   game_init(&SERVER_GAME.game);
@@ -70,7 +90,7 @@ static void *server_game(void *args) {
 
   // Create ui renderer for server ui
   // And load button default textures
-  UI_RENDERER = ui_renderer_new();
+  ui_renderer_init(&UI_RENDERER);
 
   // setup registries
   game_registry_setup();
@@ -197,7 +217,7 @@ static void *server_player_listener(void *args) {
       for (size_t i = 0; i < array_len(SERVER_GAME.clients); i++) {
         Player player = {0};
         player_init(&player);
-        
+
         PayloadPlayerJoin payload = {.player_id = player_id, .player = player};
         packet_send(client_fd, S2C_PLAYER_JOIN, &payload);
       }

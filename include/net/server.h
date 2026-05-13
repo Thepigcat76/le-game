@@ -25,6 +25,7 @@ typedef struct _server_game {
   SaveDescriptor server_save;
   Client *clients;
   PacketQueue packet_queue;
+  Bump packet_bump;
 } ServerGame;
 
 extern ServerGame SERVER_GAME;

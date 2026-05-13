@@ -69,7 +69,7 @@ static int key_from_str(char *key) {
       PANIC_FMT("Failed to get keybind: %s - %s", #keybind_field, keybind_name);\
   } while (0)
 
-void keybinds_on_reload(ClientGame *game) {
+void keybinds_reload(ClientGame *client) {
   CONFIG_READ("keybinds", json, {
     KEYBIND(KEYBINDS.move_foreward_key, "move-foreward");
     KEYBIND(KEYBINDS.move_backward_key, "move-backward");

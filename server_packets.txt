@@ -1,0 +1,1 @@
+<<< S2C PACKET_CLIENT_ACCEPTED(player_id=0),client_name=Dev)

@@ -4,41 +4,50 @@
 #include "shared.h"
 #include "ui/ui_components.h"
 #include "ui/ui_style.h"
+#include <lilc/alloc.h>
 #include <raylib.h>
 #include <stdlib.h>
-
-#ifdef CTX_SERVER
-#define UI_RENDERER_PTR server_ui_renderer
-#else
-#define UI_RENDERER_PTR (&CLIENT_GAME.ui_renderer)
-#endif
 
 extern Texture2D BUTTON_TEXTURE_DEFAULT;
 extern Texture2D BUTTON_TEXTURE_SELECTED_DEFAULT;
 
 typedef struct {
   GroupUiComponent component;
-  int prev_x;
-  int prev_y;
+  i32 prev_x;
+  i32 prev_y;
 } UiGroup;
 
 typedef struct {
-  int cur_x;
-  int cur_y;
-  int ui_height;
+  i32 screen_width;
+  i32 screen_height;
+} UiContext;
+
+typedef struct {
+  i32 cur_x;
+  i32 cur_y;
+  i32 ui_width;
+  i32 ui_height;
   bool simulate;
   UiStyle cur_style;
   UiStyle initial_style;
   UiGroup groups[MAX_UI_GROUPS_AMOUNT];
   size_t groups_amount;
-  struct {
-    int screen_width;
-    int screen_height;
-  } context;
+  UiContext context;
+
   AssetManager *asset_manager;
+
+  Bump ui_bump;
+  Allocator ui_bump_allocator;
 } UiRenderer;
 
-UiRenderer ui_renderer_new(void);
+#ifdef CTX_SERVER
+extern UiRenderer UI_RENDERER;
+#define UI_RENDERER_PTR (&UI_RENDERER)
+#else
+#define UI_RENDERER_PTR (&CLIENT_GAME.ui_renderer)
+#endif
+
+void ui_renderer_init(UiRenderer *renderer);
 
 // Setup (Order of declaratiion should also be)
 

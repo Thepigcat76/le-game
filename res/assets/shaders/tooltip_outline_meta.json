@@ -1,0 +1,5 @@
+{
+  "uniforms": {
+    "resolution": "vec2"
+  }
+}

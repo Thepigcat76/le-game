@@ -2,6 +2,7 @@
 #include "../../include/shared.h"
 #include <lilc/log.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 typedef struct {
   const char *path;
@@ -13,10 +14,12 @@ extern ResourceFile *get_resource_files(size_t *amount);
 
 void resource_files_write(const char *dir_path) {
   size_t amount = 0;
-  ResourceFile *files;
+  ResourceFile *files = NULL;
 #ifdef PACKED_RESOURCES
   files = get_resource_files(&amount);
 #endif
+
+  if (files == NULL) return;
 
   for (size_t i = 0; i < amount; i++) {
     ResourceFile file = files[i];

@@ -1,8 +1,10 @@
 #pragma once
 
 #include "../bytebuf.h"
+#include "../game.h"
 #include <stddef.h>
 #include "lilc/numbers.h"
+#include <stdbool.h>
 
 typedef enum {
   PACKET_ERROR,
@@ -31,6 +33,7 @@ typedef struct {
   PacketEncodeFunc encode_func;
   PacketDecodeFunc decode_func;
   PacketHandleFunc handle_func;
+  size_t payload_size;
 } PacketInfo;
 
 extern PacketInfo PACKET_INFOS[_amount_packet_ids];
@@ -40,3 +43,7 @@ void packets_setup(void);
 void packet_send(i32 addr, PacketId id, void *payload);
 
 void packet_receive(i32 addr, Packet *packet);
+
+void packet_log(const Packet *packet, GameSide target);
+
+void packet_alloc(Packet *packet);

@@ -1,19 +1,10 @@
 #pragma once
 
-#include "being.h"
-#include "data.h"
 #include "debug.h"
 #include "item.h"
-#include "keys.h"
-#include "menu.h"
-#include "particle.h"
 #include "save.h"
-#include "shaders.h"
-#include "shared.h"
-#include "sounds.h"
 #include "space_desc.h"
 #include "tile.h"
-#include "ui.h"
 #include "category.h"
 
 #define MAX_TICKS_PER_FRAME 20

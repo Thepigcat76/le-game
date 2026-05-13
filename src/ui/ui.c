@@ -1,33 +1,28 @@
 #include "../../include/ui.h"
 #include "../../include/net/client.h"
 #include "../../include/shared.h"
+#include "lilc/log.h"
 #include "raylib.h"
+#include <lilc/alloc.h>
 #include <stdbool.h>
 
-Texture2D BUTTON_TEXTURE_DEFAULT;
-Texture2D BUTTON_TEXTURE_SELECTED_DEFAULT;
-static bool DEFAULT_TEXTURES_INITIALIZED = false;
+void ui_renderer_init(UiRenderer *renderer) {
+  renderer->cur_x = 0;
+  renderer->cur_y = 0;
+  renderer->simulate = false;
+  renderer->ui_width = -1;
+  renderer->ui_height = -1;
+  renderer->cur_style = (UiStyle){0};
+  renderer->initial_style = (UiStyle){0};
+  renderer->context = (UiContext){.screen_width = GetScreenWidth(), .screen_height = GetScreenHeight()};
 
-UiRenderer ui_renderer_new(void) {
-  if (!DEFAULT_TEXTURES_INITIALIZED) {
-    BUTTON_TEXTURE_DEFAULT = LoadTexture("res/assets/gui/button_default.png");
-    BUTTON_TEXTURE_SELECTED_DEFAULT = LoadTexture("res/assets/gui/button_default_selected.png");
-    DEFAULT_TEXTURES_INITIALIZED = true;
-  }
-
-  return (UiRenderer){.cur_x = 0,
-                      .cur_y = 0,
-                      .simulate = false,
-                      .ui_height = -1,
-                      .cur_style = {0},
-                      .initial_style = {0},
-                      .context = {.screen_width = GetScreenWidth(), .screen_height = GetScreenHeight()}};
+  bump_init(&renderer->ui_bump, 1024);
+  bump_allocator_init(&renderer->ui_bump_allocator, &renderer->ui_bump);
 }
 
 void ui_set_background(UiRenderer *renderer, BackgroundUiComponent component) {
-
-  int x = (renderer->context.screen_width - component.texture.width * 4.5) / 2;
-  int y = (renderer->context.screen_height - component.texture.height * 4.5) / 2;
+  i32 x = (renderer->context.screen_width - component.texture.width * 4.5) / 2;
+  i32 y = (renderer->context.screen_height - component.texture.height * 4.5) / 2;
   if (renderer->cur_style.positions[0] == UI_LEFT || renderer->cur_style.positions[1] == UI_LEFT) {
     x = 0;
   }
@@ -39,7 +34,6 @@ void ui_set_background(UiRenderer *renderer, BackgroundUiComponent component) {
   if (renderer->cur_style.positions[0] == UI_BOTTOM || renderer->cur_style.positions[1] == UI_BOTTOM) {
     y = renderer->context.screen_height - component.texture.height * 4.5;
   }
-  int w = component.texture.width * 4.5;
   DrawTextureEx(component.texture, (Vector2){x + component.x_offset, y + component.y_offset}, 0, 4.5, WHITE);
 }
 
@@ -49,8 +43,8 @@ void ui_setup(UiRenderer *renderer, UiStyle ui_style) {
   renderer->initial_style = ui_style;
   renderer->cur_style = ui_style;
 
-  if (renderer->ui_height != -1) {
-    renderer->cur_x = renderer->context.screen_width / 2;
+  if (renderer->ui_height != -1 || renderer->ui_height != -1) {
+    renderer->cur_x = (renderer->context.screen_width - renderer->ui_width) / 2;
     renderer->cur_y = (renderer->context.screen_height - renderer->ui_height) / 2;
   }
   switch (renderer->cur_style.alignment) {
@@ -86,56 +80,68 @@ float ui_scale(UiRenderer *renderer) { return renderer->cur_style.scale * (rende
 
 // BUTTONS
 
-static void move(UiRenderer *renderer, int width, int height) {
+static void move_ex(UiRenderer *renderer, i32 width, i32 height, bool scale_x, bool scale_y) {
   float scale = renderer->cur_style.scale * ui_scale(renderer);
   switch (renderer->cur_style.alignment) {
   case UI_VERTICAL: {
-    renderer->cur_y += height * scale + renderer->cur_style.padding;
+    if (scale_y) {
+      renderer->cur_y += height * scale + renderer->cur_style.padding;
+    } else {
+      renderer->cur_y += height + renderer->cur_style.padding;
+    }
     break;
   }
   case UI_HORIZONTAL: {
-    renderer->cur_x += width * scale + renderer->cur_style.padding;
+    if (scale_x) {
+      renderer->cur_x += width * scale + renderer->cur_style.padding;
+    } else {
+      renderer->cur_x += width + renderer->cur_style.padding;
+    }
     break;
   }
   }
 }
 
-static void align(UiRenderer *renderer, int width, int height, int x_offset, int y_offset) {
+static void move(UiRenderer *renderer, i32 width, i32 height) { move_ex(renderer, width, height, true, true); }
+
+static void align_ex(UiRenderer *renderer, i32 width, i32 height, i32 x_offset, i32 y_offset, bool scale_horizontal, bool scale_vertical) {
   UiStyle style = renderer->cur_style;
   float scale = renderer->cur_style.scale * ui_scale(renderer);
   switch (renderer->cur_style.alignment) {
   case UI_VERTICAL: {
     if (style.positions[0] == UI_CENTER || style.positions[1] == UI_CENTER) {
-      renderer->cur_x = (renderer->context.screen_width - width * scale) / 2;
+      if (scale_vertical) {
+        renderer->cur_x = (renderer->context.screen_width - width * scale) / 2;
+      } else {
+        renderer->cur_x = (renderer->context.screen_width - width) / 2;
+      }
     }
     renderer->cur_x += x_offset;
     break;
   }
   case UI_HORIZONTAL: {
-    renderer->cur_x += x_offset;
+    if (style.positions[0] == UI_CENTER || style.positions[1] == UI_CENTER) {
+      if (scale_horizontal) {
+        renderer->cur_y = (renderer->context.screen_height - height * scale) / 2;
+      } else {
+        renderer->cur_y = (renderer->context.screen_height - height) / 2;
+      }
+    }
+    renderer->cur_y += y_offset;
     break;
   }
   }
 }
 
+static void align(UiRenderer *renderer, i32 width, i32 height, i32 x_offset, i32 y_offset) {
+  align_ex(renderer, width, height, x_offset, y_offset, true, true);
+}
+
 void ui_button_render(UiRenderer *renderer, ButtonUiComponent component) {
-  TextureHandle texture;
-
-  if (component.texture.present) {
-    texture = component.texture.texture_handle;
-  } else {
-    texture = TEX_BUTTON;
-  }
-
-  AssetId selected_texture;
-  if (component.selected_texture.present) {
-    selected_texture = component.selected_texture.texture_handle;
-  } else {
-    selected_texture = TEX_BUTTON_SELECTED;
-  }
+  TextureHandle texture = component.texture.present ? component.texture.texture_handle : TEX_BUTTON;
+  TextureHandle selected_texture = component.selected_texture.present ? component.texture.texture_handle : TEX_BUTTON_SELECTED;
 
   cw_Texture tex = cw_tex_by_handle(renderer->asset_manager, texture);
-  cw_Texture tex_selected = cw_tex_by_handle(renderer->asset_manager, selected_texture);
 
   if (component.width == 0) {
     component.width = tex.width;
@@ -146,7 +152,6 @@ void ui_button_render(UiRenderer *renderer, ButtonUiComponent component) {
   }
 
   float scale = renderer->cur_style.scale * ui_scale(renderer);
-  UiStyle style = renderer->cur_style;
   align(renderer, component.width, component.height, component.x_offset, component.y_offset);
 
   renderer->cur_x += component.x_offset;
@@ -162,9 +167,10 @@ void ui_button_render(UiRenderer *renderer, ButtonUiComponent component) {
                              .width = component.width * scale,
                              .height = component.height * scale},
                  (Vector2){.x = (component.width * scale) / 2, .y = (component.height * scale) / 2}, 0, WHITE);
-  int text_width = MeasureText(component.message, renderer->cur_style.font_scale);
-  float text_x = renderer->cur_x + component.text_x_offset + (float)(component.width * scale - text_width) / 2;
-  float text_y = renderer->cur_y + ((component.height * scale) / 2 - (float)renderer->cur_style.font_scale / 2) + component.text_y_offset;
+  i32 text_width = MeasureText(component.message, renderer->cur_style.font_scale);
+
+  f32 text_x = renderer->cur_x + component.text_x_offset + (float)(component.width * scale - text_width) / 2;
+  f32 text_y = renderer->cur_y + ((component.height * scale) / 2 - (float)renderer->cur_style.font_scale / 2) + component.text_y_offset;
   DrawText(component.message, text_x, text_y, renderer->cur_style.font_scale, WHITE);
 
   if (renderer->cur_style.alignment == UI_VERTICAL) {
@@ -194,31 +200,24 @@ void ui_text_render(UiRenderer *renderer, TextUiComponent component) {
   if (component.color.r == 0 && component.color.g == 0 && component.color.b == 0 && component.color.a == 0) {
     color = WHITE;
   }
-  int width = MeasureText(component.text, renderer->cur_style.font_scale);
-  int height = renderer->cur_style.font_scale;
-  switch (renderer->cur_style.alignment) {
-  case UI_HORIZONTAL: {
-    break;
-  }
-  case UI_VERTICAL: {
-    renderer->cur_x = (renderer->context.screen_width - width) / 2;
-    break;
-  }
-  }
+
+  i32 width = MeasureText(component.text, renderer->cur_style.font_scale);
+  i32 height = renderer->cur_style.font_scale;
+
+  align_ex(renderer, width, height, component.x_offset, component.y_offset, false, false);
+
   if (!renderer->simulate) {
     DrawText(component.text, renderer->cur_x + component.x_offset, renderer->cur_y + component.y_offset, renderer->cur_style.font_scale,
              color);
   }
-  // TODO: Move cur coordinate by dimension depdening on style
-  // renderer->cur_x += component->dimensions.x + component->offset.x;
-  renderer->cur_y += height + renderer->cur_style.padding;
+
+  move_ex(renderer, width, height, false, false);
 }
 
 // TEXT INPUT
 
 void ui_text_input_render(UiRenderer *renderer, TextInputUiComponent component) {
-  cw_Texture tex =
-      cw_tex_by_handle(renderer->asset_manager, component.texture.present ? component.texture.texture_handle : TEX_TEXT_INPUT);
+  cw_Texture tex = cw_tex_by_handle(renderer->asset_manager, component.texture.present ? component.texture.texture_handle : TEX_TEXT_INPUT);
 
   if (component.width == 0) {
     component.width = tex.width;
@@ -232,8 +231,8 @@ void ui_text_input_render(UiRenderer *renderer, TextInputUiComponent component) 
   float scale = renderer->cur_style.scale * ui_scale(renderer);
   UiStyle style = renderer->cur_style;
   align(renderer, component.width, component.height, component.x_offset, component.y_offset);
-  int x = renderer->cur_x + (component.width * scale) / 2;
-  int y = renderer->cur_y + (component.height * scale) / 2;
+  i32 x = renderer->cur_x + (component.width * scale) / 2;
+  i32 y = renderer->cur_y + (component.height * scale) / 2;
 
   Texture2D texture = tex_by_id(renderer->asset_manager, tex.id);
 
@@ -244,7 +243,7 @@ void ui_text_input_render(UiRenderer *renderer, TextInputUiComponent component) 
   DrawText(component.text_input->buf, renderer->cur_x + 3 * scale + component.text_x_offset, renderer->cur_y + 3 + component.text_y_offset,
            renderer->cur_style.font_scale, WHITE);
 
-  int line_x = renderer->cur_x + MeasureText(component.text_input->buf, renderer->cur_style.font_scale);
+  i32 line_x = renderer->cur_x + MeasureText(component.text_input->buf, renderer->cur_style.font_scale);
 
   if (((int)(GetTime() * 1.5)) % 2 == 0 && selected) {
     DrawLineEx(vec2f(line_x + 3 * scale, renderer->cur_y + (component.height - 3) * scale),
@@ -280,6 +279,7 @@ void ui_text_input_render(UiRenderer *renderer, TextInputUiComponent component) 
 // SPACING
 
 void ui_spacing_render(UiRenderer *renderer, SpacingUiComponent component) {
+  renderer->cur_x += component.width + component.x_offset + renderer->cur_style.padding;
   renderer->cur_y += component.height + component.y_offset + renderer->cur_style.padding;
 }
 
@@ -296,8 +296,8 @@ void ui_slot_render(UiRenderer *renderer, SlotUiComponent component) {
 
   align(renderer, component.width, component.height, component.x_offset, component.y_offset);
 
-  int width = component.width * ui_scale(renderer);
-  int height = component.height * ui_scale(renderer);
+  i32 width = component.width * ui_scale(renderer);
+  i32 height = component.height * ui_scale(renderer);
 
   if (CheckCollisionPointRec(GetMousePosition(), rectf(renderer->cur_x, renderer->cur_y, width, height)) && !component.fake) {
     DrawRectangle(renderer->cur_x, renderer->cur_y, width, height, color_rgba(150, 150, 150, 150));
@@ -321,8 +321,8 @@ void ui_slot_render(UiRenderer *renderer, SlotUiComponent component) {
     item_render(component.item, renderer->cur_x, renderer->cur_y);
   }
 
-  //DrawTextureEx(SLOT_TEXTURE, vec2f(renderer->cur_x - 2 * ui_scale(renderer), renderer->cur_y - 2 * ui_scale(renderer)), 0,
-  //              ui_scale(renderer), WHITE);
+  // DrawTextureEx(SLOT_TEXTURE, vec2f(renderer->cur_x - 2 * ui_scale(renderer), renderer->cur_y - 2 * ui_scale(renderer)), 0,
+  //               ui_scale(renderer), WHITE);
 
   move(renderer, component.width, component.height);
 }
@@ -340,7 +340,7 @@ void ui_group_create(UiRenderer *renderer, GroupUiComponent component) {
   }
 
   if (component.scroll_y_offset != NULL) {
-    int *scroll = component.scroll_y_offset;
+    i32 *scroll = component.scroll_y_offset;
     float wheel = GetMouseWheelMove();
     *scroll += (int)(wheel * 20); // Invert direction
     if (*scroll > 0)
@@ -364,7 +364,7 @@ void ui_group_destroy(UiRenderer *renderer) {
 
   if (scissors) {
     EndScissorMode();
-    // renderer->cur_x  = group.prev_x + group.component.width;
+    renderer->cur_x = group.prev_x + group.component.width;
     renderer->cur_y = group.prev_y + group.component.height;
   }
 

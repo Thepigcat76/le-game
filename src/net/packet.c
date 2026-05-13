@@ -8,10 +8,15 @@
 #include "../../include/player.h"
 #include "../../include/space.h"
 #include "lilc/log.h"
+#include <lilc/alloc.h>
+#include <lilc/bump.h>
+#include <lilc/dynstr.h>
+#include <stdio.h>
 
 PacketInfo PACKET_INFOS[_amount_packet_ids];
 
-static void packet_add(PacketId id, PacketEncodeFunc encode_func, PacketDecodeFunc decode_func, PacketHandleFunc handle_func);
+static void packet_add(PacketId id, PacketEncodeFunc encode_func, PacketDecodeFunc decode_func, PacketHandleFunc handle_func,
+                       size_t payload_size);
 
 /* PACKET IMPLEMENTATIONS */
 
@@ -226,27 +231,35 @@ static void packet_client_disconnect_handle(const Packet *packet) {
 /* PACKET REGISTRATION */
 
 void packets_setup(void) {
-  packet_add(PACKET_ERROR, NULL, NULL, NULL);
+  packet_add(PACKET_ERROR, NULL, NULL, NULL, 0);
 
-  packet_add(S2C_PLAYER_JOIN, packet_player_join_encode, packet_player_join_decode, packet_player_join_handle);
-  packet_add(S2C_SYNC_SPACE, packet_sync_space_encode, packet_sync_space_decode, packet_sync_space_handle);
-  packet_add(S2C_CLIENT_ACCEPTED, packet_client_accepted_encode, packet_client_accepted_decode, packet_client_accepted_handle);
-  packet_add(C2S_CLIENT_CONNECT, packet_client_connect_encode, packet_client_connect_decode, packet_client_connect_handle);
-  packet_add(S2C_CLIENT_CONNECTED, packet_client_connected_encode, packet_client_connected_decode, packet_client_connected_handle);
-  packet_add(C2S_CLIENT_DISCONNECT, packet_client_disconnect_encode, packet_client_disconnect_decode, packet_client_disconnect_handle);
+  packet_add(S2C_PLAYER_JOIN, packet_player_join_encode, packet_player_join_decode, packet_player_join_handle, sizeof(PayloadPlayerJoin));
+  packet_add(S2C_SYNC_SPACE, packet_sync_space_encode, packet_sync_space_decode, packet_sync_space_handle, sizeof(PayloadSyncSpace));
+  packet_add(S2C_CLIENT_ACCEPTED, packet_client_accepted_encode, packet_client_accepted_decode, packet_client_accepted_handle,
+             sizeof(PayloadClientAccepted));
+  packet_add(C2S_CLIENT_CONNECT, packet_client_connect_encode, packet_client_connect_decode, packet_client_connect_handle,
+             sizeof(PayloadClientConnect));
+  packet_add(S2C_CLIENT_CONNECTED, packet_client_connected_encode, packet_client_connected_decode, packet_client_connected_handle,
+             sizeof(PayloadClientConnected));
+  packet_add(C2S_CLIENT_DISCONNECT, packet_client_disconnect_encode, packet_client_disconnect_decode, packet_client_disconnect_handle,
+             sizeof(PayloadClientDisconnect));
 }
 
-static void packet_add(PacketId id, PacketEncodeFunc encode_func, PacketDecodeFunc decode_func, PacketHandleFunc handle_func) {
+static void packet_add(PacketId id, PacketEncodeFunc encode_func, PacketDecodeFunc decode_func, PacketHandleFunc handle_func,
+                       size_t payload_size) {
   PACKET_INFOS[id] = (PacketInfo){
       .encode_func = encode_func,
       .decode_func = decode_func,
       .handle_func = handle_func,
+      .payload_size = payload_size,
   };
 }
 
 void packet_send(i32 addr, PacketId id, void *payload) {
   Packet packet = {.id = id, .payload = payload};
   PacketInfo info = PACKET_INFOS[id];
+
+  packet_log(&packet, !GAME_SIDE);
 
   u8 bytes[128000];
   ByteBuf buf = {.writer_index = 0, .reader_index = 0, .capacity = 128000, .bytes = bytes};
@@ -264,6 +277,8 @@ void packet_send(i32 addr, PacketId id, void *payload) {
 }
 
 void packet_receive(i32 addr, Packet *packet) {
+  packet_log(packet, GAME_SIDE);
+
   u8 len_buf[2];
   ssize_t n = sockets_receive(addr, (SocketDataBuffer){len_buf, 2}, MSG_WAITALL);
   if (n != 2) {
@@ -292,9 +307,80 @@ void packet_receive(i32 addr, Packet *packet) {
 
   PacketId id = byte_buf_read_int(&buf);
   PacketInfo packet_info = PACKET_INFOS[id];
+  packet->id = id;
+  packet_alloc(packet);
   packet_info.decode_func(packet, &buf);
 
   // char print_buf[256];
   // packet_fmt(packet, addr, !is_client, is_client, print_buf);
   // printf("%s\n", print_buf);
+}
+
+dyn_string_t packet_fmt(const Packet *packet, Allocator *allocator) {
+  dyn_string_t str = {0};
+  dyn_string_init(&str, allocator);
+
+  switch (packet->id) {
+  case PACKET_ERROR: {
+    dyn_string_printf(&str, "PACKET_ERROR");
+  } break;
+  case S2C_PLAYER_JOIN: {
+    PayloadPlayerJoin *payload = packet->payload;
+    dyn_string_printf(&str, "S2C PACKET_PLAYER_JOIN(player_id=%d)", payload->player_id);
+  } break;
+  case S2C_SYNC_SPACE: {
+    PayloadSyncSpace *payload = packet->payload;
+    float seed = payload->space.world.seed;
+    dyn_string_printf(&str, "S2C PACKET_SYNC_SPACE(seed=%f)", seed);
+  } break;
+  case S2C_CLIENT_ACCEPTED: {
+    PayloadClientAccepted *payload = packet->payload;
+    dyn_string_printf(&str, "S2C PACKET_CLIENT_ACCEPTED(player_id=%d)", payload->player_id);
+  } break;
+  case C2S_CLIENT_CONNECT: {
+    PayloadClientConnect *payload = packet->payload;
+    dyn_string_printf(&str, "C2S PACKET_CLIENT_CONNECT(player_id=%d,player_name=%s)", payload->player_id, payload->client_name);
+  } break;
+  case S2C_CLIENT_CONNECTED: {
+    PayloadClientConnected *payload = packet->payload;
+    dyn_string_printf(&str, "S2C PACKET_CLIENT_CONNECTED(player_id=%d,client_name=%s)", payload->new_player_id, payload->client_name);
+  } break;
+  case C2S_CLIENT_DISCONNECT: {
+    PayloadClientDisconnect *payload = packet->payload;
+    dyn_string_printf(&str, "C2S PACKET_CLIENT_DISCONNECT(player_id=%d)", payload->player_id);
+  } break;
+  default: {
+    dyn_string_printf(&str, "Unknow packet, id: %d", packet->id);
+  } break;
+  }
+
+  return str;
+}
+
+void packet_log(const Packet *packet, GameSide target) {
+  bool clientside = GAME_SIDE == SIDE_CLIENT;
+
+  FILE *f;
+  if (clientside) {
+    f = fopen("client_packets.txt", "w");
+  } else {
+    f = fopen("server_packets.txt", "w");
+  }
+
+  char *direction = target == GAME_SIDE ? ">>>" : "<<<";
+
+  dyn_string_t str = packet_fmt(packet, &HEAP_ALLOCATOR);
+  fprintf(f, "%s %s", direction, str.string);
+  dyn_string_free(&str);
+}
+
+void packet_alloc(Packet *packet) {
+  if (GAME_SIDE == SIDE_CLIENT) {
+    log_debug("CLIENT ALLOC");
+    packet->payload = bump_alloc(&CLIENT_CONNECTION.packet_bump, PACKET_INFOS[packet->id].payload_size);
+  
+    log_debug("Packet ptr after alloc: %p", packet->payload);
+  } else {
+    packet->payload = bump_alloc(&SERVER_GAME.packet_bump, PACKET_INFOS[packet->id].payload_size);
+  }
 }

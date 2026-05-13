@@ -1,5 +1,6 @@
 #include "../../include/save_desc.h"
 #include "../../include/shared.h"
+#include "../../include/game.h"
 #include "../../vendor/cJSON.h"
 #include "lilc/log.h"
 #include "lilc/numbers.h"
@@ -20,7 +21,7 @@ typedef struct {
 
 static SaveNames SAVE_NAMES = {.adjectives_amount = 0, .nouns_amount = 0};
 
-void save_names_on_reload(void) {
+void save_names_reload(Game *game) {
   SAVE_NAMES.adjectives_amount = 0;
   SAVE_NAMES.nouns_amount = 0;
   for (int i = 0; i < SAVE_NAMES.adjectives_amount; i++) {

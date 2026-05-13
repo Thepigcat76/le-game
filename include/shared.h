@@ -3,19 +3,16 @@
 #include <dirent.h>
 #include <raylib.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #include "lilc/alloc.h"
 #include "lilc/numbers.h"
-#include "lilc/str.h"
 
 #define SCREEN_WIDTH 800
 #define SCREEN_HEIGHT 800
 
 #define CHUNK_SIZE 16
 
-#define WORLD_LOADED_CHUNKS 10
+#define WORLD_LOADED_CHUNKS 9
 
 #define TILE_SIZE 16
 
@@ -84,6 +81,13 @@ typedef enum {
   DIRECTION_LEFT,
   DIRECTION_RIGHT,
 } Direction;
+
+typedef struct {
+  i32 width;
+  i32 height;
+  i32 prev_width;
+  i32 prev_height;
+} Window;
 
 typedef struct {
   int x;

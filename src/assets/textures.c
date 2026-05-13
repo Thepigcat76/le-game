@@ -1,11 +1,11 @@
-#include "../../include/assets.h"
 #include "../../include/textures.h"
+#include "../../include/assets.h"
 #include "../../include/shared.h"
 #include "../../vendor/cJSON.h"
 #include "lilc/alloc.h"
 #include "lilc/array.h"
-#include "lilc/log.h"
 #include "lilc/file.h"
+#include "lilc/log.h"
 #include <lilc/bump.h>
 #include <raylib.h>
 
@@ -50,13 +50,13 @@ void texture_handles_assign_id(AssetManager *m) {
   TEX_IDS[TEX_HEAL_POTION] = tex_asset_id(m, "heal_potion");
   TEX_IDS[TEX_MAP] = tex_asset_id(m, "map");
   TEX_IDS[TEX_STICK] = tex_asset_id(m, "stick");
-  
+
   TEX_IDS[TEX_GRASS_INV] = tex_asset_id(m, "grass_inv");
   TEX_IDS[TEX_STONE_INV] = tex_asset_id(m, "stone_inv");
-  
+
   TEX_IDS[TEX_MAP_ICON_HOUSE] = tex_asset_id(m, "map_icon_house");
   TEX_IDS[TEX_MAP_ICON_TREE] = tex_asset_id(m, "map_icon_tree");
-  
+
   TEX_IDS[TEX_PARTICLE] = tex_asset_id(m, "particle");
   TEX_IDS[TEX_WALK_PARTICLES] = tex_asset_id(m, "walk_particles");
 
@@ -64,7 +64,7 @@ void texture_handles_assign_id(AssetManager *m) {
   TEX_IDS[TEX_PLAYER_FRONT_WALK] = tex_asset_id(m, "player_front_walk");
   TEX_IDS[TEX_PLAYER_LEFT_WALK] = tex_asset_id(m, "player_left_walk");
   TEX_IDS[TEX_PLAYER_RIGHT_WALK] = tex_asset_id(m, "player_right_walk");
-  
+
   TEX_IDS[TEX_PLAYER_BACK] = tex_asset_id(m, "player_back");
   TEX_IDS[TEX_PLAYER_FRONT] = tex_asset_id(m, "player_front");
   TEX_IDS[TEX_PLAYER_LEFT] = tex_asset_id(m, "player_left");
@@ -73,10 +73,11 @@ void texture_handles_assign_id(AssetManager *m) {
   TEX_IDS[TEX_WATER_OVERLAY] = tex_asset_id(m, "water_overlay");
 
   TEX_IDS[TEX_BUILDING_SHOP] = tex_asset_id(m, "building_shop");
-  
+
   TEX_IDS[TEX_BREAKING_OVERLAY] = tex_asset_id(m, "breaking_overlay");
   TEX_IDS[TEX_CURSOR_FIST] = tex_asset_id(m, "cursor_fist");
   TEX_IDS[TEX_CURSOR] = tex_asset_id(m, "cursor");
+  TEX_IDS[TEX_TOOLTIP] = tex_asset_id(m, "ui/tooltip");
 
   TEX_IDS[TEX_BUTTON] = tex_asset_id(m, "ui/button");
   TEX_IDS[TEX_BUTTON_SELECTED] = tex_asset_id(m, "ui/button_selected");
@@ -163,7 +164,7 @@ i32 cw_texture_load(cw_Texture *texture, AssetManager *manager, FileEntry file_e
         .cur_frame = 0,
         .frame_timer = 0,
     };
-    //array_add(ANIMATED_TEXTURES, animated_texture);
+    // array_add(ANIMATED_TEXTURES, animated_texture);
   } else {
     *texture = (cw_Texture){
         .kind = TEXTURE_STATIC,

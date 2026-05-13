@@ -18,7 +18,7 @@ static void debug_variant_info(void);
 
 static void on_tile_variants_reload(void);
 
-void tile_on_reload(ClientGame *game) {
+void tiles_reload(ClientGame *client) {
   init_connected_info();
 
   on_tile_variants_reload();

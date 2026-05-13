@@ -55,19 +55,56 @@ static void on_click(void) {
   }
 }
 
-void server_ui_render(UiRenderer *server_ui_renderer, ServerGame *server) {
+void server_ui_render(UiRenderer *renderer, ServerGame *server) {
   UI_SETUP({
       .positions = {UI_CENTER, UI_CENTER},
-      .alignment = UI_VERTICAL,
+      .alignment = UI_HORIZONTAL,
       .padding = 24,
       .scale = 1,
       .font_scale = 24,
   });
 
-  RENDER_TEXT({.text = "Server"});
-  RENDER_TEXT({.text = TextFormat("Connected clients: %zu", array_len(server->clients))});
-  for (size_t i = 0; i < array_len(server->clients); i++) {
-    RENDER_TEXT({.text = TextFormat("- Addr: %u - %s", server->clients[i].address, server->clients[i].name)});
+  UI_GROUP_CREATE({
+      .group_style =
+          {
+              .positions = {UI_CENTER, UI_CENTER},
+              .alignment = UI_VERTICAL,
+              .padding = 24,
+              .scale = 1,
+              .font_scale = 24,
+          },
+      .width = renderer->context.screen_width / 2,
+      .height = renderer->context.screen_height,
+  });
+  {
+    RENDER_TEXT({.text = "Server"});
+    RENDER_TEXT({.text = TextFormat("Connected clients: %zu", array_len(server->clients))});
+    for (size_t i = 0; i < array_len(server->clients); i++) {
+      RENDER_TEXT({.text = TextFormat("- Addr: %u - %s", server->clients[i].address, server->clients[i].name)});
+    }
+    RENDER_BUTTON({.message = "Create save", .on_click_func = button_click_simple(on_click), .text_y_offset = -4});
   }
-  RENDER_BUTTON({.message = "Create save", .on_click_func = button_click_simple(on_click), .text_y_offset = -4});
+  UI_GROUP_DESTROY();
+
+  UI_GROUP_CREATE({
+      .group_style =
+          {
+              .positions = {UI_CENTER, UI_CENTER},
+              .alignment = UI_VERTICAL,
+              .padding = 24,
+              .scale = 1,
+              .font_scale = 24,
+          },
+      .width = renderer->context.screen_width / 2,
+      .height = renderer->context.screen_height,
+  });
+  {
+    RENDER_TEXT({.text = "Ballz"});
+    RENDER_TEXT({.text = TextFormat("Connected clients: %zu", array_len(server->clients))});
+    for (size_t i = 0; i < array_len(server->clients); i++) {
+      RENDER_TEXT({.text = TextFormat("- Addr: %u - %s", server->clients[i].address, server->clients[i].name)});
+    }
+    RENDER_BUTTON({.message = "Create save", .on_click_func = button_click_simple(on_click), .text_y_offset = -4});
+  }
+  UI_GROUP_DESTROY();
 }

@@ -5,6 +5,7 @@
 #include "lilc/numbers.h"
 #include "shared.h"
 #include "assets/textures.h"
+#include "assets/shaders.h"
 #include <raylib.h>
 
 #define ASSETS_DIR "res/assets/"
@@ -38,7 +39,11 @@ typedef struct {
   AssetId id;
   Shader shader;
 
-  i32 shader_variable_locs[64];
+  i32 shader_values_locs[64];
+  size_t shader_values_locs_amount;
+
+  // Base path, without file extension or _meta
+  const char *base_path;
 } cw_Shader;
 
 typedef struct {
@@ -61,6 +66,8 @@ void assets_unload(AssetManager *asset_manager);
 
 // Getters
 
+/* TEXTURES */
+
 cw_Texture cw_tex_by_id(AssetManager *asset_manager, AssetId id);
 
 cw_Texture cw_tex_by_handle(AssetManager *asset_manager, TextureHandle handle);
@@ -72,12 +79,30 @@ Texture2D tex_by_id(AssetManager *asset_manager, AssetId id);
 
 Texture2D tex_by_handle(AssetManager *asset_manager, TextureHandle handle);
 
+/* SHADERS */
+
+cw_Shader cw_shader_by_id(AssetManager *asset_manager, AssetId id);
+
+cw_Shader cw_shader_by_handle(AssetManager *asset_manager, ShaderHandle handle);
+
+cw_Shader cw_shader_by_shader_path(AssetManager *asset_manager, const char *shader_path);
+
+Shader shader_by_id(AssetManager *asset_manager, AssetId id);
+
+Shader shader_by_handle(AssetManager *asset_manager, ShaderHandle id);
+
 // Load asset files
 
 i32 cw_texture_load(cw_Texture *texture, AssetManager *manager, FileEntry file_entry);
 
 void cw_texture_unload(cw_Texture *texture);
 
+i32 cw_shader_load(cw_Shader *shader, AssetManager *manager, FileEntry vs_file_entry, FileEntry fs_file_entry, FileEntry meta_file_entry);
+
+void cw_shader_unload(cw_Shader *shader);
+
 // Assign ids to handles
 
 void texture_handles_assign_id(AssetManager *m);
+
+void shader_handles_assign_id(AssetManager *m);
