@@ -4,22 +4,8 @@
 #include "../../include/net/client.h"
 #include <raylib.h>
 
-void client_setup_raylib(void) {
-#ifdef DEBUG_BUILD
-  SetTraceLogLevel(LOG_DEBUG);
-#endif
-  SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-  InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Ballz");
-  InitAudioDevice();
-  SetExitKey(0);
+/* GAME-INIT-DEINIT */
 
-  SetTargetFPS(60);
-}
-
-void client_deinit_raylib(void) {
-  CloseAudioDevice();
-  CloseWindow();
-}
 void game_init(Game *game) {
   common_reload(game);
 
@@ -40,10 +26,6 @@ void game_deinit(Game *game) {
   array_free(ADV_TILES);
 
   // free(SOUND_BUMP.buffer);
-
-  if (game->save_loaded) {
-    array_free(CLIENT_WORLD->chunks);
-  }
   
   bump_free(&ITEM_CONTAINER_BUMP);
 }

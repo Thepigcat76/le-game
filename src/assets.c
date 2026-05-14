@@ -13,7 +13,7 @@
 
 /* TEXTURES */
 
-cw_Texture cw_tex_by_id(AssetManager *asset_manager, AssetId id) { return asset_manager->textures[id]; }
+inline cw_Texture cw_tex_by_id(AssetManager *asset_manager, AssetId id) { return asset_manager->textures[id]; }
 
 inline cw_Texture cw_tex_by_handle(AssetManager *asset_manager, TextureHandle handle) {
   return cw_tex_by_id(asset_manager, TEX_IDS[handle]);
@@ -39,11 +39,25 @@ cw_Texture cw_tex_by_tex_path(AssetManager *asset_manager, const char *tex_path)
   return (cw_Texture){0};
 }
 
+i32 cw_tex_cur_frame(const cw_Texture *texture) {
+  if (texture->kind != TEXTURE_ANIMATED)
+    return 0;
+  return CLIENT_GAME.tex_manager.textures[texture->var.texture_animated.animated_texture_id].cur_frame;
+}
+
+i32 cw_tex_frame_height(const cw_Texture *texture) {
+  if (texture->kind == TEXTURE_STATIC)
+    return texture->var.texture_static.height;
+  return texture->var.texture_animated.texture.height / texture->var.texture_animated.frames;
+}
+
 /* SHADERS */
 
-cw_Shader cw_shader_by_id(AssetManager *asset_manager, AssetId id) { return asset_manager->shaders[id]; }
+inline cw_Shader cw_shader_by_id(AssetManager *asset_manager, AssetId id) { return asset_manager->shaders[id]; }
 
-cw_Shader cw_shader_by_handle(AssetManager *asset_manager, ShaderHandle handle) { return cw_shader_by_id(asset_manager, SHADER_IDS[handle]); }
+inline cw_Shader cw_shader_by_handle(AssetManager *asset_manager, ShaderHandle handle) {
+  return cw_shader_by_id(asset_manager, SHADER_IDS[handle]);
+}
 
 cw_Shader cw_shader_by_shader_path(AssetManager *asset_manager, const char *shader_path) {
   cw_Shader *shader;
@@ -55,20 +69,36 @@ cw_Shader cw_shader_by_shader_path(AssetManager *asset_manager, const char *shad
   return (cw_Shader){0};
 }
 
-Shader shader_by_id(AssetManager *asset_manager, AssetId id);
+inline Shader shader_by_id(AssetManager *asset_manager, AssetId id) { return cw_shader_by_id(asset_manager, id).shader; }
 
-Shader shader_by_handle(AssetManager *asset_manager, ShaderHandle id);
+inline Shader shader_by_handle(AssetManager *asset_manager, ShaderHandle id) { return shader_by_id(asset_manager, SHADER_IDS[id]); }
 
-i32 cw_tex_cur_frame(const cw_Texture *texture) {
-  if (texture->kind != TEXTURE_ANIMATED)
-    return 0;
-  return CLIENT_GAME.tex_manager.textures[texture->var.texture_animated.animated_texture_id].cur_frame;
+/* SOUNDS */
+
+inline cw_Sound cw_sound_by_id(AssetManager *asset_manager, AssetId id) {
+  return asset_manager->sounds[id];
 }
 
-i32 cw_tex_frame_height(const cw_Texture *texture) {
-  if (texture->kind == TEXTURE_STATIC)
-    return texture->var.texture_static.height;
-  return texture->var.texture_animated.texture.height / texture->var.texture_animated.frames;
+inline cw_Sound cw_sound_by_handle(AssetManager *asset_manager, SoundHandle handle) {
+  return cw_sound_by_id(asset_manager, SOUND_IDS[handle]);
+}
+
+cw_Sound cw_sound_by_sound_path(AssetManager *asset_manager, const char *sound_path) {
+  cw_Sound *sound;
+  array_foreach(asset_manager->sounds, sound) {
+    if (strcmp(sound->path, TextFormat(ASSETS_DIR SOUNDS_DIR "/%s.wav", sound_path)) == 0) {
+      return *sound;
+    }
+  }
+  return (cw_Sound){0};
+}
+
+inline Sound sound_by_id(AssetManager *asset_manager, AssetId id) {
+  return cw_sound_by_id(asset_manager, id).sound;
+}
+
+inline Sound sound_by_handle(AssetManager *asset_manager, SoundHandle handle) {
+  return sound_by_id(asset_manager, SOUND_IDS[handle]);
 }
 
 static void asset_manager_init(AssetManager *asset_manager) {
@@ -241,22 +271,36 @@ static void texture_asset_visit(AssetManager *asset_manager, FileEntry file_entr
     return;
 
   cw_Texture texture = {0};
-  cw_texture_load(&texture, asset_manager, file_entry);
+  if (cw_texture_load(&texture, asset_manager, file_entry)) {
 
-  texture.id = array_len(asset_manager->textures);
-  array_add(asset_manager->textures, texture);
+    texture.id = array_len(asset_manager->textures);
+    array_add(asset_manager->textures, texture);
 
-  log_info("Loaded texture %s", texture.path);
+    log_info("Loaded texture %s", texture.path);
+  }
 }
 
 static void shader_asset_visit(AssetManager *asset_manager, FileEntry vs_file_entry, FileEntry fs_file_entry, FileEntry meta_file_entry) {
   cw_Shader shader = {0};
-  cw_shader_load(&shader, asset_manager, vs_file_entry, fs_file_entry, meta_file_entry);
+  if (cw_shader_load(&shader, asset_manager, vs_file_entry, fs_file_entry, meta_file_entry)) {
+    shader.id = array_len(asset_manager->shaders);
+    array_add(asset_manager->shaders, shader);
 
-  shader.id = array_len(asset_manager->shaders);
-  array_add(asset_manager->shaders, shader);
+    log_info("Loaded shader %s", shader.base_path);
+  }
+}
 
-  log_info("Loaded shader %s", shader.base_path);
+static void sound_asset_visit(AssetManager *asset_manager, FileEntry file_entry) {
+  if (!str_eq(file_entry.file_ext, "wav"))
+    return;
+
+  cw_Sound sound = {0};
+  if (cw_sound_load(&sound, asset_manager, file_entry)) {
+    sound.id = array_len(asset_manager->sounds);
+    array_add(asset_manager->sounds, sound);
+
+    log_info("Loaded sound %s", sound.path);
+  }
 }
 
 void assets_load(AssetManager *asset_manager) {
@@ -266,9 +310,11 @@ void assets_load(AssetManager *asset_manager) {
 
   asset_dir_walk(asset_manager, ASSETS_DIR TEXTURES_DIR, texture_asset_visit);
   shaders_asset_dir_walk(asset_manager, ASSETS_DIR SHADERS_DIR, shader_asset_visit);
+  asset_dir_walk(asset_manager, ASSETS_DIR SOUNDS_DIR, sound_asset_visit);
 
   texture_handles_assign_id(asset_manager);
   shader_handles_assign_id(asset_manager);
+  sound_handles_assign_id(asset_manager);
 }
 
 void assets_unload(AssetManager *asset_manager) {

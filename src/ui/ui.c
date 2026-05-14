@@ -139,7 +139,7 @@ static void align(UiRenderer *renderer, i32 width, i32 height, i32 x_offset, i32
 
 void ui_button_render(UiRenderer *renderer, ButtonUiComponent component) {
   TextureHandle texture = component.texture.present ? component.texture.texture_handle : TEX_BUTTON;
-  TextureHandle selected_texture = component.selected_texture.present ? component.texture.texture_handle : TEX_BUTTON_SELECTED;
+  TextureHandle selected_texture = component.selected_texture.present ? component.selected_texture.texture_handle : TEX_BUTTON_SELECTED;
 
   cw_Texture tex = cw_tex_by_handle(renderer->asset_manager, texture);
 
@@ -321,8 +321,9 @@ void ui_slot_render(UiRenderer *renderer, SlotUiComponent component) {
     item_render(component.item, renderer->cur_x, renderer->cur_y);
   }
 
-  // DrawTextureEx(SLOT_TEXTURE, vec2f(renderer->cur_x - 2 * ui_scale(renderer), renderer->cur_y - 2 * ui_scale(renderer)), 0,
-  //               ui_scale(renderer), WHITE);
+  Texture2D tex = tex_by_handle(renderer->asset_manager, TEX_SLOT);
+  DrawTextureEx(tex, vec2f(renderer->cur_x - 2 * ui_scale(renderer), renderer->cur_y - 2 * ui_scale(renderer)), 0,
+                 ui_scale(renderer), WHITE);
 
   move(renderer, component.width, component.height);
 }

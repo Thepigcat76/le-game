@@ -6,6 +6,7 @@
 #include "space_desc.h"
 #include "tile.h"
 #include "category.h"
+#include "camera.h"
 
 #define MAX_TICKS_PER_FRAME 20
 

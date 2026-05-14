@@ -28,19 +28,20 @@ void queue_push(PacketQueue *queue, Packet packet) {
 
 bool queue_pop(PacketQueue *queue, Packet *out) {
   pthread_mutex_lock(&queue->lock);
+  {
+    if (!queue->head) {
+      pthread_mutex_unlock(&queue->lock);
+      return false;
+    }
 
-  if (!queue->head) {
-    pthread_mutex_unlock(&queue->lock);
-    return false;
+    struct _queue_node *node = queue->head;
+    *out = node->packet;
+    queue->head = node->next;
+    if (!queue->head)
+      queue->tail = NULL;
+
+    free(node);
   }
-
-  struct _queue_node *node = queue->head;
-  *out = node->packet;
-  queue->head = node->next;
-  if (!queue->head)
-    queue->tail = NULL;
-
-  free(node);
   pthread_mutex_unlock(&queue->lock);
   return true;
 }

@@ -6,7 +6,6 @@
 #include "../particle.h"
 #include "../player.h"
 #include "../save.h"
-#include "../sounds.h"
 #include "../textures.h"
 #include "../ui.h"
 #include "../world.h"
@@ -40,7 +39,6 @@ typedef struct _client_game {
   // Textures like animated textures
   TextureManager tex_manager;
 
-  SoundManager sound_manager;
   ParticleManager particle_manager;
 
   UiRenderer ui_renderer;
@@ -60,12 +58,18 @@ typedef struct _client_game {
   i32 player_id;
   addr_t server_addr;
   bool connected_to_server;
+
+  bool running;
+
+  PacketLogger packet_logger;
 } ClientGame;
 
 typedef struct network_connection {
   addr_t server_addr;
   bool connected;
   PacketQueue queue;
+
+  bool client_running;
 
   Bump packet_bump;
   Allocator packet_bump_allocator;
@@ -86,9 +90,9 @@ void client_init(ClientGame *game);
 
 void client_deinit(ClientGame *game);
 
-void client_setup_raylib(void);
+// Interrupts
 
-void client_deinit_raylib(void);
+void client_stop_running(ClientGame *game);
 
 // Saves
 
@@ -115,7 +119,7 @@ void client_set_menu(ClientGame *game, MenuId menu_id);
 
 // GAME RENDER
 
-void client_render(ClientGame *game, float alpha);
+void client_render(ClientGame *game, float dt);
 
 void client_render_overlay(ClientGame *game);
 

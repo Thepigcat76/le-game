@@ -1,5 +1,5 @@
-#include "menu_includes.h"
 #include "../../include/net/payloads.h"
+#include "menu_includes.h"
 #include <pthread.h>
 #include <raylib.h>
 
@@ -20,10 +20,13 @@ static void save_menu_save_game_button_clicked() {
   }
   pthread_mutex_unlock(&CLIENT_MUTEX);
 
-  PayloadClientDisconnect payload = {.player_id = CLIENT_GAME.player_id};
-  packet_send(server_addr, C2S_CLIENT_DISCONNECT, &payload);
+  if (CLIENT_GAME.connected_to_server) {
+    client_leave_server(&CLIENT_GAME);
+  }
 
   client_set_menu(&CLIENT_GAME, MENU_START);
+
+  CLIENT_GAME.game.save_loaded = false;
 
   game_unload_save(&CLIENT_GAME.game);
 }

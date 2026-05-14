@@ -1,11 +1,12 @@
 #pragma once
 
+#include "assets/shaders.h"
+#include "assets/sounds.h"
+#include "assets/textures.h"
 #include "lilc/alloc.h"
 #include "lilc/bump.h"
 #include "lilc/numbers.h"
 #include "shared.h"
-#include "assets/textures.h"
-#include "assets/shaders.h"
 #include <raylib.h>
 
 #define ASSETS_DIR "res/assets/"
@@ -49,6 +50,7 @@ typedef struct {
 typedef struct {
   AssetId id;
   Sound sound;
+  const char *path;
 } cw_Sound;
 
 typedef struct {
@@ -91,6 +93,18 @@ Shader shader_by_id(AssetManager *asset_manager, AssetId id);
 
 Shader shader_by_handle(AssetManager *asset_manager, ShaderHandle id);
 
+/* SOUNDS */
+
+cw_Sound cw_sound_by_id(AssetManager *asset_manager, AssetId id);
+
+cw_Sound cw_sound_by_handle(AssetManager *asset_manager, SoundHandle handle);
+
+cw_Sound cw_sound_by_sound_path(AssetManager *asset_manager, const char *sound_path);
+
+Sound sound_by_id(AssetManager *asset_manager, AssetId id);
+
+Sound sound_by_handle(AssetManager *asset_manager, SoundHandle id);
+
 // Load asset files
 
 i32 cw_texture_load(cw_Texture *texture, AssetManager *manager, FileEntry file_entry);
@@ -101,8 +115,14 @@ i32 cw_shader_load(cw_Shader *shader, AssetManager *manager, FileEntry vs_file_e
 
 void cw_shader_unload(cw_Shader *shader);
 
+i32 cw_sound_load(cw_Sound *sound, AssetManager *manager, FileEntry file_entry);
+
+void cw_sound_unload(cw_Sound *sound);
+
 // Assign ids to handles
 
 void texture_handles_assign_id(AssetManager *m);
 
 void shader_handles_assign_id(AssetManager *m);
+
+void sound_handles_assign_id(AssetManager *m);

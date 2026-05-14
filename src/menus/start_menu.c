@@ -1,28 +1,26 @@
 #include "menu_includes.h"
 #include <raylib.h>
 
-static void start_menu_new_save() {
+static void start_menu_new_save(void) {
   game_load_saves(&CLIENT_GAME.game);
   client_set_menu(&CLIENT_GAME, MENU_NEW_SAVE);
   //StopMusicStream(MUSIC);
 }
 
-static void start_menu_load_save() {
+static void start_menu_load_save(void) {
   game_load_saves(&CLIENT_GAME.game);
   client_set_menu(&CLIENT_GAME, MENU_LOAD_SAVE);
   //StopMusicStream(MUSIC);
 }
 
-static void start_menu_multiplayer() {
+static void start_menu_multiplayer(void) {
   client_set_menu(&CLIENT_GAME, MENU_MULTIPLAYER);
 }
 
-static void start_menu_settings() {}
+static void start_menu_settings(void) {}
 
-static void start_menu_leave_game() {
-  game_deinit(&CLIENT_GAME.game);
-  client_deinit_raylib();
-  exit(0);
+static void start_menu_leave_game(void) {
+  client_stop_running(&CLIENT_GAME);
 }
 
 void start_menu_render(UiRenderer *renderer, const ClientGame *game) {

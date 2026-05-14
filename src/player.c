@@ -10,7 +10,7 @@ void player_init(Player *player) {
   player->last_broken_tile = &TILE_INSTANCE_EMPTY;
   player->animation_frame = 0;
   player->frame_timer = 0;
-  player->held_item = (ItemInstance){.type = ITEMS[ITEM_SHOVEL]};
+  player->held_item = (ItemInstance){.type = ITEMS[ITEM_DIRT]};
   player->dragged_item = ITEM_INSTANCE_EMPTY;
   player->box = (Rectf){.x = 0, .y = 20, .width = 16, .height = 8};
   player->chunk_pos = vec2i(0, 0);

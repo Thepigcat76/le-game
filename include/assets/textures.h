@@ -35,6 +35,7 @@ typedef enum {
   // Inv textures
   TEX_GRASS_INV,
   TEX_STONE_INV,
+  TEX_DIRT_INV,
   // Ui textures
   TEX_MAP_SPRITE,
   TEX_BUTTON,
@@ -51,6 +52,9 @@ typedef enum {
   TEX_BUTTON_SELECTED_CLIENT_SETTINGS,
   TEX_BUTTON_LEAVE_GAME,
   TEX_BUTTON_SELECTED_LEAVE_GAME,
+
+  TEX_MAIN_HAND_SLOT,
+  TEX_SLOT,
   // Map textures
   TEX_MAP_ICON_HOUSE,
   TEX_MAP_ICON_TREE,

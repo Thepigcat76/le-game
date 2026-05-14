@@ -53,6 +53,7 @@ void texture_handles_assign_id(AssetManager *m) {
 
   TEX_IDS[TEX_GRASS_INV] = tex_asset_id(m, "grass_inv");
   TEX_IDS[TEX_STONE_INV] = tex_asset_id(m, "stone_inv");
+  TEX_IDS[TEX_DIRT_INV] = tex_asset_id(m, "dirt_inv");
 
   TEX_IDS[TEX_MAP_ICON_HOUSE] = tex_asset_id(m, "map_icon_house");
   TEX_IDS[TEX_MAP_ICON_TREE] = tex_asset_id(m, "map_icon_tree");
@@ -93,6 +94,9 @@ void texture_handles_assign_id(AssetManager *m) {
   TEX_IDS[TEX_BUTTON_SELECTED_CLIENT_SETTINGS] = tex_asset_id(m, "ui/buttons/selected_client_settings");
   TEX_IDS[TEX_BUTTON_LEAVE_GAME] = tex_asset_id(m, "ui/buttons/leave_game");
   TEX_IDS[TEX_BUTTON_SELECTED_LEAVE_GAME] = tex_asset_id(m, "ui/buttons/selected_leave_game");
+
+  TEX_IDS[TEX_MAIN_HAND_SLOT] = tex_asset_id(m, "ui/main_hand_slot");
+  TEX_IDS[TEX_SLOT] = tex_asset_id(m, "ui/slot");
 }
 
 i32 cw_texture_load(cw_Texture *texture, AssetManager *manager, FileEntry file_entry) {

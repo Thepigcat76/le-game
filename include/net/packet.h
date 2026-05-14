@@ -44,6 +44,10 @@ void packet_send(i32 addr, PacketId id, void *payload);
 
 void packet_receive(i32 addr, Packet *packet);
 
-void packet_log(const Packet *packet, GameSide target);
+typedef struct {
+  FILE *log_file;
+} PacketLogger;
+
+void packet_log(PacketLogger *logger, const Packet *packet, GameSide target);
 
 void packet_alloc(Packet *packet);

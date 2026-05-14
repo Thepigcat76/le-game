@@ -1,4 +1,5 @@
 #include "lilc/array.h"
+#include "lilc/log.h"
 #include "../../include/game.h"
 #include "../../include/net/client.h"
 
@@ -110,7 +111,9 @@ void game_save_save_data(Game *game, Save *save) {
       });
     }
   } else {
-    SAVE_DATA(save->descriptor, "player", sizeof(Player), byte_buf, {
+    SAVE_DATA(save->descriptor, "player", 2048, byte_buf, {
+      log_debug("Bytebuf writer index: %zu", byte_buf.writer_index);
+
       DataMap player_map = data_map_new(200);
       // player_save(&save->players[0], &player_map);
       player_save(&game->client_game->cur_player, &player_map);

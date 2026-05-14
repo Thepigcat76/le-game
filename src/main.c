@@ -9,6 +9,8 @@ int main(int argc, char **argv) {
 
   GAME_SIDE = server ? SIDE_SERVER : SIDE_CLIENT;
 
+  shared_setup();
+
   if (server) {
     if (argc == 4) {
       char *ip_addr = argv[2];
@@ -23,4 +25,5 @@ int main(int argc, char **argv) {
     //resource_files_write("res0");
     client_start();
   }
+
 }

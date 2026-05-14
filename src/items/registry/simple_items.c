@@ -6,6 +6,7 @@ void empty_item_init() {
   ItemType type = {
       .id = ITEM_EMPTY,
       .texture = {},
+      .has_texture = false,
       .item_props = {.light_source = false, .tool_props = {.attack_damage = 0, .break_speed = 0}},
   };
   ITEMS[type.id] = type;

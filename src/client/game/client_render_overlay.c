@@ -9,7 +9,9 @@
 
 void client_render_overlay(ClientGame *client) {
   Vec2i pos = vec2i(GetScreenWidth() - (3.5 * 16) - 30, (GetScreenHeight() / 2.0f) - (3.5 * 8));
-  // DrawTextureEx(MAIN_HAND_SLOT_TEXTURE, (Vector2){pos.x, pos.y}, 0, 4.5, WHITE);
+  
+  Texture2D main_hand_slot_tex = tex_by_handle(&client->asset_manager, TEX_MAIN_HAND_SLOT);
+  DrawTextureEx(main_hand_slot_tex, (Vector2){pos.x, pos.y}, 0, 4.5, WHITE);
   item_render(&CLIENT_PLAYER->held_item, pos.x + 2 * 3.5, pos.y + 2 * 3.5);
 
 #ifdef DEBUG_BUILD
@@ -31,6 +33,7 @@ void client_render_overlay(ClientGame *client) {
 
     BeginShaderMode(tooltip_shader.shader);
     {
+      mouse_pos.x -= tooltip_texture.width * 5;
       SetShaderValue(tooltip_shader.shader, tooltip_shader.shader_values_locs[RESOLUTION_LOC],
                      (float[2]){tooltip_texture.width, tooltip_texture.height}, SHADER_UNIFORM_VEC2);
       DrawTextureEx(tooltip_texture, mouse_pos, 0, 5, WHITE);

@@ -18,6 +18,7 @@ static pthread_mutex_t SERVER_MUTEX = PTHREAD_MUTEX_INITIALIZER;
 
 void server_init(ServerGame *server) {
   server->clients = array_new(Client, &HEAP_ALLOCATOR);
+  server->packet_logger.log_file = fopen("server_packets.txt", "w");
 
   pthread_mutex_lock(&SERVER_MUTEX);
   {

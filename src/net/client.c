@@ -30,11 +30,6 @@ static void *client_game(void *args) {
   // Setup bump allocator for item containers
   _internal_item_container_init();
 
-  // Setup raylib
-  // NEEDS TO BE CALLED BEFORE client_init and shared_init, because both load textures
-  client_setup_raylib();
-  // init random
-  shared_setup();
   // Init client game
   client_init(&CLIENT_GAME);
   // Create and init common game
@@ -56,10 +51,10 @@ static void *client_game(void *args) {
   }
 
   // Setup ticking
-  float tick_accumulator = 0.0f;
-  float last_frame_time = GetTime();
+  f32 tick_accumulator = 0.0f;
+  f32 last_frame_time = GetTime();
 
-  int ticks_per_frame = 0;
+  i32 ticks_per_frame = 0;
 
   // Set initial menu
   client_set_menu(&CLIENT_GAME, MENU_START);
@@ -68,13 +63,18 @@ static void *client_game(void *args) {
   HideCursor();
 
   CLIENT_GAME.initializing = false;
+  CLIENT_GAME.running = true;
 
-  while (!WindowShouldClose()) {
+  while (CLIENT_GAME.running) {
+    if (WindowShouldClose()) {
+      client_stop_running(&CLIENT_GAME);
+    }
+
     client_poll_keybinds(&CLIENT_GAME);
     ticks_per_frame = 0;
 
-    float cur_time = GetTime();
-    float delta_time = cur_time - last_frame_time;
+    f32 cur_time = GetTime();
+    f32 delta_time = cur_time - last_frame_time;
     last_frame_time = cur_time;
 
     tick_accumulator += delta_time;
@@ -102,8 +102,8 @@ static void *client_game(void *args) {
     client_render(&CLIENT_GAME, tick_accumulator / TICK_INTERVAL);
   }
 
-  client_deinit_raylib();
-  exit(0);
+  game_deinit(&CLIENT_GAME.game);
+  client_deinit(&CLIENT_GAME);
 
   return NULL;
 }
@@ -111,9 +111,11 @@ static void *client_game(void *args) {
 static void *client_packet_listener(void *args) {
   addr_t server_addr = -1;
 
+  bool running = true;
   pthread_mutex_lock(&CLIENT_MUTEX);
   {
-    while (!CLIENT_CONNECTION.connected) {
+    running = CLIENT_CONNECTION.client_running;
+    while (!CLIENT_CONNECTION.connected && CLIENT_CONNECTION.client_running) {
       log_info("Waiting for server connection...");
       pthread_cond_wait(&CLIENT_COND, &CLIENT_MUTEX);
     }
@@ -123,7 +125,7 @@ static void *client_packet_listener(void *args) {
   pthread_mutex_unlock(&CLIENT_MUTEX);
 
   // Listen for packets
-  while (true) {
+  while (running) {
     log_debug("Listening for packets");
     Packet packet = {0};
     log_debug("Packet ptr: %p", packet.payload);
@@ -139,6 +141,7 @@ static void *client_packet_listener(void *args) {
     {
       log_debug("Adding packet to queue");
       queue_push(&CLIENT_CONNECTION.queue, packet);
+      running = CLIENT_CONNECTION.client_running;
     }
     pthread_mutex_unlock(&CLIENT_MUTEX);
   }
@@ -164,80 +167,13 @@ void client_start(void) {
   pthread_join(packet_listener_thread, NULL);
 }
 
-void client_init(ClientGame *client) {
-  pthread_mutex_lock(&CLIENT_MUTEX);
-  {
-    queue_init(&CLIENT_CONNECTION.queue);
-
-    bump_init(&CLIENT_CONNECTION.packet_bump, 4096 * sizeof(Packet));
-    bump_allocator_init(&CLIENT_CONNECTION.packet_bump_allocator, &CLIENT_CONNECTION.packet_bump);
-  }
-  pthread_mutex_unlock(&CLIENT_MUTEX);
-
-  packets_setup();
-
-  int window_width = GetScreenWidth();
-  int window_height = GetScreenHeight();
-
-  client->cam = camera_new(SCREEN_WIDTH, SCREEN_HEIGHT);
-  client->state.cur_menu = MENU_START;
-  client->state.paused = false;
-  client->world_texture = LoadRenderTexture(window_width, window_height);
-  client->local_saves = array_new_capacity(SaveDescriptor, 64, &HEAP_ALLOCATOR);
-  client->window = (Window){.prev_width = window_height, .prev_height = window_height, .width = window_width, .height = window_height};
-  ui_renderer_init(&client->ui_renderer);
-  client->players = NULL;
-  client->asset_manager = (AssetManager){0};
-  client->ui_renderer.asset_manager = &client->asset_manager;
-
-  client_init_menu(client);
-
-  bump_init(&SOUND_BUMP, sizeof(Sound) * 1024);
-
-  client->sound_manager.sound_buffers[SOUND_PLACE].base_sound = LoadSound("res/sounds/place_sound.wav");
-  client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf =
-      array_new_capacity(Sound, SOUND_BUFFER_LIMIT, &HEAP_ALLOCATOR); // SOUND_BUMP_ALLOCATOR);
-
-  client_reload(client);
-
-  // assets_load(&client->asset_manager);
-
-  // for (int i = 0; i < SOUND_BUFFER_LIMIT; i++) {
-  //   client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf[i] =
-  //       LoadSoundAlias(client->sound_manager.sound_buffers[SOUND_PLACE].base_sound);
-  //   SetSoundPitch(client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf[i], 0.5);
-  //   SetSoundVolume(client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf[i], 0.25);
-  // }
-
-  // MUSIC = LoadMusicStream("res/music/main_menu_music.ogg");
-  // SetMusicVolume(MUSIC, 0.15);
-  // SetMusicPitch(MUSIC, 0.85);
-  //  PlayMusicStream(MUSIC);
-
-  AssetId texture_axe = TEX_IDS[TEX_AXE];
-  const char *path = client->asset_manager.textures[texture_axe].path;
-  log_debug("Axe path: %s", path);
-
-  // for (int i = 0; TEXTURE_MANAGER_TEXTURE_PATHS[i] != NULL; i++) {
-  //   client->texture_manager.textures[i] = LoadTexture(TextFormat("res/assets/%s.png", TEXTURE_MANAGER_TEXTURE_PATHS[i]));
-  // }
-}
-
-void client_deinit(ClientGame *client) {
-  array_free(client->local_saves);
-
-  array_free(client->sound_manager.sound_buffers[SOUND_PLACE].sound_buf);
-
-  // shaders_unload(&client->shader_manager);
-}
-
 static void client_update_animations(ClientGame *client) {
-  // for (int i = 0; i < ANIMATED_TEXTURES_LEN; i++) {
+  // for (i32 i = 0; i < ANIMATED_TEXTURES_LEN; i++) {
   //   AnimatedTexture *texture = &ANIMATED_TEXTURES[i];
   //   texture->frame_timer += TICK_INTERVAL * 1000.0f;
-  //   float delay = texture->texture.var.texture_animated.frame_time;
+  //   f32delay = texture->texture.var.texture_animated.frame_time;
   //   if (texture->frame_timer >= delay) {
-  //     int frames = texture->texture.var.texture_animated.frames;
+  //     i32 frames = texture->texture.var.texture_animated.frames;
   //     texture->cur_frame = (texture->cur_frame + 1) % frames;
   //     texture->frame_timer = 0;
   //   }
@@ -334,7 +270,7 @@ bool client_menu_hides_game(ClientGame *game, MenuId menu) {
 
 bool client_menu_is_container(ClientGame *game, MenuId menu) { return menu == MENU_INVENTORY || menu == MENU_BACKPACK; }
 
-static bool inv_slot_selected() {
+static bool inv_slot_selected(void) {
   Rectangle slot_rect = {
       .x = GetScreenWidth() - (3.5 * 16) - 30, .y = (GetScreenHeight() / 2.0f) - (3.5 * 8), .width = 20 * 3.5, .height = 20 * 3.5};
   return CheckCollisionPointRec(GetMousePosition(), slot_rect);

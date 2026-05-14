@@ -224,7 +224,12 @@ bool world_place_tile(World *world, TilePos tile_pos, TileInstance tile) {
     }
   }
 
-  return world_set_tile_on_layer(world, tile_pos, tile, layer);
+  if (world_set_tile_on_layer(world, tile_pos, tile, layer)) {
+    Sound sound = sound_by_handle(&CLIENT_GAME.asset_manager, SOUND_PLACE);
+    PlaySound(sound);
+    return true;
+  }
+  return false;
 }
 
 bool world_remove_tile(World *world, TilePos tile_pos) {

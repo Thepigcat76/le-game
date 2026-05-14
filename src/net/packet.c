@@ -259,7 +259,7 @@ void packet_send(i32 addr, PacketId id, void *payload) {
   Packet packet = {.id = id, .payload = payload};
   PacketInfo info = PACKET_INFOS[id];
 
-  packet_log(&packet, !GAME_SIDE);
+  packet_log(GAME_SIDE == SIDE_CLIENT ? &CLIENT_GAME.packet_logger : &SERVER_GAME.packet_logger, &packet, !GAME_SIDE);
 
   u8 bytes[128000];
   ByteBuf buf = {.writer_index = 0, .reader_index = 0, .capacity = 128000, .bytes = bytes};
@@ -277,8 +277,6 @@ void packet_send(i32 addr, PacketId id, void *payload) {
 }
 
 void packet_receive(i32 addr, Packet *packet) {
-  packet_log(packet, GAME_SIDE);
-
   u8 len_buf[2];
   ssize_t n = sockets_receive(addr, (SocketDataBuffer){len_buf, 2}, MSG_WAITALL);
   if (n != 2) {
@@ -306,10 +304,13 @@ void packet_receive(i32 addr, Packet *packet) {
   buf.writer_index = 0;
 
   PacketId id = byte_buf_read_int(&buf);
-  PacketInfo packet_info = PACKET_INFOS[id];
   packet->id = id;
+
+  PacketInfo packet_info = PACKET_INFOS[id];
   packet_alloc(packet);
   packet_info.decode_func(packet, &buf);
+
+  packet_log(GAME_SIDE == SIDE_CLIENT ? &CLIENT_GAME.packet_logger : &SERVER_GAME.packet_logger, packet, GAME_SIDE);
 
   // char print_buf[256];
   // packet_fmt(packet, addr, !is_client, is_client, print_buf);
@@ -357,20 +358,12 @@ dyn_string_t packet_fmt(const Packet *packet, Allocator *allocator) {
   return str;
 }
 
-void packet_log(const Packet *packet, GameSide target) {
-  bool clientside = GAME_SIDE == SIDE_CLIENT;
-
-  FILE *f;
-  if (clientside) {
-    f = fopen("client_packets.txt", "w");
-  } else {
-    f = fopen("server_packets.txt", "w");
-  }
-
+void packet_log(PacketLogger *logger, const Packet *packet, GameSide target) {
   char *direction = target == GAME_SIDE ? ">>>" : "<<<";
 
   dyn_string_t str = packet_fmt(packet, &HEAP_ALLOCATOR);
-  fprintf(f, "%s %s", direction, str.string);
+  fprintf(logger->log_file, "%s %s\n", direction, str.string);
+  fflush(logger->log_file);
   dyn_string_free(&str);
 }
 
@@ -378,7 +371,7 @@ void packet_alloc(Packet *packet) {
   if (GAME_SIDE == SIDE_CLIENT) {
     log_debug("CLIENT ALLOC");
     packet->payload = bump_alloc(&CLIENT_CONNECTION.packet_bump, PACKET_INFOS[packet->id].payload_size);
-  
+
     log_debug("Packet ptr after alloc: %p", packet->payload);
   } else {
     packet->payload = bump_alloc(&SERVER_GAME.packet_bump, PACKET_INFOS[packet->id].payload_size);

@@ -102,6 +102,8 @@ TileCategories item_tile_categories(const ItemInstance *item) { return item->typ
 
 bool item_tool_correct_for_tile(const ItemInstance *item, const TileInstance *tile, Category *lookup) {
   TileCategories tool_break_categories = item_tile_categories(item);
+  if (tool_break_categories == NULL) return false;
+
   // Check if tool has break categories
   if (array_len(tool_break_categories) > 0) {
     char **category_name;
