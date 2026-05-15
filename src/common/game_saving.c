@@ -126,7 +126,7 @@ void game_save_save_data(Game *game, Save *save) {
   }
 
   size_t loaded_saves_len = array_len(game->cur_save.loaded_spaces);
-  for (int i = 0; i < loaded_saves_len; i++) {
+  for (size_t i = 0; i < loaded_saves_len; i++) {
     space_save(save->descriptor, &game->cur_save.loaded_spaces[i]);
   }
 }
