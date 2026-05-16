@@ -1,7 +1,10 @@
 #include "lilc/array.h"
 #include "lilc/log.h"
+#include "lilc/panic.h"
 #include "../../include/game.h"
 #include "../../include/net/client.h"
+#include "../../include/data/load.h"
+#include "../../include/data/save.h"
 
 // GAME LOAD/SAVE
 
@@ -39,6 +42,8 @@
 // LOAD
 
 void game_load_save_data(Game *game, SaveDescriptor save_desc) {
+  DataContext ctx = {.registries = &game->registries};
+
   Save save = save_new(save_desc);
 
   //  if (save_desc.is_server_save) {
@@ -62,15 +67,15 @@ void game_load_save_data(Game *game, SaveDescriptor save_desc) {
   //      });
   //    }
   //  } else {
-  LOAD_DATA(save_desc, "player", sizeof(Player), byte_buf, {
+  LOAD_DATA(save_desc, "player", 2048, byte_buf, {
     Data data_map = byte_buf_read_data(&byte_buf);
     DataMap *player_map = &data_map.var.data_map;
     Player player = {0};
     player_init(&player);
     
-    player_load(&player, player_map);
+    player_load(&player, player_map, ctx);
     game->client_game->cur_player = player;
-    data_free(&data_map);
+//    data_free(&data_map);
   });
   //  }
 
@@ -78,12 +83,12 @@ void game_load_save_data(Game *game, SaveDescriptor save_desc) {
   save_load_spaces(&save);
 
   if (array_len(save.spaces) == 0)
-    PANIC_FMT("Failed to get spaces, non exist :(");
+    panic("Failed to get spaces, none exist :(");
 
   // TODO: Load into the space that the player last played
   Space space;
   space_init(&space, save.spaces[0], save_desc.config.seed);
-  space_load(save_desc, space.desc, &space);
+  space_load(save_desc, space.desc, &space, ctx);
   array_add(save.loaded_spaces, space);
 
   game->cur_save = save;
@@ -95,14 +100,16 @@ void game_load_save_data(Game *game, SaveDescriptor save_desc) {
 // UNLOAD
 
 void game_save_save_data(Game *game, Save *save) {
+  DataContext ctx = {.registries = &game->registries};
+
   if (save->descriptor.is_server_save) {
     for (size_t i = 0; i < 1 /*array_len(save->players)*/; i++) {
       char dir_buf[256];
       sprintf(dir_buf, "players/player-%zu", i);
-      SAVE_DATA(save->descriptor, dir_buf, sizeof(Player), byte_buf, {
+      SAVE_DATA(save->descriptor, dir_buf, 2048, byte_buf, {
         DataMap player_map = data_map_new(200);
         // player_save(&save->players[i], &player_map);
-        player_save(&game->client_game->cur_player, &player_map);
+        player_save(&game->client_game->cur_player, &player_map, ctx);
 
         Data player_data = data_map(player_map);
         byte_buf_write_data(&byte_buf, &player_data);
@@ -116,7 +123,7 @@ void game_save_save_data(Game *game, Save *save) {
 
       DataMap player_map = data_map_new(200);
       // player_save(&save->players[0], &player_map);
-      player_save(&game->client_game->cur_player, &player_map);
+      player_save(&game->client_game->cur_player, &player_map, ctx);
 
       Data player_data = data_map(player_map);
       byte_buf_write_data(&byte_buf, &player_data);
@@ -127,6 +134,6 @@ void game_save_save_data(Game *game, Save *save) {
 
   size_t loaded_saves_len = array_len(game->cur_save.loaded_spaces);
   for (size_t i = 0; i < loaded_saves_len; i++) {
-    space_save(save->descriptor, &game->cur_save.loaded_spaces[i]);
+    space_save(save->descriptor, &game->cur_save.loaded_spaces[i], ctx);
   }
 }

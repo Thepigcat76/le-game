@@ -1,10 +1,7 @@
 #include "../../include/textures.h"
 #include "../../include/assets.h"
 #include "../../include/shared.h"
-#include "../../vendor/cJSON.h"
-#include "lilc/alloc.h"
 #include "lilc/array.h"
-#include "lilc/file.h"
 #include "lilc/log.h"
 #include <lilc/bump.h>
 #include <raylib.h>
@@ -105,92 +102,15 @@ i32 cw_texture_load(cw_Texture *texture, AssetManager *manager, FileEntry file_e
     log_error("Failed to load texture %s", file_entry.full_path);
     return 0;
   }
-
-  dyn_string_t meta_file_name = {0};
-  dyn_string_init(&meta_file_name, &HEAP_ALLOCATOR);
-
-  dyn_string_printf(&meta_file_name, "%s/%s_meta.json", file_entry.dir, file_entry.name);
-
-  bool has_animation = false;
-  i32 frame_height = tex.width;
-  i32 frame_time = 1;
-
-  if (FileExists(meta_file_name.string)) {
-    dyn_string_t file_content = file_read_to_string(meta_file_name.string, &HEAP_ALLOCATOR);
-    if (file_content.string == NULL) {
-      log_error("Failed to read texture meta file %s", meta_file_name.string);
-      return 0;
-    }
-
-    cJSON *json = cJSON_Parse(file_content.string);
-    cJSON *animation_json = cJSON_GetObjectItemCaseSensitive(json, "animation");
-    if (cJSON_HasObjectItem(json, "animation")) {
-      has_animation = true;
-      cJSON *frame_time_json = cJSON_GetObjectItemCaseSensitive(animation_json, "frame-time");
-      cJSON *frame_height_json = cJSON_GetObjectItemCaseSensitive(animation_json, "frame-height");
-
-      if (cJSON_IsNumber(frame_time_json)) {
-        frame_time = frame_time_json->valueint;
-      }
-
-      if (cJSON_IsNumber(frame_height_json)) {
-        frame_height = frame_height_json->valueint;
-      }
-    }
-    cJSON_Delete(json);
-
-    dyn_string_free(&file_content);
-  }
-
-  if (has_animation) {
-    texture->kind = TEXTURE_ANIMATED;
-    *texture = (cw_Texture){
-        .kind = TEXTURE_ANIMATED,
-        .var =
-            {
-                .texture_animated =
-                    {
-                        .texture = tex,
-                        // TODO: Make ANIMATED_TEXTURES a dynamic array
-                        //.animated_texture_id = array_len(ANIMATED_TEXTURES),
-                        .frame_time = frame_time,
-                        .frames = texture->height / frame_height,
-                    },
-            },
-        .path = str_cpy(file_entry.full_path, &manager->asset_bump_allocator),
-        .width = tex.width,
-        .height = frame_height,
-    };
-
-    AnimatedTexture animated_texture = {
-        .texture = *texture,
-        //.animated_texture_id = array_len(ANIMATED_TEXTURES),
-        .cur_frame = 0,
-        .frame_timer = 0,
-    };
-    // array_add(ANIMATED_TEXTURES, animated_texture);
-  } else {
-    *texture = (cw_Texture){
-        .kind = TEXTURE_STATIC,
-        .var = {.texture_static = tex},
-        .path = str_cpy(file_entry.full_path, &manager->asset_bump_allocator),
-        .width = tex.width,
-        .height = tex.height,
-    };
-  }
-
-  dyn_string_free(&meta_file_name);
+  
+  texture->texture = tex;
+  texture->width = tex.width;
+  texture->height = tex.height;
+  texture->path = str_cpy(file_entry.full_path, &manager->asset_bump_allocator);
 
   return 1;
 }
 
 void cw_texture_unload(cw_Texture *texture) {
-  switch (texture->kind) {
-  case TEXTURE_STATIC: {
-    UnloadTexture(texture->var.texture_static);
-  } break;
-  case TEXTURE_ANIMATED: {
-    UnloadTexture(texture->var.texture_animated.texture);
-  } break;
-  }
+  UnloadTexture(texture->texture);
 }

@@ -7,6 +7,8 @@
 /* GAME-INIT-DEINIT */
 
 void game_init(Game *game) {
+  game->initializing = true;
+
   common_reload(game);
 
   category_init(&game->tile_categories, "Tiles");
@@ -16,14 +18,16 @@ void game_init(Game *game) {
 #ifdef DEBUG_BUILD
   debug_init(&game->debug, game);
 #endif
+
+  game->initializing = false;
 }
 
 void game_deinit(Game *game) {
-  tile_variants_free();
+  // TODO: Asset and registry deinit
 
   // UnloadMusicStream(MUSIC);
 
-  array_free(ADV_TILES);
+  //array_free(ADV_TILES);
 
   // free(SOUND_BUMP.buffer);
   

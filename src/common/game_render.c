@@ -18,11 +18,12 @@ static void game_render_break_progress(ClientGame *client, TilePos break_pos, in
 }
 
 static void client_render_beings(ClientGame *client) {
-  for (int i = 0; i < array_len(client->world->beings); i++) {
-    if (CheckCollisionPointRec(GetMousePosition(), client->world->beings[i].context.box)) {
-      client->state.hovered_being = &client->world->beings[i];
+  BeingInstance *being;
+  array_foreach(client->world->beings, being) {
+    if (CheckCollisionPointRec(GetMousePosition(), being->context.box)) {
+      client->state.hovered_being = being;
     }
-    being_render(&client->world->beings[i]);
+    being_render(being);
   }
 }
 
@@ -50,8 +51,8 @@ void client_world_render(ClientGame *client, float alpha) {
   if (CLIENT_PLAYER != NULL) {
     // log_debug("Slay");
     if (CLIENT_PLAYER->break_tile != NULL) {
-      game_render_break_progress(client, CLIENT_PLAYER->break_tile_pos, CLIENT_PLAYER->break_tile->type->tile_props.break_time,
-                                 CLIENT_PLAYER->break_progress);
+      TileProperties break_tile_props = client->game.registries.tiles[CLIENT_PLAYER->break_tile->id];
+      game_render_break_progress(client, CLIENT_PLAYER->break_tile_pos, break_tile_props.break_time, CLIENT_PLAYER->break_progress);
     }
   }
 
@@ -93,11 +94,11 @@ void client_render(ClientGame *client, float alpha) {
       float light_radius = 0;
 
       if (CLIENT_PLAYER != NULL) {
-        light_radius = CLIENT_PLAYER->held_item.type.item_props.light_source ? 0.08f * cam->zoom * (1.0f + 0.11f * sin(GetTime())) : 0;
+        ItemProperties held_item_props = client->game.registries.items[CLIENT_PLAYER->held_item.id];
+        light_radius = held_item_props.light_source ? 0.08f * cam->zoom * (1.0f + 0.11f * sin(GetTime())) : 0;
       }
 
-      // ShaderVarLookupLighting lighting_lookup = client->shader_manager.lookups[SHADER_LIGHTING].var.lighting;
-      // Shader lighting_shader = client->shader_manager.shaders[SHADER_LIGHTING];
+      cw_Shader lighting_shader = cw_shader_by_handle(&client->asset_manager, SHADER_LIGHTING);
 
       // SetShaderValue(lighting_shader, lighting_lookup.light_pos_loc, &light_pos, SHADER_UNIFORM_VEC2);
       // SetShaderValue(lighting_shader, lighting_lookup.light_color_loc, &light_color, SHADER_UNIFORM_VEC3);
@@ -150,9 +151,9 @@ void client_render(ClientGame *client, float alpha) {
     bool can_cursor_interact_with_being = cursor_can_interact_with_being(client, client->state.hovered_being);
 
     float scale = 3;
-    Texture2D tex = tex_by_handle(&CLIENT_GAME.asset_manager,
-                                  can_cursor_interact_with_tile || can_cursor_interact_with_being ? TEX_CURSOR_FIST : TEX_CURSOR);
-    DrawTextureEx(tex, (Vector2){.x = mouse_pos.x, .y = mouse_pos.y}, 0, scale, WHITE);
+    cw_Texture tex = tex_by_handle(&CLIENT_GAME.asset_manager,
+                                   can_cursor_interact_with_tile || can_cursor_interact_with_being ? TEX_CURSOR_FIST : TEX_CURSOR);
+    DrawTextureEx(tex.texture, (Vector2){.x = mouse_pos.x, .y = mouse_pos.y}, 0, scale, WHITE);
 
     if (client_menu_is_container(client, client->state.cur_menu) && !item_is_empty(&CLIENT_PLAYER->dragged_item)) {
       item_render(&CLIENT_PLAYER->dragged_item, mouse_pos.x - 22, mouse_pos.y - 22);

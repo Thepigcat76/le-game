@@ -44,10 +44,13 @@ static void *client_game(void *args) {
 
   game_categories_setup(game);
 
-  game->debug.options.selected_tile_to_place_instance = tile_new(&TILES[TILE_DIRT]);
+  tile_init(&game->debug.options.selected_tile_to_place_instance, TILE_DIRT);
   game->debug.options.selectable_tiles = array_new_capacity(TileInstance, 256, &HEAP_ALLOCATOR);
-  for (size_t i = 0; i < TILES_AMOUNT; i++) {
-    array_add(game->debug.options.selectable_tiles, tile_new(&TILES[i]));
+  TileProperties *tile;
+  array_foreach(game->registries.tiles, tile) {
+    TileInstance tile_inst;
+    tile_init(&tile_inst, tile->id);
+    array_add(game->debug.options.selectable_tiles, tile_inst);
   }
 
   // Setup ticking
@@ -207,7 +210,7 @@ void client_tick(ClientGame *client) {
     }
   }
 
-  client_update_animations(client);
+  animation_manager_tick(&client->tex_manager, &client->asset_manager);
 }
 
 // MENUS
@@ -298,7 +301,7 @@ static void client_poll_keybinds(ClientGame *client) {
 }
 
 bool cursor_can_interact_with_tile(ClientGame *client, TileInstance *tile) {
-  if (tile == NULL || tile->type == TILE_INSTANCE_EMPTY.type)
+  if (tile == NULL || tile->id == TILE_EMPTY)
     return false;
 
   Player *p = &client->cur_player;

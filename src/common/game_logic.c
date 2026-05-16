@@ -1,9 +1,9 @@
 #include "../../include/config.h"
 #include "../../include/game.h"
-#include "../../include/reload.h"
 #include "../../include/net/client.h"
-#include "lilc/log.h"
+#include "../../include/reload.h"
 #include "lilc/array.h"
+#include "lilc/log.h"
 #include <raylib.h>
 
 static void game_world_tick(Game *game);
@@ -16,7 +16,7 @@ void game_tick(Game *game) {
   if (game->client_game != NULL) {
     client_tick(game->client_game);
   } else {
-    //server_tick(game->server_game);
+    // server_tick(game->server_game);
   }
 
   if (!game->client_game->state.paused && CLIENT_WORLD != NULL) {
@@ -59,9 +59,8 @@ static void game_world_tick(Game *game) {
 
   player_handle_movement(CLIENT_PLAYER, w, a, s, d);
 
-  for (int i = 0; i < array_len(CLIENT_WORLD->beings); i++) {
-    being_tick(&CLIENT_WORLD->beings[i]);
-  }
+  BeingInstance *being;
+  array_foreach(CLIENT_WORLD->beings, being) { being_tick(being); }
 
   game_handle_mouse_interaction(game);
 
@@ -98,22 +97,26 @@ static void game_world_tick(Game *game) {
 #endif
 }
 
-TileCategories item_tile_categories(const ItemInstance *item) { return item->type.item_props.tool_props.break_categories; }
+TileCategories item_tile_categories(const ItemInstance *item) {
+  ItemProperties item_props = CLIENT_GAME.game.registries.items[item->id];
+  return item_props.tool_props.break_categories;
+}
 
 bool item_tool_correct_for_tile(const ItemInstance *item, const TileInstance *tile, Category *lookup) {
   TileCategories tool_break_categories = item_tile_categories(item);
-  if (tool_break_categories == NULL) return false;
+  if (tool_break_categories == NULL)
+    return false;
 
   // Check if tool has break categories
   if (array_len(tool_break_categories) > 0) {
     char **category_name;
     array_foreach(tool_break_categories, category_name) {
-      if (is_category_of_elem_id(lookup, tile->type->id, *category_name)) {
+      if (is_category_of_elem_id(lookup, tile->id, *category_name)) {
         return true;
       }
     }
   }
-  
+
   return false;
 }
 
@@ -129,16 +132,19 @@ static void game_handle_tile_interaction(Game *game) {
   // Break tile
   if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && true /*!slot_selected*/ && interaction_in_range) {
     TileInstance *selected_tile = world_highest_tile_at(CLIENT_WORLD, vec2i(x_index, y_index));
+    TileProperties selected_tile_props = game->registries.tiles[selected_tile->id];
     bool correct_tool = item_tool_correct_for_tile(&CLIENT_PLAYER->held_item, selected_tile, &game->tile_categories);
 
-    if (selected_tile->type->id == TILE_EMPTY || selected_tile->type->tile_props.break_time < 0 || !correct_tool) {
+    if (selected_tile->id == TILE_EMPTY || selected_tile_props.break_time < 0 || !correct_tool) {
       CLIENT_PLAYER->break_progress = -1;
       return;
     }
 
-    if (CLIENT_PLAYER->last_broken_tile->type->layer == selected_tile->type->layer || CLIENT_PLAYER->last_broken_tile->type->id == TILE_EMPTY) {
+    TileProperties last_broken_tile_props = game->registries.tiles[CLIENT_PLAYER->last_broken_tile->id];
+
+    if (last_broken_tile_props.layer == selected_tile_props.layer || CLIENT_PLAYER->last_broken_tile->id == TILE_EMPTY) {
       TraceLog(LOG_DEBUG, "Break x: %d, y: %d, break progress: %d, tile: %s", x_index * TILE_SIZE, y_index * TILE_SIZE,
-               CLIENT_PLAYER->break_progress, tile_type_to_string(selected_tile->type));
+               CLIENT_PLAYER->break_progress, selected_tile_props.name);
       if (CheckCollisionPointRec(mouse_world_pos, rectf_from_dimf(x_index * TILE_SIZE, y_index * TILE_SIZE, selected_tile->box))) {
         if (CLIENT_PLAYER->break_tile_pos.x != x_index || CLIENT_PLAYER->break_tile_pos.y != y_index) {
           CLIENT_PLAYER->break_tile_pos = vec2i(x_index, y_index);
@@ -146,35 +152,38 @@ static void game_handle_tile_interaction(Game *game) {
           return;
         }
 
-        CLIENT_PLAYER->break_progress += CLIENT_PLAYER->held_item.type.item_props.tool_props.break_speed + 1;
+        ItemProperties held_item_props = game->registries.items[CLIENT_PLAYER->held_item.id];
+        CLIENT_PLAYER->break_progress += held_item_props.tool_props.break_speed + 1;
         CLIENT_PLAYER->break_tile_pos = vec2i(x_index, y_index);
-        log_debug("sleected tile: %d", selected_tile->type->id);
+        log_debug("sleected tile: %d", selected_tile->id);
         CLIENT_PLAYER->break_tile = selected_tile;
-        if (CLIENT_PLAYER->break_progress >= selected_tile->type->tile_props.break_time) {
-          if (CLIENT_PLAYER->held_item.type.id == ITEM_HAMMER) {
+        if (CLIENT_PLAYER->break_progress >= selected_tile_props.break_time) {
+          if (CLIENT_PLAYER->held_item.id == ITEM_HAMMER) {
             for (int y = -1; y <= 1; y++) {
               for (int x = -1; x <= 1; x++) {
                 TilePos tile_pos = vec2i(x_index + x, y_index + y);
                 TileInstance *tile_ptr = world_highest_tile_at(game->client_game->world, tile_pos);
-                TileInstance tile = TILE_INSTANCE_EMPTY;
+                TileInstance tile = TILE_INST_EMPTY;
                 if (tile_ptr != NULL) {
                   tile = *tile_ptr;
                 }
                 world_remove_tile(game->client_game->world, tile_pos);
                 TileInstance remainder = tile_break_remainder(&tile, tile_pos);
-                world_set_tile_on_layer(game->client_game->world, tile_pos, remainder, remainder.type->layer);
+                TileProperties remainder_tile_props = game->registries.tiles[remainder.id];
+                world_set_tile_on_layer(game->client_game->world, tile_pos, remainder, remainder_tile_props.layer);
               }
             }
           } else {
             TileInstance *tile_ptr = world_highest_tile_at(game->client_game->world, vec2i(x_index, y_index));
-            TileInstance tile = TILE_INSTANCE_EMPTY;
+            TileInstance tile = TILE_INST_EMPTY;
             if (tile_ptr != NULL) {
               tile = *tile_ptr;
             }
             TilePos tile_pos = vec2i(x_index, y_index);
             world_remove_tile(game->client_game->world, tile_pos);
             TileInstance remainder = tile_break_remainder(&tile, tile_pos);
-            world_set_tile_on_layer(game->client_game->world, tile_pos, remainder, remainder.type->layer);
+            TileProperties remainder_tile_props = game->registries.tiles[remainder.id];
+            world_set_tile_on_layer(game->client_game->world, tile_pos, remainder, remainder_tile_props.layer);
           }
           CLIENT_PLAYER->break_progress = -1;
           CLIENT_PLAYER->last_broken_tile = selected_tile;
@@ -187,7 +196,7 @@ static void game_handle_tile_interaction(Game *game) {
 
   // Reset last broken tile, which allows you to break any tile again
   if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
-    CLIENT_PLAYER->last_broken_tile = &TILE_INSTANCE_EMPTY;
+    CLIENT_PLAYER->last_broken_tile = &TILE_INST_EMPTY;
   }
 
   // Debug - set target position for npc to go to
@@ -202,11 +211,12 @@ static void game_handle_tile_interaction(Game *game) {
   if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && true /*!slot_selected*/ && interaction_in_range) {
     TileInstance *selected_tile = world_highest_tile_at(CLIENT_WORLD, vec2i(x_index, y_index));
     if (CheckCollisionPointRec(mouse_world_pos, rectf_from_dimf(x_index * TILE_SIZE, y_index * TILE_SIZE, selected_tile->box))) {
-      if (selected_tile->type->id == TILE_CHEST) {
+      if (selected_tile->id == TILE_CHEST) {
         // game_set_menu(game, MENU_DIALOG);
         return;
       }
-      TileInstance new_tile = tile_new(game->debug.options.selected_tile_to_place_instance.type);
+      TileInstance new_tile;
+      tile_init(&new_tile, game->debug.options.selected_tile_to_place_instance.id);
       if (!game->debug.options.print_tile_debug_info) {
         bool placed = world_place_tile(CLIENT_WORLD, vec2i(x_index, y_index), new_tile);
       } else {
@@ -228,9 +238,10 @@ static void game_handle_tile_interaction(Game *game) {
 static void game_handle_mouse_interaction(Game *game) {
   bool being_clicked = false;
   if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
-    for (int i = 0; i < array_len(CLIENT_WORLD->beings); i++) {
-      BeingInstance being = CLIENT_WORLD->beings[i];
-      if (being.id == BEING_NPC && CheckCollisionPointRec(GetScreenToWorld2D(GetMousePosition(), game->client_game->cam), being.context.box)) {
+    BeingInstance *being;
+    array_foreach(CLIENT_WORLD->beings, being) {
+      if (being->id == BEING_NPC &&
+          CheckCollisionPointRec(GetScreenToWorld2D(GetMousePosition(), game->client_game->cam), being->context.box)) {
         // game_set_menu(game, MENU_DIALOG);
         TraceLog(LOG_DEBUG, "Clicked being");
         being_clicked = true;
@@ -245,14 +256,14 @@ static void game_handle_mouse_interaction(Game *game) {
 }
 
 static void game_handle_item_pickup(Game *game) {
-  for (int i = 0; i < array_len(CLIENT_WORLD->beings); i++) {
-    if (CLIENT_WORLD->beings[i].id == BEING_ITEM &&
-        CheckCollisionRecs(CLIENT_WORLD->beings[i].context.box, player_collision_box(CLIENT_PLAYER))) {
-      if (GetTime() - CLIENT_WORLD->beings[i].context.creation_time > CONFIG.item_pickup_delay) {
-        BeingInstance being = CLIENT_WORLD->beings[i];
-        ItemInstance item = being.extra.var.item_instance.item;
-        world_remove_being(CLIENT_WORLD, &being);
-        log_debug("Inserting item: %s", item_type_to_string(&item.type));
+  BeingInstance *being;
+  array_foreach(CLIENT_WORLD->beings, being) {
+    if (being->id == BEING_ITEM && CheckCollisionRecs(being->context.box, player_collision_box(CLIENT_PLAYER))) {
+      if (GetTime() - being->context.creation_time > CONFIG.item_pickup_delay) {
+        ItemInstance item = being->extra.var.item_instance.item;
+        ItemProperties item_props = game->registries.items[item.id];
+        world_remove_being(CLIENT_WORLD, being);
+        log_debug("Inserting item: %s", item_props.name);
         item_container_insert(&CLIENT_PLAYER->inv_container, item);
         break;
       }

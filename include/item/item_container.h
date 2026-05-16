@@ -1,7 +1,7 @@
 #pragma once
 
 #include "lilc/bump.h"
-#include "../item.h"
+#include "../registries/items.h"
 
 typedef struct {
   ItemInstance *items;
@@ -17,7 +17,3 @@ void item_container_init(ItemContainer *item_container, size_t slots);
 void item_container_set_item_in_slot(ItemContainer *container, ItemInstance item, size_t slot);
 
 void item_container_insert(ItemContainer *container, ItemInstance item);
-
-void item_container_save(const ItemContainer *item_container, DataMap *data);
-
-void item_container_load(ItemContainer *item_container, const DataMap *data);

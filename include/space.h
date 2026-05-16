@@ -54,7 +54,3 @@ typedef struct {
 void space_init(Space *space, SpaceDescriptor desc, float seed);
 
 void space_init_default(Space *space, float seed);
-
-void space_load(SaveDescriptor save_desc, SpaceDescriptor space_desc, Space *space);
-
-void space_save(SaveDescriptor save_desc, const Space *space);

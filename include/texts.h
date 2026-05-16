@@ -2,7 +2,13 @@
 
 #include "raylib.h"
 
+// TODO: Implement this
+
+struct text_node {
+  char *text;
+  Color color;
+};
+
 typedef struct {
-    char *text;
-    Color text_color;
+  struct text_node *nodes;
 } FormattedText;

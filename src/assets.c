@@ -8,28 +8,19 @@
 #include "lilc/file.h"
 #include "lilc/log.h"
 #include <lilc/dynstr.h>
+#include <lilc/str.h>
 #include <raylib.h>
 #include <stdio.h>
 
 /* TEXTURES */
 
-inline cw_Texture cw_tex_by_id(AssetManager *asset_manager, AssetId id) { return asset_manager->textures[id]; }
+inline cw_Texture tex_by_id(const AssetManager *asset_manager, AssetId id) { return asset_manager->textures[id]; }
 
-inline cw_Texture cw_tex_by_handle(AssetManager *asset_manager, TextureHandle handle) {
-  return cw_tex_by_id(asset_manager, TEX_IDS[handle]);
+inline cw_Texture tex_by_handle(const AssetManager *asset_manager, TextureHandle handle) {
+  return tex_by_id(asset_manager, TEX_IDS[handle]);
 }
 
-Texture2D tex_by_id(AssetManager *asset_manager, AssetId id) {
-  cw_Texture tex = cw_tex_by_id(asset_manager, id);
-  if (tex.kind == TEXTURE_STATIC) {
-    return tex.var.texture_static;
-  }
-  return tex.var.texture_animated.texture;
-}
-
-inline Texture2D tex_by_handle(AssetManager *asset_manager, TextureHandle handle) { return tex_by_id(asset_manager, TEX_IDS[handle]); }
-
-cw_Texture cw_tex_by_tex_path(AssetManager *asset_manager, const char *tex_path) {
+cw_Texture tex_by_tex_path(const AssetManager *asset_manager, const char *tex_path) {
   cw_Texture *tex;
   array_foreach(asset_manager->textures, tex) {
     if (strcmp(tex->path, TextFormat(ASSETS_DIR TEXTURES_DIR "/%s.png", tex_path)) == 0) {
@@ -40,15 +31,15 @@ cw_Texture cw_tex_by_tex_path(AssetManager *asset_manager, const char *tex_path)
 }
 
 i32 cw_tex_cur_frame(const cw_Texture *texture) {
-  if (texture->kind != TEXTURE_ANIMATED)
-    return 0;
-  return CLIENT_GAME.tex_manager.textures[texture->var.texture_animated.animated_texture_id].cur_frame;
+  if (texture->has_meta_info && texture->meta_info.has_animation)
+    return CLIENT_GAME.tex_manager.animated_textures[texture->id].cur_frame;
+  return 0;
 }
 
 i32 cw_tex_frame_height(const cw_Texture *texture) {
-  if (texture->kind == TEXTURE_STATIC)
-    return texture->var.texture_static.height;
-  return texture->var.texture_animated.texture.height / texture->var.texture_animated.frames;
+  if (texture->has_meta_info && texture->meta_info.has_animation)
+    return texture->meta_info.animation.frame_height;
+  return texture->height;
 }
 
 /* SHADERS */
@@ -75,9 +66,7 @@ inline Shader shader_by_handle(AssetManager *asset_manager, ShaderHandle id) { r
 
 /* SOUNDS */
 
-inline cw_Sound cw_sound_by_id(AssetManager *asset_manager, AssetId id) {
-  return asset_manager->sounds[id];
-}
+inline cw_Sound cw_sound_by_id(AssetManager *asset_manager, AssetId id) { return asset_manager->sounds[id]; }
 
 inline cw_Sound cw_sound_by_handle(AssetManager *asset_manager, SoundHandle handle) {
   return cw_sound_by_id(asset_manager, SOUND_IDS[handle]);
@@ -93,13 +82,9 @@ cw_Sound cw_sound_by_sound_path(AssetManager *asset_manager, const char *sound_p
   return (cw_Sound){0};
 }
 
-inline Sound sound_by_id(AssetManager *asset_manager, AssetId id) {
-  return cw_sound_by_id(asset_manager, id).sound;
-}
+inline Sound sound_by_id(AssetManager *asset_manager, AssetId id) { return cw_sound_by_id(asset_manager, id).sound; }
 
-inline Sound sound_by_handle(AssetManager *asset_manager, SoundHandle handle) {
-  return sound_by_id(asset_manager, SOUND_IDS[handle]);
-}
+inline Sound sound_by_handle(AssetManager *asset_manager, SoundHandle handle) { return sound_by_id(asset_manager, SOUND_IDS[handle]); }
 
 static void asset_manager_init(AssetManager *asset_manager) {
   bump_init(&asset_manager->asset_bump, sizeof(cw_Texture) * 8192);
@@ -110,7 +95,7 @@ static void asset_manager_init(AssetManager *asset_manager) {
   asset_manager->sounds = array_new_capacity(cw_Sound, 1024, &HEAP_ALLOCATOR);
 }
 
-typedef void (*AssetFileVisitFunc)(AssetManager *asset_manager, FileEntry file_entry);
+typedef void (*AssetFileVisitFunc)(AssetManager *asset_manager, FileEntry file_entry, FileEntry meta_file_entry);
 
 typedef void (*ShaderAssetFileVisitFunc)(AssetManager *asset_manager, FileEntry vs_file_entry, FileEntry fs_file_entry,
                                          FileEntry meta_file_entry);
@@ -252,31 +237,105 @@ static void asset_dir_walk(AssetManager *asset_manager, const char *path, AssetF
       char name[strlen(entry->d_name)];
       size_t length = dot - entry->d_name;
       strncpy(name, entry->d_name, dot - entry->d_name);
-      name[length + 1] = '\0';
+      name[length] = '\0';
       FileEntry file_entry = {
           .dir = path,
-          .name = entry->d_name,
+          .name = name,
           .file_ext = file_ext,
           .full_path = dir_buf,
       };
-      visit_func(asset_manager, file_entry);
+      FileEntry meta_file_entry = {0};
+      dyn_string_t meta_file_path = {0};
+      dyn_string_init(&meta_file_path, &HEAP_ALLOCATOR);
+      dyn_string_printf(&meta_file_path, "%s/%s_meta.json", path, name);
+
+      log_debug("META FILE PATH: %s", meta_file_path.string);
+
+      dyn_string_t meta_name = {0};
+
+      if (file_exists(meta_file_path.string)) {
+        meta_name = file_name(meta_file_path.string, &HEAP_ALLOCATOR);
+
+        meta_file_entry.dir = path;
+        meta_file_entry.name = meta_name.string;
+        meta_file_entry.file_ext = "json";
+        meta_file_entry.full_path = meta_file_path.string;
+      }
+      visit_func(asset_manager, file_entry, meta_file_entry);
+
+      dyn_string_free(&meta_file_path);
+      dyn_string_free(&meta_name);
     }
   }
 
   closedir(dp);
 }
 
-static void texture_asset_visit(AssetManager *asset_manager, FileEntry file_entry) {
+static void tex_meta_info_load(cJSON *json, TextureMetaInfo *meta_info, cw_Texture tex, AssetManager *assets) {
+  log_debug("Loading meta info");
+
+  if (cJSON_HasObjectItem(json, "animation")) {
+    meta_info->has_animation = true;
+
+    cJSON *animation = cJSON_GetObjectItemCaseSensitive(json, "animation");
+    if (cJSON_HasObjectItem(animation, "frame-time")) {
+      cJSON *frame_time = cJSON_GetObjectItemCaseSensitive(animation, "frame-time");
+      meta_info->animation.frame_time = frame_time->valueint;
+      meta_info->animation.frames = tex.height / tex.width;
+      if (cJSON_HasObjectItem(animation, "frame-height")) {
+        cJSON *frame_height = cJSON_GetObjectItemCaseSensitive(animation, "frame-height");
+        meta_info->animation.frame_height = frame_height->valueint;
+      } else {
+        meta_info->animation.frame_height = tex.width;
+      }
+    }
+  }
+
+  if (cJSON_HasObjectItem(json, "variants")) {
+    cJSON *variants = cJSON_GetObjectItemCaseSensitive(json, "variants");
+    log_debug("VARIANTS META INFO: %d", cJSON_GetArraySize(variants));
+
+    if (cJSON_GetArraySize(variants) > 0) {
+      meta_info->has_variants = true;
+
+      meta_info->variant_paths = array_new(char *, &HEAP_ALLOCATOR);
+
+      cJSON *variant;
+      cJSON_ArrayForEach(variant, variants) {
+        array_add(meta_info->variant_paths, str_cpy(variant->valuestring, &assets->asset_bump_allocator));
+        log_debug("Add variant: %s", variant->valuestring);
+      }
+    }
+  }
+}
+
+static void texture_asset_visit(AssetManager *asset_manager, FileEntry file_entry, FileEntry meta_file_entry) {
   if (!str_eq(file_entry.file_ext, "png"))
     return;
 
   cw_Texture texture = {0};
   if (cw_texture_load(&texture, asset_manager, file_entry)) {
-
     texture.id = array_len(asset_manager->textures);
-    array_add(asset_manager->textures, texture);
 
     log_info("Loaded texture %s", texture.path);
+
+    if (meta_file_entry.name != NULL) {
+      texture.has_meta_info = true;
+
+      dyn_string_t meta_file_content = file_read_to_string(meta_file_entry.full_path, &HEAP_ALLOCATOR);
+
+      cJSON *json = cJSON_Parse(meta_file_content.string);
+
+      TextureMetaInfo meta_info = {0};
+      tex_meta_info_load(json, &meta_info, texture, asset_manager);
+      texture.meta_info = meta_info;
+
+      cJSON_Delete(json);
+
+      dyn_string_free(&meta_file_content);
+    }
+
+    array_add(asset_manager->textures, texture);
   }
 }
 
@@ -290,7 +349,7 @@ static void shader_asset_visit(AssetManager *asset_manager, FileEntry vs_file_en
   }
 }
 
-static void sound_asset_visit(AssetManager *asset_manager, FileEntry file_entry) {
+static void sound_asset_visit(AssetManager *asset_manager, FileEntry file_entry, FileEntry meta_file_entry) {
   if (!str_eq(file_entry.file_ext, "wav"))
     return;
 

@@ -1,8 +1,10 @@
 #include "../../include/data/bytebuf_ex.h"
 #include "../../include/data/data_reader.h"
+#include "../../include/data/load.h"
+#include "../../include/data/save.h"
 #include "../../include/net/client.h"
 
-void space_encode(const Space *space, ByteBuf *buf) {
+void space_encode(const Space *space, ByteBuf *buf, DataContext ctx) {
   // Desc
   SpaceDescriptor desc = space->desc;
   {
@@ -22,7 +24,7 @@ void space_encode(const Space *space, ByteBuf *buf) {
   // World
   const World *world = &space->world;
   DataMap map = data_map_new(2000);
-  world_save(world, &map);
+  world_save(world, &map, ctx);
   Data data = data_map(map);
   char *data_string = data_reader_read_data(&data);
   FILE *f = fopen("space_packet_world.json", "w");
@@ -49,7 +51,7 @@ void space_encode(const Space *space, ByteBuf *buf) {
   }
 }
 
-void space_decode(Space *space, ByteBuf *buf) {
+void space_decode(Space *space, ByteBuf *buf, DataContext ctx) {
   // Desc
   SpaceDescriptor *desc = &space->desc;
   {
@@ -76,7 +78,7 @@ void space_decode(Space *space, ByteBuf *buf) {
   fputs(map_str, f);
   fclose(f);
 
-  world_load(&space->world, &map);
+  world_load(&space->world, &map, ctx);
   // Initialized
   space->world.initialized = byte_buf_read_byte(buf);
   space->world.seed = seed;

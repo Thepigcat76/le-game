@@ -7,12 +7,11 @@
 
 GameSide GAME_SIDE;
 
+// TODO: FIX REGISTRY SETUP
 void game_registry_setup(void) {
   // Items need to be done before tiles,
   // cuz tiles reference the items
-  item_types_init();
-  tile_types_init();
-  world_types_init();
+  //world_types_init();
   space_types_init();
 }
 

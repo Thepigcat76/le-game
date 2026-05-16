@@ -9,4 +9,4 @@ typedef enum {
 
 typedef struct {
   WorldId id;
-} WorldType;
+} WorldProperties;

@@ -37,7 +37,8 @@ typedef struct _client_game {
   /* Managers */
   AssetManager asset_manager;
   // Textures like animated textures
-  TextureManager tex_manager;
+  AnimationManager tex_manager;
+  TileTextureManager tile_tex_manager;
 
   ParticleManager particle_manager;
 

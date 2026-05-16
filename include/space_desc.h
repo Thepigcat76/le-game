@@ -2,7 +2,7 @@
 
 #include <stddef.h>
 #include <stdbool.h>
-#include "world_type.h"
+#include "registries/worlds.h"
 
 typedef enum {
   SPACE_BASE,
@@ -11,7 +11,7 @@ typedef enum {
 
 typedef struct {
   SpaceId space_id;
-  const WorldType *world_type;
+  WorldId world_id;
   // Whether this space should be cached, so we dont have to load it from disk each time
   // Useful for spaces that are visited often, SPACE_BASE, last couple of dungeons, houses
   // that are visited often...

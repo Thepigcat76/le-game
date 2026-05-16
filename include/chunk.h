@@ -3,10 +3,10 @@
 #include "data.h"
 #include "tile.h"
 #include "shared.h"
-#include "world_type.h"
+#include "registries/worlds.h"
 
 typedef struct {
-  const WorldType *world_type;
+  WorldId world_id;
   ChunkPos chunk_pos;
   TileInstance tiles[CHUNK_SIZE][CHUNK_SIZE][TILE_LAYERS_AMOUNT];
   // REPLACE WITH PERLIN NOISE

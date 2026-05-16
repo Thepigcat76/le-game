@@ -3,6 +3,8 @@
 #include "../../include/net/payloads.h"
 #include "../../include/netincludes.h"
 #include "../../include/server_ui.h"
+#include "../../include/data/load.h"
+#include "../../include/data/save.h"
 #include "../../include/ui.h"
 #include "lilc/array.h"
 #include "lilc/log.h"
@@ -54,11 +56,11 @@ static void calc_server_ui_height(UiRenderer *ui_renderer) {
   }
 }
 
-static void save_save_data(const Save *save) {
+static void save_save_data(const Save *save, DataContext ctx) {
   if (save->loaded_spaces != NULL) {
     size_t loaded_saves_len = array_len(save->loaded_spaces);
-    for (int i = 0; i < loaded_saves_len; i++) {
-      space_save(save->descriptor, &save->loaded_spaces[i]);
+    for (size_t i = 0; i < loaded_saves_len; i++) {
+      space_save(save->descriptor, &save->loaded_spaces[i], ctx);
     }
   }
 }
@@ -98,7 +100,7 @@ static void *server_game(void *args) {
 
   game_categories_setup(game);
 
-  game->debug.options.selected_tile_to_place_instance = tile_new(&TILES[TILE_DIRT]);
+  tile_init(&game->debug.options.selected_tile_to_place_instance, TILE_DIRT);
   game->debug.options.selectable_tiles = array_new_capacity(TileInstance, 256, &HEAP_ALLOCATOR);
 
   server_ui_setup(&UI_RENDERER);
@@ -131,7 +133,9 @@ static void *server_game(void *args) {
     EndDrawing();
   }
 
-  save_save_data(&SERVER_GAME.game.cur_save);
+  DataContext ctx = {.registries = &game->registries};
+
+  save_save_data(&SERVER_GAME.game.cur_save, ctx);
 
   CloseWindow();
   exit(0);

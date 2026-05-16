@@ -2,6 +2,7 @@
 
 #include "debug.h"
 #include "item.h"
+#include "registry.h"
 #include "save.h"
 #include "space_desc.h"
 #include "tile.h"
@@ -11,8 +12,10 @@
 #define MAX_TICKS_PER_FRAME 20
 
 typedef struct _game {
+  RegistryManager registries;
   // SAVE SPECIFIC
   Save cur_save;
+  bool save_loaded;
   // pointers to the fields in the current save
   // CATEGORIES
   Category tile_categories;
@@ -24,7 +27,8 @@ typedef struct _game {
   // of these is not NULL
   struct _client_game *client_game;
   struct _server_game *server_game;
-  bool save_loaded;
+  
+  bool initializing;
 } Game;
 
 typedef enum {

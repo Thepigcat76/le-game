@@ -1,8 +1,8 @@
 #include "../../include/tile.h"
 #include "../../include/game.h"
-#include "../../include/textures.h"
 #include "../../include/net/client.h"
 #include "../../include/shared.h"
+#include "../../include/textures.h"
 #include "lilc/array.h"
 #include <dirent.h>
 #include <limits.h>
@@ -26,87 +26,21 @@ AdvTileInstance *ADV_TILES;
     (lookup_ptr)->tiles_amount++;                                                                                                          \
   }
 
-TileType *TILES = NULL;
-size_t TILES_AMOUNT = 0;
 TileInstance TILE_INSTANCE_EMPTY = {0};
-
-// AdvTexture ERR_TEXTURE;
-
-void tile_types_init() {
-  if (TILES == NULL) {
-    TILES = array_new_capacity(TileType, 256, &HEAP_ALLOCATOR);
-    array_fill(TILES, 256, (TileType){0});
-  }
-
-  INIT_TILE(empty)
-  INIT_TILE(simple_ground_tiles)
-  INIT_TILE(simple_tiles)
-
-  // char buf[1024];
-  // tile_type_debug_print(&TILES[0], buf);
-  // puts(buf);
-
-  for (int i = 0; i < TILES_AMOUNT; i++) {
-  }
-
-  TILE_INSTANCE_EMPTY = tile_new(&TILES[TILE_EMPTY]);
-
-  bump_init(&ADV_TILE_BUMP, 256 * sizeof(AdvTileInstance));
-  ADV_TILES = array_new_capacity(AdvTileInstance, 256, &HEAP_ALLOCATOR);
-
-  //  ERR_TEXTURE = adv_texture_load("res/assets/err_texture.png");
-}
-
-char *tile_type_to_string(const TileType *type) {
-  switch (type->id) {
-  case TILE_EMPTY:
-    return "empty";
-  case TILE_GRASS:
-    return "grass";
-  case TILE_STONE:
-    return "stone";
-  case TILE_DIRT:
-    return "dirt";
-  case TILE_WATER:
-    return "water";
-  case TILE_WORKSTATION:
-    return "workstation";
-  case TILE_OVEN:
-    return "oven";
-  case TILE_TREE:
-    return "tree";
-  case TILE_TREE_STUMP:
-    return "tree_stump";
-  case TILE_CHEST:
-    return "chest";
-  case TILE_DUNGEON_FLOOR:
-    return "dungeon_floor";
-  case TILE_DUNGEON_PORTAL:
-    return "dungeon_portal";
-  }
-}
-
-void tile_type_debug_print(const TileType *type, char *buf) {
-  sprintf(buf,
-          "-- Tile Type Info --\n  id: %s\n  id-literal: %s\n  name: %s\n  layer: %d\n  has-texture: %s\n  dimensions: [%d-%d]\n  Tile "
-          "Item: %s\n  Var index: %d\n",
-          tile_type_to_string(type), type->id_literal, type->name, type->layer, type->has_texture ? "true" : "false",
-          type->tile_dimensions.width, type->tile_dimensions.height, item_type_to_string(type->tile_item), type->variant_index);
-}
 
 // TILE INSTANCE
 
-static AdvTileInstance *adv_tile_new(const TileType *type) {
-  switch (type->id) {
-  case TILE_CHEST: {
-    int index = array_len(ADV_TILES);
-    AdvTileInstance adv_tile_instance = ((AdvTileInstance){.type = ADV_TILE_CHEST, .var = {}});
-    array_add(ADV_TILES, adv_tile_instance);
-    return &ADV_TILES[index];
-  }
-  default:
-    return NULL;
-  }
+void adv_tile_init(AdvTileInstance *adv_tile_inst) {
+  // switch (type->id) {
+  // case TILE_CHEST: {
+  //   int index = array_len(ADV_TILES);
+  //   AdvTileInstance adv_tile_instance = ((AdvTileInstance){.type = ADV_TILE_CHEST, .var = {}});
+  //   array_add(ADV_TILES, adv_tile_instance);
+  //   return &ADV_TILES[index];
+  // }
+  // default:
+  //   return NULL;
+  // }
 }
 
 TileLayer tile_layer_from_str(const char *layer_literal) {
@@ -117,58 +51,60 @@ TileLayer tile_layer_from_str(const char *layer_literal) {
   PANIC_FMT("Failed to get layer from string: %s", layer_literal);
 }
 
-TileInstance tile_new(const TileType *type) {
+void tile_init(TileInstance *tile_inst, TileId id) {
   bool client = GAME_SIDE == SIDE_CLIENT;
 
-  TileInstance tile = {0};
-  tile.type = type;
-  tile.box = (Dimensionsf){.width = TILE_SIZE, .height = TILE_SIZE};
-  tile.adv_tile_instance = adv_tile_new(type);
+  tile_inst->id = id;
+  tile_inst->box = (Dimensionsf){.width = TILE_SIZE, .height = TILE_SIZE};
+  // TODO: Write manager for advanced tiles
+  adv_tile_init(tile_inst->adv_tile_instance);
 
-  if (client && type->id != TILE_EMPTY) {
+  if (client && id != TILE_EMPTY) {
+    TileProperties tile_props = CLIENT_GAME.game.registries.tiles[id];
     Vec2i default_pos = tile_default_sprite_pos();
     int default_sprite_res = tile_default_sprite_resolution();
 
-    cw_Texture tex = cw_tex_by_id(&CLIENT_GAME.asset_manager, type->id);
+    cw_Texture tex = tex_by_id(&CLIENT_GAME.asset_manager, tile_props.texture);
 
-    tile.cur_sprite_box = type->texture_props.uses_tileset ? rectf(default_pos.x, default_pos.y, default_sprite_res, default_sprite_res)
-                                                           : rectf(0, 0, tex.width, tex.height);
-    tile.animation_frame = 0;
-    if (type->texture_props.has_variants) {
-      int max = tile_variants_amount_for_tile(type, 0, 0) - 1;
-      if (max >= 0) {
-        int r = GetRandomValue(0, max);
-        tile.variant_texture = tile_variants_for_tile(type, 0, 0)[r];
-      } else {
-        // TODO: Properly fix this
-        tile.variant_texture = type->texture;
-      }
-    }
+    tile_inst->cur_sprite_box = tile_props.uses_tileset ? rectf(default_pos.x, default_pos.y, default_sprite_res, default_sprite_res)
+                                                        : rectf(0, 0, tex.width, tex.height);
+    tile_inst->animation_frame = 0;
+    // if (tex.has_meta_info && tex.meta_info.has_variants) {
+    //   int max = tile_variants_amount_for_tile(type, 0, 0) - 1;
+    //   if (max >= 0) {
+    //     int r = GetRandomValue(0, max);
+    //     tile.variant_texture = tile_variants_for_tile(type, 0, 0)[r];
+    //   } else {
+    //     // TODO: Properly fix this
+    //     tile_inst->variant_texture = type->texture;
+    //   }
+    // }
 
     for (int j = 0; j < 8; j++) {
-      tile.texture_data.surrounding_tiles[j] = TILE_EMPTY;
+      tile_inst->texture_data.surrounding_tiles[j] = TILE_EMPTY;
     }
 
-    tile_calc_sprite_box(&tile);
+    tile_calc_sprite_box(tile_inst);
   }
-  return tile;
 }
 
 void tile_instance_debug(const TileInstance *tile, char *buf) {
-  char tex_data_buf[256] = "";
-  strcat(tex_data_buf, "Surrounding tiles: [");
-  for (int i = 0; i < 8; i++) {
-    strcat(tex_data_buf, tile_type_to_string(&TILES[tile->texture_data.surrounding_tiles[i]]));
-    strcat(tex_data_buf, ",");
-  }
-  strcat(tex_data_buf, "]");
-  // sprintf(buf,
-  //         "-- %s --\n  box: {w: %d, h: %d}\n  adv_tile: %p\n  texture_data: %s\n  sprite box: {x: %f, y: %f, w: %f, h: %f}\n var_texture:
-  //         "
-  //         "%s\n  var_index: %d\n  anim_frame: %d",
-  //         tile_type_to_string(tile->type), tile->box.width, tile->box.height, tile->adv_tile_instance, tex_data_buf,
-  //         tile->cur_sprite_box.x, tile->cur_sprite_box.y, tile->cur_sprite_box.width, tile->cur_sprite_box.height,
-  //         tile->variant_texture.path, tile->type->variant_index, tile->animation_frame);
+  // char tex_data_buf[256] = "";
+  // strcat(tex_data_buf, "Surrounding tiles: [");
+  // for (int i = 0; i < 8; i++) {
+  //
+  //   strcat(tex_data_buf, tile_type_to_string(&TILES[tile->texture_data.surrounding_tiles[i]]));
+  //   strcat(tex_data_buf, ",");
+  // }
+  // strcat(tex_data_buf, "]");
+  //  sprintf(buf,
+  //          "-- %s --\n  box: {w: %d, h: %d}\n  adv_tile: %p\n  texture_data: %s\n  sprite box: {x: %f, y: %f, w: %f, h: %f}\n
+  //          var_texture:
+  //          "
+  //          "%s\n  var_index: %d\n  anim_frame: %d",
+  //          tile_type_to_string(tile->type), tile->box.width, tile->box.height, tile->adv_tile_instance, tex_data_buf,
+  //          tile->cur_sprite_box.x, tile->cur_sprite_box.y, tile->cur_sprite_box.width, tile->cur_sprite_box.height,
+  //          tile->variant_texture.path, tile->type->variant_index, tile->animation_frame);
 }
 
 Rectf tile_collision_box_at(const TileInstance *tile, int x, int y) {
@@ -177,8 +113,10 @@ Rectf tile_collision_box_at(const TileInstance *tile, int x, int y) {
 }
 
 Dimensionsf tile_collision_dimensions_at(const TileInstance *tile) {
-  if (tile->type->layer == TILE_LAYER_TOP) {
-    switch (tile->type->id) {
+  TileProperties tile_props = CLIENT_GAME.game.registries.tiles[tile->id];
+
+  if (tile_props.layer == TILE_LAYER_TOP) {
+    switch (tile_props.id) {
     case TILE_TREE:
     case TILE_TREE_STUMP:
       return dimf(tile->box.width, tile->box.height);
@@ -190,8 +128,10 @@ Dimensionsf tile_collision_dimensions_at(const TileInstance *tile) {
 }
 
 Vec2f tile_collision_offset_at(const TileInstance *tile) {
-  if (tile->type->layer == TILE_LAYER_TOP) {
-    switch (tile->type->id) {
+  TileProperties tile_props = CLIENT_GAME.game.registries.tiles[tile->id];
+
+  if (tile_props.layer == TILE_LAYER_TOP) {
+    switch (tile_props.id) {
     case TILE_TREE:
     case TILE_TREE_STUMP:
       return vec2f(0, -4);
@@ -203,31 +143,34 @@ Vec2f tile_collision_offset_at(const TileInstance *tile) {
 }
 
 TileInstance tile_break_remainder(const TileInstance *tile, TilePos pos) {
-  if (tile->type->id == TILE_TREE) {
-    return tile_new(&TILES[TILE_TREE_STUMP]);
+  TileProperties tile_props = CLIENT_GAME.game.registries.tiles[tile->id];
+
+  if (tile_props.id == TILE_TREE) {
+    TileInstance tile = {0};
+    tile_init(&tile, TILE_TREE_STUMP);
+    return tile;
   }
   return TILE_INSTANCE_EMPTY;
 }
 
 void tile_render_scaled(TileInstance *tile, int x, int y, float scale) {
-  if (tile->type->has_texture) {
-    if (tile->type->texture_props.has_variants) {
+  TileProperties tile_props = CLIENT_GAME.game.registries.tiles[tile->id];
+
+  if (tile_props.has_texture) {
+    // TODO: Reenable variant texture rendering
+    if (false) {
       AssetId variant_tex_id = tile->variant_texture;
-      Texture2D variant_tex = tex_by_id(&CLIENT_GAME.asset_manager, variant_tex_id);
-      DrawTextureRecEx(variant_tex, tile->cur_sprite_box, vec2f(x, y), 0, scale, WHITE);
+      cw_Texture variant_tex = tex_by_id(&CLIENT_GAME.asset_manager, variant_tex_id);
+      DrawTextureRecEx(variant_tex.texture, tile->cur_sprite_box, vec2f(x, y), 0, scale, WHITE);
     } else {
-      cw_Texture texture = cw_tex_by_id(&CLIENT_GAME.asset_manager, tile->type->texture);
-      Texture2D final_texture = tex_by_id(&CLIENT_GAME.asset_manager, tile->type->texture);
-      i32 cur_frame = cw_tex_cur_frame(&texture);
-      i32 frame_height = cw_tex_frame_height(&texture);
+      cw_Texture tex = tex_by_id(&CLIENT_GAME.asset_manager, tile_props.texture);
+      i32 cur_frame = 0;             // cw_tex_cur_frame(&tex);
+      i32 frame_height = tex.height; // cw_tex_frame_height(&tex);
       Rectangle sprite_rect = tile->cur_sprite_box;
       sprite_rect.y += frame_height * cur_frame;
-      int offset_x = (tile->type->tile_dimensions.width - TILE_SIZE) / 2;
-      int offset_y = tile->type->tile_dimensions.height - TILE_SIZE;
-      if (texture.kind == TEXTURE_ANIMATED) {
-        // TraceLog(LOG_DEBUG, "height: %d, cur_frame: %d", frame_height, cur_frame);
-      }
-      DrawTextureRecEx(final_texture, sprite_rect, vec2f(x - offset_x, y - offset_y), 0, scale, WHITE);
+      int offset_x = (tile_props.tile_dimensions.width - TILE_SIZE) / 2;
+      int offset_y = tile_props.tile_dimensions.height - TILE_SIZE;
+      DrawTextureRecEx(tex.texture, sprite_rect, vec2f(x - offset_x, y - offset_y), 0, scale, WHITE);
 #ifdef DEBUG_BUILD
 #include "../../include/game.h"
       if (CLIENT_GAME.game.debug.options.hitboxes_shown && tile->type->layer == TILE_LAYER_TOP) {
@@ -239,29 +182,24 @@ void tile_render_scaled(TileInstance *tile, int x, int y, float scale) {
 }
 
 void tile_render(TileInstance *tile, int x, int y, bool dbg) {
-  if (tile->type->has_texture) {
-    if (tile->type->texture_props.has_variants) {
-      // ASSERT(tile->variant_texture.path != NULL, "Tile %s doesnt have variant texture", tile_type_to_string(tile->type));
-      // DrawTextureRec(adv_texture_to_texture(&tile->variant_texture), tile->cur_sprite_box, vec2f(x, y), WHITE);
-    } else {
-      Texture2D texture = tex_by_id(&CLIENT_GAME.asset_manager, tile->type->texture);
-      int cur_frame = 0;    // adv_texture_cur_frame(&tile->type->texture);
-      int frame_height = 0; // adv_texture_frame_height(&tile->type->texture);
-      Rectangle sprite_rect = tile->cur_sprite_box;
-      sprite_rect.y += frame_height * cur_frame;
-      int offset_x = (tile->type->tile_dimensions.width - TILE_SIZE) / 2;
-      int offset_y = tile->type->tile_dimensions.height - TILE_SIZE;
-      if (tile->type->id == TILE_GRASS) {
-        // printf("Sprite rect: x: %f, y: %f, w: %f, h: %f\n", sprite_rect.x, sprite_rect.y, sprite_rect.width, sprite_rect.height);
-      }
-      DrawTextureRec(texture, sprite_rect, vec2f(x - offset_x, y - offset_y), WHITE);
+  TileProperties tile_props = CLIENT_GAME.game.registries.tiles[tile->id];
+
+  if (tile_props.has_texture) {
+    cw_Texture tex = tile_tex(tile->id, vec2i(x, y), CLIENT_WORLD->seed, &CLIENT_GAME.tile_tex_manager, &CLIENT_GAME.game.registries,
+                             &CLIENT_GAME.asset_manager);
+    u32 cur_frame = cw_tex_cur_frame(&tex);
+    u32 frame_height = cw_tex_frame_height(&tex);
+    Rectangle sprite_rect = tile->cur_sprite_box;
+    sprite_rect.y += frame_height * cur_frame;
+    i32 offset_x = (tile_props.tile_dimensions.width - TILE_SIZE) / 2;
+    i32 offset_y = tile_props.tile_dimensions.height - TILE_SIZE;
+    DrawTextureRec(tex.texture, sprite_rect, vec2f(x - offset_x, y - offset_y), WHITE);
 #ifdef DEBUG_BUILD
 #include "../../include/game.h"
-      if (CLIENT_GAME.game.debug.options.hitboxes_shown && tile->type->layer == TILE_LAYER_TOP) {
-        rec_draw_outline(tile_collision_box_at(tile, x, y), GREEN);
-      }
-#endif
+    if (CLIENT_GAME.game.debug.options.hitboxes_shown && tile->type->layer == TILE_LAYER_TOP) {
+      rec_draw_outline(tile_collision_box_at(tile, x, y), GREEN);
     }
+#endif
   }
 }
 

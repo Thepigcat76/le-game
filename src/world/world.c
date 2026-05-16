@@ -1,6 +1,8 @@
 #include "../../include/world.h"
 #include "../../include/being.h"
 #include "../../include/data/data_reader.h"
+#include "../../include/data/load.h"
+#include "../../include/data/save.h"
 #include "../../include/game.h"
 #include "../../include/item.h"
 #include "../../include/net/client.h"
@@ -8,6 +10,7 @@
 #include "../../include/player.h"
 #include "lilc/array.h"
 #include "lilc/log.h"
+#include <lilc/alloc.h>
 #include <raylib.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -16,44 +19,17 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-WorldType *WORLD_TYPES;
-
 Texture2D particle_texture;
 static bool particle_texture_loaded = false;
 
-World world_new_no_chunks(bool clientside) {
-  if (!particle_texture_loaded) {
-    particle_texture = LoadTexture("res/assets/particle.png");
-    particle_texture_loaded = true;
-  }
-  return (World){
-      .chunks = NULL,
-      .initialized = false,
-      .type = NULL,
-      .beings = array_new_capacity(BeingInstance, 200, &HEAP_ALLOCATOR),
-  };
-}
-
-World world_new(const WorldType *world_type, float seed) {
-  if (!particle_texture_loaded) {
-    particle_texture = LoadTexture("res/assets/particle.png");
-    particle_texture_loaded = true;
-  }
-  return (World){
-      .chunks = array_new_capacity(Chunk, WORLD_LOADED_CHUNKS, &HEAP_ALLOCATOR),
-      .chunk_lookup = {.chunks_positions = array_new_capacity(ChunkPos, WORLD_LOADED_CHUNKS, &HEAP_ALLOCATOR),
-                       .indices = array_new_capacity(size_t, WORLD_LOADED_CHUNKS, &HEAP_ALLOCATOR)},
-      .initialized = false,
-      .type = world_type,
-      .seed = seed,
-      .beings = array_new_capacity(BeingInstance, 200, &HEAP_ALLOCATOR),
-  };
-}
-
-void world_types_init(void) {
-  WORLD_TYPES = array_new_capacity(WorldType, 16, &HEAP_ALLOCATOR);
-  WORLD_TYPES[WORLD_BASE] = (WorldType){.id = WORLD_BASE};
-  WORLD_TYPES[WORLD_DUNGEON_TEST] = (WorldType){.id = WORLD_DUNGEON_TEST};
+void world_init(World *world, WorldId world_id, float seed) {
+  world->chunks = array_new_capacity(Chunk, WORLD_LOADED_CHUNKS, &HEAP_ALLOCATOR);
+  world->chunk_lookup = (ChunkLookup){.chunks_positions = array_new_capacity(ChunkPos, WORLD_LOADED_CHUNKS, &HEAP_ALLOCATOR),
+                                      .indices = array_new_capacity(size_t, WORLD_LOADED_CHUNKS, &HEAP_ALLOCATOR)};
+  world->initialized = false;
+  world->world_id = world_id;
+  world->seed = seed;
+  world->beings = array_new_capacity(BeingInstance, 200, &HEAP_ALLOCATOR);
 }
 
 void world_initialize(World *world) {
@@ -86,13 +62,13 @@ bool world_has_chunk_at(const World *world, ChunkPos chunk_pos) {
 static void world_print_debug_chunk_lookup(const ChunkLookup *lookup) {
   printf("-- Chunk Lookup --\n");
   size_t len = array_len(lookup->chunks_positions);
-  for (int i = 0; i < len; i++) {
+  for (size_t i = 0; i < len; i++) {
     printf("Chunk %d, %d - %zu\n", lookup->chunks_positions[i].x, lookup->chunks_positions[i].y, lookup->indices[i]);
   }
 }
 
 void world_gen_chunk_at(World *world, ChunkPos chunk_pos) {
-  Chunk chunk = {.world_type = world->type};
+  Chunk chunk = {.world_id = world->world_id};
 
   chunk_gen(&chunk, chunk_pos, world->seed);
 
@@ -118,11 +94,11 @@ TileInstance *world_ground_tile_at(const World *world, TilePos tile_pos) { retur
 TileInstance *world_highest_tile_at(const World *world, TilePos tile_pos) {
   for (int l = TILE_LAYERS_AMOUNT - 1; l >= 0; l--) {
     TileInstance *tile = world_tile_at(world, tile_pos, l);
-    if (tile->type->id != TILE_EMPTY || l == 0) {
+    if (tile->id != TILE_EMPTY || l == 0) {
       return tile;
     }
   }
-  return &TILE_INSTANCE_EMPTY;
+  return &TILE_INST_EMPTY;
 }
 
 TileInstance *world_tile_at(const World *world, TilePos tile_pos, TileLayer layer) {
@@ -140,7 +116,7 @@ TileInstance *world_tile_at(const World *world, TilePos tile_pos, TileLayer laye
     return tile;
   }
 
-  return &TILE_INSTANCE_EMPTY;
+  return &TILE_INST_EMPTY;
 }
 
 static const Vec2i RENDER_CHUNK_OFFSETS[8] = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, 1}, {1, 0}, {1, -1}};
@@ -172,7 +148,8 @@ void world_gen(World *world) {
 }
 
 bool world_set_tile(World *world, TilePos tile_pos, TileInstance tile) {
-  return world_set_tile_on_layer(world, tile_pos, tile, tile.type->layer);
+  TileProperties tile_props = CLIENT_GAME.game.registries.tiles[tile.id];
+  return world_set_tile_on_layer(world, tile_pos, tile, tile_props.layer);
 }
 
 bool world_set_tile_on_layer(World *world, TilePos tile_pos, TileInstance tile, TileLayer layer) {
@@ -213,13 +190,14 @@ bool world_set_tile_on_layer(World *world, TilePos tile_pos, TileInstance tile, 
 }
 
 bool world_place_tile(World *world, TilePos tile_pos, TileInstance tile) {
-  TileLayer layer = tile.type->layer;
+  TileProperties tile_props = CLIENT_GAME.game.registries.tiles[tile.id];
+  TileLayer layer = tile_props.layer;
   for (int l = layer - 1; l >= 0; l--) {
     if (l <= 0) {
       break;
     }
 
-    if (world_tile_at(world, tile_pos, l)->type->id == TILE_EMPTY) {
+    if (world_tile_at(world, tile_pos, l)->id == TILE_EMPTY) {
       return false;
     }
   }
@@ -233,15 +211,16 @@ bool world_place_tile(World *world, TilePos tile_pos, TileInstance tile) {
 }
 
 bool world_remove_tile(World *world, TilePos tile_pos) {
-  TileInstance empty_instance = TILE_INSTANCE_EMPTY;
+  TileInstance empty_instance = TILE_INST_EMPTY;
   TileInstance *tile = world_highest_tile_at(world, tile_pos);
-  Color color = tile->type->tile_props.tile_color;
-  ItemType *item_type = tile->type->tile_item;
-  if (world_set_tile_on_layer(world, tile_pos, empty_instance, tile->type->layer)) {
+  TileProperties tile_props = CLIENT_GAME.game.registries.tiles[tile->id];
+  Color color = tile_props.tile_color;
+  i32 tile_item = tile_props.tile_item;
+  if (world_set_tile_on_layer(world, tile_pos, empty_instance, tile_props.layer)) {
     log_debug("setting tile");
-    if (item_type != NULL) {
+    if (tile_item != -1) {
       world_add_being(world,
-                      being_item_new((ItemInstance){.type = *item_type}, (tile_pos.x * TILE_SIZE) + GetRandomValue(-7, 9),
+                      being_item_new((ItemInstance){.id = tile_item}, (tile_pos.x * TILE_SIZE) + GetRandomValue(-7, 9),
                                      (tile_pos.y * TILE_SIZE) + GetRandomValue(-7, 9)));
     }
 
@@ -281,7 +260,7 @@ void world_prepare_chunk_rendering(World *world, Chunk *chunk) {
       int chunk_y = chunk->chunk_pos.y * CHUNK_SIZE;
       TilePos pos = vec2i(chunk_x + x, chunk_y + y);
       TileInstance *tile = world_ground_tile_at(world, vec2i(pos.x, pos.y));
-      if (tile->type->id != TILE_EMPTY) {
+      if (tile->id != TILE_EMPTY) {
         world_set_tile_texture_data(world, tile, pos.x, pos.y);
       }
     }
@@ -291,7 +270,7 @@ void world_prepare_chunk_rendering(World *world, Chunk *chunk) {
     for (int x = 0; x < CHUNK_SIZE; x++) {
       TilePos pos = vec2i((chunk->chunk_pos.x * CHUNK_SIZE) + x, (chunk->chunk_pos.y * CHUNK_SIZE) + y);
       TileInstance *tile = world_ground_tile_at(world, vec2i(pos.x, pos.y));
-      if (tile->type->id != TILE_EMPTY) {
+      if (tile->id != TILE_EMPTY) {
         tile_calc_sprite_box(tile);
       }
     }
@@ -300,20 +279,20 @@ void world_prepare_chunk_rendering(World *world, Chunk *chunk) {
 
 void world_set_tile_texture_data(World *world, TileInstance *tile, int x, int y) {
   TileTextureData *texture_data = &tile->texture_data;
-  texture_data->surrounding_tiles[0] = world_ground_tile_at(world, vec2i(x - 1, y - 1))->type->id;
-  texture_data->surrounding_tiles[1] = world_ground_tile_at(world, vec2i(x, y - 1))->type->id;
-  texture_data->surrounding_tiles[2] = world_ground_tile_at(world, vec2i(x + 1, y - 1))->type->id;
-  texture_data->surrounding_tiles[3] = world_ground_tile_at(world, vec2i(x - 1, y))->type->id;
-  texture_data->surrounding_tiles[4] = world_ground_tile_at(world, vec2i(x + 1, y))->type->id;
-  texture_data->surrounding_tiles[5] = world_ground_tile_at(world, vec2i(x - 1, y + 1))->type->id;
-  texture_data->surrounding_tiles[6] = world_ground_tile_at(world, vec2i(x, y + 1))->type->id;
-  texture_data->surrounding_tiles[7] = world_ground_tile_at(world, vec2i(x + 1, y + 1))->type->id;
+  texture_data->surrounding_tiles[0] = world_ground_tile_at(world, vec2i(x - 1, y - 1))->id;
+  texture_data->surrounding_tiles[1] = world_ground_tile_at(world, vec2i(x, y - 1))->id;
+  texture_data->surrounding_tiles[2] = world_ground_tile_at(world, vec2i(x + 1, y - 1))->id;
+  texture_data->surrounding_tiles[3] = world_ground_tile_at(world, vec2i(x - 1, y))->id;
+  texture_data->surrounding_tiles[4] = world_ground_tile_at(world, vec2i(x + 1, y))->id;
+  texture_data->surrounding_tiles[5] = world_ground_tile_at(world, vec2i(x - 1, y + 1))->id;
+  texture_data->surrounding_tiles[6] = world_ground_tile_at(world, vec2i(x, y + 1))->id;
+  texture_data->surrounding_tiles[7] = world_ground_tile_at(world, vec2i(x + 1, y + 1))->id;
 }
 
 void world_prepare_rendering(World *world) {
   size_t len = array_len(world->chunks);
   TraceLog(LOG_DEBUG, "Chunks for world render prep: %zu", len);
-  for (int i = 0; i < len; i++) {
+  for (size_t i = 0; i < len; i++) {
     world_prepare_chunk_rendering_update_nearby(world, &world->chunks[i]);
     TraceLog(LOG_DEBUG, "Chunk at pos: %d, %d prepared", world->chunks[i].chunk_pos.x, world->chunks[i].chunk_pos.y);
   }
@@ -330,9 +309,10 @@ void world_render_layer(World *world, TileLayer layer) {
       for (int y = chunk_y; y < chunk_y + CHUNK_SIZE; y++) {
         for (int x = chunk_x; x < chunk_x + CHUNK_SIZE; x++) {
           size_t idx = chunk->background_texture_variants[y - chunk_y][x - chunk_x];
-          AssetId variant = tile_variants_by_index(chunk->variant_index, 0, 0)[idx];
-          Texture2D tex = tex_by_id(&CLIENT_GAME.asset_manager, variant);
-          DrawTexture(tex, x * TILE_SIZE, y * TILE_SIZE, WHITE);
+          // TODO: Reenable chunk background rendering
+          //AssetId variant = tile_variants_by_index(chunk->variant_index, 0, 0)[idx];
+          //Texture2D tex = tex_by_id(&CLIENT_GAME.asset_manager, variant).texture;
+          //DrawTexture(tex, x * TILE_SIZE, y * TILE_SIZE, WHITE);
         }
       }
     }
@@ -370,7 +350,7 @@ void world_render_layer_top_split(World *world, Rectangle player_box, bool draw_
 
         bool should_draw = (tile_screen_y <= player_feet_y && draw_before_player) || (tile_screen_y > player_feet_y && !draw_before_player);
 
-        if (should_draw && tile->type->id != TILE_EMPTY) {
+        if (should_draw && tile->id != TILE_EMPTY) {
           tile_render(tile, world_x * TILE_SIZE, world_y * TILE_SIZE, false);
         }
       }
@@ -384,57 +364,57 @@ void world_on_reload(ClientGame *client) {
   }
 }
 
-static void world_load_beings(World *world, const DataMap *data) {
+static void world_load_beings(World *world, const DataMap *data, DataContext ctx) {
   DataList list = data_map_get_or_default(data, "beings", data_list(data_list_new(0))).var.data_list;
-  for (int i = 0; i < list.len; i++) {
+  for (size_t i = 0; i < list.len; i++) {
     DataMap being_data = data_list_get(&list, i).var.data_map;
     BeingId id = data_map_get_or_default(&being_data, "id", data_int(BEING_NPC)).var.data_int;
     BeingInstance being_instance = being_new_default(id);
-    being_load(&being_instance, &being_data);
+    being_load(&being_instance, &being_data, ctx);
     world_add_being(world, being_instance);
   }
 }
 
-void world_load(World *world, const DataMap *data) {
+void world_load(World *world, const DataMap *data, DataContext ctx) {
   WorldId world_id = data_map_get(data, "world_id").var.data_int;
-  world->type = &WORLD_TYPES[world_id];
+  world->world_id = world_id;
   DataList chunks_list = data_map_get(data, "chunks").var.data_list;
   size_t chunks = chunks_list.len;
-  for (int i = 0; i < chunks; i++) {
+  for (size_t i = 0; i < chunks; i++) {
     DataMap data_map = data_list_get(&chunks_list, i).var.data_map;
-    Chunk chunk = {.world_type = world->type};
+    Chunk chunk = {.world_id = world->world_id};
     chunk_load(&chunk, &data_map);
     world_add_chunk(world, chunk.chunk_pos, chunk);
   }
   TraceLog(LOG_DEBUG, "Total loaded chunks: %u", chunks);
-  world_load_beings(world, data);
+  world_load_beings(world, data, ctx);
   TraceLog(LOG_DEBUG, "Total loaded beings: %d", array_len(world->beings));
 }
 
-static void world_save_beings(const World *world, DataMap *data) {
+static void world_save_beings(const World *world, DataMap *data, DataContext ctx) {
   DataList list = data_list_new(array_len(world->beings));
   for (int i = 0; i < array_len(world->beings); i++) {
     const BeingInstance *instance = &world->beings[i];
     DataMap being_data = data_map_new(10);
     data_map_insert(&being_data, "id", data_int(instance->id));
-    being_save(instance, &being_data);
+    being_save(instance, &being_data, ctx);
     data_list_add(&list, data_map(being_data));
   }
   data_map_insert(data, "beings", data_list(list));
 }
 
-void world_save(const World *world, DataMap *data) {
+void world_save(const World *world, DataMap *data, DataContext ctx) {
   DataList chunks_list = data_list_new(WORLD_LOADED_CHUNKS);
   size_t len = array_len(world->chunks);
-  for (int i = 0; i < len; i++) {
+  for (size_t i = 0; i < len; i++) {
     DataMap map = data_map_new(len);
     const Chunk *chunk = &world->chunks[i];
     chunk_save(chunk, &map);
     data_list_add(&chunks_list, data_map(map));
   }
-  data_map_insert(data, "world_id", data_int(world->type->id));
+  data_map_insert(data, "world_id", data_int(world->world_id));
   data_map_insert(data, "chunks", data_list(chunks_list));
   TraceLog(LOG_DEBUG, "Total saved chunks: %zu", array_len(world->chunks));
-  world_save_beings(world, data);
+  world_save_beings(world, data, ctx);
   TraceLog(LOG_DEBUG, "Total saved beings: %d", array_len(world->beings));
 }

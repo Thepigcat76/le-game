@@ -1,69 +1,37 @@
 #include "../../include/item.h"
 #include "../../include/assets.h"
 #include "../../include/data.h"
+#include "../../include/data/data_ex.h"
 #include "../../include/net/client.h"
 #include <raylib.h>
 #include <stdio.h>
 #include <string.h>
 
-#define INIT_ITEM(src_file_name)                                                                                                           \
-  extern void src_file_name##_item_init();                                                                                                 \
-  src_file_name##_item_init();
-
-ItemType ITEMS[MAX_ITEM_TYPES];
-size_t ITEMS_AMOUNT = 0;
-
-ItemInstance ITEM_INSTANCE_EMPTY;
-
-void item_types_init() {
-  INIT_ITEM(empty);
-  INIT_ITEM(simple_items);
-  INIT_ITEM(simple_inv_items);
-  INIT_ITEM(tool_items);
-
-  ITEM_INSTANCE_EMPTY = (ItemInstance){.type = ITEMS[ITEM_EMPTY]};
-}
-
 void item_render(const ItemInstance *item, int x, int y) {
-  if (item->type.has_texture) {
-    DrawTextureEx(tex_by_id(&CLIENT_GAME.asset_manager, item->type.texture), (Vector2){.x = x, .y = y}, 0, 3.5, WHITE);
+  RegistryManager registries = CLIENT_GAME.game.registries;
+  ItemProperties item_props = registries.items[item->id];
+
+  if (item_props.has_texture) {
+    cw_Texture tex = tex_by_id(&CLIENT_GAME.asset_manager, item_props.texture);
+    DrawTextureEx(tex.texture, (Vector2){.x = x, .y = y}, 0, 3.5, WHITE);
   }
 }
 
-char *item_type_to_string(const ItemType *type) {
-  if (type == NULL)
-    return "ITEM TYPE IS NULL";
-
-  switch (type->id) {
-  case ITEM_EMPTY:
-    return "empty";
-  case ITEM_GRASS:
-    return "grass";
-  case ITEM_STONE:
-    return "stone";
-  case ITEM_DIRT:
-    return "dirt";
-  case ITEM_SHOVEL:
-    return "shovel";
-  default:
-    return "NYI Item";
-  }
-}
-
-ItemType *item_from_str(const char *item_iteral) {
+ItemId item_from_str(const char *item_iteral, RegistryManager *m) {
   if (item_iteral == NULL)
-    return NULL;
+    return ITEM_EMPTY;
 
-  for (int i = 0; i < ITEMS_AMOUNT; i++) {
-    if (strcmp(item_iteral, item_type_to_string(&ITEMS[i])))
-      return &ITEMS[i];
-  }
+  // FIXME: Readd once registry stuff is done
+  // for (int i = 0; i < ITEMS_AMOUNT; i++) {
+  //   if (strcmp(item_iteral, item_type_to_string(&ITEMS[i])))
+  //     return &ITEMS[i];
+  // }
 
-  return NULL;
+  return ITEM_EMPTY;
 }
 
 void item_tooltip(const ItemInstance *item, char *buf, size_t buf_capacity) {
-  switch (item->type.id) {
+  switch (item->id) {
   case ITEM_TORCH: {
     snprintf(buf, buf_capacity, "Le Torch\nLe Sus");
     break;
@@ -74,11 +42,11 @@ void item_tooltip(const ItemInstance *item, char *buf, size_t buf_capacity) {
   }
 }
 
-void item_save(const ItemInstance *item, DataMap *data) { data_map_insert(data, "item", data_int(item->type.id)); }
+void item_save(const ItemInstance *item, DataMap *data, DataContext ctx) { data_map_insert(data, "item", data_int(item->id)); }
 
-void item_load(ItemInstance *item, const DataMap *data) {
+void item_load(ItemInstance *item, const DataMap *data, DataContext ctx) {
   ItemId item_id = data_map_get_or_default(data, "item", data_int(ITEM_EMPTY)).var.data_int;
-  item->type = ITEMS[item_id];
+  item->id = item_id;
 }
 
-bool item_is_empty(ItemInstance *item) { return item->type.id == ITEM_EMPTY; }
+bool item_is_empty(ItemInstance *item) { return item->id == ITEM_EMPTY; }

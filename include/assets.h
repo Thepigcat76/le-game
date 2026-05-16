@@ -17,23 +17,25 @@
 #define SOUNDS_DIR "sounds"
 
 typedef struct {
-  enum {
-    TEXTURE_STATIC,
-    TEXTURE_ANIMATED,
-  } kind;
-  union {
-    Texture2D texture_static;
-    struct {
-      int animated_texture_id;
-      Texture2D texture;
-      int frames;
-      int frame_time;
-    } texture_animated;
-  } var;
+  char **variant_paths;
+  bool has_variants;
+  struct {
+    size_t frames;
+    u32 frame_time;
+    u32 frame_height;
+  } animation;
+  bool has_animation;
+} TextureMetaInfo;
+
+typedef struct {
   AssetId id;
-  int width;
-  int height;
+  Texture2D texture;
+  u32 width;
+  u32 height;
   const char *path;
+  
+  TextureMetaInfo meta_info;
+  bool has_meta_info;
 } cw_Texture;
 
 typedef struct {
@@ -70,16 +72,12 @@ void assets_unload(AssetManager *asset_manager);
 
 /* TEXTURES */
 
-cw_Texture cw_tex_by_id(AssetManager *asset_manager, AssetId id);
+cw_Texture tex_by_id(const AssetManager *asset_manager, AssetId id);
 
-cw_Texture cw_tex_by_handle(AssetManager *asset_manager, TextureHandle handle);
+cw_Texture tex_by_handle(const AssetManager *asset_manager, TextureHandle handle);
 
 // Uses a texture path, which drops res/assets/tes/ and .png
-cw_Texture cw_tex_by_tex_path(AssetManager *asset_manager, const char *tex_path);
-
-Texture2D tex_by_id(AssetManager *asset_manager, AssetId id);
-
-Texture2D tex_by_handle(AssetManager *asset_manager, TextureHandle handle);
+cw_Texture tex_by_tex_path(const AssetManager *asset_manager, const char *tex_path);
 
 /* SHADERS */
 

@@ -2,8 +2,9 @@
 #include "../include/config.h"
 #include "../include/game.h"
 #include "../include/keys.h"
-#include "lilc/array.h"
 #include "../include/net/client.h"
+#include "../include/registries/beings.h"
+#include "lilc/array.h"
 #include "raylib.h"
 #include "rlgl.h"
 
@@ -21,13 +22,14 @@ static void debug_render_game_object_overlay(Debug *debug) {
   switch (debug->game->debug.options.game_object_display) {
   case DEBUG_DISPLAY_ALL_ITEMS: {
     debug->game->client_game->state.paused = true;
-    for (int i = 0; i < ITEMS_AMOUNT; i++) {
-      ItemInstance item = (ItemInstance){.type = ITEMS[i]};
+    ItemProperties *item_props;
+    array_foreach(debug->game->registries.items, item_props) {
+      ItemInstance item = (ItemInstance){.id = item_props->id};
       float scale = 3.5;
-      float x = ((float)SCREEN_WIDTH / 2) - (ITEMS_AMOUNT * 16 * scale) / 2 + (i * 20 * scale);
+      float x = ((float)SCREEN_WIDTH / 2) - (_amount_item_ids * 16 * scale) / 2 + (item_props->id * 20 * scale);
       float y = ((float)SCREEN_HEIGHT / 2) - 8 * scale;
       item_render(&item, x, y);
-      cw_Texture tex = cw_tex_by_id(&CLIENT_GAME.asset_manager, item.type.texture);
+      cw_Texture tex = tex_by_id(&CLIENT_GAME.asset_manager, item_props->texture);
       Rectf item_box = rectf(x, y, tex.width * scale, tex.height * scale);
       rec_draw_outline(item_box, WHITE);
       if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && CheckCollisionPointRec(GetMousePosition(), item_box)) {
@@ -38,14 +40,15 @@ static void debug_render_game_object_overlay(Debug *debug) {
   }
   case DEBUG_DISPLAY_ALL_TILES: {
     debug->game->client_game->state.paused = true;
-    for (int i = 0; i < TILES_AMOUNT; i++) {
-      double x = ((float)SCREEN_WIDTH / 2) - (ITEMS_AMOUNT * 16 * 3.5) / 2 + (i * 32 * 3.5);
+    TileInstance *tile_inst;
+    array_foreach(debug->options.selectable_tiles, tile_inst) {
+      double x = ((float)SCREEN_WIDTH / 2) - (_amount_tile_ids * 16 * 3.5) / 2 + (tile_inst->id * 32 * 3.5);
       double y = ((float)SCREEN_HEIGHT / 2) - 8 * 3.5;
-      tile_render_scaled(&debug->options.selectable_tiles[i], x - 160, y, 3.5);
+      tile_render_scaled(tile_inst, x - 160, y, 3.5);
       Rectf tile_box = rectf(x - 185, y - TILE_SIZE * 2, TILE_SIZE * 3.5, TILE_SIZE * 3.5);
       rec_draw_outline(tile_box, WHITE);
       if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && CheckCollisionPointRec(GetMousePosition(), tile_box)) {
-        debug->options.selected_tile_to_place_instance = debug->options.selectable_tiles[i];
+        debug->options.selected_tile_to_place_instance = *tile_inst;
       }
     }
     break;
@@ -81,11 +84,13 @@ void debug_render_overlay(Debug *debug) {
     debug_render_game_object_overlay(debug);
 
     TileInstance *hovered_tile = debug->game->client_game->state.hovered_tile;
+    TileProperties hovered_tile_props = debug->game->registries.tiles[hovered_tile->id];
     if (hovered_tile != NULL) {
-      char *tile_name = tile_type_to_string(hovered_tile->type);
+      char *tile_name = hovered_tile_props.name;
       int font_size = CONFIG.default_font_size / 1.5;
       DrawText(tile_name, 0, 32, font_size, WHITE);
-      DrawText(TextFormat("Sprite: %d, %d", (int) hovered_tile->cur_sprite_box.x, (int) hovered_tile->cur_sprite_box.y), 0, 32 + font_size, font_size, WHITE);
+      DrawText(TextFormat("Sprite: %d, %d", (int)hovered_tile->cur_sprite_box.x, (int)hovered_tile->cur_sprite_box.y), 0, 32 + font_size,
+               font_size, WHITE);
     }
   }
 }
@@ -94,10 +99,9 @@ void debug_render(Debug *debug) {
   if (debug->game->debug.options.hitboxes_shown) {
     Rectangle player_hitbox = player_collision_box(CLIENT_PLAYER);
     rec_draw_outline(player_hitbox, BLUE);
-    rec_draw_outline(rectf(CLIENT_PLAYER->tile_pos.x * TILE_SIZE, CLIENT_PLAYER->tile_pos.y * TILE_SIZE, 16, 16),
-                     RED);
+    rec_draw_outline(rectf(CLIENT_PLAYER->tile_pos.x * TILE_SIZE, CLIENT_PLAYER->tile_pos.y * TILE_SIZE, 16, 16), RED);
 
-    for (int i = 0; i < array_len(CLIENT_WORLD->beings); i++) {
+    for (size_t i = 0; i < array_len(CLIENT_WORLD->beings); i++) {
       rec_draw_outline(CLIENT_WORLD->beings[i].context.box, WHITE);
     }
   }
@@ -117,8 +121,8 @@ void debug_tick(Debug *debug) {
 
   if (keycode >= KEY_ZERO && keycode <= KEY_NINE) {
     int tile_index = keycode - KEY_ZERO;
-    if (tile_index < TILES_AMOUNT) {
-      debug->options.selected_tile_to_place_instance = tile_new(&TILES[tile_index]);
+    if (tile_index < _amount_tile_ids) {
+      tile_init(&debug->options.selected_tile_to_place_instance, tile_index);
     }
   }
 

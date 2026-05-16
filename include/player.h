@@ -65,7 +65,3 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d);
 
 void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool walking_particles,
                        bool check_for_water);
-
-void player_load(Player *player, DataMap *map);
-
-void player_save(Player *player, DataMap *map);

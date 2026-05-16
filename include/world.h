@@ -3,11 +3,12 @@
 #include "being.h"
 #include "chunk.h"
 #include "data.h"
+#include "data/data_ex.h"
 #include "save_desc.h"
 #include "shared.h"
 #include "space_desc.h"
 #include "tile.h"
-#include "world_type.h"
+#include "registries/worlds.h"
 #include <stddef.h>
 #include <unistd.h>
 
@@ -17,7 +18,7 @@ typedef struct {
 } ChunkLookup;
 
 typedef struct _world {
-  const WorldType *type;
+  WorldId world_id;
   const SaveDescriptor *save_desc;
   Chunk *chunks;
   ChunkLookup chunk_lookup;
@@ -30,7 +31,10 @@ typedef struct _world {
 
 World world_new_no_chunks(bool clientside);
 
-World world_new(const WorldType *world_type, float seed);
+// FIXME: Naming is bad: world_init <-> world_initialize
+
+
+void world_init(World *world, WorldId world_id, float seed);
 
 void world_initialize(World *world);
 
@@ -76,7 +80,3 @@ void world_add_being(World *world, BeingInstance being);
 
 // TODO: Use UUID at some point
 void world_remove_being(World *world, BeingInstance *being);
-
-void world_load(World *world, const DataMap *data);
-
-void world_save(const World *world, DataMap *data);

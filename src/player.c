@@ -1,4 +1,6 @@
 #include "../include/config.h"
+#include "../include/data/load.h"
+#include "../include/data/save.h"
 #include "../include/net/client.h"
 #include "../include/shared.h"
 #include "lilc/log.h"
@@ -7,34 +9,35 @@
 
 void player_init(Player *player) {
   player->direction = DIRECTION_DOWN;
-  player->last_broken_tile = &TILE_INSTANCE_EMPTY;
+  player->last_broken_tile = &TILE_INST_EMPTY;
   player->animation_frame = 0;
   player->frame_timer = 0;
-  player->held_item = (ItemInstance){.type = ITEMS[ITEM_DIRT]};
-  player->dragged_item = ITEM_INSTANCE_EMPTY;
+  player->held_item = (ItemInstance){.id = ITEM_DIRT};
+  player->dragged_item = ITEM_INST_EMPTY;
   player->box = (Rectf){.x = 0, .y = 20, .width = 16, .height = 8};
   player->chunk_pos = vec2i(0, 0);
   player->tile_pos = vec2i(0, 0);
   player->break_progress = -1;
-  player->break_tile = &TILE_INSTANCE_EMPTY;
+  player->break_tile = &TILE_INST_EMPTY;
   player->break_tile_pos = vec2i(0, 0);
 
   item_container_init(&player->inv_container, 9);
 }
 
-static const TextureHandle PLAYER_WALKING_TEXTURES[] = {TEX_PLAYER_BACK_WALK, TEX_PLAYER_FRONT_WALK, TEX_PLAYER_LEFT_WALK, TEX_PLAYER_RIGHT_WALK};
+static const TextureHandle PLAYER_WALKING_TEXTURES[] = {TEX_PLAYER_BACK_WALK, TEX_PLAYER_FRONT_WALK, TEX_PLAYER_LEFT_WALK,
+                                                        TEX_PLAYER_RIGHT_WALK};
 static const TextureHandle PLAYER_TEXTURES[] = {TEX_PLAYER_BACK, TEX_PLAYER_FRONT, TEX_PLAYER_LEFT, TEX_PLAYER_RIGHT};
 
 static Texture2D player_get_texture(PlayerRenderDescriptor *player) {
   TextureHandle handle;
-  
+
   if (player->walking) {
     handle = PLAYER_WALKING_TEXTURES[player->direction];
   } else {
     handle = PLAYER_TEXTURES[player->direction];
   }
 
-  return tex_by_handle(&CLIENT_GAME.asset_manager, handle);
+  return tex_by_handle(&CLIENT_GAME.asset_manager, handle).texture;
 }
 
 Vector2 player_pos(const Player *player) { return (Vector2){.x = player->box.x, .y = player->box.y}; }
@@ -107,7 +110,7 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool
   log_debug("setting position, x: %f, y: %f", x, y);
 
   if (check_for_water) {
-    player->in_water = world_ground_tile_at(CLIENT_WORLD, player->tile_pos)->type->id == TILE_WATER;
+    player->in_water = world_ground_tile_at(CLIENT_WORLD, player->tile_pos)->id == TILE_WATER;
     if (player->in_water) {
       x -= (x - player->box.x) / 2;
       y -= (y - player->box.y) / 2;
@@ -138,10 +141,16 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool
 
   if (walking_particles && GetRandomValue(0, 4) == 0) {
     TileInstance *tile = world_ground_tile_at(CLIENT_WORLD, player->tile_pos);
-    ParticleInstance *particle = client_emit_particle(
-        &CLIENT_GAME, x + GetRandomValue(-5, 7), y + GetRandomValue(-5, 7) + 27, PARTICLE_WALKING,
-        (ParticleInstanceEx){.type = PARTICLE_INSTANCE_WALKING,
-                             .var = {.tile_break = {.texture = tex_by_handle(&CLIENT_GAME.asset_manager, TEX_WALK_PARTICLES), .tint = tile->type->tile_props.tile_color}}});
+    TileProperties tile_props = CLIENT_GAME.game.registries.tiles[tile->id];
+
+    ParticleInstanceEx particle_info = {.type = PARTICLE_INSTANCE_WALKING,
+                                        .var = {.tile_break = {
+                                                    .texture = tex_by_handle(&CLIENT_GAME.asset_manager, TEX_WALK_PARTICLES).texture,
+                                                    .tint = tile_props.tile_color,
+                                                }}};
+
+    ParticleInstance *particle =
+        client_emit_particle(&CLIENT_GAME, x + GetRandomValue(-5, 7), y + GetRandomValue(-5, 7) + 27, PARTICLE_WALKING, particle_info);
     particle->lifetime /= 1.5;
     particle->velocity = vec2f(0, 0);
   }
@@ -198,7 +207,7 @@ static void check_collisions(const Player *player, Vec2f *player_pos, Vec2f play
     for (int x = -1; x <= 1; x++) {
       TilePos tile_pos = vec2i(player_tile_pos.x + x, player_tile_pos.y + y);
       TileInstance *tile = world_tile_at(CLIENT_WORLD, tile_pos, TILE_LAYER_TOP);
-      if (tile->type->id != TILE_EMPTY) {
+      if (tile->id != TILE_EMPTY) {
         Rectf tile_box = tile_collision_box_at(tile, tile_pos.x * TILE_SIZE, tile_pos.y * TILE_SIZE);
 
         if (CheckCollisionRecs(player_hitbox, tile_box)) {
@@ -286,7 +295,7 @@ void player_handle_movement(Player *player, bool w, bool a, bool s, bool d) {
 
 Rectf player_collision_box(const Player *player) { return rectf(player->box.x, player->box.y + 24, player->box.width, player->box.height); }
 
-void player_load(Player *player, DataMap *map) {
+void player_load(Player *player, const DataMap *map, DataContext ctx) {
   player->essence = data_map_get_or_default(map, "essence", data_int(0)).var.data_int;
   player->direction = data_map_get_or_default(map, "direction", data_int(0)).var.data_int;
   int x = data_map_get_or_default(map, "pos_x", data_int(0)).var.data_int;
@@ -298,35 +307,35 @@ void player_load(Player *player, DataMap *map) {
 
   if (data_map_contains(map, "held_item")) {
     DataMap held_item_map = data_map_get(map, "held_item").var.data_map;
-    item_load(&player->held_item, &held_item_map);
+    item_load(&player->held_item, &held_item_map, ctx);
   }
 
   if (data_map_contains(map, "dragged_item")) {
     DataMap dragged_item_map = data_map_get(map, "dragged_item").var.data_map;
-    item_load(&player->dragged_item, &dragged_item_map);
+    item_load(&player->dragged_item, &dragged_item_map, ctx);
   }
 
   if (data_map_contains(map, "inv")) {
     DataMap inv_map = data_map_get(map, "inv").var.data_map;
-    item_container_load(&player->inv_container, &inv_map);
+    item_container_load(&player->inv_container, &inv_map, ctx);
   }
 }
 
-void player_save(Player *player, DataMap *map) {
+void player_save(const Player *player, DataMap *map, DataContext ctx) {
   data_map_insert(map, "essence", data_int(player->essence));
   data_map_insert(map, "direction", data_int(player->direction));
   data_map_insert(map, "pos_x", data_int(player->box.x));
   data_map_insert(map, "pos_y", data_int(player->box.y));
 
   DataMap held_item_map = data_map_new(4);
-  item_save(&player->held_item, &held_item_map);
+  item_save(&player->held_item, &held_item_map, ctx);
   data_map_insert(map, "held_item", data_map(held_item_map));
 
   DataMap dragged_item_map = data_map_new(4);
-  item_save(&player->dragged_item, &dragged_item_map);
+  item_save(&player->dragged_item, &dragged_item_map, ctx);
   data_map_insert(map, "dragged_item", data_map(dragged_item_map));
 
   DataMap inv_map = data_map_new(4);
-  item_container_save(&player->inv_container, &inv_map);
+  item_container_save(&player->inv_container, &inv_map, ctx);
   data_map_insert(map, "inv", data_map(inv_map));
 }

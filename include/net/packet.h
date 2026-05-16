@@ -23,9 +23,9 @@ typedef struct {
   void *payload;
 } Packet;
 
-typedef void (*PacketEncodeFunc)(const Packet *, ByteBuf *buf);
+typedef void (*PacketEncodeFunc)(const Packet *, ByteBuf *, DataContext);
 
-typedef void (*PacketDecodeFunc)(Packet *, ByteBuf *buf);
+typedef void (*PacketDecodeFunc)(Packet *, ByteBuf *buf, DataContext);
 
 typedef void (*PacketHandleFunc)(const Packet *);
 

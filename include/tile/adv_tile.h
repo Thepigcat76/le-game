@@ -14,3 +14,5 @@ typedef struct {
     size_t index;
     TilePos tile_pos;
 } AdvTileInstance;
+
+void adv_tile_init(AdvTileInstance *tile_inst);

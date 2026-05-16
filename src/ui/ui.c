@@ -141,7 +141,7 @@ void ui_button_render(UiRenderer *renderer, ButtonUiComponent component) {
   TextureHandle texture = component.texture.present ? component.texture.texture_handle : TEX_BUTTON;
   TextureHandle selected_texture = component.selected_texture.present ? component.selected_texture.texture_handle : TEX_BUTTON_SELECTED;
 
-  cw_Texture tex = cw_tex_by_handle(renderer->asset_manager, texture);
+  cw_Texture tex = tex_by_handle(renderer->asset_manager, texture);
 
   if (component.width == 0) {
     component.width = tex.width;
@@ -160,8 +160,8 @@ void ui_button_render(UiRenderer *renderer, ButtonUiComponent component) {
   bool hovered = CheckCollisionPointRec(
       GetMousePosition(),
       (Rectangle){.x = renderer->cur_x, .y = renderer->cur_y, .width = component.width * scale, .height = component.height * scale});
-  Texture2D final_tex = tex_by_handle(renderer->asset_manager, hovered ? selected_texture : texture);
-  DrawTexturePro(final_tex, (Rectangle){.x = 0, .y = 0, .width = tex.width, .height = tex.height},
+  cw_Texture final_tex = tex_by_handle(renderer->asset_manager, hovered ? selected_texture : texture);
+  DrawTexturePro(final_tex.texture, (Rectangle){.x = 0, .y = 0, .width = tex.width, .height = tex.height},
                  (Rectangle){.x = renderer->cur_x + (component.width * scale) / 2,
                              .y = renderer->cur_y + (component.height * scale) / 2,
                              .width = component.width * scale,
@@ -217,7 +217,7 @@ void ui_text_render(UiRenderer *renderer, TextUiComponent component) {
 // TEXT INPUT
 
 void ui_text_input_render(UiRenderer *renderer, TextInputUiComponent component) {
-  cw_Texture tex = cw_tex_by_handle(renderer->asset_manager, component.texture.present ? component.texture.texture_handle : TEX_TEXT_INPUT);
+  cw_Texture tex = tex_by_handle(renderer->asset_manager, component.texture.present ? component.texture.texture_handle : TEX_TEXT_INPUT);
 
   if (component.width == 0) {
     component.width = tex.width;
@@ -234,9 +234,9 @@ void ui_text_input_render(UiRenderer *renderer, TextInputUiComponent component) 
   i32 x = renderer->cur_x + (component.width * scale) / 2;
   i32 y = renderer->cur_y + (component.height * scale) / 2;
 
-  Texture2D texture = tex_by_id(renderer->asset_manager, tex.id);
+  cw_Texture texture = tex_by_id(renderer->asset_manager, tex.id);
 
-  DrawTexturePro(texture, (Rectangle){.x = 0, .y = 0, .width = tex.width, .height = tex.height},
+  DrawTexturePro(texture.texture, (Rectangle){.x = 0, .y = 0, .width = tex.width, .height = tex.height},
                  (Rectangle){.x = x, .y = y, .width = component.width * scale, .height = component.height * scale},
                  (Vector2){.x = (component.width * scale) / 2, .y = (component.height * scale) / 2}, 0, WHITE);
 
@@ -305,10 +305,10 @@ void ui_slot_render(UiRenderer *renderer, SlotUiComponent component) {
     if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
       if (item_is_empty(&CLIENT_PLAYER->dragged_item)) {
         CLIENT_PLAYER->dragged_item = *component.item;
-        *component.item = ITEM_INSTANCE_EMPTY;
+        *component.item = ITEM_INST_EMPTY;
       } else if (item_is_empty(component.item)) {
         *component.item = CLIENT_PLAYER->dragged_item;
-        CLIENT_PLAYER->dragged_item = ITEM_INSTANCE_EMPTY;
+        CLIENT_PLAYER->dragged_item = ITEM_INST_EMPTY;
       } else {
         ItemInstance dragged_item = CLIENT_PLAYER->dragged_item;
         CLIENT_PLAYER->dragged_item = *component.item;
@@ -321,8 +321,8 @@ void ui_slot_render(UiRenderer *renderer, SlotUiComponent component) {
     item_render(component.item, renderer->cur_x, renderer->cur_y);
   }
 
-  Texture2D tex = tex_by_handle(renderer->asset_manager, TEX_SLOT);
-  DrawTextureEx(tex, vec2f(renderer->cur_x - 2 * ui_scale(renderer), renderer->cur_y - 2 * ui_scale(renderer)), 0,
+  cw_Texture tex = tex_by_handle(renderer->asset_manager, TEX_SLOT);
+  DrawTextureEx(tex.texture, vec2f(renderer->cur_x - 2 * ui_scale(renderer), renderer->cur_y - 2 * ui_scale(renderer)), 0,
                  ui_scale(renderer), WHITE);
 
   move(renderer, component.width, component.height);

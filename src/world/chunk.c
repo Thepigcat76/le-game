@@ -15,14 +15,15 @@
   chunk->variant_index = tile_variants_index_for_name(tex.path, 0, 0);
 */
 
+// TODO: Reenable this
 static void chunk_assign_dirt_variants(Chunk *chunk) {
-  cw_Texture tex = cw_tex_by_handle(&CLIENT_GAME.asset_manager, TEX_DIRT);
-  chunk->variant_index = tile_variants_index_for_name("res/assets/tex/dirt.png", 0, 0);
-  for (int y = 0; y < CHUNK_SIZE; y++) {
-    for (int x = 0; x < CHUNK_SIZE; x++) {
-      chunk->background_texture_variants[y][x] = GetRandomValue(0, tile_variants_amount_by_index(chunk->variant_index, 0, 0) - 1);
-    }
-  }
+  //cw_Texture tex = tex_by_handle(&CLIENT_GAME.asset_manager, TEX_DIRT);
+  //chunk->variant_index = tile_variants_index_for_name("res/assets/tex/dirt.png", 0, 0);
+  //for (int y = 0; y < CHUNK_SIZE; y++) {
+  //  for (int x = 0; x < CHUNK_SIZE; x++) {
+  //    chunk->background_texture_variants[y][x] = GetRandomValue(0, tile_variants_amount_by_index(chunk->variant_index, 0, 0) - 1);
+  //  }
+  //}
 }
 
 void chunk_empty(Chunk *chunk, ChunkPos chunk_pos, float world_seed) {
@@ -43,7 +44,7 @@ void chunk_gen(Chunk *chunk, ChunkPos chunk_pos, float world_seed) {
         float noise = (stb_perlin_noise3(fx, fy, 0.0f, 0, 0, 0) + 1) * 10.0;
         TileId tile_id;
         if (l == TILE_LAYER_GROUND) {
-          if (chunk->world_type->id == WORLD_BASE) {
+          if (chunk->world_id == WORLD_BASE) {
             if (noise > 5) {
               if (noise < 8) {
                 tile_id = TILE_DIRT;
@@ -53,14 +54,14 @@ void chunk_gen(Chunk *chunk, ChunkPos chunk_pos, float world_seed) {
             } else {
               tile_id = TILE_WATER;
             }
-          } else if (chunk->world_type->id == WORLD_DUNGEON_TEST) {
+          } else if (chunk->world_id == WORLD_DUNGEON_TEST) {
             if (noise > 4) {
               tile_id = TILE_DUNGEON_FLOOR;
             } else {
               tile_id = TILE_STONE;
             }
           } else {
-            PANIC_FMT("NYI World gen for type: %d", chunk->world_type->id);
+            PANIC_FMT("NYI World gen for type: %d", chunk->world_id);
           }
         } else {
           // if (noise > 9.9) {
@@ -69,7 +70,7 @@ void chunk_gen(Chunk *chunk, ChunkPos chunk_pos, float world_seed) {
           tile_id = TILE_EMPTY;
           //}
         }
-        chunk->tiles[y][x][l] = tile_new(&TILES[tile_id]);
+        tile_init(&chunk->tiles[y][x][l], tile_id);
       }
     }
   }
@@ -80,7 +81,7 @@ void chunk_gen(Chunk *chunk, ChunkPos chunk_pos, float world_seed) {
 }
 
 bool chunk_can_place_tile_on_layer(Chunk *chunk, TileInstance tile, int x, int y, TileLayer layer) {
-  if (chunk->tiles[y][x][layer].type->id == tile.type->id) {
+  if (chunk->tiles[y][x][layer].id == tile.id) {
     return false; // No need to update if the tile is the same
   }
 
@@ -112,7 +113,7 @@ void chunk_load(Chunk *chunk, const DataMap *data) {
       for (int x = 0; x < CHUNK_SIZE; x++) {
         int8_t id = list.items[y * CHUNK_SIZE + x].var.data_byte;
 
-        chunk->tiles[y][x][l] = tile_new(&TILES[id]);
+        tile_init(&chunk->tiles[y][x][l], id);
         // TileInstance *tile = &chunk->tiles[y][x];
         // if (TILES[tile_id].stores_custom_data) {
         //   char custom_data[length + 13 + 1];
@@ -136,7 +137,7 @@ void chunk_save(const Chunk *chunk, DataMap *data) {
 
         const TileInstance *tile = &chunk->tiles[y][x][l];
         // Insert with a duplicated/copy string if needed
-        data_list_add(&tiles, data_byte(tile->type->id));
+        data_list_add(&tiles, data_byte(tile->id));
 
         // if (tile->type.stores_custom_data) {
         //   char custom_data[length + 13 + 1];

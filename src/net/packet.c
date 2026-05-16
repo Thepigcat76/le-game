@@ -1,5 +1,7 @@
 #include "../../include/net/packet.h"
 #include "../../include/data/bytebuf_ex.h"
+#include "../../include/data/load.h"
+#include "../../include/data/save.h"
 #include "../../include/net/client.h"
 #include "../../include/net/payloads.h"
 #include "../../include/net/server.h"
@@ -22,26 +24,26 @@ static void packet_add(PacketId id, PacketEncodeFunc encode_func, PacketDecodeFu
 
 /* PLAYER-JOIN */
 
-static void packet_player_join_encode(const Packet *packet, ByteBuf *buf) {
+static void packet_player_join_encode(const Packet *packet, ByteBuf *buf, DataContext ctx) {
   PayloadPlayerJoin *payload = packet->payload;
 
   i32 player_id = payload->player_id;
   byte_buf_write_int(buf, player_id);
 
   DataMap player_map = data_map_new(200);
-  player_save(&payload->player, &player_map);
+  player_save(&payload->player, &player_map, (DataContext){.registries = ctx.registries});
   Data player_data = data_map(player_map);
   byte_buf_write_data(buf, &player_data);
 }
 
-static void packet_player_join_decode(Packet *packet, ByteBuf *buf) {
+static void packet_player_join_decode(Packet *packet, ByteBuf *buf, DataContext ctx) {
   PayloadPlayerJoin *payload = packet->payload;
 
   payload->player_id = byte_buf_read_int(buf);
 
   DataMap player_map = byte_buf_read_data(buf).var.data_map;
   player_init(&payload->player);
-  player_load(&payload->player, &player_map);
+  player_load(&payload->player, &player_map, (DataContext){.registries = ctx.registries});
 }
 
 static void packet_player_join_handle(const Packet *packet) {
@@ -64,18 +66,18 @@ static void packet_player_join_handle(const Packet *packet) {
 
 /* SYNC-SPACE */
 
-static void packet_sync_space_encode(const Packet *packet, ByteBuf *buf) {
+static void packet_sync_space_encode(const Packet *packet, ByteBuf *buf, DataContext ctx) {
   PayloadSyncSpace *payload = packet->payload;
 
   Space space = payload->space;
   space.desc.external = true;
-  space_encode(&space, buf);
+  space_encode(&space, buf, ctx);
 }
 
-static void packet_sync_space_decode(Packet *packet, ByteBuf *buf) {
+static void packet_sync_space_decode(Packet *packet, ByteBuf *buf, DataContext ctx) {
   PayloadSyncSpace *payload = packet->payload;
 
-  space_decode(&payload->space, buf);
+  space_decode(&payload->space, buf, ctx);
 }
 
 static void packet_sync_space_handle(const Packet *packet) {
@@ -106,14 +108,14 @@ static void packet_sync_space_handle(const Packet *packet) {
 
 /* CLIENT-ACCEPTED */
 
-static void packet_client_accepted_encode(const Packet *packet, ByteBuf *buf) {
+static void packet_client_accepted_encode(const Packet *packet, ByteBuf *buf, DataContext ctx) {
   PayloadClientAccepted *payload = packet->payload;
 
   i32 player_id = payload->player_id;
   byte_buf_write_int(buf, player_id);
 }
 
-static void packet_client_accepted_decode(Packet *packet, ByteBuf *buf) {
+static void packet_client_accepted_decode(Packet *packet, ByteBuf *buf, DataContext ctx) {
   PayloadClientAccepted *payload = packet->payload;
 
   payload->player_id = byte_buf_read_int(buf);
@@ -129,7 +131,7 @@ static void packet_client_accepted_handle(const Packet *packet) {
 
 /* CLIENT-CONNECT */
 
-static void packet_client_connect_encode(const Packet *packet, ByteBuf *buf) {
+static void packet_client_connect_encode(const Packet *packet, ByteBuf *buf, DataContext ctx) {
   PayloadClientConnect *payload = packet->payload;
 
   i32 player_id = payload->player_id;
@@ -139,7 +141,7 @@ static void packet_client_connect_encode(const Packet *packet, ByteBuf *buf) {
   byte_buf_write_string(buf, client_name);
 }
 
-static void packet_client_connect_decode(Packet *packet, ByteBuf *buf) {
+static void packet_client_connect_decode(Packet *packet, ByteBuf *buf, DataContext ctx) {
   PayloadClientConnect *payload = packet->payload;
 
   payload->player_id = byte_buf_read_int(buf);
@@ -172,7 +174,7 @@ static void packet_client_connect_handle(const Packet *packet) {
 
 /* CLIENT-CONNECTED */
 
-static void packet_client_connected_encode(const Packet *packet, ByteBuf *buf) {
+static void packet_client_connected_encode(const Packet *packet, ByteBuf *buf, DataContext ctx) {
   PayloadClientConnected *payload = packet->payload;
 
   i32 player_id = payload->new_player_id;
@@ -182,7 +184,7 @@ static void packet_client_connected_encode(const Packet *packet, ByteBuf *buf) {
   byte_buf_write_string(buf, client_name);
 }
 
-static void packet_client_connected_decode(Packet *packet, ByteBuf *buf) {
+static void packet_client_connected_decode(Packet *packet, ByteBuf *buf, DataContext ctx) {
   PayloadClientConnected *payload = packet->payload;
 
   payload->new_player_id = byte_buf_read_int(buf);
@@ -200,14 +202,14 @@ static void packet_client_connected_handle(const Packet *packet) {
 
 /* CLIENT-DISCONNECT */
 
-static void packet_client_disconnect_encode(const Packet *packet, ByteBuf *buf) {
+static void packet_client_disconnect_encode(const Packet *packet, ByteBuf *buf, DataContext ctx) {
   PayloadClientDisconnect *payload = packet->payload;
 
   i32 player_id = payload->player_id;
   byte_buf_write_int(buf, player_id);
 }
 
-static void packet_client_disconnect_decode(Packet *packet, ByteBuf *buf) {
+static void packet_client_disconnect_decode(Packet *packet, ByteBuf *buf, DataContext ctx) {
   PayloadClientDisconnect *payload = packet->payload;
 
   payload->player_id = byte_buf_read_int(buf);
@@ -261,10 +263,17 @@ void packet_send(i32 addr, PacketId id, void *payload) {
 
   packet_log(GAME_SIDE == SIDE_CLIENT ? &CLIENT_GAME.packet_logger : &SERVER_GAME.packet_logger, &packet, !GAME_SIDE);
 
+  DataContext ctx;
+  if (GAME_SIDE == SIDE_CLIENT) {
+    ctx.registries = &CLIENT_GAME.game.registries;
+  } else {
+    ctx.registries = &SERVER_GAME.game.registries;
+  }
+
   u8 bytes[128000];
   ByteBuf buf = {.writer_index = 0, .reader_index = 0, .capacity = 128000, .bytes = bytes};
   byte_buf_write_int(&buf, id);
-  info.encode_func(&packet, &buf);
+  info.encode_func(&packet, &buf, ctx);
   // Send: 2-byte length + data
   u16 len = buf.writer_index;
   u8 header[2] = {len >> 8, len & 0xFF};
@@ -306,9 +315,16 @@ void packet_receive(i32 addr, Packet *packet) {
   PacketId id = byte_buf_read_int(&buf);
   packet->id = id;
 
+  DataContext ctx;
+  if (GAME_SIDE == SIDE_CLIENT) {
+    ctx.registries = &CLIENT_GAME.game.registries;
+  } else {
+    ctx.registries = &SERVER_GAME.game.registries;
+  }
+
   PacketInfo packet_info = PACKET_INFOS[id];
   packet_alloc(packet);
-  packet_info.decode_func(packet, &buf);
+  packet_info.decode_func(packet, &buf, ctx);
 
   packet_log(GAME_SIDE == SIDE_CLIENT ? &CLIENT_GAME.packet_logger : &SERVER_GAME.packet_logger, packet, GAME_SIDE);
 
