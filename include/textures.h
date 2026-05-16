@@ -2,6 +2,7 @@
 
 #include "assets.h"
 #include "registry.h"
+#include "tile.h"
 
 /* ANIMATION MANAGER */
 
@@ -21,9 +22,24 @@ typedef struct {
   AnimatedTexture *animated_textures;
 } AnimationManager;
 
+/* TILE TEXTURE MANAGER */
+
+typedef struct {
+  i32 predicates[8];
+  i32 predicates_amount;
+  i32 ignored_tiles[8];
+  i32 ignored_tiles_amount;
+  Vec2i sprite_pos;
+} Connection;
+
 typedef struct {
   // Index for this is TileId, total amount is _amount_tile_ids
   VariantTexture *tile_variant_textures;
+
+  // Connected textures
+  Vec2i default_sprite_pos;
+  u32 default_resolution;
+  Connection *connections;
 } TileTextureManager;
 
 /* ANIMATION MANAGER */
@@ -45,3 +61,5 @@ void tile_tex_manager_load(TileTextureManager *tile_tex_manager, const RegistryM
 void tile_tex_manager_unload(TileTextureManager *tile_tex_manager, const RegistryManager *registries, const AssetManager *asset_manager);
 
 cw_Texture tile_tex(TileId id, TilePos tile_pos, f32 seed, const TileTextureManager *tile_texs, const RegistryManager *registries, const AssetManager *asset_manager);
+
+void tile_calc_sprite_box(TileInstance *tile);

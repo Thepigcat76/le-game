@@ -6,149 +6,122 @@
 #include "lilc/log.h"
 #include <dirent.h>
 #include <lilc/alloc.h>
+#include <lilc/array.h>
 #include <lilc/file.h>
+#include <math.h>
 #include <raylib.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
-
-static void init_connected_info(void);
-
-static void init_tile_variants(void);
-
-static void debug_variant_info(void);
-
-static void on_tile_variants_reload(void);
-
-void tiles_reload(ClientGame *client) { init_connected_info(); }
 
 // -- CONNECTED TEXTURES --
 
-typedef struct {
-  i32 predicates[8];
-  i32 predicates_amount;
-  i32 ignored_tiles[8];
-  i32 ignored_tiles_amount;
-  Vec2i sprite_pos;
-} Connection;
-
-typedef struct {
-  u32 res;
-  Vec2i default_sprite_pos;
-  Connection connections[256];
-  size_t connections_amount;
-} ConnectedInfo;
-
-static ConnectedInfo CONNECTED_INFO = {0};
-
-static void init_connected_info(void) {
-  ConnectedInfo info = {0};
+static void connected_info_load(TileTextureManager *tile_tex_manager, const char *file_path) {
   dyn_string_t file = file_read_to_string("res/assets/connected.json", &HEAP_ALLOCATOR);
   cJSON *json = cJSON_Parse(file.string);
   if (json == NULL) {
-    printf("Error parsing JSON\n");
-    exit(1);
+    log_error("Error parsing connected texture info file at: %s", file_path);
+    return;
   }
 
   cJSON *res = cJSON_GetObjectItemCaseSensitive(json, "res");
-  cJSON *default_sprite_pos = cJSON_GetObjectItemCaseSensitive(json, "default");
-  cJSON *values = cJSON_GetObjectItemCaseSensitive(json, "values");
-
   if (cJSON_IsNumber(res)) {
-    info.res = res->valueint;
+    tile_tex_manager->default_resolution = res->valueint;
   }
 
+  cJSON *default_sprite_pos = cJSON_GetObjectItemCaseSensitive(json, "default");
   if (cJSON_IsArray(default_sprite_pos)) {
     cJSON *x = cJSON_GetArrayItem(default_sprite_pos, 0);
     cJSON *y = cJSON_GetArrayItem(default_sprite_pos, 1);
     if (cJSON_IsNumber(x) && cJSON_IsNumber(y)) {
-      info.default_sprite_pos = vec2i(x->valueint, y->valueint);
+      tile_tex_manager->default_sprite_pos = vec2i(x->valueint, y->valueint);
     } else {
-      printf("Failed to get default sprite pos");
+      log_error("Failed to get default sprite pos");
       exit(1);
     }
   }
 
+  if (tile_tex_manager->connections == NULL) {
+    tile_tex_manager->connections = array_new_capacity(Connection, 128, &HEAP_ALLOCATOR);
+  }
+
+  cJSON *values = cJSON_GetObjectItemCaseSensitive(json, "values");
   if (cJSON_IsArray(values)) {
-    int size = cJSON_GetArraySize(values);
-    size_t index = 0;
-    for (int i = 0; i < size; i++) {
-      cJSON *entry = cJSON_GetArrayItem(values, i);
+
+    cJSON *entry;
+    cJSON_ArrayForEach(entry, values) {
+      Connection connection = {0};
+
       if (cJSON_IsString(entry)) {
-        if (strncmp(entry->valuestring, "_comment", 8) == 0) {
-          continue;
-        } else {
+        if (strncmp(entry->valuestring, "_comment", 8) != 0) {
           log_error("Invalid json element in connected.json: %s", entry->valuestring);
-          exit(1);
         }
+        continue;
       }
-      cJSON *tiles = cJSON_GetObjectItemCaseSensitive(entry, "tiles");
-      cJSON *value = cJSON_GetObjectItemCaseSensitive(entry, "value");
+
       if (cJSON_HasObjectItem(entry, "ignored_tiles")) {
         cJSON *ignored = cJSON_GetObjectItemCaseSensitive(entry, "ignored_tiles");
-        int j = 0;
+        i32 j = 0;
         cJSON *elem;
         cJSON_ArrayForEach(elem, ignored) {
           if (cJSON_IsNumber(elem)) {
-            info.connections[index].ignored_tiles[j] = elem->valueint;
+            connection.ignored_tiles[j] = elem->valueint;
             j++;
+          } else {
+            log_error("[connected.json] Ignored entries are expected to be integers");
+            continue;
           }
         }
-        info.connections[index].ignored_tiles_amount = j;
+        connection.ignored_tiles_amount = j;
       }
 
+      cJSON *tiles = cJSON_GetObjectItemCaseSensitive(entry, "tiles");
       if (cJSON_IsArray(tiles)) {
-        int size = cJSON_GetArraySize(tiles);
-        for (int j = 0; j < size; j++) {
+        i32 size = cJSON_GetArraySize(tiles);
+        for (i32 j = 0; j < size; j++) {
           cJSON *entry = cJSON_GetArrayItem(tiles, j);
 
           if (cJSON_IsNumber(entry)) {
-            info.connections[index].predicates[j] = entry->valueint;
+            connection.predicates[j] = entry->valueint;
           } else {
+            log_error("[connected.json] Predicate entries are expected to be integers");
+            continue;
           }
-          info.connections[index].predicates_amount = size;
+          connection.predicates_amount = size;
         }
       }
 
       Vec2i value_pos;
+
+      cJSON *value = cJSON_GetObjectItemCaseSensitive(entry, "value");
+
+      bool valid_sprite_pos = false;
 
       if (cJSON_IsArray(value)) {
         cJSON *x = cJSON_GetArrayItem(value, 0);
         cJSON *y = cJSON_GetArrayItem(value, 1);
         if (cJSON_IsNumber(x) && cJSON_IsNumber(y)) {
           value_pos = vec2i(x->valueint, y->valueint);
-        } else {
-          printf("Failed to get sprite pos, values index: %d", i);
-          exit(1);
+          valid_sprite_pos = true;
         }
       }
 
-      info.connections[index].sprite_pos = value_pos;
-      index++;
+      if (!valid_sprite_pos) {
+        log_error("[connected.json] Sprite pos needs to be array of integers");
+        continue;
+      }
+
+      connection.sprite_pos = value_pos;
+
+      array_add(tile_tex_manager->connections, connection);
     }
-    info.connections_amount = size;
   }
-
-  // DEBUG ignored tiles
-  // for (int i = 0; i < info.connections_amount; i++) {
-  //  Connection *connection = &info.connections[i];
-  //  if (connection->ignored_tiles_amount > 0) {
-  //    TraceLog(LOG_DEBUG, "!!Ignored tiles for %d %d!!", connection->sprite_pos.x, connection->sprite_pos.y);
-  //    for (int j = 0; j < connection->ignored_tiles_amount; j++) {
-  //      int ignored_tile = connection->ignored_tiles[j];
-  //      TraceLog(LOG_DEBUG, "%d", ignored_tile);
-  //    }
-  //  }
-  //}
-
-  CONNECTED_INFO = info;
 
   cJSON_Delete(json);
   dyn_string_free(&file);
 }
 
-static bool tile_is_ignored(int *ignored_tiles, int ignored_tiles_amount, int ignored_index) {
-  for (int i = 0; i < ignored_tiles_amount; i++) {
+static bool tile_is_ignored(const i32 *ignored_tiles, i32 ignored_tiles_amount, i32 ignored_index) {
+  for (i32 i = 0; i < ignored_tiles_amount; i++) {
     if (ignored_tiles[i] == ignored_index) {
       return true;
     }
@@ -156,17 +129,17 @@ static bool tile_is_ignored(int *ignored_tiles, int ignored_tiles_amount, int ig
   return false;
 }
 
-static void indices_arr_to_bool_arr(int *indices, int indices_amount, bool *arr, int arr_size) {
-  for (int i = 0; i < indices_amount; i++) {
-    int idx = indices[i];
+static void indices_arr_to_bool_arr(const i32 *indices, i32 indices_amount, bool *arr, i32 arr_size) {
+  for (i32 i = 0; i < indices_amount; i++) {
+    i32 idx = indices[i];
     if (idx >= 0 && idx < arr_size) {
       arr[idx] = true;
     }
   }
 }
 
-static bool cmp_same_tiles(bool *expected_same_tiles, bool *physical_same_tiles, int *ignored_tiles, int ignored_tiles_amount) {
-  for (int i = 0; i < 8; i++) {
+static bool cmp_same_tiles(bool *expected_same_tiles, bool *physical_same_tiles, const i32 *ignored_tiles, i32 ignored_tiles_amount) {
+  for (i32 i = 0; i < 8; i++) {
     if (tile_is_ignored(ignored_tiles, ignored_tiles_amount, i))
       continue;
 
@@ -177,27 +150,26 @@ static bool cmp_same_tiles(bool *expected_same_tiles, bool *physical_same_tiles,
   return true;
 }
 
-static bool indices_true_and_other_false(bool *physical_same_tiles, int *indices, int indices_amount, int *ignored, int ignored_amount,
-                                         int size) {
+// Checks if if the predicates for a function match
+static bool predicates_match(bool *physical_same_tiles, const Connection *connection) {
   bool expected_same_tiles[8] = {false};
-  indices_arr_to_bool_arr(indices, indices_amount, expected_same_tiles, 8);
-  bool same_tiles = cmp_same_tiles(expected_same_tiles, physical_same_tiles, ignored, ignored_amount);
+  indices_arr_to_bool_arr(connection->predicates, connection->predicates_amount, expected_same_tiles, 8);
+  bool same_tiles = cmp_same_tiles(expected_same_tiles, physical_same_tiles, connection->ignored_tiles, connection->ignored_tiles_amount);
   return same_tiles;
 }
 
-static Rectangle sprite_rect(int x, int y) { return (Rectangle){.x = x, .y = y, .width = 16, .height = 16}; }
+static Rectangle sprite_rect(i32 x, i32 y) { return (Rectangle){.x = x, .y = y, .width = 16, .height = 16}; }
 
-static Rectangle select_tile(bool *same_tile) {
-  for (size_t i = 0; i < CONNECTED_INFO.connections_amount; i++) {
-    Connection connection = CONNECTED_INFO.connections[i];
-    if (indices_true_and_other_false(same_tile, connection.predicates, connection.predicates_amount, connection.ignored_tiles,
-                                     connection.ignored_tiles_amount, 8)) {
-      return sprite_rect(connection.sprite_pos.x, connection.sprite_pos.y);
+static Rectangle select_tile(const TileTextureManager *tex_manager, bool *same_tile) {
+  Connection *connection;
+  array_foreach(tex_manager->connections, connection) {
+    if (predicates_match(same_tile, connection)) {
+      return sprite_rect(connection->sprite_pos.x, connection->sprite_pos.y);
     }
   }
 
   log_error("Failed to select tile box");
-  return sprite_rect(CONNECTED_INFO.default_sprite_pos.x, CONNECTED_INFO.default_sprite_pos.y);
+  return sprite_rect(tex_manager->default_sprite_pos.x, tex_manager->default_sprite_pos.y);
 }
 
 void tile_calc_sprite_box(TileInstance *tile) {
@@ -215,13 +187,9 @@ void tile_calc_sprite_box(TileInstance *tile) {
     same_tile[5] = texture_data[5] == self_id;
     same_tile[6] = texture_data[6] == self_id;
     same_tile[7] = texture_data[7] == self_id;
-    tile->cur_sprite_box = select_tile(same_tile);
+    tile->cur_sprite_box = select_tile(&CLIENT_GAME.tile_tex_manager, same_tile);
   }
 }
-
-Vec2i tile_default_sprite_pos() { return CONNECTED_INFO.default_sprite_pos; }
-
-int tile_default_sprite_resolution() { return CONNECTED_INFO.res; }
 
 // -- TEXTURE VARIANTS --
 
@@ -229,6 +197,8 @@ void tile_tex_manager_load(TileTextureManager *tile_tex_manager, const RegistryM
   if (tile_tex_manager->tile_variant_textures == NULL) {
     tile_tex_manager->tile_variant_textures = array_new(VariantTexture, &HEAP_ALLOCATOR);
   }
+
+  connected_info_load(tile_tex_manager, "res/assets/connected.json");
 
   TileProperties *tile;
   array_foreach(registries->tiles, tile) {
@@ -240,7 +210,7 @@ void tile_tex_manager_load(TileTextureManager *tile_tex_manager, const RegistryM
     if (tex.has_meta_info && meta_info.has_variants) {
       var_tex.kind = TEX_VAR_SINGLE;
       var_tex.variants = array_new(AssetId, &asset_manager->asset_bump_allocator);
-      
+
       char **variant_path;
       array_foreach(meta_info.variant_paths, variant_path) {
         cw_Texture tex = tex_by_tex_path(asset_manager, *variant_path);
@@ -257,10 +227,11 @@ void tile_tex_manager_load(TileTextureManager *tile_tex_manager, const RegistryM
 
 void tile_tex_manager_unload(TileTextureManager *tile_tex_manager, const RegistryManager *registries, const AssetManager *asset_manager) {
   array_clear(tile_tex_manager->tile_variant_textures);
+  array_clear(tile_tex_manager->connections);
 }
 
 cw_Texture tile_tex(TileId id, TilePos tile_pos, f32 world_seed, const TileTextureManager *tile_texs, const RegistryManager *registries,
-                   const AssetManager *asset_manager) {
+                    const AssetManager *asset_manager) {
   // We are just indexing arrays here, both operations should be relatively cheap
   TileProperties tile_props = registries->tiles[id];
 
@@ -276,11 +247,11 @@ cw_Texture tile_tex(TileId id, TilePos tile_pos, f32 world_seed, const TileTextu
 
     size_t variants = array_len(tile_texs->tile_variant_textures[id].variants);
 
-    f32 raw_noise = (stb_perlin_noise3(fx, fy, 0.0f, 0, 0, 0) + 1);
+    f32 raw_noise = stb_perlin_noise3(fx, fy, 0.0f, 0, 0, 0) + 1.0f;
     raw_noise = fminf(1.0f, fmaxf(0.0f, raw_noise));
     f32 noise = raw_noise * (variants - 1);
 
-    return tex_by_id(asset_manager, var_tex.variants[(i32) noise]);
+    return tex_by_id(asset_manager, var_tex.variants[(i32)noise]);
   }
 
   return tex;

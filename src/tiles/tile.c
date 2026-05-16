@@ -61,8 +61,8 @@ void tile_init(TileInstance *tile_inst, TileId id) {
 
   if (client && id != TILE_EMPTY) {
     TileProperties tile_props = CLIENT_GAME.game.registries.tiles[id];
-    Vec2i default_pos = tile_default_sprite_pos();
-    int default_sprite_res = tile_default_sprite_resolution();
+    Vec2i default_pos = CLIENT_GAME.tile_tex_manager.default_sprite_pos;
+    int default_sprite_res = CLIENT_GAME.tile_tex_manager.default_resolution;
 
     cw_Texture tex = tex_by_id(&CLIENT_GAME.asset_manager, tile_props.texture);
 

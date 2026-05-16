@@ -17,19 +17,6 @@ void item_render(const ItemInstance *item, int x, int y) {
   }
 }
 
-ItemId item_from_str(const char *item_iteral, RegistryManager *m) {
-  if (item_iteral == NULL)
-    return ITEM_EMPTY;
-
-  // FIXME: Readd once registry stuff is done
-  // for (int i = 0; i < ITEMS_AMOUNT; i++) {
-  //   if (strcmp(item_iteral, item_type_to_string(&ITEMS[i])))
-  //     return &ITEMS[i];
-  // }
-
-  return ITEM_EMPTY;
-}
-
 void item_tooltip(const ItemInstance *item, char *buf, size_t buf_capacity) {
   switch (item->id) {
   case ITEM_TORCH: {

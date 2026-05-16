@@ -1,6 +1,7 @@
 #include "../../include/chunk.h"
 #include "../../include/game.h"
 #include "../../include/net/client.h"
+#include "lilc/panic.h"
 #ifndef _WIN32
 #define STB_PERLIN_IMPLEMENTATION
 #endif
@@ -61,7 +62,7 @@ void chunk_gen(Chunk *chunk, ChunkPos chunk_pos, float world_seed) {
               tile_id = TILE_STONE;
             }
           } else {
-            PANIC_FMT("NYI World gen for type: %d", chunk->world_id);
+            panic("NYI World gen for type: %d", chunk->world_id);
           }
         } else {
           // if (noise > 9.9) {

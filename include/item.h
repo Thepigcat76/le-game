@@ -17,6 +17,4 @@ int item_break_speed(const ItemProperties *type);
 
 int item_attack_damage(const ItemProperties *type);
 
-ItemId item_from_str(const char *item_iteral, RegistryManager *registries);
-
 bool item_is_empty(ItemInstance *item);

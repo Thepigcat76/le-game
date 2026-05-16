@@ -18,8 +18,6 @@ ClientGame CLIENT_GAME = {0};
 
 static Music MUSIC;
 
-static Bump SOUND_BUMP;
-
 static void client_game_start(void);
 
 static void client_poll_keybinds(ClientGame *client);

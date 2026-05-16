@@ -10,8 +10,6 @@ void common_reload(Game *game);
 
 /* CLIENT */
 
-void tiles_reload(ClientGame *client);
-
 void keybinds_reload(ClientGame *client);
 
 /* REACTIONARY-FUNCTIONS */

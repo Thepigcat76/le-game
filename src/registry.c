@@ -2,6 +2,7 @@
 #include <lilc/alloc.h>
 #include <lilc/array.h>
 #include <limits.h>
+#include <dlfcn.h>
 
 #define register_item(m, _id, ...)                                                                                                         \
   do {                                                                                                                                     \
@@ -127,6 +128,8 @@ static void tiles_init(RegistryManager *m) {
 
 static void registry_manager_init(RegistryManager *manager);
 
+typedef void (*PrintTestFunc)(void);
+
 void registries_load(RegistryManager *manager) {
   if (!manager->initialized) {
     registry_manager_init(manager);
@@ -134,6 +137,24 @@ void registries_load(RegistryManager *manager) {
 
   items_init(manager);
   tiles_init(manager);
+
+  void *h = dlopen("./build/libfoo.so", RTLD_NOW);
+  if (!h) {
+    fprintf(stderr, "dlopen: %s\n", dlerror());
+    exit(1);
+  }
+
+  dlerror();
+  PrintTestFunc print_test_func = (PrintTestFunc)dlsym(h, "print_test");
+  const char *err = dlerror();
+  if (err) {
+    fprintf(stderr, "dlsym: %s\n", err);
+    exit(1);
+  }
+
+  print_test_func();
+
+  dlclose(h);
 }
 
 void registries_unload(RegistryManager *manager) {}

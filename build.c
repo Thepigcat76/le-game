@@ -195,6 +195,7 @@ int main(int argc, char **argv) {
   bool recompile_dynamic = args_contains(argc, argv, "recompile-dynamic") != -1;
 
   if (recompile_dynamic) {
+    printf("RECOMPILED DYNAMIC GAME CONTENT\n");
     return recompile_dynamic_files();
   }
 

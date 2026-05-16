@@ -25,8 +25,6 @@ typedef struct {
     TEX_VAR_CONNECTED,
   } kind;
   AssetId *variants;
-  //SingleTileVariant single_tile_var;
-  //ConnectedTileVariant connnected_tile_var;
 } VariantTexture;
 
 typedef enum {

@@ -18,7 +18,6 @@ void client_reload(ClientGame *client) {
   assets_load(&client->asset_manager);
   animation_manager_load(&client->tex_manager, &client->asset_manager);
 
-  tiles_reload(client);
   keybinds_reload(client);
 
   world_on_reload(client);

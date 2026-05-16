@@ -22,7 +22,9 @@ void space_types_init(void) {
 void space_init(Space *space, SpaceDescriptor desc, float seed) {
   space->desc = desc;
   printf("Creating space - Seed: %f, type: %p\n", seed, desc.type);
-  world_init(&space->world, desc.type->world_id, seed);
+
+  // FIXME: Use actual world id again
+  world_init(&space->world, WORLD_BASE, seed);
   if (!desc.external) {
     world_gen(&space->world);
   }

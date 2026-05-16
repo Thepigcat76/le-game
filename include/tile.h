@@ -35,11 +35,3 @@ void tile_right_click(TileInstance *tile);
 TileInstance tile_break_remainder(const TileInstance *tile, TilePos pos);
 
 void tile_tick(TileInstance *tile);
-
-// CONNECTED TEXTURES
-
-Vec2i tile_default_sprite_pos(void);
-
-i32 tile_default_sprite_resolution(void);
-
-void tile_calc_sprite_box(TileInstance *tile);
