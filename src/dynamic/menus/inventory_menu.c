@@ -1,7 +1,7 @@
 #include "menu_includes.h"
 #include <raylib.h>
 
-void inventory_menu_render(UiRenderer *renderer, const ClientGame *game) {
+void inventory_menu_render(UiRenderer *renderer, ClientGame *game) {
   UI_SETUP({
       .positions = {UI_CENTER, UI_CENTER},
       .alignment = UI_VERTICAL,

@@ -68,7 +68,7 @@ void texture_handles_assign_id(AssetManager *m) {
   TEX_IDS[TEX_PLAYER_LEFT] = tex_asset_id(m, "player_left");
   TEX_IDS[TEX_PLAYER_RIGHT] = tex_asset_id(m, "player_right");
 
-  TEX_IDS[TEX_WATER_OVERLAY] = tex_asset_id(m, "water_overlay");
+  TEX_IDS[TEX_WATER_OVERLAY] = tex_asset_id(m, "water_animation_player");
 
   TEX_IDS[TEX_BUILDING_SHOP] = tex_asset_id(m, "building_shop");
 

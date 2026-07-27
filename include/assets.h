@@ -19,12 +19,16 @@
 typedef struct {
   char **variant_paths;
   bool has_variants;
+  
   struct {
     size_t frames;
     u32 frame_time;
     u32 frame_height;
   } animation;
   bool has_animation;
+
+  u32 nine_slice_border;
+  bool is_nine_slice;
 } TextureMetaInfo;
 
 typedef struct {

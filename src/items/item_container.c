@@ -33,9 +33,9 @@ void item_container_insert(ItemContainer *container, ItemInstance item) {
 
 // TODO: Might want to just write a data list
 void item_container_save(const ItemContainer *item_container, DataMap *data, DataContext ctx) {
-  DataList data_list_items = data_list_new(item_container->slots);
+  DataList data_list_items = data_list_new(item_container->slots, &HEAP_ALLOCATOR);
   for (size_t i = 0; i < item_container->slots; i++) {
-    DataMap item_data = data_map_new(4);
+    DataMap item_data = data_map_new(4, &HEAP_ALLOCATOR);
     item_save(&item_container->items[i], &item_data, ctx);
     data_list_add(&data_list_items, data_map(item_data));
   }

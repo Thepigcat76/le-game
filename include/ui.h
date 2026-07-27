@@ -22,7 +22,7 @@ typedef struct {
   i32 screen_height;
 } UiContext;
 
-typedef struct {
+typedef struct _ui_renderer {
   i32 cur_x;
   i32 cur_y;
   i32 ui_width;

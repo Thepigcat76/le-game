@@ -1,19 +1,11 @@
-#include "lilc/array.h"
 #include "../include/game.h"
 #include "../include/net/client.h"
+#include "lilc/array.h"
 #include <dirent.h>
 #include <raylib.h>
 #include <stdint.h>
 
 GameSide GAME_SIDE;
-
-// TODO: FIX REGISTRY SETUP
-void game_registry_setup(void) {
-  // Items need to be done before tiles,
-  // cuz tiles reference the items
-  //world_types_init();
-  space_types_init();
-}
 
 void game_categories_setup(Game *game) {
   category_add(&game->tile_categories, CATEGORY_STONE, TILE_STONE);
@@ -34,4 +26,5 @@ void game_enter_space(Game *game, SpaceDescriptor desc) {
   array_add(game->cur_save.loaded_spaces, space);
   Space *new_space = &game->cur_save.loaded_spaces[array_len(game->cur_save.loaded_spaces) - 1];
   CLIENT_GAME.world = &new_space->world;
+  CLIENT_GAME.space = new_space;
 }

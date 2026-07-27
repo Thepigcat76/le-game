@@ -139,7 +139,7 @@ void game_create_save(Game *game, SaveDescriptor save_desc) {
   player_init(&player);
   game->client_game->cur_player = player;
   //array_add(game->cur_save.players, player);
-  array_add(game->cur_save.spaces, (SpaceDescriptor){.type = &SPACES[SPACE_BASE], .id = 0});
+  array_add(game->cur_save.spaces, (SpaceDescriptor){.space_id = SPACE_BASE, .id = 0});
   Space default_space;
   printf("Save Seed: %f\n", save_desc.config.seed);
   space_init_default(&default_space, save_desc.config.seed);
@@ -147,4 +147,5 @@ void game_create_save(Game *game, SaveDescriptor save_desc) {
   // game->cur_save.cur_space = &game->cur_save.loaded_spaces[0];
   // FIXME: Highly sus
   game->client_game->world = &game->cur_save.loaded_spaces[0].world;
+  game->client_game->space = &game->cur_save.loaded_spaces[0];
 }

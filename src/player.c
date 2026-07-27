@@ -4,6 +4,7 @@
 #include "../include/net/client.h"
 #include "../include/shared.h"
 #include "lilc/log.h"
+#include <lilc/alloc.h>
 #include <math.h>
 #include <raylib.h>
 
@@ -12,7 +13,7 @@ void player_init(Player *player) {
   player->last_broken_tile = &TILE_INST_EMPTY;
   player->animation_frame = 0;
   player->frame_timer = 0;
-  player->held_item = (ItemInstance){.id = ITEM_DIRT};
+  player->held_item = (ItemInstance){.id = ITEM_SHOVEL};
   player->dragged_item = ITEM_INST_EMPTY;
   player->box = (Rectf){.x = 0, .y = 20, .width = 16, .height = 8};
   player->chunk_pos = vec2i(0, 0);
@@ -28,7 +29,7 @@ static const TextureHandle PLAYER_WALKING_TEXTURES[] = {TEX_PLAYER_BACK_WALK, TE
                                                         TEX_PLAYER_RIGHT_WALK};
 static const TextureHandle PLAYER_TEXTURES[] = {TEX_PLAYER_BACK, TEX_PLAYER_FRONT, TEX_PLAYER_LEFT, TEX_PLAYER_RIGHT};
 
-static Texture2D player_get_texture(PlayerRenderDescriptor *player) {
+static cw_Texture player_get_texture(PlayerRenderDescriptor *player) {
   TextureHandle handle;
 
   if (player->walking) {
@@ -37,7 +38,7 @@ static Texture2D player_get_texture(PlayerRenderDescriptor *player) {
     handle = PLAYER_TEXTURES[player->direction];
   }
 
-  return tex_by_handle(&CLIENT_GAME.asset_manager, handle).texture;
+  return tex_by_handle(&CLIENT_GAME.asset_manager, handle);
 }
 
 Vector2 player_pos(const Player *player) { return (Vector2){.x = player->box.x, .y = player->box.y}; }
@@ -61,21 +62,33 @@ void player_tick(Player *player) {
 
 static void player_render_texture(PlayerRenderDescriptor *player) {
   double scale = 1;
-  Texture2D player_texture = player_get_texture(player);
-  DrawTexturePro(player_texture, (Rectangle){0, player->walking ? 32 * player->animation_frame : 32, 16, player->in_water ? 24 : 32},
+  cw_Texture player_texture = player_get_texture(player);
+  u32 cur_frame = cw_tex_cur_frame(&player_texture);
+  u32 frame_height = cw_tex_frame_height(&player_texture);
+  DrawTexturePro(player_texture.texture, (Rectangle){0, player->walking ? frame_height * cur_frame : 32, 16, player->in_water ? 24 : 32},
                  (Rectangle){.x = player->box.x + 8 * scale,
                              .y = player->box.y + 16 * scale,
                              .width = 16 * scale,
                              .height = (player->in_water ? 24 : 32) * scale},
                  (Vector2){.x = 8 * scale, .y = 16 * scale}, 0, WHITE);
+
+  if (player->in_water) {
+    cw_Texture water_overlay = tex_by_handle(&CLIENT_GAME.asset_manager, TEX_WATER_OVERLAY);
+    u32 w_cur_frame = cw_tex_cur_frame(&water_overlay);
+    u32 w_frame_height = cw_tex_frame_height(&water_overlay);
+    Color anim_color = CLIENT_GAME.game.registries.tiles[TILE_WATER].tile_color;
+    anim_color = color_rgba(anim_color.r, anim_color.g, anim_color.b, anim_color.a + 60);
+    DrawTextureRec(water_overlay.texture, rectf(0, w_cur_frame * w_frame_height, water_overlay.width, w_frame_height),
+                   vec2f(player->box.x, player->box.y), anim_color);
+  }
 }
 
 void player_render_from_desc(PlayerRenderDescriptor *player, float delta) {
   player_render_texture(player);
 
-  if (player->walking) {
-    update_animation(player, delta);
-  }
+  // if (player->walking) {
+  //   update_animation(player, delta);
+  // }
 }
 
 void player_render(Player *player, float delta) {
@@ -101,16 +114,15 @@ void player_render(Player *player, float delta) {
 
   player_render_texture(&render_descriptor);
 
-  if (player->walking) {
-    update_animation(&render_descriptor, GetFrameTime());
-  }
+  // if (player->walking) {
+  //   update_animation(&render_descriptor, GetFrameTime());
+  // }
 }
 
 void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool walking_particles, bool check_for_water) {
   log_debug("setting position, x: %f, y: %f", x, y);
 
   if (check_for_water) {
-    player->in_water = world_ground_tile_at(CLIENT_WORLD, player->tile_pos)->id == TILE_WATER;
     if (player->in_water) {
       x -= (x - player->box.x) / 2;
       y -= (y - player->box.y) / 2;
@@ -128,6 +140,10 @@ void player_set_pos_ex(Player *player, float x, float y, bool update_chunk, bool
   player->tile_pos.y = floor_div(y + 8, TILE_SIZE) + 1;
   player->chunk_pos.x = floor_div(x, CHUNK_SIZE * TILE_SIZE);
   player->chunk_pos.y = floor_div(y, CHUNK_SIZE * TILE_SIZE);
+
+  if (check_for_water) {
+    player->in_water = world_ground_tile_at(CLIENT_WORLD, player->tile_pos)->id == TILE_WATER;
+  }
 
   World *world = CLIENT_WORLD;
   if (update_chunk && !world_has_chunk_at(world, player->chunk_pos)) {
@@ -305,6 +321,8 @@ void player_load(Player *player, const DataMap *map, DataContext ctx) {
   CLIENT_GAME.cam.target.x = x;
   CLIENT_GAME.cam.target.y = y;
 
+  player->cur_space = data_map_get_or_default(map, "cur_space", data_int(SPACE_BASE)).var.data_int;
+
   if (data_map_contains(map, "held_item")) {
     DataMap held_item_map = data_map_get(map, "held_item").var.data_map;
     item_load(&player->held_item, &held_item_map, ctx);
@@ -326,16 +344,17 @@ void player_save(const Player *player, DataMap *map, DataContext ctx) {
   data_map_insert(map, "direction", data_int(player->direction));
   data_map_insert(map, "pos_x", data_int(player->box.x));
   data_map_insert(map, "pos_y", data_int(player->box.y));
+  data_map_insert(map, "cur_space", data_int(player->cur_space));
 
-  DataMap held_item_map = data_map_new(4);
+  DataMap held_item_map = data_map_new(4, &HEAP_ALLOCATOR);
   item_save(&player->held_item, &held_item_map, ctx);
   data_map_insert(map, "held_item", data_map(held_item_map));
 
-  DataMap dragged_item_map = data_map_new(4);
+  DataMap dragged_item_map = data_map_new(4, &HEAP_ALLOCATOR);
   item_save(&player->dragged_item, &dragged_item_map, ctx);
   data_map_insert(map, "dragged_item", data_map(dragged_item_map));
 
-  DataMap inv_map = data_map_new(4);
+  DataMap inv_map = data_map_new(4, &HEAP_ALLOCATOR);
   item_container_save(&player->inv_container, &inv_map, ctx);
   data_map_insert(map, "inv", data_map(inv_map));
 }

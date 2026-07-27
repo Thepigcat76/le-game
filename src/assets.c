@@ -278,16 +278,17 @@ static void tex_meta_info_load(cJSON *json, TextureMetaInfo *meta_info, cw_Textu
     meta_info->has_animation = true;
 
     cJSON *animation = cJSON_GetObjectItemCaseSensitive(json, "animation");
+    if (cJSON_HasObjectItem(animation, "frame-height")) {
+      cJSON *frame_height = cJSON_GetObjectItemCaseSensitive(animation, "frame-height");
+      meta_info->animation.frame_height = frame_height->valueint;
+    } else {
+      meta_info->animation.frame_height = tex.width;
+    }
+
     if (cJSON_HasObjectItem(animation, "frame-time")) {
       cJSON *frame_time = cJSON_GetObjectItemCaseSensitive(animation, "frame-time");
       meta_info->animation.frame_time = frame_time->valueint;
-      meta_info->animation.frames = tex.height / tex.width;
-      if (cJSON_HasObjectItem(animation, "frame-height")) {
-        cJSON *frame_height = cJSON_GetObjectItemCaseSensitive(animation, "frame-height");
-        meta_info->animation.frame_height = frame_height->valueint;
-      } else {
-        meta_info->animation.frame_height = tex.width;
-      }
+      meta_info->animation.frames = tex.height / meta_info->animation.frame_height;
     }
   }
 
@@ -304,6 +305,17 @@ static void tex_meta_info_load(cJSON *json, TextureMetaInfo *meta_info, cw_Textu
       cJSON_ArrayForEach(variant, variants) {
         array_add(meta_info->variant_paths, str_cpy(variant->valuestring, &assets->asset_bump_allocator));
         log_debug("Add variant: %s", variant->valuestring);
+      }
+    }
+  }
+
+  if (cJSON_HasObjectItem(json, "nine-slice")) {
+    cJSON *nine_slice = cJSON_GetObjectItemCaseSensitive(json, "nine-slice");
+    if (cJSON_HasObjectItem(nine_slice, "border")) {
+      meta_info->is_nine_slice = true;
+      cJSON *border = cJSON_GetObjectItemCaseSensitive(nine_slice, "border");
+      if (cJSON_IsNumber(border)) {
+        meta_info->nine_slice_border = border->valueint;
       }
     }
   }

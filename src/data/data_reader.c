@@ -22,9 +22,6 @@ static cJSON *data_reader_data_to_json(Data *data) {
   case DATA_TYPE_DOUBLE: {
     return cJSON_CreateNumber(data->var.data_double);
   }
-  case DATA_TYPE_CHAR: {
-    return cJSON_CreateString(data->var.data_string);
-  }
   case DATA_TYPE_STRING: {
     return cJSON_CreateString(data->var.data_string);
   }

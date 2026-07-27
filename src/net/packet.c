@@ -30,7 +30,7 @@ static void packet_player_join_encode(const Packet *packet, ByteBuf *buf, DataCo
   i32 player_id = payload->player_id;
   byte_buf_write_int(buf, player_id);
 
-  DataMap player_map = data_map_new(200);
+  DataMap player_map = data_map_new(200, &HEAP_ALLOCATOR);
   player_save(&payload->player, &player_map, (DataContext){.registries = ctx.registries});
   Data player_data = data_map(player_map);
   byte_buf_write_data(buf, &player_data);
@@ -271,7 +271,7 @@ void packet_send(i32 addr, PacketId id, void *payload) {
   }
 
   u8 bytes[128000];
-  ByteBuf buf = {.writer_index = 0, .reader_index = 0, .capacity = 128000, .bytes = bytes};
+  ByteBuf buf = {.writer_index = 0, .reader_index = 0, .bytes = bytes};
   byte_buf_write_int(&buf, id);
   info.encode_func(&packet, &buf, ctx);
   // Send: 2-byte length + data
@@ -301,8 +301,9 @@ void packet_receive(i32 addr, Packet *packet) {
     return;
   }
 
+  // TODO: Use dynamic arrays here
   uint8_t bytes[16000];
-  ByteBuf buf = {.reader_index = 0, .writer_index = len, .capacity = 16000, .bytes = bytes};
+  ByteBuf buf = {.reader_index = 0, .writer_index = len, .bytes = bytes};
   n = sockets_receive(addr, (SocketDataBuffer){buf.bytes, len}, MSG_WAITALL);
   if (n != len) {
     perror("Failed to read full packet");

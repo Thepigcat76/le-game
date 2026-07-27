@@ -1,29 +1,26 @@
+#include "lilc/log.h"
 #include "menu_includes.h"
 #include <raylib.h>
 
 static void start_menu_new_save(void) {
   game_load_saves(&CLIENT_GAME.game);
   client_set_menu(&CLIENT_GAME, MENU_NEW_SAVE);
-  //StopMusicStream(MUSIC);
+  // StopMusicStream(MUSIC);
 }
 
 static void start_menu_load_save(void) {
   game_load_saves(&CLIENT_GAME.game);
   client_set_menu(&CLIENT_GAME, MENU_LOAD_SAVE);
-  //StopMusicStream(MUSIC);
+  // StopMusicStream(MUSIC);
 }
 
-static void start_menu_multiplayer(void) {
-  client_set_menu(&CLIENT_GAME, MENU_MULTIPLAYER);
-}
+static void start_menu_multiplayer(void) { client_set_menu(&CLIENT_GAME, MENU_MULTIPLAYER); }
 
 static void start_menu_settings(void) {}
 
-static void start_menu_leave_game(void) {
-  client_stop_running(&CLIENT_GAME);
-}
+static void start_menu_leave_game(void) { client_stop_running(&CLIENT_GAME); }
 
-void start_menu_render(UiRenderer *renderer, const ClientGame *game) {
+void start_menu_render(UiRenderer *renderer, ClientGame *game) {
   UI_SETUP({
       .positions = {UI_CENTER, UI_CENTER},
       .alignment = UI_VERTICAL,

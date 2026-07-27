@@ -1,7 +1,7 @@
-#include "../../include/config.h"
-#include "../../include/net/server.h"
-#include "../../include/net/client.h"
-#include "../../include/ui.h"
+#include "../../../include/config.h"
+#include "../../../include/net/server.h"
+#include "../../../include/net/client.h"
+#include "../../../include/ui.h"
 #include <raylib.h>
 
 static char ip_addr_buf[128];
@@ -12,9 +12,9 @@ static void host_menu_host() { server_start(IP_ADDR.buf, DEBUG_PORT); }
 
 static void host_menu_back() { client_set_menu(&CLIENT_GAME, MENU_MULTIPLAYER); }
 
-void host_menu_open(UiRenderer *renderer, const ClientGame *game) { ip_addr(IP_ADDR.buf); }
+void host_menu_open(ClientGame *game) { ip_addr(IP_ADDR.buf); }
 
-void host_menu_render(UiRenderer *renderer, const ClientGame *game) {
+void host_menu_render(UiRenderer *renderer, ClientGame *game) {
   UI_SETUP({
       .positions = {UI_CENTER, UI_CENTER},
       .alignment = UI_VERTICAL,

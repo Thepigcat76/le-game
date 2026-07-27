@@ -31,6 +31,7 @@ static bool compile_error = false;
 
 static bool packed_resources = false;
 static bool reloadable = false;
+static bool recompile_dynamic = false;
 static bool server = false;
 
 static Cmd pack_cmd = {0};
@@ -72,6 +73,8 @@ static void visit_entry(struct file_entry entry) {
   char build_path[512];
   sprintf(build_path, "./build/%s.o", src_path);
   ensure_parent_dirs(build_path, 0755);
+
+  printf("COMPILING SRC: %s\n", entry.path);
 
   if (cmd_execute(&compile_cmd) != 0) {
     compile_error = true;
@@ -118,6 +121,7 @@ static void visit_dyn_entry(struct file_entry entry) {
 
   Cmd compile_cmd = {0};
 
+  cmd_appendf(&compile_cmd, "ccache");
   cmd_appendf(&compile_cmd, COMPILER);
 
   cmd_appendf(&compile_cmd, "-fPIC");
@@ -137,7 +141,7 @@ static void visit_dyn_entry(struct file_entry entry) {
   cmd_appendf(&compile_cmd, "-DTARGET=" TARGET_LINUX);
   cmd_appendf(&compile_cmd, "-DCOZY_WRATH_VERSION=" COZY_WRATH_VERSION);
   cmd_appendf(&compile_cmd, "-DCOZY_WRATH_VERSION_RELEASE_DATE=" COZY_WRATH_VERSION_RELEASE_DATE);
-  if (reloadable) {
+  if (recompile_dynamic) {
     cmd_appendf(&compile_cmd, "-DRELOADABLE");
   }
 
@@ -149,12 +153,14 @@ static void visit_dyn_entry(struct file_entry entry) {
   sprintf(build_path, "./build/%s.o", src_path);
   ensure_parent_dirs(build_path, 0755);
 
+  printf("Compiling dynamic: %s\n", entry.path);
+
   if (cmd_execute(&compile_cmd) != 0) {
     compile_error = true;
   }
 }
 
-static int recompile_dynamic_files() {
+static int recompile_dynamic_files(void) {
   walk_dir("src/dynamic", visit_dyn_entry);
 
   cmd_appendf(&cmd, COMPILER);
@@ -164,14 +170,14 @@ static int recompile_dynamic_files() {
   walk_dir("build/dynamic", visit_obj_entry);
 
   // Libraries
-  cmd_appendf(&cmd, "-l%s", LIB_LILC);
-  cmd_appendf(&cmd, "-l%s", LIB_RAYLIB);
-  cmd_appendf(&cmd, "-l%s", LIB_GL);
-  cmd_appendf(&cmd, "-l%s", LIB_MATH);
-  cmd_appendf(&cmd, "-l%s", LIB_DL);
-  cmd_appendf(&cmd, "-l%s", LIB_RT);
-  cmd_appendf(&cmd, "-l%s", LIB_PTHREAD);
-  cmd_appendf(&cmd, "-l%s", LIB_CJSON);
+  //cmd_appendf(&cmd, "-l%s", LIB_LILC);
+  //cmd_appendf(&cmd, "-l%s", LIB_RAYLIB);
+  //cmd_appendf(&cmd, "-l%s", LIB_GL);
+  //cmd_appendf(&cmd, "-l%s", LIB_MATH);
+  //cmd_appendf(&cmd, "-l%s", LIB_DL);
+  //cmd_appendf(&cmd, "-l%s", LIB_RT);
+  //cmd_appendf(&cmd, "-l%s", LIB_PTHREAD);
+  //cmd_appendf(&cmd, "-l%s", LIB_CJSON);
 
   cmd_appendf(&cmd, "-o");
   cmd_appendf(&cmd, "build/libfoo.so");
@@ -192,7 +198,7 @@ int main(int argc, char **argv) {
   reloadable = run && (args_contains(argc, argv, "--reloadable") != -1 || args_contains(argc, argv, "-r") != -1);
   server = run && (args_contains(argc, argv, "--server") != -1 || args_contains(argc, argv, "-s") != -1);
 
-  bool recompile_dynamic = args_contains(argc, argv, "recompile-dynamic") != -1;
+  recompile_dynamic = args_contains(argc, argv, "recompile-dynamic") != -1;
 
   if (recompile_dynamic) {
     printf("RECOMPILED DYNAMIC GAME CONTENT\n");

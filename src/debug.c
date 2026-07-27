@@ -7,6 +7,7 @@
 #include "lilc/array.h"
 #include "raylib.h"
 #include "rlgl.h"
+#include <lilc/log.h>
 
 void debug_init(Debug *debug, struct _game *game) {
   debug->options = game->debug.options;
@@ -21,6 +22,7 @@ void debug_init(Debug *debug, struct _game *game) {
 static void debug_render_game_object_overlay(Debug *debug) {
   switch (debug->game->debug.options.game_object_display) {
   case DEBUG_DISPLAY_ALL_ITEMS: {
+    log_debug("Displaying items");
     debug->game->client_game->state.paused = true;
     ItemProperties *item_props;
     array_foreach(debug->game->registries.items, item_props) {
@@ -101,14 +103,14 @@ void debug_render(Debug *debug) {
     rec_draw_outline(player_hitbox, BLUE);
     rec_draw_outline(rectf(CLIENT_PLAYER->tile_pos.x * TILE_SIZE, CLIENT_PLAYER->tile_pos.y * TILE_SIZE, 16, 16), RED);
 
-    for (size_t i = 0; i < array_len(CLIENT_WORLD->beings); i++) {
-      rec_draw_outline(CLIENT_WORLD->beings[i].context.box, WHITE);
+    for (size_t i = 0; i < array_len(CLIENT_GAME.space->beings); i++) {
+      rec_draw_outline(CLIENT_GAME.space->beings[i].context.box, WHITE);
     }
   }
 
   if (debug->game->client_game->state.cur_menu == MENU_DEBUG) {
     int id = debug->debug_controlled_being_id;
-    BeingBrain brain = CLIENT_WORLD->beings[id].brain;
+    BeingBrain brain = CLIENT_GAME.space->beings[id].brain;
     // if (brain.activities_amount > 0) {
     //   BeingActivityWalkAround wa_activity = brain.activities[0].var.activity_walk_around;
     //   DrawCircleV(wa_activity.cur_target_pos, 8, WHITE);
@@ -127,7 +129,7 @@ void debug_tick(Debug *debug) {
   }
 
   if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON) && debug->game->client_game->state.cur_menu == MENU_DEBUG) {
-    BeingInstance *being = &CLIENT_WORLD->beings[debug->debug_controlled_being_id];
+    BeingInstance *being = &CLIENT_GAME.space->beings[debug->debug_controlled_being_id];
     being_brain_reset(being);
     being_activities_add_walk_around(being, debug->debug_go_to_pos);
     TraceLog(LOG_DEBUG, "Added activity");

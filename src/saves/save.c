@@ -1,5 +1,6 @@
 #include "../../include/save.h"
 #include "lilc/array.h"
+#include "lilc/log.h"
 #include <raylib.h>
 
 // TODO: create bumps for both of these possibly
@@ -21,16 +22,6 @@ cJSON *save_config_to_json(const SaveConfig *config) {
   return json;
 }
 
-static const SpaceType *space_type_from_id(SpaceId space_id) {
-  size_t len = array_len(SPACES);
-  for (size_t i = 0; i < len; i++) {
-    if (SPACES[i].space_id == space_id) {
-      return &SPACES[i];
-    }
-  }
-  return NULL;
-}
-
 static size_t space_disk_id_from_str(const char *path) {
   const char *id_lit = strrchr(path, '-');
   size_t id = atoi(id_lit + 1);
@@ -39,7 +30,7 @@ static size_t space_disk_id_from_str(const char *path) {
 
 static size_t space_disk_id_from_id(const SpaceIdLookup *lookup, SpaceId space_id) { return 0; }
 
-void save_load_spaces(Save *save) {
+void save_scan_spaces(Save *save, DataContext ctx) {
   char path[256];
   if (save->descriptor.is_server_save) {
     strcpy(path, "server-save/spaces");
@@ -52,10 +43,11 @@ void save_load_spaces(Save *save) {
     strcpy(path_buf, entry->d_name);
     char *path_buf_end_of_id_lit = strrchr(path_buf, '-');
     *path_buf_end_of_id_lit = '\0';
-    SpaceId space_id = space_id_by_name(path_buf);
-    SpaceDescriptor desc = {.type = &SPACES[space_id], .id = space_disk_id_from_str(entry->d_name), .external = true};
+    SpaceId space_id = space_id_by_ident(path_buf);
+    SpaceDescriptor desc = {.space_id = space_id, .id = space_disk_id_from_str(entry->d_name), .external = true};
     array_add(save->spaces, desc);
-    TraceLog(LOG_INFO, "Found save: Type: %s with index: %zu", space_id_to_name(space_id), desc.id);
+    SpaceProperties space_props = ctx.registries->spaces[space_id];
+    TraceLog(LOG_INFO, "Found save: Type: %s with index: %zu", space_props.name, desc.id);
     ssize_t space_id_index = -1;
     SpaceIdLookupEntry *entry;
     array_foreach(save->space_id_lookup.entries, entry) {
@@ -72,9 +64,9 @@ void save_load_spaces(Save *save) {
     }
   });
 
-  for (int i = 0; i < array_len(save->spaces); i++) {
-    SpaceDescriptor desc = save->spaces[i];
-    printf("Space: %s - disk id: %zu\n", space_id_to_name(desc.type->space_id), desc.id);
+  SpaceDescriptor *space_desc;
+  array_foreach(save->spaces, space_desc) {
+    log_debug("Space: %d - disk id: %zu\n", space_desc->space_id, space_desc->id);
   }
   
 }

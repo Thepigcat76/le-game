@@ -1,6 +1,7 @@
 #include "../../include/data.h"
 #include "lilc/array.h"
 #include "../../include/data/data_reader.h"
+#include <lilc/alloc.h>
 #include <raylib.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -8,12 +9,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-DataMap data_map_new(size_t capacity) {
+DataMap data_map_new(size_t capacity, Allocator *alloc) {
   return (DataMap){
-      .keys = capacity != 0 ? array_new_capacity(char *, capacity, &HEAP_ALLOCATOR) : NULL,
-      .values = capacity != 0 ? array_new_capacity(Data, capacity, &HEAP_ALLOCATOR) : NULL,
+      .keys = capacity != 0 ? array_new_capacity(char *, capacity, alloc) : NULL,
+      .values = capacity != 0 ? array_new_capacity(Data, capacity, alloc) : NULL,
       .capacity = capacity,
       .len = 0,
+      .allocator = alloc,
   };
 }
 
@@ -44,13 +46,13 @@ Data data_map_get_or_default(const DataMap *data_map, const char *key, Data defa
 }
 
 void data_map_insert(DataMap *data_map, const char *key, Data val) {
-  array_add(data_map->keys, malloc(strlen(key) + 1));
-  if (!data_map->keys[data_map->len]) {
-    fprintf(stderr, "Failed to allocate memory for key\n");
-    exit(1);
-  }
-  strcpy(data_map->keys[data_map->len], key);
+  char *key_copy = data_map->allocator->alloc(data_map->allocator, strlen(key) + 1);
+
+  strcpy(key_copy, key);
+
+  array_add(data_map->keys, key_copy);
   array_add(data_map->values, val);
+
   data_map->len++;
 }
 
@@ -63,8 +65,8 @@ void data_map_keys_debug(const DataMap *data_map) {
   TraceLog(LOG_DEBUG, "-----");
 }
 
-DataList data_list_new(size_t capacity) {
-  return (DataList){.items = capacity != 0 ? array_new_capacity(Data, capacity, &HEAP_ALLOCATOR) : NULL, .len = 0};
+DataList data_list_new(size_t capacity, Allocator *alloc) {
+  return (DataList){.items = capacity != 0 ? array_new_capacity(Data, capacity, alloc) : NULL, .len = 0};
 }
 
 Data data_list_get(const DataList *data_list, size_t i) { return data_list->items[i]; }
@@ -76,7 +78,7 @@ void data_list_add(DataList *data_list, Data data) {
 
 void byte_buf_write_data_map(ByteBuf *buf, const DataMap *map) {
   byte_buf_write_int(buf, map->len);
-  for (int i = 0; i < map->len; i++) {
+  for (size_t i = 0; i < map->len; i++) {
     byte_buf_write_string(buf, map->keys[i]);
     byte_buf_write_data(buf, &map->values[i]);
   }
@@ -114,9 +116,6 @@ void byte_buf_write_data(ByteBuf *buf, const Data *data) {
   case DATA_TYPE_INT:
     byte_buf_write_int(buf, data->var.data_int);
     break;
-  case DATA_TYPE_CHAR:
-    byte_buf_write_byte(buf, data->var.data_char);
-    break;
   case DATA_TYPE_STRING:
     byte_buf_write_string(buf, data->var.data_string);
     break;
@@ -133,37 +132,33 @@ void byte_buf_write_data(ByteBuf *buf, const Data *data) {
 }
 
 Data byte_buf_read_data(ByteBuf *buf) {
-  uint8_t type = byte_buf_read_byte(buf);
+  u8 type = byte_buf_read_byte(buf);
 
   switch (type) {
   case DATA_TYPE_BYTE: {
-    signed char byte = byte_buf_read_byte(buf);
+    u8 byte = byte_buf_read_byte(buf);
     return (Data){.type = type, .var = {.data_byte = byte}};
   }
   case DATA_TYPE_INT: {
-    int32_t integer = byte_buf_read_int(buf);
+    i32 integer = byte_buf_read_int(buf);
     return (Data){.type = type, .var = {.data_int = integer}};
-  }
-  case DATA_TYPE_CHAR: {
-    uint8_t character = byte_buf_read_byte(buf);
-    return (Data){.type = type, .var = {.data_char = character}};
   }
   case DATA_TYPE_STRING: {
     int len = byte_buf_read_int(buf);
-    char *string = malloc(len * sizeof(char));
+    char *string = buf->allocator->alloc(buf->allocator, len * sizeof(char));
     byte_buf_read_string(buf, string, len);
     return (Data){.type = type, .var = {.data_string = string}};
   }
   case DATA_TYPE_MAP: {
     size_t len = byte_buf_read_int(buf);
-    DataMap map = data_map_new(len);
+    DataMap map = data_map_new(len, buf->allocator);
     byte_buf_read_data_map(buf, &map, len);
     return (Data){.type = type, .var = {.data_map = map}};
   }
   case DATA_TYPE_LIST: {
     size_t len = byte_buf_read_int(buf);
     printf("Data list len: %zu\n", len);
-    DataList list = data_list_new(len);
+    DataList list = data_list_new(len, buf->allocator);
     byte_buf_read_data_list(buf, &list, len);
     return (Data){.type = type, .var = {.data_list = list}};
   }

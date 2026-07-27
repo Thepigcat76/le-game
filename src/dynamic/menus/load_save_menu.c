@@ -15,7 +15,7 @@ static void load_save_menu_load_save(void *args) {
 
 static void load_save_menu_back() { client_set_menu(&CLIENT_GAME, MENU_START); }
 
-void load_save_menu_render(UiRenderer *renderer, const ClientGame *game) {
+void load_save_menu_render(UiRenderer *renderer, ClientGame *game) {
   UI_SETUP({
       .positions = {UI_CENTER, UI_CENTER},
       .alignment = UI_VERTICAL,

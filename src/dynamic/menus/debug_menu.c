@@ -35,7 +35,7 @@ static void debug_menu_tile_info_button_clicked(void) {
 
 static void debug_menu_rerender_world(void) { world_prepare_rendering(CLIENT_GAME.world); }
 
-void debug_menu_render(UiRenderer *renderer, const ClientGame *game) {
+void debug_menu_render(UiRenderer *renderer, ClientGame *client) {
   UI_SETUP({
       .positions = {UI_LEFT, UI_TOP},
       .alignment = UI_HORIZONTAL,

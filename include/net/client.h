@@ -2,7 +2,6 @@
 
 #include "../game.h"
 #include "../keys.h"
-#include "../menu.h"
 #include "../particle.h"
 #include "../player.h"
 #include "../save.h"
@@ -13,6 +12,7 @@
 #include "queue.h"
 #include "sockets.h"
 #include "../assets.h"
+#include "../cutscene.h"
 
 typedef struct {
   bool paused;
@@ -41,22 +41,29 @@ typedef struct _client_game {
   TileTextureManager tile_tex_manager;
 
   ParticleManager particle_manager;
+  
+  CutSceneManager cut_scene_manager;
 
   UiRenderer ui_renderer;
   Window window;
   RenderTexture2D world_texture;
+
   // Saves
   // These are saves that are actually stored on disk
   SaveDescriptor *local_saves;
+
   // Main game
   Game game;
   // World, Player - points to the
   // world and player usually stored
   // in CLIENT_GAME.cur_save
   World *world;
+  Space *space;
+
   PlayerRenderDescriptor *players;
   Player cur_player;
   i32 player_id;
+  
   addr_t server_addr;
   bool connected_to_server;
 
@@ -107,12 +114,6 @@ void client_init_loaded_save(ClientGame *game, Save *save);
 void client_tick(ClientGame *game);
 
 // MENUS
-
-void client_init_menu(ClientGame *game);
-
-bool client_menu_hides_game(ClientGame *game, MenuId menu);
-
-bool client_menu_is_container(ClientGame *game, MenuId menu);
 
 void client_render_menu(ClientGame *game);
 

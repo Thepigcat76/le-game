@@ -95,9 +95,6 @@ static void *server_game(void *args) {
   // And load button default textures
   ui_renderer_init(&UI_RENDERER);
 
-  // setup registries
-  game_registry_setup();
-
   game_categories_setup(game);
 
   tile_init(&game->debug.options.selected_tile_to_place_instance, TILE_DIRT);

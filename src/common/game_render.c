@@ -19,7 +19,7 @@ static void game_render_break_progress(ClientGame *client, TilePos break_pos, in
 
 static void client_render_beings(ClientGame *client) {
   BeingInstance *being;
-  array_foreach(client->world->beings, being) {
+  array_foreach(client->space->beings, being) {
     if (CheckCollisionPointRec(GetMousePosition(), being->context.box)) {
       client->state.hovered_being = being;
     }
@@ -109,8 +109,15 @@ void client_render(ClientGame *client, float alpha) {
         BeginMode2D(*cam);
         {
           ClearBackground(DARKGRAY);
-          if (!client_menu_hides_game(client, client->state.cur_menu)) {
+
+          MenuProperties menu_props = client->game.registries.menus[client->state.cur_menu];
+          if (!menu_props.hides_game) {
             client_world_render(client, alpha);
+
+            if (client->cut_scene_manager.cur_scene == CUT_SCENE_TEST) {
+              cam->offset.x += 0.35f;
+              cam->offset.y += 0.35f;
+            }
 
             // TODO: MOVE TO GAME RENDER FUNCTION
 
@@ -127,7 +134,9 @@ void client_render(ClientGame *client, float alpha) {
       }
       EndTextureMode();
 
-      if (!client_menu_hides_game(client, client->state.cur_menu)) {
+      MenuProperties menu_props = client->game.registries.menus[client->state.cur_menu];
+
+      if (!menu_props.hides_game) {
         // RENDER WORLD
         // BeginShaderMode(lighting_shader);
         {
@@ -136,9 +145,7 @@ void client_render(ClientGame *client, float alpha) {
                          (Vector2){0, 0}, WHITE);
         }
         // EndShaderMode();
-      }
 
-      if (!client_menu_hides_game(client, client->state.cur_menu)) {
         client_render_overlay(client);
       }
     }
@@ -151,14 +158,19 @@ void client_render(ClientGame *client, float alpha) {
     bool can_cursor_interact_with_being = cursor_can_interact_with_being(client, client->state.hovered_being);
 
     float scale = 3;
-    cw_Texture tex = tex_by_handle(&CLIENT_GAME.asset_manager,
-                                   can_cursor_interact_with_tile || can_cursor_interact_with_being ? TEX_CURSOR_FIST : TEX_CURSOR);
+    cw_Texture tex = tex_by_handle(
+        &CLIENT_GAME.asset_manager,
+        (can_cursor_interact_with_tile || can_cursor_interact_with_being) && CLIENT_WORLD != NULL ? TEX_CURSOR_FIST : TEX_CURSOR);
     DrawTextureEx(tex.texture, (Vector2){.x = mouse_pos.x, .y = mouse_pos.y}, 0, scale, WHITE);
 
-    if (client_menu_is_container(client, client->state.cur_menu) && !item_is_empty(&CLIENT_PLAYER->dragged_item)) {
-      item_render(&CLIENT_PLAYER->dragged_item, mouse_pos.x - 22, mouse_pos.y - 22);
-    } else if (can_cursor_interact_with_tile) {
-      item_render(&CLIENT_PLAYER->held_item, mouse_pos.x - 22, mouse_pos.y - 22);
+    if (CLIENT_WORLD != NULL) {
+      MenuProperties menu_props = client->game.registries.menus[client->state.cur_menu];
+
+      if (menu_props.container && !item_is_empty(&CLIENT_PLAYER->dragged_item)) {
+        item_render(&CLIENT_PLAYER->dragged_item, mouse_pos.x - 22, mouse_pos.y - 22);
+      } else if (can_cursor_interact_with_tile) {
+        item_render(&CLIENT_PLAYER->held_item, mouse_pos.x - 22, mouse_pos.y - 22);
+      }
     }
   }
 

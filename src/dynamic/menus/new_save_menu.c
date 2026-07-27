@@ -1,7 +1,8 @@
-#include "../../include/save_desc.h"
+#include "../../../include/save_desc.h"
 #include "lilc/array.h"
 #include "menu_includes.h"
 #include <lilc/alloc.h>
+#include <lilc/log.h>
 #include <string.h>
 
 static bool save_name_input_selected = true;
@@ -27,16 +28,16 @@ static void new_save_create_world() {
 
 static void new_save_back_to_start_menu() { client_set_menu(&CLIENT_GAME, MENU_START); }
 
-void new_save_menu_open(UiRenderer *renderer, const ClientGame *game) {
+void new_save_menu_open(ClientGame *game) {
   dyn_string_t random_save_name = generate_save_name(&HEAP_ALLOCATOR);
-  int len = random_save_name.len;
+  i32 len = random_save_name.len;
   strcpy(save_name_text_input_buffer.buf, random_save_name.string);
   save_name_text_input_buffer.len = len;
   dyn_string_free(&random_save_name);
 }
 
-void new_save_menu_render(UiRenderer *renderer, const ClientGame *game) {
-  float scale = 0.85;
+void new_save_menu_render(UiRenderer *renderer, ClientGame *game) {
+  f32 scale = 0.85;
   UI_SETUP({
       .positions = {UI_CENTER, UI_CENTER},
       .alignment = UI_VERTICAL,
@@ -45,8 +46,8 @@ void new_save_menu_render(UiRenderer *renderer, const ClientGame *game) {
       .font_scale = CONFIG.default_font_size * scale,
   });
 
-  int x_offset = 0;
-  int y_offset = -2;
+  i32 x_offset = 0;
+  i32 y_offset = -2;
 
   RENDER_TEXT({.text = "Create new save"});
   RENDER_SPACING({.height = 40});

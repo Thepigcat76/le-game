@@ -33,12 +33,11 @@ static void *client_game(void *args) {
   // Create and init common game
   game_init(&CLIENT_GAME.game);
 
+  client_set_menu(&CLIENT_GAME, MENU_START);
+
   CLIENT_GAME.game.client_game = &CLIENT_GAME;
 
   Game *game = &CLIENT_GAME.game;
-
-  // init registries
-  game_registry_setup();
 
   game_categories_setup(game);
 
@@ -208,39 +207,22 @@ void client_tick(ClientGame *client) {
     }
   }
 
+  if (IsKeyPressed(KEY_L)) {
+    cut_scene_play(&client->cut_scene_manager, CUT_SCENE_TEST);
+  }
+
   animation_manager_tick(&client->tex_manager, &client->asset_manager);
 }
 
 // MENUS
 
-#define INIT_MENU(menu_name)                                                                                                               \
-  extern void menu_name##_init();                                                                                                          \
-  menu_name##_init();
+static void client_open_menu(ClientGame *client, MenuId menu_id) {
+  MenuProperties menu_props = client->game.registries.menus[menu_id];
 
-#define OPEN_MENU(ui_renderer, menu_name)                                                                                                  \
-  extern void menu_name##_open(UiRenderer *renderer, const ClientGame *game);                                                              \
-  menu_name##_open(ui_renderer, game);
+  log_debug("Render func: %p", (void *)menu_props.render_func);
 
-void client_init_menu(ClientGame *game) {
-  INIT_MENU(save_menu);
-  INIT_MENU(dialog_menu);
-  // INIT_MENU(start_menu);
-  // INIT_MENU(debug_menu);
-}
-
-static void client_open_menu(ClientGame *game, MenuId menu_id) {
-  switch (menu_id) {
-  case MENU_NEW_SAVE: {
-    OPEN_MENU(&game->ui_renderer, new_save_menu);
-    break;
-  }
-  case MENU_HOST_SERVER: {
-    OPEN_MENU(&game->ui_renderer, host_menu);
-    break;
-  }
-  default: {
-    break;
-  }
+  if (menu_props.open_func != 0) {
+    menu_props.open_func(client);
   }
 }
 
@@ -264,12 +246,6 @@ void client_set_menu(ClientGame *game, MenuId menu_id) {
   client_calc_ui_height(&game->ui_renderer);
   client_open_menu(game, menu_id);
 }
-
-bool client_menu_hides_game(ClientGame *game, MenuId menu) {
-  return menu == MENU_START || menu == MENU_NEW_SAVE || menu == MENU_LOAD_SAVE || menu == MENU_MULTIPLAYER || menu == MENU_HOST_SERVER;
-}
-
-bool client_menu_is_container(ClientGame *game, MenuId menu) { return menu == MENU_INVENTORY || menu == MENU_BACKPACK; }
 
 static bool inv_slot_selected(void) {
   Rectangle slot_rect = {

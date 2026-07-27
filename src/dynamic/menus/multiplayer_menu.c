@@ -1,4 +1,4 @@
-#include "../../include/net/payloads.h"
+#include "../../../include/net/payloads.h"
 #include "menu_includes.h"
 #include <raylib.h>
 
@@ -22,7 +22,7 @@ static void multiplayer_menu_host() { client_set_menu(&CLIENT_GAME, MENU_HOST_SE
 
 static void multiplayer_menu_back() { client_set_menu(&CLIENT_GAME, MENU_START); }
 
-void multiplayer_menu_render(UiRenderer *renderer, const ClientGame *game) {
+void multiplayer_menu_render(UiRenderer *renderer, ClientGame *game) {
   UI_SETUP({
       .positions = {UI_CENTER, UI_CENTER},
       .alignment = UI_VERTICAL,

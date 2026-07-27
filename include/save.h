@@ -1,5 +1,6 @@
 #pragma once
 
+#include "data/data_ex.h"
 #include "game_feature.h"
 #include "player.h"
 #include "space.h"
@@ -17,4 +18,4 @@ typedef struct {
 // Create new save and return it
 Save save_new(SaveDescriptor desc);
 
-void save_load_spaces(Save *save);
+void save_scan_spaces(Save *save, DataContext ctx);

@@ -23,6 +23,10 @@ void item_tooltip(const ItemInstance *item, char *buf, size_t buf_capacity) {
     snprintf(buf, buf_capacity, "Le Torch\nLe Sus");
     break;
   }
+  case ITEM_SHOVEL: {
+    snprintf(buf, buf_capacity, "Ballz\nShovels dirt and stuff");
+    break;
+  }
   default:
     buf[0] = '\0';
     break;

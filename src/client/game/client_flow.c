@@ -9,9 +9,7 @@
 /* CLIENT-INIT-DEINIT */
 
 static void client_init_raylib(void) {
-#ifdef DEBUG_BUILD
-  SetTraceLogLevel(LOG_DEBUG);
-#endif
+  SetTraceLogLevel(LOG_NONE);
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
   InitWindow(SCREEN_INITIAL_WIDTH, SCREEN_INITIAL_HEIGHT, GAME_TITLE);
   InitAudioDevice();
@@ -41,8 +39,8 @@ void client_init(ClientGame *client) {
 
   client->packet_logger.log_file = fopen("client_packets.txt", "w");
 
-  int window_width = GetScreenWidth();
-  int window_height = GetScreenHeight();
+  i32 window_width = GetScreenWidth();
+  i32 window_height = GetScreenHeight();
 
   camera_init(&client->cam, SCREEN_WIDTH, SCREEN_HEIGHT);
   client->state.cur_menu = MENU_START;
@@ -55,7 +53,7 @@ void client_init(ClientGame *client) {
   client->asset_manager = (AssetManager){0};
   client->ui_renderer.asset_manager = &client->asset_manager;
 
-  client_init_menu(client);
+  cut_scene_manager_init(&client->cut_scene_manager);
 
   client_reload(client);
 
@@ -109,4 +107,5 @@ void client_stop_running(ClientGame *game) {
 
 void client_init_loaded_save(ClientGame *client, Save *save) {
   client->world = &save->loaded_spaces[0].world;
+  client->space = &save->loaded_spaces[0];
 }

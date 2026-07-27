@@ -1,6 +1,5 @@
 #include "../../include/net/client.h"
 #include "../../include/shared.h"
-#include "../../include/tile.h"
 #include "../../vendor/cJSON.h"
 #include "../../vendor/stb_perlin.h"
 #include "lilc/log.h"
@@ -203,24 +202,10 @@ void tile_tex_manager_load(TileTextureManager *tile_tex_manager, const RegistryM
   TileProperties *tile;
   array_foreach(registries->tiles, tile) {
     cw_Texture tex = asset_manager->textures[tile->texture];
-    VariantTexture var_tex = {
-        .id = tile->id,
-    };
-    TextureMetaInfo meta_info = tex.meta_info;
-    if (tex.has_meta_info && meta_info.has_variants) {
-      var_tex.kind = TEX_VAR_SINGLE;
-      var_tex.variants = array_new(AssetId, &asset_manager->asset_bump_allocator);
+    VariantTexture var_tex = {0};
 
-      char **variant_path;
-      array_foreach(meta_info.variant_paths, variant_path) {
-        cw_Texture tex = tex_by_tex_path(asset_manager, *variant_path);
-        array_add(var_tex.variants, tex.id);
+    var_tex_load(&var_tex, &tex, asset_manager);
 
-        log_debug("TExture: %s <-> id: %zu", tex.path, tex.id);
-      }
-    } else {
-      var_tex.kind = TEX_VAR_NONE;
-    }
     array_add(tile_tex_manager->tile_variant_textures, var_tex);
   }
 }
@@ -241,6 +226,8 @@ cw_Texture tile_tex(TileId id, TilePos tile_pos, f32 world_seed, const TileTextu
 
   if (tex.meta_info.has_variants) {
     VariantTexture var_tex = tile_texs->tile_variant_textures[id];
+    
+    AssetId id = var_tex_for_pos(&var_tex, tile_pos.x, tile_pos.y, seed_offset);
 
     f32 fx = tile_pos.x * 0.1 + seed_offset;
     f32 fy = tile_pos.y * 0.1 + seed_offset;

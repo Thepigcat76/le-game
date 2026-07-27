@@ -1,6 +1,7 @@
-#include "../../include/net/payloads.h"
+#include "../../../include/net/payloads.h"
 #include "menu_includes.h"
 #include <pthread.h>
+#include "lilc/log.h"
 #include <raylib.h>
 
 static void save_menu_back_to_game_button_clicked() {
@@ -31,19 +32,7 @@ static void save_menu_save_game_button_clicked() {
   game_unload_save(&CLIENT_GAME.game);
 }
 
-static Texture2D DECLARE_BUTTON_TEXTURE(BACK_TO_GAME_BUTTON_TEXTURE);
-static Texture2D DECLARE_BUTTON_TEXTURE(VISUAL_SETTINGS_BUTTON_TEXTURE);
-static Texture2D DECLARE_BUTTON_TEXTURE(GAME_SETTINGS_BUTTON_TEXTURE);
-static Texture2D DECLARE_BUTTON_TEXTURE(LEAVE_GAME_BUTTON_TEXTURE);
-
-void save_menu_init() {
-  INIT_TEXTURE(BACK_TO_GAME_BUTTON_TEXTURE, "back_to_game_button");
-  INIT_TEXTURE(VISUAL_SETTINGS_BUTTON_TEXTURE, "visual_settings_button");
-  INIT_TEXTURE(GAME_SETTINGS_BUTTON_TEXTURE, "game_settings_button");
-  INIT_TEXTURE(LEAVE_GAME_BUTTON_TEXTURE, "leave_game_button");
-}
-
-void save_menu_render(UiRenderer *renderer, const ClientGame *game) {
+void save_menu_render(UiRenderer *renderer, ClientGame *game) {
   UI_SETUP({
       .positions = {UI_CENTER, UI_CENTER},
       .alignment = UI_VERTICAL,

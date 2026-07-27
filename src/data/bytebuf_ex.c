@@ -9,7 +9,7 @@ void space_encode(const Space *space, ByteBuf *buf, DataContext ctx) {
   SpaceDescriptor desc = space->desc;
   {
     // Type
-    byte_buf_write_byte(buf, desc.type->space_id);
+    byte_buf_write_byte(buf, desc.space_id);
     // Id
     byte_buf_write_int(buf, desc.id);
     // Loaded from disk
@@ -23,7 +23,7 @@ void space_encode(const Space *space, ByteBuf *buf, DataContext ctx) {
   printf("Writer index, before world: %zu", buf->writer_index);
   // World
   const World *world = &space->world;
-  DataMap map = data_map_new(2000);
+  DataMap map = data_map_new(2000, buf->allocator);
   world_save(world, &map, ctx);
   Data data = data_map(map);
   char *data_string = data_reader_read_data(&data);
@@ -55,7 +55,7 @@ void space_decode(Space *space, ByteBuf *buf, DataContext ctx) {
   // Desc
   SpaceDescriptor *desc = &space->desc;
   {
-    desc->type = &SPACES[byte_buf_read_byte(buf)];
+    desc->space_id = byte_buf_read_byte(buf);
     desc->id = byte_buf_read_int(buf);
     desc->external = byte_buf_read_byte(buf);
   }
@@ -66,7 +66,7 @@ void space_decode(Space *space, ByteBuf *buf, DataContext ctx) {
   byte_buf_read_string(buf, seed_buf, len);
 
   float seed = atof(seed_buf);
-  printf("Seed: %f, space: %p, desc: %p\n", seed, space, desc);
+  printf("Seed: %f, space: %p, desc: %p\n", seed, (void *) space, (void *) desc);
   space_init(space, *desc, seed);
   space->seed = seed;
 

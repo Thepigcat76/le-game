@@ -157,27 +157,21 @@ void tile_render_scaled(TileInstance *tile, int x, int y, float scale) {
   TileProperties tile_props = CLIENT_GAME.game.registries.tiles[tile->id];
 
   if (tile_props.has_texture) {
-    // TODO: Reenable variant texture rendering
-    if (false) {
-      AssetId variant_tex_id = tile->variant_texture;
-      cw_Texture variant_tex = tex_by_id(&CLIENT_GAME.asset_manager, variant_tex_id);
-      DrawTextureRecEx(variant_tex.texture, tile->cur_sprite_box, vec2f(x, y), 0, scale, WHITE);
-    } else {
-      cw_Texture tex = tex_by_id(&CLIENT_GAME.asset_manager, tile_props.texture);
-      i32 cur_frame = 0;             // cw_tex_cur_frame(&tex);
-      i32 frame_height = tex.height; // cw_tex_frame_height(&tex);
-      Rectangle sprite_rect = tile->cur_sprite_box;
-      sprite_rect.y += frame_height * cur_frame;
-      int offset_x = (tile_props.tile_dimensions.width - TILE_SIZE) / 2;
-      int offset_y = tile_props.tile_dimensions.height - TILE_SIZE;
-      DrawTextureRecEx(tex.texture, sprite_rect, vec2f(x - offset_x, y - offset_y), 0, scale, WHITE);
+    cw_Texture tex = tile_tex(tile->id, vec2i(x, y), CLIENT_WORLD->seed, &CLIENT_GAME.tile_tex_manager, &CLIENT_GAME.game.registries,
+                              &CLIENT_GAME.asset_manager);
+    u32 cur_frame = cw_tex_cur_frame(&tex);
+    u32 frame_height = cw_tex_frame_height(&tex);
+    Rectangle sprite_rect = tile->cur_sprite_box;
+    sprite_rect.y += frame_height * cur_frame;
+    i32 offset_x = (tile_props.tile_dimensions.width - TILE_SIZE) / 2;
+    i32 offset_y = tile_props.tile_dimensions.height - TILE_SIZE;
+    DrawTextureRecEx(tex.texture, sprite_rect, vec2f(x - offset_x, y - offset_y), 0, scale, WHITE);
 #ifdef DEBUG_BUILD
 #include "../../include/game.h"
-      if (CLIENT_GAME.game.debug.options.hitboxes_shown && tile->type->layer == TILE_LAYER_TOP) {
-        rec_draw_outline(tile_collision_box_at(tile, x, y), GREEN);
-      }
-#endif
+    if (CLIENT_GAME.game.debug.options.hitboxes_shown && tile->type->layer == TILE_LAYER_TOP) {
+      rec_draw_outline(tile_collision_box_at(tile, x, y), GREEN);
     }
+#endif
   }
 }
 
@@ -186,7 +180,7 @@ void tile_render(TileInstance *tile, int x, int y, bool dbg) {
 
   if (tile_props.has_texture) {
     cw_Texture tex = tile_tex(tile->id, vec2i(x, y), CLIENT_WORLD->seed, &CLIENT_GAME.tile_tex_manager, &CLIENT_GAME.game.registries,
-                             &CLIENT_GAME.asset_manager);
+                              &CLIENT_GAME.asset_manager);
     u32 cur_frame = cw_tex_cur_frame(&tex);
     u32 frame_height = cw_tex_frame_height(&tex);
     Rectangle sprite_rect = tile->cur_sprite_box;

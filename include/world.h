@@ -8,7 +8,6 @@
 #include "shared.h"
 #include "space_desc.h"
 #include "tile.h"
-#include "registries/worlds.h"
 #include <stddef.h>
 #include <unistd.h>
 
@@ -18,12 +17,12 @@ typedef struct {
 } ChunkLookup;
 
 typedef struct _world {
-  WorldId world_id;
+  SpaceId space_id;
+
   const SaveDescriptor *save_desc;
   Chunk *chunks;
   ChunkLookup chunk_lookup;
-  // TODO: Use dynamic array for beings
-  struct _being_instance *beings;
+
   bool initialized;
   bool clientside;
   float seed;
@@ -34,7 +33,7 @@ World world_new_no_chunks(bool clientside);
 // FIXME: Naming is bad: world_init <-> world_initialize
 
 
-void world_init(World *world, WorldId world_id, float seed);
+void world_init(World *world, SpaceId space_id, float seed);
 
 void world_initialize(World *world);
 
@@ -75,8 +74,3 @@ void world_set_tile_texture_data(World *world, TileInstance *tile, int x, int y)
 void world_render_layer(World *world, TileLayer layer);
 
 void world_render_layer_top_split(World *world, Rectangle player_box, bool draw_before_player);
-
-void world_add_being(World *world, BeingInstance being);
-
-// TODO: Use UUID at some point
-void world_remove_being(World *world, BeingInstance *being);

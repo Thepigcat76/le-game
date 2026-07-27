@@ -19,7 +19,7 @@ void game_tick(Game *game) {
     // server_tick(game->server_game);
   }
 
-  if (!game->client_game->state.paused && CLIENT_WORLD != NULL) {
+  if (!game->client_game->state.paused && CLIENT_GAME.space != NULL) {
     game_world_tick(game);
   }
 
@@ -37,9 +37,7 @@ void game_tick(Game *game) {
     // game_set_menu(game, MENU_NONE);
   }
 
-#ifdef DEBUG_BUILD
   debug_tick(&game->debug);
-#endif
 
   if (IS_KEY_PRESSED(reload)) {
     client_reload(game->client_game);
@@ -60,7 +58,7 @@ static void game_world_tick(Game *game) {
   player_handle_movement(CLIENT_PLAYER, w, a, s, d);
 
   BeingInstance *being;
-  array_foreach(CLIENT_WORLD->beings, being) { being_tick(being); }
+  array_foreach(CLIENT_GAME.space->beings, being) { being_tick(being); }
 
   game_handle_mouse_interaction(game);
 
@@ -76,10 +74,9 @@ static void game_world_tick(Game *game) {
     }
   }
 
-#ifdef DEBUG_BUILD
   if (IsKeyPressed(KEY_F1)) {
-    world_add_being(CLIENT_WORLD, being_npc_new(CLIENT_PLAYER->box.x, CLIENT_PLAYER->box.y));
-    game->debug.debug_controlled_being_id = array_len(CLIENT_WORLD->beings) - 1;
+    space_add_being(CLIENT_GAME.space, being_npc_new(CLIENT_PLAYER->box.x, CLIENT_PLAYER->box.y));
+    game->debug.debug_controlled_being_id = array_len(CLIENT_GAME.space->beings) - 1;
   }
 
   if (IS_KEY_PRESSED(open_close_debug_menu)) {
@@ -92,9 +89,8 @@ static void game_world_tick(Game *game) {
   }
 
   if (IS_KEY_PRESSED(visit_dungeon)) {
-    game_enter_space(game, (SpaceDescriptor){.type = &SPACES[SPACE_DUNGEON_TEST], .id = 0});
+    game_enter_space(game, (SpaceDescriptor){.space_id = SPACE_DUNGEON_TEST, .id = 0});
   }
-#endif
 }
 
 TileCategories item_tile_categories(const ItemInstance *item) {
@@ -239,7 +235,7 @@ static void game_handle_mouse_interaction(Game *game) {
   bool being_clicked = false;
   if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
     BeingInstance *being;
-    array_foreach(CLIENT_WORLD->beings, being) {
+    array_foreach(CLIENT_GAME.space->beings, being) {
       if (being->id == BEING_NPC &&
           CheckCollisionPointRec(GetScreenToWorld2D(GetMousePosition(), game->client_game->cam), being->context.box)) {
         // game_set_menu(game, MENU_DIALOG);
@@ -257,12 +253,12 @@ static void game_handle_mouse_interaction(Game *game) {
 
 static void game_handle_item_pickup(Game *game) {
   BeingInstance *being;
-  array_foreach(CLIENT_WORLD->beings, being) {
+  array_foreach(CLIENT_GAME.space->beings, being) {
     if (being->id == BEING_ITEM && CheckCollisionRecs(being->context.box, player_collision_box(CLIENT_PLAYER))) {
       if (GetTime() - being->context.creation_time > CONFIG.item_pickup_delay) {
         ItemInstance item = being->extra.var.item_instance.item;
         ItemProperties item_props = game->registries.items[item.id];
-        world_remove_being(CLIENT_WORLD, being);
+        space_remove_being(CLIENT_GAME.space, being);
         log_debug("Inserting item: %s", item_props.name);
         item_container_insert(&CLIENT_PLAYER->inv_container, item);
         break;

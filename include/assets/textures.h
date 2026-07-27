@@ -4,30 +4,8 @@
 #include "../shared.h"
 #include "raylib.h"
 
-/* VARIANT TEXTURES */
-
-typedef struct {
-  AssetId *variants;
-} SingleTileVariant;
-
-typedef struct {
-  Vec2i *cases;
-  SingleTileVariant *case_variant;
-} ConnectedTileVariant;
-
-typedef struct {
-  // Links to the base asset. In the case of dirt this would be 'TEX_DIRT',
-  // which in turn links to the AssetIds of its variants
-  AssetId id;
-  enum {
-    TEX_VAR_NONE,
-    TEX_VAR_SINGLE,
-    TEX_VAR_CONNECTED,
-  } kind;
-  AssetId *variants;
-} VariantTexture;
-
 typedef enum {
+  TEX_ERR,
   // Tile textures
   TEX_BRICKS,
   TEX_BUSH,
@@ -105,7 +83,6 @@ typedef enum {
   TEX_CURSOR,
   TEX_TOOLTIP,
 
-  TEX_ERR,
   _amount_texture_handles,
 } TextureHandle;
 

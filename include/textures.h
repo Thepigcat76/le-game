@@ -2,6 +2,7 @@
 
 #include "assets.h"
 #include "registry.h"
+#include "shared.h"
 #include "tile.h"
 
 /* ANIMATION MANAGER */
@@ -21,6 +22,20 @@ typedef struct {
   // Index for this is AssetId, total amount is array_len(asset_manager->textures)
   AnimatedTexture *animated_textures;
 } AnimationManager;
+
+/* VARIANT TEXTURES */
+
+typedef struct {
+  // Links to the base asset. In the case of dirt this would be the id of 'TEX_DIRT',
+  // which in turn links to the AssetIds of its variants
+  AssetId id;
+  enum {
+    TEX_VAR_NONE,
+    TEX_VAR_SINGLE,
+    TEX_VAR_CONNECTED,
+  } kind;
+  AssetId *variants;
+} VariantTexture;
 
 /* TILE TEXTURE MANAGER */
 
@@ -42,6 +57,22 @@ typedef struct {
   Connection *connections;
 } TileTextureManager;
 
+/* GENERAL */
+
+void tex_draw0(cw_Texture *tex, Vec2i pos, Color tint);
+
+void tex_draw1(cw_Texture *tex, Vec2i pos, f32 scale, Color tint);
+
+void tex_draw2(cw_Texture *tex, Vec2i dest, Rectf src, f32 rotation, f32 scale, Color tint);
+
+void tex_draw3(cw_Texture *tex, Rectf dest, Rectf src, Vec2f origin, f32 rotation, Color tint);
+
+/* VARIANT TEXTURES */
+
+void var_tex_load(VariantTexture *var_tex, const cw_Texture *tex, AssetManager *assets);
+
+AssetId var_tex_for_pos(VariantTexture *var_tex, i32 x, i32 y, f32 seed_offset);
+
 /* ANIMATION MANAGER */
 
 void animation_manager_load(AnimationManager *anim_manager, const AssetManager *asset_manager);
@@ -60,6 +91,7 @@ void tile_tex_manager_load(TileTextureManager *tile_tex_manager, const RegistryM
 
 void tile_tex_manager_unload(TileTextureManager *tile_tex_manager, const RegistryManager *registries, const AssetManager *asset_manager);
 
-cw_Texture tile_tex(TileId id, TilePos tile_pos, f32 seed, const TileTextureManager *tile_texs, const RegistryManager *registries, const AssetManager *asset_manager);
+cw_Texture tile_tex(TileId id, TilePos tile_pos, f32 seed, const TileTextureManager *tile_texs, const RegistryManager *registries,
+                    const AssetManager *asset_manager);
 
 void tile_calc_sprite_box(TileInstance *tile);

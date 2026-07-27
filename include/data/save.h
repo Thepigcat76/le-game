@@ -18,5 +18,3 @@ void item_container_save(const ItemContainer *item_container, DataMap *data, Dat
 void space_save(SaveDescriptor save_desc, const Space *space, DataContext ctx);
 
 void player_save(const Player *player, DataMap *map, DataContext ctx);
-
-void player_load(Player *player, const DataMap *map, DataContext ctx);

@@ -5,7 +5,8 @@
 #include "registries/items.h"
 #include "registries/tiles.h"
 #include "registries/beings.h"
-#include "registries/worlds.h"
+#include "registries/spaces.h"
+#include "registries/menus.h"
 
 typedef struct {
   bool initialized;
@@ -13,7 +14,8 @@ typedef struct {
   ItemProperties *items;
   TileProperties *tiles;
   BeingProperties *beings;
-  WorldProperties *worlds;
+  SpaceProperties *spaces;
+  MenuProperties *menus;
 
   Bump registry_bump;
   Allocator registry_bump_allocator;

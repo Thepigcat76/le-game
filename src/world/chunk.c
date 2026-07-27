@@ -2,6 +2,7 @@
 #include "../../include/game.h"
 #include "../../include/net/client.h"
 #include "lilc/panic.h"
+#include <lilc/alloc.h>
 #ifndef _WIN32
 #define STB_PERLIN_IMPLEMENTATION
 #endif
@@ -16,20 +17,8 @@
   chunk->variant_index = tile_variants_index_for_name(tex.path, 0, 0);
 */
 
-// TODO: Reenable this
-static void chunk_assign_dirt_variants(Chunk *chunk) {
-  //cw_Texture tex = tex_by_handle(&CLIENT_GAME.asset_manager, TEX_DIRT);
-  //chunk->variant_index = tile_variants_index_for_name("res/assets/tex/dirt.png", 0, 0);
-  //for (int y = 0; y < CHUNK_SIZE; y++) {
-  //  for (int x = 0; x < CHUNK_SIZE; x++) {
-  //    chunk->background_texture_variants[y][x] = GetRandomValue(0, tile_variants_amount_by_index(chunk->variant_index, 0, 0) - 1);
-  //  }
-  //}
-}
-
 void chunk_empty(Chunk *chunk, ChunkPos chunk_pos, float world_seed) {
   chunk->chunk_pos = chunk_pos;
-  chunk_assign_dirt_variants(chunk);
 }
 
 void chunk_gen(Chunk *chunk, ChunkPos chunk_pos, float world_seed) {
@@ -45,7 +34,7 @@ void chunk_gen(Chunk *chunk, ChunkPos chunk_pos, float world_seed) {
         float noise = (stb_perlin_noise3(fx, fy, 0.0f, 0, 0, 0) + 1) * 10.0;
         TileId tile_id;
         if (l == TILE_LAYER_GROUND) {
-          if (chunk->world_id == WORLD_BASE) {
+          if (chunk->space_id == SPACE_BASE) {
             if (noise > 5) {
               if (noise < 8) {
                 tile_id = TILE_DIRT;
@@ -55,14 +44,15 @@ void chunk_gen(Chunk *chunk, ChunkPos chunk_pos, float world_seed) {
             } else {
               tile_id = TILE_WATER;
             }
-          } else if (chunk->world_id == WORLD_DUNGEON_TEST) {
+          } else if (chunk->space_id == SPACE_DUNGEON_TEST) {
             if (noise > 4) {
               tile_id = TILE_DUNGEON_FLOOR;
             } else {
               tile_id = TILE_STONE;
             }
           } else {
-            panic("NYI World gen for type: %d", chunk->world_id);
+            panic("NYI World gen for space id: %d", chunk->space_id);
+            tile_id = TILE_EMPTY;
           }
         } else {
           // if (noise > 9.9) {
@@ -74,9 +64,6 @@ void chunk_gen(Chunk *chunk, ChunkPos chunk_pos, float world_seed) {
         tile_init(&chunk->tiles[y][x][l], tile_id);
       }
     }
-  }
-  if (GAME_SIDE == SIDE_CLIENT) {
-    chunk_assign_dirt_variants(chunk);
   }
   chunk->chunk_pos = chunk_pos;
 }
@@ -124,7 +111,6 @@ void chunk_load(Chunk *chunk, const DataMap *data) {
       }
     }
   }
-  chunk_assign_dirt_variants(chunk);
   chunk->chunk_pos = chunk_pos;
 }
 
@@ -132,7 +118,7 @@ void chunk_save(const Chunk *chunk, DataMap *data) {
   data_map_insert(data, "chunk_x", data_int(chunk->chunk_pos.x));
   data_map_insert(data, "chunk_y", data_int(chunk->chunk_pos.y));
   for (int l = 0; l < TILE_LAYERS_AMOUNT; l++) {
-    DataList tiles = data_list_new(256);
+    DataList tiles = data_list_new(256, &HEAP_ALLOCATOR);
     for (int y = 0; y < CHUNK_SIZE; y++) {
       for (int x = 0; x < CHUNK_SIZE; x++) {
 

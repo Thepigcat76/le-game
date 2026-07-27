@@ -2,8 +2,8 @@
 
 #include "raylib.h"
 #include "ui_style.h"
-#include "../textures.h"
-#include "../item.h"
+#include "lilc/numbers.h"
+#include "../registries/items.h"
 #include <stdlib.h>
 
 typedef struct {
@@ -22,7 +22,7 @@ ButtonClickFunction button_click_args(void (*on_click_func)(void *), void *args)
 #define OPT_TEX(tex) (struct _optional_texture){.texture_handle = tex, .present = true}
 
 struct _optional_texture {
-  TextureHandle texture_handle;
+  u32 texture_handle;
   bool present;
 };
 

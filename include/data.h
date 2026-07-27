@@ -1,15 +1,17 @@
 //! A format for game data
 #pragma once
 
+#include "bytebuf.h"
+#include <lilc/alloc.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include "bytebuf.h"
 
 typedef struct {
   char **keys;
   struct _data *values;
   size_t len;
   size_t capacity;
+  Allocator *allocator;
 } DataMap;
 
 typedef struct {
@@ -25,7 +27,6 @@ typedef struct _data {
     DATA_TYPE_SHORT,
     DATA_TYPE_INT,
     DATA_TYPE_LONG,
-    DATA_TYPE_CHAR,
     DATA_TYPE_FLOAT,
     DATA_TYPE_DOUBLE,
     DATA_TYPE_STRING,
@@ -46,7 +47,7 @@ typedef struct _data {
 
 // DATAMAP
 
-DataMap data_map_new(size_t capacity);
+DataMap data_map_new(size_t capacity, Allocator *allocator);
 
 bool data_map_contains(const DataMap *data_map, const char *key);
 
@@ -54,13 +55,14 @@ Data data_map_get(const DataMap *data_map, const char *key);
 
 Data data_map_get_or_default(const DataMap *data_map, const char *key, Data default_val);
 
+// Copies the key, it can safely be freed after this function
 void data_map_insert(DataMap *data_map, const char *key, Data val);
 
 void data_map_keys_debug(const DataMap *data_map);
 
 // DATALIST
 
-DataList data_list_new(size_t capacity);
+DataList data_list_new(size_t capacity, Allocator *alloc);
 
 Data data_list_get(const DataList *data_list, size_t i);
 

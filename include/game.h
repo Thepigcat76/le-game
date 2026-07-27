@@ -13,13 +13,15 @@
 
 typedef struct _game {
   RegistryManager registries;
+  
   // SAVE SPECIFIC
   Save cur_save;
   bool save_loaded;
-  // pointers to the fields in the current save
+
   // CATEGORIES
   Category tile_categories;
   Category item_categories;
+
   // DEBUGGING
   Debug debug;
   // Client/Server - depending on
@@ -37,9 +39,6 @@ typedef enum {
 } GameSide;
 
 extern GameSide GAME_SIDE;
-
-// Initialize registries
-void game_registry_setup(void);
 
 void game_categories_setup(Game *game);
 

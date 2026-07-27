@@ -28,6 +28,8 @@ typedef struct _player {
   TileInstance *break_tile;
   TilePos break_tile_pos;
 
+  SpaceId cur_space;
+
   // PLAYER DATA
   Rectf box;
   int essence;
